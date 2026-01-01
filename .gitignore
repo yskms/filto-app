@@ -1,0 +1,34 @@
+# ===== Node / Expo =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Expo =====
+.expo/
+.expo-shared/
+web-build/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Editor =====
+.vscode/
+.idea/
+
+# ===== Env =====
+.env
+.env.local
+.env.*.local
+
+# ===== Build =====
+dist/
+build/
+
+# ===== Logs =====
+logs/
+*.log
+
+# ===== Optional =====
+coverage/

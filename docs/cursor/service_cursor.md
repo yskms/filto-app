@@ -1,3 +1,7 @@
+> IMPORTANT:
+> This task MUST comply with cursor/CONSTRAINTS.md.
+> No dependency or configuration changes are allowed.
+
 # Service層 詳細設計（Cursor向け）
 
 ## 🧠 Service層 全体方針

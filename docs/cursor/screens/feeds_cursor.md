@@ -1,3 +1,7 @@
+> IMPORTANT:
+> This task MUST comply with cursor/CONSTRAINTS.md.
+> No dependency or configuration changes are allowed.
+
 # Feeds Screen
 
 ## Component
