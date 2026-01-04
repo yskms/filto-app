@@ -52,6 +52,24 @@ SafeAreaView
 - Header は原則として画面内に実装し、
   Navigation の header は使用しない
 
+### Screen Header
+- Height: 48px
+- Padding: horizontal 16
+- Vertical padding MUST NOT be used
+- Vertical alignment is handled by alignItems: center
+  (縦方向の中央揃え：alignItems: center で行う)
+- Title:
+  - fontSize: 18
+  - fontWeight: 600
+- Border bottom: 1px #e0e0e0
+
+### Header実装上の注意（重要）
+- paddingVertical は 使用しないこと
+- 高さは height: 48 で固定する
+- タイトルやアイコンの縦位置調整は余白ではなく alignItems: center によって行う
+- 画面ごとに独自のヘッダー高さを定義しない
+ （Home / Filters / Settings で必ず共通にする）
+
 ## 実装上の禁止事項
 
 - 新しい UI ライブラリを追加しない
