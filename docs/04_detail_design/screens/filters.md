@@ -46,3 +46,10 @@
   - 別行のタップ（編集アイコン含む）
   - 別行のスワイプ操作
 - スワイプが開いている間は編集操作は実行されない
+
+## Swipeable 実装について（注意）
+
+- 現在は react-native-gesture-handler の Swipeable（JS実装）を使用している
+- TypeScript 上で deprecated warning が表示されるが、
+  動作・保守上の問題はないため当面は許容する
+- 将来的に Gesture Handler Reanimated 版 Swipeable へ移行予定
