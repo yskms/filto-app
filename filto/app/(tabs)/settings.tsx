@@ -50,7 +50,8 @@ export default function SettingsScreen() {
   const handlePressMenuItem = React.useCallback((itemId: string) => {
     switch (itemId) {
       case 'feeds':
-        console.log('go to feeds');
+        // console.log('go to feeds');
+        router.push('/feeds');
         break;
       case 'preferences':
         console.log('go to preferences');
