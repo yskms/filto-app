@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 // ダミーデータ型定義
 interface Filter {
@@ -190,6 +192,22 @@ export default function FiltersScreen() {
       }
     }
   }, [openSwipeId]);
+
+  // 画面がフォーカスを失う時に開いているスワイプを閉じる
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        // クリーンアップ関数：フォーカスを失う時に実行
+        if (openSwipeId !== null) {
+          const ref = swipeableRefs.current.get(openSwipeId);
+          if (ref?.current) {
+            ref.current.close();
+          }
+          setOpenSwipeId(null);
+        }
+      };
+    }, [openSwipeId])
+  );
 
   const handleToggleDeleteMode = React.useCallback(() => {
     setDeleteMode((prev) => {
