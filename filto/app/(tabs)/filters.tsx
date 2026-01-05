@@ -8,7 +8,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Swipeable } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 
 
@@ -65,18 +66,18 @@ const FilterItem: React.FC<{
   onSwipeableWillOpen,
   onSwipeableWillClose,
 }) => {
-  // 削除アクション（右側）
+  // 削除アクション（右側）- Reanimated版
   const renderRightActions = () => {
     return (
-      <TouchableOpacity
-        style={styles.deleteAction}
-        onPress={onPressDelete}
-        activeOpacity={0.8}
-      >
-        <View style={styles.deleteButton}>
+      <Reanimated.View style={styles.deleteAction}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={onPressDelete}
+          activeOpacity={0.8}
+        >
           <Text style={styles.deleteIcon}>🗑️</Text>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Reanimated.View>
     );
   };
 
@@ -106,6 +107,7 @@ const FilterItem: React.FC<{
       rightThreshold={40}
       onSwipeableWillOpen={onSwipeableWillOpen}
       onSwipeableWillClose={onSwipeableWillClose}
+      overshootRight={false}
     >
       <TouchableOpacity
         style={[

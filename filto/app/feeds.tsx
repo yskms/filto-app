@@ -8,8 +8,9 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LongPressGestureHandler, State, Swipeable } from 'react-native-gesture-handler';
-import Animated, {
+import { LongPressGestureHandler, State } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -95,18 +96,18 @@ const FeedItem: React.FC<{
     }
   };
 
-  // 削除アクション（右側）
+  // 削除アクション（右側）- Reanimated版
   const renderRightActions = () => {
     return (
-      <TouchableOpacity
-        style={styles.deleteAction}
-        onPress={onPressDelete}
-        activeOpacity={0.8}
-      >
-        <View style={styles.deleteButton}>
+      <Reanimated.View style={styles.deleteAction}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={onPressDelete}
+          activeOpacity={0.8}
+        >
           <Text style={styles.deleteIcon}>🗑️</Text>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Reanimated.View>
     );
   };
 
@@ -127,13 +128,14 @@ const FeedItem: React.FC<{
       rightThreshold={40}
       onSwipeableWillOpen={onSwipeableWillOpen}
       onSwipeableWillClose={onSwipeableWillClose}
+      overshootRight={false}
     >
       <LongPressGestureHandler
         onHandlerStateChange={handleLongPress}
         enabled={!deleteMode && !isSwipeOpen}
         minDurationMs={300}
       >
-        <Animated.View style={animatedStyle}>
+        <Reanimated.View style={animatedStyle}>
           <TouchableOpacity
             style={[
               styles.feedContainer,
@@ -153,7 +155,7 @@ const FeedItem: React.FC<{
               </View>
             </View>
           </TouchableOpacity>
-        </Animated.View>
+        </Reanimated.View>
       </LongPressGestureHandler>
     </Swipeable>
   );
