@@ -120,7 +120,7 @@ const FilterItem: React.FC<{
             <Text style={styles.blockKeyword}>{filter.block_keyword}</Text>
             {filter.allow_keyword && (
               <Text style={styles.allowKeyword}>
-                Allow: {filter.allow_keyword}
+                許可: {filter.allow_keyword}
               </Text>
             )}
           </View>
@@ -140,9 +140,45 @@ const FilterItem: React.FC<{
 // ヘッダーコンポーネント
 const FiltersHeader: React.FC<{
   deleteMode: boolean;
+  selectedCount: number;
   onToggleDeleteMode: () => void;
   onPressAdd: () => void;
-}> = ({ deleteMode, onToggleDeleteMode, onPressAdd }) => {
+  onConfirmDelete: () => void;
+}> = ({ deleteMode, selectedCount, onToggleDeleteMode, onPressAdd, onConfirmDelete }) => {
+  if (deleteMode) {
+    // 削除モード時のヘッダー
+    return (
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={onToggleDeleteMode}
+          style={styles.headerButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.cancelText}>キャンセル</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>
+          {selectedCount}件選択
+        </Text>
+
+        <TouchableOpacity
+          onPress={onConfirmDelete}
+          style={styles.headerButton}
+          disabled={selectedCount === 0}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={[
+            styles.deleteText,
+            selectedCount === 0 && styles.disabledText
+          ]}>
+            削除
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // 通常モード時のヘッダー
   return (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>Filters</Text>
@@ -167,7 +203,7 @@ const FiltersHeader: React.FC<{
 };
 
 export default function FiltersScreen() {
-  const [filters] = useState<Filter[]>(dummyFilters);
+  const [filters, setFilters] = useState<Filter[]>(dummyFilters);
   const [deleteMode, setDeleteMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [openSwipeId, setOpenSwipeId] = useState<number | null>(null);
@@ -285,6 +321,8 @@ export default function FiltersScreen() {
           style: 'destructive',
           onPress: () => {
             console.log('delete filter', filterId);
+            // TODO: FilterService.delete(filterId)
+            setFilters((prev) => prev.filter((f) => f.id !== filterId));
             // 削除後、スワイプを閉じる
             const ref = swipeableRefs.current.get(filterId);
             if (ref?.current) {
@@ -296,6 +334,32 @@ export default function FiltersScreen() {
       ]
     );
   }, []);
+
+  const handleConfirmDelete = React.useCallback(() => {
+    if (selectedIds.length === 0) return;
+
+    Alert.alert(
+      `${selectedIds.length}件のフィルタを削除しますか？`,
+      'この操作は取り消せません',
+      [
+        {
+          text: 'キャンセル',
+          style: 'cancel',
+        },
+        {
+          text: '削除',
+          style: 'destructive',
+          onPress: () => {
+            console.log('delete filters', selectedIds);
+            // TODO: FilterService.delete(selectedIds)
+            setFilters((prev) => prev.filter((f) => !selectedIds.includes(f.id)));
+            setSelectedIds([]);
+            setDeleteMode(false);
+          },
+        },
+      ]
+    );
+  }, [selectedIds]);
 
   const handleSwipeableWillOpen = React.useCallback(
     (filterId: number) => {
@@ -314,8 +378,10 @@ export default function FiltersScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <FiltersHeader
         deleteMode={deleteMode}
+        selectedCount={selectedIds.length}
         onToggleDeleteMode={handleToggleDeleteMode}
         onPressAdd={handlePressAdd}
+        onConfirmDelete={handleConfirmDelete}
       />
 
       <FlatList
@@ -378,6 +444,18 @@ const styles = StyleSheet.create({
   },
   headerIcon: {
     fontSize: 20,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: '#1976d2',
+  },
+  deleteText: {
+    fontSize: 16,
+    color: '#ff3b30',
+    fontWeight: '600',
+  },
+  disabledText: {
+    opacity: 0.3,
   },
   listContent: {
     paddingBottom: 20,
