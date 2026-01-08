@@ -1,29 +1,47 @@
-# Filto 仕様書（メイン）
+# Filto 仕様書
 
-> 本ドキュメントは本アプリの**方針・全体像を共有するためのメイン仕様書**である。  
-> 各種詳細設計（画面遷移図、DB定義、API仕様など）は**別冊：設計資料集**を参照する。
+> RSSベースのローカル完結型ニュースリーダー
 
 ---
 
 ## ドキュメント構成
 
-- 第1章：概要書（要件）
-  - 1-1 要件概要書
-  - 1-2 機能要件書
-  - 1-3 非機能要件書
-  - 1-4 方式設計
-- 第2章：基本設計書（サマリ）
-- 付録：設計資料集（別冊）一覧
+### 要件定義
+- [00_main_spec.md](00_main_spec.md) - 本ファイル（要件定義）
+
+### 基本設計
+- [画面遷移図](../02_basic_design/01_screen_flow.md)
+- [ワイヤーフレーム](../02_basic_design/02_wireframes.md)
+- [DB設計](../02_basic_design/03_db_design.md)
+- [ER図](../02_basic_design/04_er_diagram.md)
+- [CRUD整理](../02_basic_design/05_crud_matrix.md)
+- [API設計](../02_basic_design/06_api_design.md)
+- [アーキテクチャ](../02_basic_design/07_architecture.md)
+- [UI規約](../02_basic_design/08_ui_conventions.md)
+
+### 開発計画
+- [開発スケジュール](../03_dev_plan/01_wbs.md)
+
+### 詳細設計
+- [Home画面](../04_detail_design/home.md)
+- [FeedSelectModal画面](../04_detail_design/feed_select_modal.md)
+- [Feeds画面](../04_detail_design/feeds.md)
+- [FeedAdd画面](../04_detail_design/feed_add.md)
+- [Filters画面](../04_detail_design/filters.md)
+- [FilterEdit画面](../04_detail_design/filter_edit.md)
+- [Settings画面](../04_detail_design/settings.md)
+- [Preferences画面](../04_detail_design/preferences.md)
+
+### 実装制約
+- [実装制約](../cursor/CONSTRAINTS.md)
 
 ---
 
-# 第1章 概要書
-
-## 1-1 要件概要書
+## 要件概要
 
 ### アプリの目的
 RSSフィードを用いて必要な情報のみを効率的に収集し、
-キーワードベースのフィルタでノイズを抑えた“自分専用ニュースフィード”を提供する。
+キーワードベースのフィルタでノイズを抑えた"自分専用ニュースフィード"を提供する。
 
 ### 想定ユーザー
 - Google Discover 等のレコメンド型フィードをよく使う人
@@ -44,9 +62,9 @@ RSSフィードを用いて必要な情報のみを効率的に収集し、
 
 ---
 
-## 1-2 機能要件書
+## 機能要件
 
-### 必須機能（初期リリース / MVP）
+### MVP（初期リリース）
 - RSSフィード管理（追加・削除・並び替え）
 - 記事取得・一覧表示
 - 既読管理
@@ -56,16 +74,14 @@ RSSフィードを用いて必要な情報のみを効率的に収集し、
 - 外部ブラウザでの記事表示
 - 設定管理（言語・テーマ・同期関連）
 
-### リリース後に対応予定の機能
+### リリース後に対応予定
 - 課金（Proプラン）
-
-### あれば嬉しい機能
-- フィルタ条件の高度化
+- グローバル許可リスト
+- 正規表現対応
 - お気に入り（スター）
-- 記事メモ
 - OPMLインポート/エクスポート
 
-### 今回は作らない機能（スコープ外）
+### スコープ外
 - プッシュ通知
 - バックグラウンド常時更新
 - 全文取得・オフライン全文保存
@@ -74,7 +90,7 @@ RSSフィードを用いて必要な情報のみを効率的に収集し、
 
 ---
 
-## 1-3 非機能要件書
+## 非機能要件
 
 ### パフォーマンス
 - 起動は数秒以内
@@ -89,119 +105,58 @@ RSSフィードを用いて必要な情報のみを効率的に収集し、
 - iOS / Android
 - 一般的なスマートフォン端末
 
-### 保守・運用観点
+### 保守・運用
 - ローカルDB破損時も再取得で復旧可能
 - 設定はKey-Valueで拡張容易
 
 ---
 
-## 1-4 方式設計
+## 方式設計
 
-### フロント / バックエンド構成
-- フロント：React Native + Expo
-- バックエンド：持たず、アプリ内ローカルAPIとして実装
+### アーキテクチャ
+- フロント：React Native + Expo + TypeScript
+- DB：SQLite（ローカル完結）
+- バックエンド：なし（アプリ内ローカルAPIとして実装）
 
-### 使用言語
-- TypeScript / JavaScript
-- （将来サーバ化する場合：Python想定）
+詳細は [アーキテクチャ図](../02_basic_design/07_architecture.md) を参照
 
 ### 外部サービス・API
 - 利用なし（各RSS URLへ直接アクセス）
 
----
-
-# 第2章 基本設計書（サマリ）
-
-> 本章では詳細設計の要点のみをまとめる。  
-> 図表・定義の詳細は付録の**設計資料集**を参照すること。
-
-## 2.1 全体構成サマリ
-
-- ローカル完結型アーキテクチャ
-- UI / Service（アプリ内API）/ DB の3層構成
-- データはSQLiteで管理
-
-※ 詳細：**アーキテクチャ図**参照
-
----
-
-## 2.2 画面構成サマリ
-
-### タブ構成
-- Home：記事一覧
-- Filters：フィルタ管理
-- Settings：設定・フィード管理
-
-### 主な画面
-Home / Filters / FilterAdd / Settings / Feeds / FeedAdd / Preferences
-
-※ 詳細：**画面遷移図・ワイヤーフレーム**参照
-
----
-
-## 2.3 フィルタ仕様サマリ
-
-- 対象：タイトル・概要
-- block にヒット かつ allow にヒットしない場合にブロック
-- 複数ルールは OR 条件
-- ブロック記事は一覧から非表示
-
-※ 詳細：**フィルタ仕様・CRUD整理**参照
-
----
-
-## 2.4 データ設計サマリ
-
+### データ構造
 主要テーブル：
-- feeds
-- articles
-- filters
-- settings
-- meta
+- `feeds` - RSSフィード
+- `articles` - 記事
+- `filters` - フィルタルール
+- `settings` - 設定（Key-Value）
 
-※ 詳細：**DB設計書・ER図・CRUD整理**参照
+詳細は [DB設計](../02_basic_design/03_db_design.md) / [ER図](../02_basic_design/04_er_diagram.md) を参照
 
----
+### フィルタロジック
+```
+if (記事.タイトル or 概要 に block_keyword が含まれる) {
+  if (allow_keyword のいずれかが含まれる) {
+    → 表示（例外として許可）
+  } else {
+    → ブロック
+  }
+}
+```
 
-## 2.5 API設計サマリ
+### 画面構成
+```
+Tab Navigation
+├─ Home（記事一覧）
+├─ Filters（フィルタ管理）
+└─ Settings（設定・フィード管理）
+```
 
-- アプリ内ローカルAPIとしてREST風に実装
-- リソース：feeds / articles / filters / settings
-- 同期用：/sync
-
-※ 詳細：**API設計書**参照
-
----
-
-## 2.6 MVPスコープ
-
-### 含む
-- RSS取得・保存
-- 記事一覧
-- フィルタ（block / allow）
-- フィード管理
-- 設定画面
-
-### 含まない
-- 通知
-- バックグラウンド頻繁更新
-- 全文取得
-- クラウド同期
-- SNS連携
+詳細は [画面遷移図](../02_basic_design/01_screen_flow.md) / [ワイヤーフレーム](../02_basic_design/02_wireframes.md) を参照
 
 ---
 
-# 付録：設計資料集（別冊）一覧
+## 🚀 開発状況
 
-以下の資料は本仕様書から参照される**詳細設計ドキュメント**とする。
+詳細は [開発スケジュール](../03_dev_plan/01_wbs.md) を参照
 
-- 画面遷移図
-- 画面ワイヤーフレーム
-- DB設計書
-- ER図
-- CRUD整理
-- API設計書
-- アーキテクチャ図
-
-※ 各資料は Notion / Markdown のサブページや別ファイルとして管理する。
-
+---
