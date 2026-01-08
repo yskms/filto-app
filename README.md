@@ -1,5 +1,7 @@
 # Filto
 
+[English](README_EN.md) | 日本語
+
 **ローカルフィルタ特化型の軽量RSSリーダー**
 
 Filto は、**記事のノイズを「自分のルール」でコントロールできる**シンプルで実用的なモバイル向けRSSリーダーです。
@@ -62,29 +64,43 @@ Filto では、
 ## プロジェクト構成（簡易）
 
 ```txt
-Filto/
-├─ app/            # UI / Screens（React Native）
-├─ services/       # ビジネスロジック（取得・フィルタ）
-├─ repositories/   # DBアクセス層
-├─ db/             # SQLite / マイグレーション
+FILTO-APP/
+├─ filto/          # アプリ本体（Expo + React Native）
+│  ├─ app/         # UI / Screens（Expo Router）
+│  ├─ components/  # 共通UIコンポーネント
+│  ├─ hooks/       # カスタムフック
+│  ├─ constants/   # テーマなどの定数
+│  └─ ...          # その他アプリ関連コード
 └─ docs/           # 設計ドキュメント一式
 ```
-
-詳細な設計資料は `docs/` 配下にまとめています。
 
 ---
 
 ## ドキュメント
 
-`docs/` ディレクトリには以下の設計資料を含みます：
+- **要件定義**: [00_main_spec.md](docs/01_requirements/00_main_spec.md) - アプリ全体の仕様
+- **開発計画**: [01_wbs.md](docs/03_dev_plan/01_wbs.md) - 開発スケジュール
+- **基本設計**: [02_basic_design/](docs/02_basic_design/) - 画面遷移図・DB設計・API設計など
+- **詳細設計**: [04_detail_design/](docs/04_detail_design/) - 各画面の詳細仕様
+- **Cursor指示書**: [cursor/](docs/cursor/) - Cursor向け実装用プロンプト
 
-- 要件概要・機能要件・非機能要件
-- 画面遷移図 / ワイヤーフレーム
-- DB設計 / ER図 / CRUD整理
-- API設計 / アーキテクチャ図
-- 開発フロー（WBS）・実装タスクリスト
-- 画面別 / Service / Repository 詳細設計
-- Cursor向け実装用プロンプト
+詳細は [00_main_spec.md](docs/01_requirements/00_main_spec.md) の「ドキュメント構成」を参照
+
+---
+
+## 開発ルール
+
+### コミットメッセージ規約
+- `feat`: 新機能・画面追加
+- `fix`: バグ修正
+- `refactor`: 挙動を変えない内部整理
+- `docs`: 設計書・README修正
+- `chore`: 設定・雑務（機能影響なし）
+
+#### 方針
+- 1コミット = 1意図
+- UIのみでも feat とする
+- 迷ったら feat を使う
 
 ---
 
@@ -100,7 +116,7 @@ Filto/
 
 - **個人開発プロジェクト**
 - **現在**：詳細設計〜実装フェーズ
-- **初回リリース目標**：2025年5月
+- **初回リリース目標**：2026年5月
 
 ※ 課金機能は初期リリースには含まれませんが、将来的な追加を前提とした設計になっています。
 

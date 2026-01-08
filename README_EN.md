@@ -1,47 +1,49 @@
 # Filto
 
-**A lightweight RSS reader focused on local filtering**
+**Lightweight RSS Reader with Local Filter Focus**
 
-Filto is a mobile RSS reader designed to give users full control over article filtering using local rules, without relying on paid cloud-based services.
+Filto is a simple and practical mobile RSS reader that lets you **control article noise with your own rules**.
 
 ---
 
 ## Overview
 
-Many RSS readers today suffer from:
+Many RSS readers face challenges such as:
 
-- Advanced filters locked behind paid plans
-- Cloud-dependent processing
-- Overly complex configuration
+- Advanced filters are limited to paid plans
+- Processing relies on cloud services
+- Complex settings can be overwhelming
 
-Filto aims to provide:
+Filto focuses on:
 
-- **Fully local article filtering**
-- **Simple yet expressive filter rules**
-- **A quiet reading experience without notifications**
+- **All article fetching and filtering is done locally**
+- **Simple yet expressive filters**
+- **Quiet experience without push notifications**
+
+The goal is to "read only the articles you need, comfortably."
 
 ---
 
 ## Target Users
 
-- People who regularly use RSS but feel overwhelmed by noise
-- Users who want to filter tech, finance, or hobby-related articles
-- Those interested in client-side filtering instead of cloud services
-- Engineers and indie developers who value control and simplicity
+- People who use RSS daily but are tired of noise
+- Those who want to curate tech/investment/hobby information their own way
+- Users who see value in premium filters (like Inoreader/Feedly) but are cautious about subscriptions
+- Engineers and indie developers who want to design their own reading experience
 
 ---
 
 ## Key Features
 
-- RSS feed management (add / remove / reorder)
-- Local filtering rules
-  - Keyword-based include / exclude
-  - Exception rules (e.g. block A unless B exists)
-- On-demand or low-frequency feed refresh
-- Open articles in the system browser
-- Light / Dark theme support
-- Supports both Japanese and English RSS feeds
-- Planned UI localization
+- RSS feed management (add, delete, reorder)
+- Local filtering capabilities
+  - Block/allow by keywords
+  - Exception rules (e.g., allow if contains A but also contains B)
+- Filters apply instantly and on-demand
+- Article content opens in system browser
+- Manual or low-frequency feed updates
+- Light/Dark theme support
+- Support for Japanese/English RSS feeds (UI localization planned)
 
 ---
 
@@ -49,47 +51,70 @@ Filto aims to provide:
 
 - **Frontend**: React Native (Expo)
 - **Language**: TypeScript
-- **Local Database**: SQLite
+- **Local DB**: SQLite
 - **Architecture**: UI / Service / Repository
-- **Network**: RSS fetching only (no cloud backend)
+- **Communication**: RSS fetching only (no cloud dependencies)
 
 ---
 
 ## Project Structure (Simplified)
 
 ```txt
-Filto/
-├─ app/            # UI / Screens (React Native)
-├─ services/       # Business logic (feeds, filtering)
-├─ repositories/   # Data access layer
-├─ db/             # SQLite / migrations
-└─ docs/           # Design documents
+FILTO-APP/
+├─ filto/          # Main app (Expo + React Native)
+│  ├─ app/         # UI / Screens (Expo Router)
+│  ├─ components/  # Shared UI components
+│  ├─ hooks/       # Custom hooks
+│  ├─ constants/   # Constants like theme
+│  └─ ...          # Other app-related code
+└─ docs/           # Design documentation
 ```
 
 ---
 
 ## Documentation
 
-The `docs/` directory contains detailed design documents:
+- **Requirements**: [00_main_spec.md](docs/01_requirements/00_main_spec.md) - Overall specifications
+- **Dev Plan**: [01_wbs.md](docs/03_dev_plan/01_wbs.md) - Development schedule
+- **Basic Design**: [02_basic_design/](docs/02_basic_design/) - Screen flows, DB design, API design, etc.
+- **Detailed Design**: [04_detail_design/](docs/04_detail_design/) - Detailed specs for each screen
+- **Cursor Guides**: [cursor/](docs/cursor/) - Implementation prompts for Cursor
 
-- Requirements and specifications
-- Screen flow and wireframes
-- Database design and ER diagrams
-- CRUD definitions and API design
-- Architecture diagrams
-- Development plan and task lists
-- Detailed designs for UI, Service, and Repository layers
-- Cursor-ready implementation prompts
+For complete documentation structure, see [00_main_spec.md](docs/01_requirements/00_main_spec.md)
+
+---
+
+## Development Rules
+
+### Commit Message Convention
+- `feat`: New features/screens
+- `fix`: Bug fixes
+- `refactor`: Internal improvements without behavior changes
+- `docs`: Design docs/README updates
+- `chore`: Config/maintenance (no functional impact)
+
+#### Guidelines
+- 1 commit = 1 intent
+- UI-only changes also use `feat`
+- When in doubt, use `feat`
+
+---
+
+## UI Mock (Concept)
+
+![UI Mock](docs/02_basic_design/mock/nano-banana_v1_light.png)
+
+*This image is an initial UI concept for design exploration
 
 ---
 
 ## Development Status
 
-- **Personal indie development project**
-- **Currently in design and implementation phase**
-- **Initial release planned for May 2025**
+- **Personal development project**
+- **Current**: Design to implementation phase
+- **Initial release target**: May 2026
 
-Note: Monetization features are not included in the initial release, but the architecture is designed to support them in the future.
+*Monetization features are not included in the initial release but are planned for future updates.
 
 ---
 
