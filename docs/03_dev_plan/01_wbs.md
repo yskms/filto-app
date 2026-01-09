@@ -48,7 +48,7 @@
 - [x] Filters画面UI + 削除機能
 
 **実装中・今後**:
-- [ ] ドキュメント更新
+- [x] ドキュメント更新
 - [ ] FilterEdit画面
 - [ ] テーマ対応（基礎：Context + 色定義）
 - [ ] SQLite設計・CRUD
