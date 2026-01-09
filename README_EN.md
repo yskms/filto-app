@@ -39,6 +39,7 @@ The goal is to "read only the articles you need, comfortably."
 - Local filtering capabilities
   - Block/allow by keywords
   - Exception rules (e.g., allow if contains A but also contains B)
+  - Global allow list (prioritized over all filters)
 - Filters apply instantly and on-demand
 - Article content opens in system browser
 - Manual or low-frequency feed updates
