@@ -128,6 +128,7 @@ RSSフィードを用いて必要な情報のみを効率的に収集し、
 - `feeds` - RSSフィード
 - `articles` - 記事
 - `filters` - フィルタルール
+- `global_allow_keywords` - グローバル許可リスト
 - `settings` - 設定（Key-Value）
 
 詳細は [DB設計](../02_basic_design/03_db_design.md) / [ER図](../02_basic_design/04_er_diagram.md) を参照
