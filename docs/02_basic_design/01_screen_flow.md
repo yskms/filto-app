@@ -4,7 +4,6 @@
 
 ```mermaid
 flowchart TB
-
   %% Tabs
   subgraph Tabs["Tabs"]
     direction LR
@@ -12,23 +11,24 @@ flowchart TB
     Settings["Settings"]
     Filters["Filters"]
   end
-
+  
   %% Home flow
-  FeedSelect["Feed Select(Modal)"]
+  FeedSelect["Feed Select (Modal)"]
   Home --> FeedSelect --> Home
   FeedSelect --> Feeds
-
+  
   %% Settings flow
   Feeds["Feeds"]
   FeedAdd["FeedAdd"]
   Preferences["Preferences"]
-
   Settings --> Feeds --> FeedAdd
   Settings --> Preferences
-
+  
   %% Filters flow
   FilterEdit["FilterEdit"]
+  FilterSort["Filter Sort (Modal)"]
   Filters --> FilterEdit
+  Filters --> FilterSort --> Filters
 ```
 
 ---
@@ -38,6 +38,7 @@ flowchart TB
 - **Home**：記事一覧
 - **Feed Select**：表示フィード選択（モーダル）
 - **Filters**：フィルタ一覧
+- **Filter Sort**：フィルタ並び替え選択（モーダル）
 - **FilterEdit**：フィルタ追加/編集
 - **Feeds**：フィード一覧
 - **FeedAdd**：RSSフィード追加/編集
@@ -66,6 +67,36 @@ flowchart TB
 
 ---
 
+### 🚫 Filters
+
+- **🔄ボタン** → Filter Sort（モーダル）
+- **＋ボタン** → FilterEdit（新規）
+- **✏️ボタン** → FilterEdit（編集）
+
+---
+
+### 🔄 Filter Sort（モーダル）
+
+- **並び順選択** → Filtersに戻る（自動的に並び替え反映）
+- **モーダル外タップ** → 閉じる
+
+**選択肢**：
+- ブロックキーワード（昇順）
+- 作成日時（新しい順）
+- 作成日時（古い順）
+- 更新日時（新しい順）
+- 更新日時（古い順）
+
+---
+
+### ✏️ FilterEdit
+
+- **保存** → Filters
+- **削除**（編集時のみ） → Filters
+- **←** → Filters
+
+---
+
 ### ⚙ Settings
 
 **Settingsトップから：**
@@ -88,21 +119,6 @@ flowchart TB
 
 - **追加成功** → Feeds に戻る
 - **←** → Feeds
-
----
-
-### 🚫 Filters
-
-- **＋** → FilterEdit（新規）
-- **✏️** → FilterEdit（編集）
-- **← 戻る** → Settings
-
----
-
-### ✏️ FilterEdit
-
-- **保存** → Filters
-- **←** → Filters
 
 ---
 
