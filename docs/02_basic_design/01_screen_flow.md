@@ -21,8 +21,9 @@ flowchart TB
   Feeds["Feeds"]
   FeedAdd["FeedAdd"]
   Preferences["Preferences"]
+  GlobalAllowKeywords["Global Allow Keywords"]
   Settings --> Feeds --> FeedAdd
-  Settings --> Preferences
+  Settings --> Preferences --> GlobalAllowKeywords
   
   %% Filters flow
   FilterEdit["FilterEdit"]
@@ -44,6 +45,7 @@ flowchart TB
 - **FeedAdd**：RSSフィード追加/編集
 - **Settings**：設定
 - **Preferences**：表示・同期・その他
+- **Global Allow Keywords**：グローバル許可キーワード管理
 
 ---
 
@@ -124,4 +126,14 @@ flowchart TB
 
 ### ⚙ Preferences
 
+- **グローバル許可** → Global Allow Keywords
 - **←** → Settings
+
+---
+
+### 🌟 Global Allow Keywords
+
+- **＋ボタン** → キーワード追加（Pro版チェックあり）
+- **✕ボタン** → キーワード削除（確認ダイアログ）
+- **Pro版ボタン**（無料版のみ） → Pro案内画面
+- **←** → Preferences
