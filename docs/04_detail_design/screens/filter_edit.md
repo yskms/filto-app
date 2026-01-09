@@ -10,6 +10,12 @@
 
 ## フィルタロジック
 ```
+// グローバル許可リストを最優先でチェック（FilterServiceで実行）
+if (global_allow_keywords のいずれかが含まれる) {
+  → 表示（無条件で許可、他のフィルタを無視）
+}
+
+// 通常のフィルタ評価
 if (記事.タイトル or 概要 に block_keyword が含まれる) {
   if (allow_keyword が指定されている) {
     if (記事.タイトル or 概要 に allow_keyword のいずれかが含まれる) {
@@ -22,6 +28,8 @@ if (記事.タイトル or 概要 に block_keyword が含まれる) {
   }
 }
 ```
+
+---
 
 ## UI構成
 
@@ -88,6 +96,8 @@ if (記事.タイトル or 概要 に block_keyword が含まれる) {
   - タップ時：確認ダイアログ表示
   - 削除実行後：Filters画面に戻る
 
+---
+
 ## 削除確認ダイアログ
 ```
 タイトル: フィルタを削除
@@ -96,6 +106,8 @@ if (記事.タイトル or 概要 に block_keyword が含まれる) {
   - キャンセル（style: 'cancel'）
   - 削除（style: 'destructive'）
 ```
+
+---
 
 ## 入力例
 
@@ -129,6 +141,8 @@ if (記事.タイトル or 概要 に block_keyword が含まれる) {
 → FXを含むが、暗号資産関連キーワードのいずれかも含む場合は表示
 ```
 
+---
+
 ## バリデーション
 
 ### 入力時
@@ -147,6 +161,8 @@ if (!targetTitle && !targetDescription) {
   return;
 }
 ```
+
+---
 
 ## データ処理
 
@@ -169,18 +185,33 @@ const allowKeywordsForDisplay = filter.allow_keyword
   .join('\n') || '';  // "仮想通貨\nweb3\ncrypto"
 ```
 
+---
+
 ## DB保存仕様
 ```typescript
 interface Filter {
   id?: number;                // undefined = 新規
   block_keyword: string;      // 単一キーワード: "FX"
   allow_keyword: string | null; // カンマ区切り: "仮想通貨,web3" or NULL
-  target_title: boolean;      // タイトルを対象にするか
-  target_description: boolean; // 概要を対象にするか
-  created_at?: string;
-  updated_at?: string;
+  target_title: boolean;      // タイトルを対象にするか (1 or 0)
+  target_description: boolean; // 概要を対象にするか (1 or 0)
+  created_at?: number;        // UnixTime（秒）
+  updated_at?: number;        // UnixTime（秒）
 }
 ```
+
+### SQLite型変換
+```typescript
+// Booleanは0/1で保存
+target_title: targetTitle ? 1 : 0
+target_description: targetDescription ? 1 : 0
+
+// 読み込み時は逆変換
+targetTitle: filter.target_title === 1
+targetDescription: filter.target_description === 1
+```
+
+---
 
 ## 画面遷移
 
@@ -194,10 +225,15 @@ interface Filter {
 ### 遷移先
 - **保存成功**: FilterEdit → Filters
   - `router.back()`
+  - Filters画面で再読み込み（自動）
 - **削除成功**: FilterEdit → Filters
   - `router.back()`
+  - Filters画面で再読み込み（自動）
 - **戻るボタン**: FilterEdit → Filters
   - `router.back()`
+  - 未保存の変更は破棄
+
+---
 
 ## 使用API / Service
 
@@ -211,12 +247,23 @@ FilterService.get(id: number): Promise<Filter>
 FilterService.save(filter: Filter): Promise<void>
 // 新規の場合: filter.id = undefined
 // 更新の場合: filter.id = number
+// 保存後、全記事を再評価（バックグラウンド）
 ```
 
 ### 削除時（編集時のみ）
 ```typescript
 FilterService.delete(id: number): Promise<void>
+// 削除後、全記事を再評価（バックグラウンド）
 ```
+
+### フィルタ再評価
+```typescript
+// 保存・削除後に自動実行（Service内部で処理）
+FilterService.evaluateAll(): Promise<void>
+// グローバル許可リスト → 通常フィルタの順で評価
+```
+
+---
 
 ## ブロックキーワードの重複について
 
@@ -241,6 +288,8 @@ Filters画面で **ソート機能** を使って確認できる：
 - ブロックキーワード順でソート → 同じキーワードが隣接
 - 重複を見つけたら、編集または削除で整理
 
+---
+
 ## Pro版の制限
 
 ### 無料版
@@ -263,13 +312,77 @@ Alert表示:
   - Pro版を見る → /settings/pro へ遷移
 ```
 
-## 将来的な拡張（今回は実装しない）
+---
 
-### グローバル許可リスト
-- Settings → Preferences に実装予定
-- すべてのフィルタに対して優先的に許可するキーワード
-- 例：自社名、特定の技術名など
-- **無料版：3件まで / Pro版：無制限**
+## State管理
+
+### Component State
+```typescript
+const [blockKeyword, setBlockKeyword] = useState('');
+const [allowKeywords, setAllowKeywords] = useState(''); // 改行区切り
+const [targetTitle, setTargetTitle] = useState(true);
+const [targetDescription, setTargetDescription] = useState(true);
+const [isSaving, setIsSaving] = useState(false);
+const [isDeleting, setIsDeleting] = useState(false);
+```
+
+### 初期化（編集時）
+```typescript
+useEffect(() => {
+  if (filterId) {
+    loadFilter();
+  }
+}, [filterId]);
+
+async function loadFilter() {
+  const filter = await FilterService.get(filterId);
+  setBlockKeyword(filter.block_keyword);
+  setAllowKeywords(
+    filter.allow_keyword
+      ?.split(',')
+      .map(k => k.trim())
+      .join('\n') || ''
+  );
+  setTargetTitle(filter.target_title === 1);
+  setTargetDescription(filter.target_description === 1);
+}
+```
+
+---
+
+## エラーハンドリング
+
+### 保存失敗時
+```typescript
+try {
+  await FilterService.save(filter);
+  router.back();
+} catch (error) {
+  Alert.alert(
+    'エラー',
+    '保存に失敗しました。もう一度お試しください。'
+  );
+  setIsSaving(false);
+}
+```
+
+### 削除失敗時
+```typescript
+try {
+  await FilterService.delete(filterId);
+  router.back();
+} catch (error) {
+  Alert.alert(
+    'エラー',
+    '削除に失敗しました。もう一度お試しください。'
+  );
+  setIsDeleting(false);
+}
+```
+
+---
+
+## 将来的な拡張（今回は実装しない）
 
 ### 正規表現対応（Pro版限定）
 ```
@@ -277,9 +390,17 @@ Alert表示:
 → 正規表現で高度なマッチング
 ```
 
+### フィルタの有効/無効切り替え
+```
+[ 保存 ]  [ 削除 ]  [ 無効化 ]
+→ is_enabled フラグで制御
+```
+
 ### その他の拡張
 - 複数のブロックキーワード対応（→ 複数フィルタで対応）
 - AND/OR/NOTの高度な条件（将来検討）
+
+---
 
 ## 備考
 
@@ -297,3 +418,8 @@ Alert表示:
   - フィルタ一覧が見やすい
   - 個別に編集・無効化が可能
   - ロジックがシンプル
+
+### グローバル許可リストとの関係
+- グローバル許可リストに登録されたキーワードは、すべてのフィルタより優先して許可される
+- FilterEdit では設定できない（Preferences画面で管理）
+- フィルタ評価時に FilterService が自動的にチェック

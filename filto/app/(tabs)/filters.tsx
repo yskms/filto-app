@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 
 // ダミーデータ型定義
@@ -205,6 +206,7 @@ const FiltersHeader: React.FC<{
 };
 
 export default function FiltersScreen() {
+  const router = useRouter();
   const [filters, setFilters] = useState<Filter[]>(dummyFilters);
   const [deleteMode, setDeleteMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -265,8 +267,8 @@ export default function FiltersScreen() {
     // 開いているスワイプを閉じる
     closeOpenSwipe();
     setOpenSwipeId(null);
-    console.log('add filter');
-  }, [closeOpenSwipe]);
+    router.push('/filter_edit');
+  }, [closeOpenSwipe, router]);
 
   const handlePressFilter = React.useCallback(
     (filterId: number) => {
@@ -296,8 +298,8 @@ export default function FiltersScreen() {
       // 開いているスワイプを閉じる
       closeOpenSwipe();
       setOpenSwipeId(null);
-      // 編集を実行
-      console.log('edit filter', filterId);
+      // 編集画面に遷移（filterId付き）
+      router.push(`/filter_edit?filterId=${filterId}`);
     },
     [closeOpenSwipe]
   );
