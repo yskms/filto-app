@@ -64,3 +64,23 @@ const { filterId } = useLocalSearchParams<{ filterId?: string }>();
 - 同じキーワードでも異なる許可条件で管理したい場合がある
 - 例：FX → 仮想通貨は許可、FX → web3は許可
 - ソート機能で重複確認可能
+
+---
+
+## その他
+
+### 命名の軸は「層ごとに違う」
+① 画面（UI層）
+- ルーティング・URL・人間の操作が基準
+  filters.tsx
+  filter_edit.tsx
+- snake_case / 小文字が多い（expo-router と相性◎）
+
+② Service 層（ロジック）
+- 「責務（役割）」が基準
+  FilterService.ts
+  FeedService.ts
+- 「〜を扱う責任を持つクラス」
+- 👉 ファイル名 = クラス名 = 責務名
+
+---

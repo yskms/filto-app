@@ -105,6 +105,48 @@ FILTO-APP/
 
 ---
 
+## 命名規則
+
+### ファイル名
+
+| 種類 | 命名規則 | 例 |
+|------|---------|-----|
+| **画面** | snake_case.tsx | `filter_edit.tsx`, `feed_add.tsx` |
+| **コンポーネント** | PascalCase.tsx | `FilterItem.tsx`, `Header.tsx` |
+| **サービス** | PascalCase.ts | `FilterService.ts`, `FeedService.ts` |
+| **リポジトリ** | PascalCase.ts | `FilterRepository.ts`, `FeedRepository.ts` |
+| **ユーティリティ** | camelCase.ts | `dateUtils.ts`, `stringUtils.ts` |
+| **型定義** | PascalCase.ts | `Filter.ts`, `Feed.ts` |
+
+### 変数・関数名
+
+| 種類 | 命名規則 | 例 |
+|------|---------|-----|
+| **変数** | camelCase | `filterList`, `isLoading` |
+| **関数** | camelCase | `handleSave()`, `fetchData()` |
+| **クラス** | PascalCase | `FilterService`, `DatabaseManager` |
+| **定数** | UPPER_SNAKE_CASE | `MAX_FILTERS`, `API_URL` |
+
+### ディレクトリ構造
+```
+docs/
+filto/
+├─ app/                    # 画面（snake_case）
+├─ components/             # コンポーネント（PascalCase）
+├─ services/               # サービス（PascalCase）
+├─ repositories/           # リポジトリ（PascalCase）
+├─ utils/                  # ユーティリティ（camelCase）
+├─ types/                  # 型定義（PascalCase）
+└─ constants/              # 定数（UPPER_SNAKE_CASE）
+```
+
+### データベース（SQLite）
+
+- **テーブル名**: snake_case (`filters`, `global_allow_keywords`)
+- **カラム名**: snake_case (`block_keyword`, `created_at`)
+
+---
+
 ## UI Mock (Concept)
 
 ![UI Mock](docs/02_basic_design/mock/nano-banana_v1_light.png)
