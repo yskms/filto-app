@@ -1,12 +1,9 @@
- 
-## Service層 詳細設計書（Draft）
+# Service層 全体像
 
----
+## 概要
 
-## 1. 概要
-
-本ドキュメントは、Service 層の設計を定義する。  
-Service層は、UI層とデータ層（Repository / DAO）、外部通信（RSS取得）の間に位置し、  
+本ドキュメントは、Service 層の全体設計を定義する。  
+Service層は、UI層とデータ層（Repository）、外部通信（RSS取得）の間に位置し、  
 アプリケーションのビジネスロジックを集約する。
 
 ### 目的
@@ -23,7 +20,7 @@ Service層は、UI層とデータ層（Repository / DAO）、外部通信（RSS�
 
 ---
 
-## 2. ディレクトリ構成
+## ディレクトリ構成
 
 ```
 /services
@@ -38,11 +35,11 @@ Service層は、UI層とデータ層（Repository / DAO）、外部通信（RSS�
 
 ---
 
-## 3. 各Service設計
+## 各Service設計
 
 ---
 
-### 3.1 FeedService
+### FeedService
 
 #### 概要
 RSSフィードの管理（CRUD）および並び順の制御を行う。
@@ -86,7 +83,7 @@ type Feed = {
 
 ---
 
-### 3.2 ArticleService
+### ArticleService
 
 #### 概要
 記事データの取得、既読管理、フィルタ適用後の記事提供を行う。
@@ -138,43 +135,53 @@ type Article = {
 
 ---
 
-### 3.3 FilterService
+### FilterService
 
 #### 概要
 ユーザー定義のフィルタ条件を管理する。
 
+#### 詳細設計
+→ [`filter_service.md`](./filter_service.md)
+
 #### 責務
 - フィルタ条件のCRUD
+- ソート付き一覧取得
 
 #### 提供API
 
 ```ts
 list(): Promise<Filter[]>
-get(id: string): Promise<Filter>
+listWithSort(sortType: FilterSortType): Promise<Filter[]>
+get(id: number): Promise<Filter>
 save(filter: Filter): Promise<void>
-delete(ids: string[]): Promise<void>
+delete(id: number): Promise<void>
+count(): Promise<number>
 ```
 
 #### Filter型
 
 ```ts
-type Filter = {
-  id: string
-  name: string
-  conditions: ConditionJSON
-  createdAt: string
+interface Filter {
+  id?: number
+  block_keyword: string
+  allow_keyword: string | null
+  target_title: number
+  target_description: number
+  created_at: number
+  updated_at: number
 }
 ```
 
 #### 処理概要
 - `save()`: id有無で insert / update を切替
+- `listWithSort()`: 6つのソートパターンに対応
 
 #### 依存
 - FilterRepository
 
 ---
 
-### 3.4 FilterEngine
+### FilterEngine
 
 #### 概要
 記事がフィルタ条件に一致するかを評価する純粋ロジック。
@@ -182,42 +189,36 @@ type Filter = {
 #### 責務
 - 記事に対する条件評価
 - 表示可否の判定
+- グローバル許可リストの優先評価
 
 #### 提供API
 
 ```ts
-apply(articles: Article[], filters: Filter[]): Article[]
-```
-
-#### ConditionJSON形式
-
-```json
-{
-  "operator": "AND",
-  "rules": [
-    { "type": "include", "keyword": "FX" },
-    { "type": "exclude", "keyword": "仮想通貨" }
-  ]
-}
+evaluate(article: Article, filters: Filter[], globalAllowKeywords: string[]): boolean
+evaluateAll(articles: Article[]): Promise<void>
 ```
 
 #### 評価仕様
 
-**include:**
-- keyword が本文に含まれない → false
+**グローバル許可リスト（最優先）**:
+- グローバル許可キーワードに一致 → 無条件で許可（他のフィルタを無視）
 
-**exclude:**
-- keyword が本文に含まれる → false
+**通常のフィルタ評価**:
+- `block_keyword` が含まれる
+  - `allow_keyword` も含まれる → 許可（例外）
+  - `allow_keyword` が含まれない → ブロック
 
-**operator:**
-- AND: 全ルールtrueでtrue
-- OR: いずれかtrueでtrue
+**対象範囲**:
+- `target_title`: タイトルをチェック
+- `target_description`: 概要をチェック
 
-※ 本文対象： title + summary
+#### 依存
+- FilterService
+- GlobalAllowKeywordsService（将来）
 
 ---
 
-### 3.5 SettingsService
+### SettingsService
 
 #### 概要
 アプリ全体設定の取得・保存を行う。
@@ -252,7 +253,7 @@ type Settings = {
 
 ---
 
-### 3.6 SyncService
+### SyncService
 
 #### 概要
 全フィードのRSSを取得し、記事を保存する同期処理を司る。
@@ -287,7 +288,7 @@ refresh(): Promise<void>
 
 ---
 
-### 3.7 RssService
+### RssService
 
 #### 概要
 RSS/Atomフィードの取得・解析を行う。
@@ -326,7 +327,7 @@ type ArticleInput = {
 
 ---
 
-## 4. Service間依存関係
+## Service間依存関係
 
 ```
 UI
@@ -340,15 +341,16 @@ Refresh → SyncService → RssService → ArticleService
 
 ---
 
-## 5. 将来拡張（Pro対応）
+## 将来拡張（Pro対応）
 
-- Settings.isPro を参照して機能制御
+- Settings.isPro を参照して機能制限
 - Pro限定機能はService内でガード
 - 課金Service追加時もUI影響を最小化
 
 ---
 
-## 6. 備考
+## 備考
 
-- Repository層の設計は別ドキュメントにて定義する
+- Repository層の設計は [`../repositories/_overview_repositories.md`](../repositories/_overview_repositories.md) を参照
 - Service層はユニットテスト可能な設計とする
+- 詳細設計は実装完了時に同フォルダ内に作成
