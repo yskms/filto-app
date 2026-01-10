@@ -1,5 +1,6 @@
 import { Filter } from '@/services/FilterService';
 import { openDatabase } from '@/database/init';
+import { FilterSortType } from '@/components/FilterSortModal';
 
 /**
  * FilterRepository
@@ -21,6 +22,58 @@ export const FilterRepository = {
       updated_at: number;
     }>(
       'SELECT * FROM filters ORDER BY created_at DESC',
+      []
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      block_keyword: row.block_keyword,
+      allow_keyword: row.allow_keyword,
+      target_title: row.target_title,
+      target_description: row.target_description,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+  },
+
+  /**
+   * ソート付きでフィルタ一覧を取得
+   */
+  async listWithSort(sortType: FilterSortType): Promise<Filter[]> {
+    const db = openDatabase();
+    
+    let orderByClause = '';
+    switch (sortType) {
+      case 'created_at_desc':
+        orderByClause = 'ORDER BY created_at DESC';
+        break;
+      case 'created_at_asc':
+        orderByClause = 'ORDER BY created_at ASC';
+        break;
+      case 'updated_at_desc':
+        orderByClause = 'ORDER BY updated_at DESC';
+        break;
+      case 'updated_at_asc':
+        orderByClause = 'ORDER BY updated_at ASC';
+        break;
+      case 'block_keyword_asc':
+        orderByClause = 'ORDER BY block_keyword COLLATE NOCASE ASC';
+        break;
+      case 'block_keyword_desc':
+        orderByClause = 'ORDER BY block_keyword COLLATE NOCASE DESC';
+        break;
+    }
+
+    const rows = db.getAllSync<{
+      id: number;
+      block_keyword: string;
+      allow_keyword: string | null;
+      target_title: number;
+      target_description: number;
+      created_at: number;
+      updated_at: number;
+    }>(
+      `SELECT * FROM filters ${orderByClause}`,
       []
     );
 

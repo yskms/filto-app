@@ -1,4 +1,5 @@
 import { FilterRepository } from '@/repositories/FilterRepository';
+import { FilterSortType } from '@/components/FilterSortModal';
 
 // Filter型定義
 export interface Filter {
@@ -18,6 +19,13 @@ export const FilterService = {
    */
   async list(): Promise<Filter[]> {
     return await FilterRepository.list();
+  },
+
+  /**
+   * ソート付きでフィルタ一覧を取得
+   */
+  async listWithSort(sortType: FilterSortType): Promise<Filter[]> {
+    return await FilterRepository.listWithSort(sortType);
   },
 
   /**

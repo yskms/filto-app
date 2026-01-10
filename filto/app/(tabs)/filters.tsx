@@ -14,6 +14,7 @@ import Reanimated from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { FilterService, Filter } from '@/services/FilterService';
+import { FilterSortModal, FilterSortType } from '@/components/FilterSortModal';
 
 // フィルタアイテムコンポーネント
 const FilterItem: React.FC<{
@@ -98,9 +99,10 @@ const FiltersHeader: React.FC<{
   deleteMode: boolean;
   selectedCount: number;
   onToggleDeleteMode: () => void;
+  onPressSortButton: () => void;
   onPressAdd: () => void;
   onConfirmDelete: () => void;
-}> = ({ deleteMode, selectedCount, onToggleDeleteMode, onPressAdd, onConfirmDelete }) => {
+}> = ({ deleteMode, selectedCount, onToggleDeleteMode, onPressSortButton, onPressAdd, onConfirmDelete }) => {
   if (deleteMode) {
     // 削除モード時のヘッダー
     return (
@@ -141,6 +143,13 @@ const FiltersHeader: React.FC<{
       <View style={styles.headerButtons}>
         <TouchableOpacity
           style={styles.headerButton}
+          onPress={onPressSortButton}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.headerIcon}>🔄</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerButton}
           onPress={onToggleDeleteMode}
           activeOpacity={0.7}
         >
@@ -165,18 +174,22 @@ export default function FiltersScreen() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [openSwipeId, setOpenSwipeId] = useState<number | null>(null);
   
+  // ソート関連のState
+  const [sortModalVisible, setSortModalVisible] = useState(false);
+  const [currentSort, setCurrentSort] = useState<FilterSortType>('created_at_desc');
+  
   // 各フィルタのSwipeable refを管理
   const swipeableRefs = useRef<Map<number, React.RefObject<SwipeableMethods | null>>>(new Map());
 
   // フィルタ一覧を読み込む
   const loadFilters = React.useCallback(async () => {
     try {
-      const filterList = await FilterService.list();
+      const filterList = await FilterService.listWithSort(currentSort);
       setFilters(filterList);
     } catch (error) {
       Alert.alert('エラー', 'フィルタの読み込みに失敗しました');
     }
-  }, []);
+  }, [currentSort]);
 
   // Swipeable refを取得または作成
   const getSwipeableRef = React.useCallback((filterId: number) => {
@@ -195,6 +208,11 @@ export default function FiltersScreen() {
       }
     }
   }, [openSwipeId]);
+
+  // currentSort が変更されたときにフィルタを再読み込み
+  React.useEffect(() => {
+    loadFilters();
+  }, [currentSort, loadFilters]);
 
   // 画面がフォーカスされた時にフィルタを読み込む
   useFocusEffect(
@@ -215,7 +233,7 @@ export default function FiltersScreen() {
           setSelectedIds([]);
         }
       };
-    }, [openSwipeId, deleteMode])
+    }, [openSwipeId, deleteMode, loadFilters])
   );
 
   const handleToggleDeleteMode = React.useCallback(() => {
@@ -238,6 +256,17 @@ export default function FiltersScreen() {
     setOpenSwipeId(null);
     router.push('/filter_edit');
   }, [closeOpenSwipe, router]);
+
+  const handlePressSortButton = React.useCallback(() => {
+    closeOpenSwipe();
+    setOpenSwipeId(null);
+    setSortModalVisible(true);
+  }, [closeOpenSwipe]);
+
+  const handleSelectSort = React.useCallback((sortType: FilterSortType) => {
+    setCurrentSort(sortType);
+    // loadFilters は currentSort の変更で自動的に再実行される
+  }, []);
 
   const handlePressFilter = React.useCallback(
     (filterId: number) => {
@@ -356,6 +385,7 @@ export default function FiltersScreen() {
         deleteMode={deleteMode}
         selectedCount={selectedIds.length}
         onToggleDeleteMode={handleToggleDeleteMode}
+        onPressSortButton={handlePressSortButton}
         onPressAdd={handlePressAdd}
         onConfirmDelete={handleConfirmDelete}
       />
@@ -383,6 +413,13 @@ export default function FiltersScreen() {
         }}
         keyExtractor={(item) => (item.id ?? 0).toString()}
         contentContainerStyle={styles.listContent}
+      />
+
+      <FilterSortModal
+        visible={sortModalVisible}
+        currentSort={currentSort}
+        onClose={() => setSortModalVisible(false)}
+        onSelectSort={handleSelectSort}
       />
     </SafeAreaView>
   );
