@@ -410,12 +410,20 @@ catch (error) {
 ## Navigation
 
 ### From
-- Filters screen → FilterEdit (filterId: undefined = new, number = edit)
+- **New filter**: Filters screen → FilterEdit (filterId: undefined)
+  - Tap + button
+- **Edit filter**: Filters screen → FilterEdit (filterId: number)
+  - **Tap filter row (in normal mode)**
+  - Swipe delete is for deletion only (does not navigate to edit screen)
 
 ### To
 - Save success → Back to Filters (`router.back()`)
 - Delete success → Back to Filters (`router.back()`)
 - Back button → Back to Filters (`router.back()`)
+
+### Notes
+- Filters screen automatically reloads data when focused (via `useFocusEffect`)
+- Delete mode is automatically disabled when navigating to other tabs
 
 ---
 

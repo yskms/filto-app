@@ -9,49 +9,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-
-
-// ダミーデータ型定義
-interface Filter {
-  id: number;
-  block_keyword: string;
-  allow_keyword?: string;
-}
-
-// ダミーデータ
-const dummyFilters: Filter[] = [
-  {
-    id: 1,
-    block_keyword: 'FX',
-    allow_keyword: '仮想通貨',
-  },
-  {
-    id: 2,
-    block_keyword: '炎上',
-  },
-  {
-    id: 3,
-    block_keyword: 'ゴシップ',
-  },
-  {
-    id: 4,
-    block_keyword: '新卒',
-    allow_keyword: 'react',
-  },
-];
+import { FilterService, Filter } from '@/services/FilterService';
 
 // フィルタアイテムコンポーネント
 const FilterItem: React.FC<{
   filter: Filter;
   isSelected: boolean;
   deleteMode: boolean;
-  swipeableRef: React.RefObject<Swipeable>;
+  swipeableRef: React.RefObject<SwipeableMethods | null>;
   isSwipeOpen: boolean;
   onPress: () => void;
-  onPressEdit: () => void;
   onPressDelete: () => void;
   onSwipeableWillOpen: () => void;
   onSwipeableWillClose: () => void;
@@ -62,7 +33,6 @@ const FilterItem: React.FC<{
   swipeableRef,
   isSwipeOpen,
   onPress,
-  onPressEdit,
   onPressDelete,
   onSwipeableWillOpen,
   onSwipeableWillClose,
@@ -88,16 +58,6 @@ const FilterItem: React.FC<{
       swipeableRef.current.close();
     }
     onPress();
-  };
-
-  const handlePressEdit = () => {
-    // スワイプが開いている場合は閉じる（編集は実行しない）
-    if (swipeableRef.current && isSwipeOpen) {
-      swipeableRef.current.close();
-      return;
-    }
-    // スワイプが閉じている場合のみ編集を実行
-    onPressEdit();
   };
 
   return (
@@ -127,13 +87,6 @@ const FilterItem: React.FC<{
               </Text>
             )}
           </View>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={handlePressEdit}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.editIcon}>✏️</Text>
-          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     </Swipeable>
@@ -207,18 +160,28 @@ const FiltersHeader: React.FC<{
 
 export default function FiltersScreen() {
   const router = useRouter();
-  const [filters, setFilters] = useState<Filter[]>(dummyFilters);
+  const [filters, setFilters] = useState<Filter[]>([]);
   const [deleteMode, setDeleteMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [openSwipeId, setOpenSwipeId] = useState<number | null>(null);
   
   // 各フィルタのSwipeable refを管理
-  const swipeableRefs = useRef<Map<number, React.RefObject<Swipeable>>>(new Map());
+  const swipeableRefs = useRef<Map<number, React.RefObject<SwipeableMethods | null>>>(new Map());
+
+  // フィルタ一覧を読み込む
+  const loadFilters = React.useCallback(async () => {
+    try {
+      const filterList = await FilterService.list();
+      setFilters(filterList);
+    } catch (error) {
+      Alert.alert('エラー', 'フィルタの読み込みに失敗しました');
+    }
+  }, []);
 
   // Swipeable refを取得または作成
   const getSwipeableRef = React.useCallback((filterId: number) => {
     if (!swipeableRefs.current.has(filterId)) {
-      swipeableRefs.current.set(filterId, React.createRef<Swipeable>() as React.RefObject<Swipeable>);
+      swipeableRefs.current.set(filterId, React.createRef<SwipeableMethods>());
     }
     return swipeableRefs.current.get(filterId)!;
   }, []);
@@ -233,9 +196,10 @@ export default function FiltersScreen() {
     }
   }, [openSwipeId]);
 
-  // 画面がフォーカスを失う時に開いているスワイプを閉じる
+  // 画面がフォーカスされた時にフィルタを読み込む
   useFocusEffect(
     React.useCallback(() => {
+      loadFilters();
       return () => {
         // クリーンアップ関数：フォーカスを失う時に実行
         if (openSwipeId !== null) {
@@ -245,8 +209,13 @@ export default function FiltersScreen() {
           }
           setOpenSwipeId(null);
         }
+        // 削除モードをオフにする
+        if (deleteMode) {
+          setDeleteMode(false);
+          setSelectedIds([]);
+        }
       };
-    }, [openSwipeId])
+    }, [openSwipeId, deleteMode])
   );
 
   const handleToggleDeleteMode = React.useCallback(() => {
@@ -286,60 +255,56 @@ export default function FiltersScreen() {
           }
         });
       } else {
-        // 通常モード時：編集（現状はconsole.log）
-        console.log('edit filter', filterId);
+        // 通常モード時：編集画面に遷移
+        router.push(`/filter_edit?filterId=${filterId}`);
       }
     },
-    [deleteMode, closeOpenSwipe]
+    [deleteMode, closeOpenSwipe, router]
   );
 
-  const handlePressEdit = React.useCallback(
+  const handlePressDelete = React.useCallback(
     (filterId: number) => {
-      // 開いているスワイプを閉じる
-      closeOpenSwipe();
-      setOpenSwipeId(null);
-      // 編集画面に遷移（filterId付き）
-      router.push(`/filter_edit?filterId=${filterId}`);
+      Alert.alert(
+        'フィルタを削除',
+        'このフィルタを削除しますか？',
+        [
+          {
+            text: 'キャンセル',
+            style: 'cancel',
+            onPress: () => {
+              // キャンセル時もスワイプを閉じる
+              const ref = swipeableRefs.current.get(filterId);
+              if (ref?.current) {
+                ref.current.close();
+              }
+            },
+          },
+          {
+            text: '削除',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await FilterService.delete(filterId);
+                // 削除後、スワイプを閉じる
+                const ref = swipeableRefs.current.get(filterId);
+                if (ref?.current) {
+                  ref.current.close();
+                }
+                setOpenSwipeId(null);
+                // フィルタ一覧を再読み込み
+                await loadFilters();
+              } catch (error) {
+                Alert.alert('エラー', 'フィルタの削除に失敗しました');
+              }
+            },
+          },
+        ]
+      );
     },
-    [closeOpenSwipe]
+    [loadFilters]
   );
 
-  const handlePressDelete = React.useCallback((filterId: number) => {
-    Alert.alert(
-      'フィルタを削除',
-      'このフィルタを削除しますか？',
-      [
-        {
-          text: 'キャンセル',
-          style: 'cancel',
-          onPress: () => {
-            // キャンセル時もスワイプを閉じる
-            const ref = swipeableRefs.current.get(filterId);
-            if (ref?.current) {
-              ref.current.close();
-            }
-          },
-        },
-        {
-          text: '削除',
-          style: 'destructive',
-          onPress: () => {
-            console.log('delete filter', filterId);
-            // TODO: FilterService.delete(filterId)
-            setFilters((prev) => prev.filter((f) => f.id !== filterId));
-            // 削除後、スワイプを閉じる
-            const ref = swipeableRefs.current.get(filterId);
-            if (ref?.current) {
-              ref.current.close();
-            }
-            setOpenSwipeId(null);
-          },
-        },
-      ]
-    );
-  }, []);
-
-  const handleConfirmDelete = React.useCallback(() => {
+  const handleConfirmDelete = React.useCallback(async () => {
     if (selectedIds.length === 0) return;
 
     Alert.alert(
@@ -353,17 +318,24 @@ export default function FiltersScreen() {
         {
           text: '削除',
           style: 'destructive',
-          onPress: () => {
-            console.log('delete filters', selectedIds);
-            // TODO: FilterService.delete(selectedIds)
-            setFilters((prev) => prev.filter((f) => !selectedIds.includes(f.id)));
-            setSelectedIds([]);
-            setDeleteMode(false);
+          onPress: async () => {
+            try {
+              // 複数削除を順次実行
+              for (const id of selectedIds) {
+                await FilterService.delete(id);
+              }
+              setSelectedIds([]);
+              setDeleteMode(false);
+              // フィルタ一覧を再読み込み
+              await loadFilters();
+            } catch (error) {
+              Alert.alert('エラー', 'フィルタの削除に失敗しました');
+            }
           },
         },
       ]
     );
-  }, [selectedIds]);
+  }, [selectedIds, loadFilters]);
 
   const handleSwipeableWillOpen = React.useCallback(
     (filterId: number) => {
@@ -391,24 +363,25 @@ export default function FiltersScreen() {
       <FlatList
         data={filters}
         renderItem={({ item }) => {
-          const swipeableRef = getSwipeableRef(item.id);
-          const isSwipeOpen = openSwipeId === item.id;
+          if (!item.id) return null;
+          const filterId = item.id;
+          const swipeableRef = getSwipeableRef(filterId);
+          const isSwipeOpen = openSwipeId === filterId;
           return (
             <FilterItem
               filter={item}
-              isSelected={selectedIds.includes(item.id)}
+              isSelected={selectedIds.includes(filterId)}
               deleteMode={deleteMode}
               swipeableRef={swipeableRef}
               isSwipeOpen={isSwipeOpen}
-              onPress={() => handlePressFilter(item.id)}
-              onPressEdit={() => handlePressEdit(item.id)}
-              onPressDelete={() => handlePressDelete(item.id)}
-              onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
+              onPress={() => handlePressFilter(filterId)}
+              onPressDelete={() => handlePressDelete(filterId)}
+              onSwipeableWillOpen={() => handleSwipeableWillOpen(filterId)}
               onSwipeableWillClose={handleSwipeableWillClose}
             />
           );
         }}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => (item.id ?? 0).toString()}
         contentContainerStyle={styles.listContent}
       />
     </SafeAreaView>
@@ -490,14 +463,6 @@ const styles = StyleSheet.create({
   allowKeyword: {
     fontSize: 14,
     color: '#666',
-  },
-  editButton: {
-    padding: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  editIcon: {
-    fontSize: 18,
   },
   deleteAction: {
     justifyContent: 'center',

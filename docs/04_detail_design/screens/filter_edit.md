@@ -219,8 +219,8 @@ targetDescription: filter.target_description === 1
 - **新規追加**: Filters → FilterEdit（filterId なし）
   - ＋ボタンタップ
 - **編集**: Filters → FilterEdit（filterId あり）
-  - ✏️ボタンタップ
-  - 行タップ（通常モード時）
+  - **行タップ（通常モード時）**
+  - スワイプ削除は個別削除のみ（編集画面には遷移しない）
 
 ### 遷移先
 - **保存成功**: FilterEdit → Filters

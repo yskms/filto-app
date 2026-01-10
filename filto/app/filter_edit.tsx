@@ -11,29 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-
-// スタブ: FilterService（UI only）
-const FilterService = {
-  async get(id: number) {
-    // スタブ実装
-    console.log('get filter', id);
-    return {
-      id,
-      block_keyword: 'FX',
-      allow_keyword: '仮想通貨,web3',
-      target_title: 1,
-      target_description: 1,
-    };
-  },
-  async save(filter: any) {
-    // スタブ実装
-    console.log('save filter', filter);
-  },
-  async delete(id: number) {
-    // スタブ実装
-    console.log('delete filter', id);
-  },
-};
+import { FilterService, Filter } from '@/services/FilterService';
 
 // ヘッダーコンポーネント
 const FilterEditHeader: React.FC<{
@@ -144,14 +122,15 @@ export default function FilterEditScreen() {
         .filter((k) => k.length > 0)
         .join(',');
 
-      const filter = {
+      const now = Math.floor(Date.now() / 1000);
+      const filter: Filter = {
         id: filterId ? parseInt(filterId) : undefined,
         block_keyword: blockKeyword.trim(),
         allow_keyword: allowKeywordsForDB || null,
         target_title: targetTitle ? 1 : 0,
         target_description: targetDescription ? 1 : 0,
-        created_at: filterId ? undefined : Math.floor(Date.now() / 1000),
-        updated_at: Math.floor(Date.now() / 1000),
+        created_at: now,
+        updated_at: now,
       };
 
       await FilterService.save(filter);
