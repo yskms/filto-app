@@ -11,6 +11,40 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Article } from '@/types/Article';
+import { FeedSelectModal } from '@/components/FeedSelectModal';
+import { Feed } from '@/types/Feed';
+
+// ダミーフィードデータ
+const dummyFeeds: Feed[] = [
+  {
+    id: 'feed1',
+    title: 'TechCrunch',
+    url: 'https://techcrunch.com/feed/',
+    orderNo: 1,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'feed2',
+    title: 'Qiita',
+    url: 'https://qiita.com/feed',
+    orderNo: 2,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'feed3',
+    title: 'Medium',
+    url: 'https://medium.com/feed',
+    orderNo: 3,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'feed4',
+    title: 'Dev.to',
+    url: 'https://dev.to/feed',
+    orderNo: 4,
+    createdAt: new Date().toISOString(),
+  },
+];
 
 // ダミーデータ
 const dummyArticles: Article[] = [
@@ -153,7 +187,16 @@ const HomeHeader: React.FC<{
 export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [articles] = React.useState<Article[]>(dummyArticles);
-  const [selectedFeedName] = React.useState<string>('ALL');
+  const [feeds] = React.useState<Feed[]>(dummyFeeds);
+  const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null); // null = ALL
+  const [feedModalVisible, setFeedModalVisible] = React.useState(false);
+
+  // 選択中のフィード名を取得
+  const selectedFeedName = React.useMemo(() => {
+    if (selectedFeedId === null) return 'ALL';
+    const feed = feeds.find(f => f.id === selectedFeedId);
+    return feed?.title || 'ALL';
+  }, [selectedFeedId, feeds]);
 
   const handleRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -164,8 +207,12 @@ export default function HomeScreen() {
   }, []);
 
   const handleFeedSelect = React.useCallback(() => {
-    // TODO: FeedSelectモーダルを開く
-    console.log('FeedSelectモーダルを開く');
+    setFeedModalVisible(true);
+  }, []);
+
+  const handleSelectFeed = React.useCallback((feedId: string | null) => {
+    setSelectedFeedId(feedId);
+    // TODO: フィルタリング処理
   }, []);
 
   const handlePressArticle = React.useCallback(async (article: Article) => {
@@ -198,6 +245,15 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         contentContainerStyle={styles.listContent}
+      />
+
+      {/* フィード選択モーダル */}
+      <FeedSelectModal
+        visible={feedModalVisible}
+        feeds={feeds}
+        selectedFeedId={selectedFeedId}
+        onClose={() => setFeedModalVisible(false)}
+        onSelectFeed={handleSelectFeed}
       />
     </SafeAreaView>
   );
