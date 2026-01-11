@@ -10,9 +10,12 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Article } from '@/types/Article';
 import { FeedSelectModal } from '@/components/FeedSelectModal';
 import { Feed } from '@/types/Feed';
+import { FilterEngine } from '@/services/FilterEngine';
+import { FilterService, Filter } from '@/services/FilterService';
 
 // ダミーフィードデータ
 const dummyFeeds: Feed[] = [
@@ -62,7 +65,7 @@ const dummyArticles: Article[] = [
     id: '2',
     feedId: 'feed2',
     feedName: 'Qiita',
-    title: 'TypeScript 5.5 の新機能を解説',
+    title: 'FXで稼ぐ自動トレード術', // ← フィルタテスト用
     link: 'https://example.com/article2',
     summary: 'TypeScript 5.5で追加された便利な機能。',
     publishedAt: new Date(Date.now() - 7200 * 1000).toISOString(),
@@ -82,7 +85,7 @@ const dummyArticles: Article[] = [
     id: '4',
     feedId: 'feed1',
     feedName: 'TechBlog',
-    title: 'モバイルアプリ開発の最新トレンド',
+    title: '炎上したスタートアップの教訓', // ← フィルタテスト用
     link: 'https://example.com/article4',
     summary: '2025年のモバイル開発動向をまとめました。',
     publishedAt: new Date(Date.now() - 172800 * 1000).toISOString(),
@@ -188,8 +191,12 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [articles] = React.useState<Article[]>(dummyArticles);
   const [feeds] = React.useState<Feed[]>(dummyFeeds);
-  const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null); // null = ALL
+  const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null);
   const [feedModalVisible, setFeedModalVisible] = React.useState(false);
+  
+  // フィルタ関連
+  const [filters, setFilters] = React.useState<Filter[]>([]);
+  const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
 
   // 選択中のフィード名を取得
   const selectedFeedName = React.useMemo(() => {
@@ -198,13 +205,49 @@ export default function HomeScreen() {
     return feed?.title || 'ALL';
   }, [selectedFeedId, feeds]);
 
+  // フィルタを読み込む
+  const loadFilters = React.useCallback(async () => {
+    try {
+      const filterList = await FilterService.list();
+      setFilters(filterList);
+    } catch (error) {
+      console.error('Failed to load filters:', error);
+    }
+  }, []);
+
+  // 画面フォーカス時にフィルタを読み込む
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFilters();
+    }, [loadFilters])
+  );
+
+  // フィルタ適用
+  React.useEffect(() => {
+    // フィードでフィルタリング
+    let filtered = articles;
+    if (selectedFeedId !== null) {
+      filtered = articles.filter(a => a.feedId === selectedFeedId);
+    }
+
+    // フィルタエンジンで評価
+    const globalAllowKeywords: string[] = []; // TODO: グローバル許可リスト
+    const displayed = filtered.filter(article => {
+      const shouldBlock = FilterEngine.evaluate(article, filters, globalAllowKeywords);
+      return !shouldBlock; // ブロックされない記事のみ表示
+    });
+
+    setFilteredArticles(displayed);
+  }, [articles, selectedFeedId, filters]);
+
   const handleRefresh = React.useCallback(() => {
     setRefreshing(true);
     // TODO: RSS取得処理
+    loadFilters(); // フィルタも再読み込み
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
-  }, []);
+  }, [loadFilters]);
 
   const handleFeedSelect = React.useCallback(() => {
     setFeedModalVisible(true);
@@ -212,7 +255,6 @@ export default function HomeScreen() {
 
   const handleSelectFeed = React.useCallback((feedId: string | null) => {
     setSelectedFeedId(feedId);
-    // TODO: フィルタリング処理
   }, []);
 
   const handlePressArticle = React.useCallback(async (article: Article) => {
@@ -233,7 +275,7 @@ export default function HomeScreen() {
       />
       
       <FlatList
-        data={articles}
+        data={filteredArticles}
         renderItem={({ item }) => (
           <ArticleItem 
             article={item} 
@@ -245,6 +287,12 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>📭</Text>
+            <Text style={styles.emptyMessage}>記事がありません</Text>
+          </View>
+        }
       />
 
       {/* フィード選択モーダル */}
@@ -355,5 +403,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginHorizontal: 4,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyMessage: {
+    fontSize: 16,
+    color: '#666',
   },
 });
