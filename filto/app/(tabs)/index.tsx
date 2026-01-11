@@ -5,71 +5,74 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   RefreshControl,
+  Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// ダミーデータ型定義
-interface Article {
-  id: number;
-  title: string;
-  feedName: string;
-  publishedAt: number;
-  thumbnail?: string;
-  isRead: boolean;
-  link: string;
-}
+import { Article } from '@/types/Article';
 
 // ダミーデータ
 const dummyArticles: Article[] = [
   {
-    id: 1,
-    title: 'React 19 Released: What\'s New in the Latest Version',
+    id: '1',
+    feedId: 'feed1',
     feedName: 'TechCrunch',
-    publishedAt: Math.floor(Date.now() / 1000) - 3600, // 1時間前
-    isRead: false,
+    title: 'React 19 Released: What\'s New in the Latest Version',
     link: 'https://example.com/article1',
+    summary: 'React 19の新機能を詳しく解説します。',
+    publishedAt: new Date(Date.now() - 3600 * 1000).toISOString(),
+    isRead: false,
   },
   {
-    id: 2,
-    title: 'TypeScript 5.5 の新機能を解説',
+    id: '2',
+    feedId: 'feed2',
     feedName: 'Qiita',
-    publishedAt: Math.floor(Date.now() / 1000) - 7200, // 2時間前
-    isRead: false,
+    title: 'TypeScript 5.5 の新機能を解説',
     link: 'https://example.com/article2',
-  },
-  {
-    id: 3,
-    title: 'Expo Router のベストプラクティス',
-    feedName: 'Medium',
-    publishedAt: Math.floor(Date.now() / 1000) - 86400, // 1日前
-    isRead: true,
-    link: 'https://example.com/article3',
-  },
-  {
-    id: 4,
-    title: 'モバイルアプリ開発の最新トレンド',
-    feedName: 'TechBlog',
-    publishedAt: Math.floor(Date.now() / 1000) - 172800, // 2日前
+    summary: 'TypeScript 5.5で追加された便利な機能。',
+    publishedAt: new Date(Date.now() - 7200 * 1000).toISOString(),
     isRead: false,
-    link: 'https://example.com/article4',
   },
   {
-    id: 5,
-    title: 'RSSリーダーアプリの設計思想',
-    feedName: 'Dev.to',
-    publishedAt: Math.floor(Date.now() / 1000) - 259200, // 3日前
+    id: '3',
+    feedId: 'feed3',
+    feedName: 'Medium',
+    title: 'Expo Router のベストプラクティス',
+    link: 'https://example.com/article3',
+    summary: 'Expo Routerを使った効率的な開発手法。',
+    publishedAt: new Date(Date.now() - 86400 * 1000).toISOString(),
     isRead: true,
+  },
+  {
+    id: '4',
+    feedId: 'feed1',
+    feedName: 'TechBlog',
+    title: 'モバイルアプリ開発の最新トレンド',
+    link: 'https://example.com/article4',
+    summary: '2025年のモバイル開発動向をまとめました。',
+    publishedAt: new Date(Date.now() - 172800 * 1000).toISOString(),
+    isRead: false,
+  },
+  {
+    id: '5',
+    feedId: 'feed4',
+    feedName: 'Dev.to',
+    title: 'RSSリーダーアプリの設計思想',
     link: 'https://example.com/article5',
+    summary: 'ユーザー体験を重視したRSSリーダーの作り方。',
+    publishedAt: new Date(Date.now() - 259200 * 1000).toISOString(),
+    isRead: true,
   },
 ];
 
 // 経過時間を計算
-const getTimeAgo = (publishedAt: number): string => {
-  const now = Math.floor(Date.now() / 1000);
-  const diff = now - publishedAt;
-  const minutes = Math.floor(diff / 60);
+const getTimeAgo = (publishedAt: string): string => {
+  const now = Date.now();
+  const published = new Date(publishedAt).getTime();
+  const diff = now - published;
+  
+  const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
@@ -80,20 +83,22 @@ const getTimeAgo = (publishedAt: number): string => {
 };
 
 // 記事アイテムコンポーネント
-const ArticleItem: React.FC<{ article: Article }> = ({ article }) => {
+const ArticleItem: React.FC<{ 
+  article: Article;
+  onPress: () => void;
+}> = ({ article, onPress }) => {
   const timeAgo = getTimeAgo(article.publishedAt);
 
   return (
     <TouchableOpacity
       style={[styles.articleContainer, article.isRead && styles.readContainer]}
       activeOpacity={0.7}
+      onPress={onPress}
     >
       <View style={styles.articleContent}>
-        {article.thumbnail ? (
-          <Image source={{ uri: article.thumbnail }} style={styles.thumbnail} />
-        ) : (
-          <View style={styles.thumbnailPlaceholder} />
-        )}
+        <View style={styles.thumbnailPlaceholder}>
+          <Text style={styles.thumbnailIcon}>📰</Text>
+        </View>
         
         <View style={styles.textContainer}>
           <Text
@@ -152,7 +157,7 @@ export default function HomeScreen() {
 
   const handleRefresh = React.useCallback(() => {
     setRefreshing(true);
-    // ダミー実装：1秒後にリフレッシュ完了
+    // TODO: RSS取得処理
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
@@ -163,8 +168,16 @@ export default function HomeScreen() {
     console.log('FeedSelectモーダルを開く');
   }, []);
 
+  const handlePressArticle = React.useCallback(async (article: Article) => {
+    try {
+      await Linking.openURL(article.link);
+      // TODO: 既読にする処理
+    } catch (error) {
+      Alert.alert('エラー', '記事を開けませんでした');
+    }
+  }, []);
+
   return (
-    
     <SafeAreaView style={styles.container} edges={['top']}>
       <HomeHeader
         feedName={selectedFeedName}
@@ -174,15 +187,19 @@ export default function HomeScreen() {
       
       <FlatList
         data={articles}
-        renderItem={({ item }) => <ArticleItem article={item} />}
-        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <ArticleItem 
+            article={item} 
+            onPress={() => handlePressArticle(item)}
+          />
+        )}
+        keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         contentContainerStyle={styles.listContent}
       />
     </SafeAreaView>
-    
   );
 }
 
@@ -241,19 +258,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  thumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
-    backgroundColor: '#f0f0f0',
-  },
   thumbnailPlaceholder: {
     width: 60,
     height: 60,
     borderRadius: 8,
     marginRight: 12,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  thumbnailIcon: {
+    fontSize: 24,
   },
   textContainer: {
     flex: 1,
