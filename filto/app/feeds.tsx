@@ -167,8 +167,9 @@ const FeedsHeader: React.FC<{
   selectedCount: number;
   onToggleDeleteMode: () => void;
   onPressBack: () => void;
+  onPressAdd: () => void;
   onConfirmDelete: () => void;
-}> = ({ deleteMode, selectedCount, onToggleDeleteMode, onPressBack, onConfirmDelete }) => {
+}> = ({ deleteMode, selectedCount, onToggleDeleteMode, onPressBack, onPressAdd, onConfirmDelete }) => {
   if (deleteMode) {
     // 削除モード時のヘッダー
     return (
@@ -215,13 +216,23 @@ const FeedsHeader: React.FC<{
 
       <Text style={styles.headerTitle}>Feeds</Text>
 
-      <TouchableOpacity
-        onPress={onToggleDeleteMode}
-        style={styles.headerButton}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={styles.headerIcon}>🗑</Text>
-      </TouchableOpacity>
+      <View style={styles.headerButtons}>
+        <TouchableOpacity
+          onPress={onPressAdd}
+          style={styles.addButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.addIcon}>＋</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onToggleDeleteMode}
+          style={styles.headerButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.headerIcon}>🗑</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -301,8 +312,8 @@ export default function FeedsScreen() {
     // 開いているスワイプを閉じる
     closeOpenSwipe();
     setOpenSwipeId(null);
-    console.log('add feed');
-  }, [closeOpenSwipe]);
+    router.push('/feed_add');
+  }, [closeOpenSwipe, router]);
 
   const handlePressFeed = React.useCallback(
     (feedId: number) => {
@@ -418,6 +429,7 @@ export default function FeedsScreen() {
           selectedCount={selectedIds.length}
           onToggleDeleteMode={handleToggleDeleteMode}
           onPressBack={() => router.back()}
+          onPressAdd={handlePressAdd}
           onConfirmDelete={handleConfirmDelete}
         />
 
@@ -471,6 +483,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerButton: {
     padding: 8,
     justifyContent: 'center',
@@ -479,6 +496,13 @@ const styles = StyleSheet.create({
   },
   headerIcon: {
     fontSize: 20,
+  },
+  addButton: {
+    padding: 8,
+  },
+  addIcon: {
+    fontSize: 24,
+    color: '#1976d2',
   },
   cancelText: {
     fontSize: 16,
