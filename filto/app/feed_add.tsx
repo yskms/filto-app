@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
+import { FeedService } from '@/services/FeedService';
 
 export default function FeedAddScreen() {
   const router = useRouter();
@@ -57,11 +58,13 @@ export default function FeedAddScreen() {
     setIsLoading(true);
 
     try {
-      // TODO: RssService.fetchMeta() でフィード情報を取得
-      // TODO: FeedService.create() でフィードを保存
+      // TODO: RssService.fetchMeta() でフィード情報を取得（将来）
 
-      // ダミー実装
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // FeedService.create() でフィードを保存
+      await FeedService.create({
+        url: url.trim(),
+        title: name.trim() || undefined,  // 空文字の場合はundefinedに
+      });
 
       Alert.alert('成功', 'フィードを追加しました', [
         {
@@ -70,6 +73,7 @@ export default function FeedAddScreen() {
         },
       ]);
     } catch (error) {
+      console.error('Failed to add feed:', error);
       Alert.alert('エラー', 'フィードの追加に失敗しました');
     } finally {
       setIsLoading(false);
@@ -146,7 +150,7 @@ export default function FeedAddScreen() {
                 onSubmitEditing={handleAdd}
               />
               <Text style={styles.hint}>
-                空欄の場合、フィードから自動取得します
+                空欄の場合、URLをタイトルとして使用します
               </Text>
             </View>
 
