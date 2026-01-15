@@ -26,7 +26,7 @@ const FilterItem: React.FC<{
   onPress: () => void;
   onPressDelete: () => void;
   onSwipeableWillOpen: () => void;
-  onSwipeableWillClose: () => void;
+  onSwipeableWillClose: (filterId: number) => void;
 }> = ({
   filter,
   isSelected,
@@ -68,7 +68,7 @@ const FilterItem: React.FC<{
       enabled={!deleteMode}
       rightThreshold={40}
       onSwipeableWillOpen={onSwipeableWillOpen}
-      onSwipeableWillClose={onSwipeableWillClose}
+      onSwipeableWillClose={() => onSwipeableWillClose(filter.id!)}
       overshootRight={false}
     >
       <TouchableOpacity
@@ -180,6 +180,9 @@ export default function FiltersScreen() {
   
   // 各フィルタのSwipeable refを管理
   const swipeableRefs = useRef<Map<number, React.RefObject<SwipeableMethods | null>>>(new Map());
+  
+  // 開いているスワイプのIDを保持（refで直接管理）
+  const openSwipeIdRef = useRef<number | null>(null);
 
   // フィルタ一覧を読み込む
   const loadFilters = React.useCallback(async () => {
@@ -199,15 +202,16 @@ export default function FiltersScreen() {
     return swipeableRefs.current.get(filterId)!;
   }, []);
 
-  // 開いているスワイプを閉じる
-  const closeOpenSwipe = React.useCallback((excludeId?: number) => {
-    if (openSwipeId !== null && openSwipeId !== excludeId) {
-      const ref = swipeableRefs.current.get(openSwipeId);
+  // 開いているスワイプを閉じる（useCallback を使わない）
+  const closeOpenSwipe = (excludeId?: number) => {
+    const currentOpenId = openSwipeIdRef.current;
+    if (currentOpenId !== null && currentOpenId !== excludeId) {
+      const ref = swipeableRefs.current.get(currentOpenId);
       if (ref?.current) {
         ref.current.close();
       }
     }
-  }, [openSwipeId]);
+  };
 
   // currentSort が変更されたときにフィルタを再読み込み
   React.useEffect(() => {
@@ -220,11 +224,13 @@ export default function FiltersScreen() {
       loadFilters();
       return () => {
         // クリーンアップ関数：フォーカスを失う時に実行
-        if (openSwipeId !== null) {
-          const ref = swipeableRefs.current.get(openSwipeId);
+        const currentOpenId = openSwipeIdRef.current;
+        if (currentOpenId !== null) {
+          const ref = swipeableRefs.current.get(currentOpenId);
           if (ref?.current) {
             ref.current.close();
           }
+          openSwipeIdRef.current = null;
           setOpenSwipeId(null);
         }
         // 削除モードをオフにする
@@ -233,7 +239,7 @@ export default function FiltersScreen() {
           setSelectedIds([]);
         }
       };
-    }, [openSwipeId, deleteMode, loadFilters])
+    }, [deleteMode, loadFilters])
   );
 
   const handleToggleDeleteMode = React.useCallback(() => {
@@ -245,23 +251,26 @@ export default function FiltersScreen() {
       }
       // 開いているスワイプを閉じる
       closeOpenSwipe();
+      openSwipeIdRef.current = null;
       setOpenSwipeId(null);
       return newMode;
     });
-  }, [closeOpenSwipe]);
+  }, []);
 
   const handlePressAdd = React.useCallback(() => {
     // 開いているスワイプを閉じる
     closeOpenSwipe();
+    openSwipeIdRef.current = null;
     setOpenSwipeId(null);
     router.push('/filter_edit');
-  }, [closeOpenSwipe, router]);
+  }, [router]);
 
   const handlePressSortButton = React.useCallback(() => {
     closeOpenSwipe();
+    openSwipeIdRef.current = null;
     setOpenSwipeId(null);
     setSortModalVisible(true);
-  }, [closeOpenSwipe]);
+  }, []);
 
   const handleSelectSort = React.useCallback((sortType: FilterSortType) => {
     setCurrentSort(sortType);
@@ -270,9 +279,13 @@ export default function FiltersScreen() {
 
   const handlePressFilter = React.useCallback(
     (filterId: number) => {
-      // 開いているスワイプを閉じる
-      closeOpenSwipe();
-      setOpenSwipeId(null);
+      // スワイプが開いている場合は閉じるのみ
+      if (openSwipeIdRef.current !== null) {
+        closeOpenSwipe();
+        openSwipeIdRef.current = null;
+        setOpenSwipeId(null);
+        return;
+      }
 
       if (deleteMode) {
         // 削除モード時：選択をトグル
@@ -288,7 +301,7 @@ export default function FiltersScreen() {
         router.push(`/filter_edit?filterId=${filterId}`);
       }
     },
-    [deleteMode, closeOpenSwipe, router]
+    [deleteMode, router]
   );
 
   const handlePressDelete = React.useCallback(
@@ -313,13 +326,14 @@ export default function FiltersScreen() {
             style: 'destructive',
             onPress: async () => {
               try {
-                await FilterService.delete(filterId);
                 // 削除後、スワイプを閉じる
                 const ref = swipeableRefs.current.get(filterId);
                 if (ref?.current) {
                   ref.current.close();
                 }
+                openSwipeIdRef.current = null;
                 setOpenSwipeId(null);
+                await FilterService.delete(filterId);
                 // フィルタ一覧を再読み込み
                 await loadFilters();
               } catch (error) {
@@ -366,18 +380,22 @@ export default function FiltersScreen() {
     );
   }, [selectedIds, loadFilters]);
 
-  const handleSwipeableWillOpen = React.useCallback(
-    (filterId: number) => {
-      // 以前に開いていたスワイプを閉じる
-      closeOpenSwipe(filterId);
-      setOpenSwipeId(filterId);
-    },
-    [closeOpenSwipe]
-  );
+  const handleSwipeableWillOpen = (filterId: number) => {
+    // 古いスワイプを閉じる（新しいIDは除外）
+    closeOpenSwipe(filterId);
+    
+    // 新しいIDを設定
+    openSwipeIdRef.current = filterId;
+    setOpenSwipeId(filterId);
+  };
 
-  const handleSwipeableWillClose = React.useCallback(() => {
-    setOpenSwipeId(null);
-  }, []);
+  const handleSwipeableWillClose = (filterId: number) => {
+    // 自分が開いていた場合のみクリア
+    if (openSwipeIdRef.current === filterId) {
+      openSwipeIdRef.current = null;
+      setOpenSwipeId(null);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -407,7 +425,7 @@ export default function FiltersScreen() {
               onPress={() => handlePressFilter(filterId)}
               onPressDelete={() => handlePressDelete(filterId)}
               onSwipeableWillOpen={() => handleSwipeableWillOpen(filterId)}
-              onSwipeableWillClose={handleSwipeableWillClose}
+              onSwipeableWillClose={() => handleSwipeableWillClose(filterId)}
             />
           );
         }}
