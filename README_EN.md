@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="README_EN.md">English</a> | 日本語
+  English | <a href="README.md">日本語</a>
 </p>
 
 **Lightweight RSS Reader with Local Filter Focus**
