@@ -8,9 +8,9 @@
   Simple RSS Reader with Powerful Filters
 </p>
 
----
-
-# Filto
+<p align="center">
+  <a href="README_EN.md">English</a> | 日本語
+</p>
 
 **Lightweight RSS Reader with Local Filter Focus**
 
