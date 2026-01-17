@@ -1,3 +1,15 @@
+<p align="center">
+  <img src="assets/images/filto-logo.png" width="120" />
+</p>
+
+<h1 align="center">Filto</h1>
+
+<p align="center">
+  Simple RSS Reader with Powerful Filters
+</p>
+
+---
+
 # Filto
 
 **Lightweight RSS Reader with Local Filter Focus**
