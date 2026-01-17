@@ -24,6 +24,7 @@ export default function FeedAddScreen() {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMeta, setIsLoadingMeta] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
   const urlInputRef = useRef<TextInput>(null);
 
   // 起動時に入力欄にフォーカス
@@ -34,11 +35,60 @@ export default function FeedAddScreen() {
     return () => clearTimeout(timer);
   }, []);
 
+  // URLバリデーション関数
+  const validateUrl = (urlString: string): { valid: boolean; message?: string } => {
+    if (!urlString.trim()) {
+      return { valid: false, message: 'URLを入力してください' };
+    }
+
+    try {
+      const urlObj = new URL(urlString.trim());
+      
+      // プロトコルチェック
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
+        return { valid: false, message: 'http または https のURLを入力してください' };
+      }
+      
+      // ホスト名チェック
+      if (!urlObj.hostname || urlObj.hostname.length === 0) {
+        return { valid: false, message: '有効なホスト名を含むURLを入力してください' };
+      }
+      
+      // ローカルホストの除外
+      if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+        return { valid: false, message: 'ローカルホストのURLは使用できません' };
+      }
+      
+      return { valid: true };
+    } catch (error) {
+      return { valid: false, message: '有効なURL形式で入力してください（例: https://example.com/feed.xml）' };
+    }
+  };
+
+  // URL変更時のリアルタイムバリデーション
+  const handleUrlChange = (text: string) => {
+    setUrl(text);
+    
+    // 空欄の場合はエラーをクリア
+    if (!text.trim()) {
+      setUrlError(null);
+      return;
+    }
+    
+    // 入力中はリアルタイムでバリデーション
+    const validation = validateUrl(text);
+    if (!validation.valid) {
+      setUrlError(validation.message || null);
+    } else {
+      setUrlError(null);
+    }
+  };
+
   const handlePaste = async () => {
     try {
       const text = await Clipboard.getString();
       if (text) {
-        setUrl(text.trim());
+        handleUrlChange(text.trim());
       }
     } catch (error) {
       console.error('Clipboard error:', error);
@@ -47,14 +97,9 @@ export default function FeedAddScreen() {
 
   const handleFetchMeta = async () => {
     // バリデーション
-    if (!url.trim()) {
-      Alert.alert('エラー', 'Feed URLを入力してください');
-      return;
-    }
-
-    // URLの簡易チェック
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      Alert.alert('エラー', '有効なURLを入力してください');
+    const validation = validateUrl(url);
+    if (!validation.valid) {
+      Alert.alert('エラー', validation.message || 'URLが無効です');
       return;
     }
 
@@ -81,14 +126,9 @@ export default function FeedAddScreen() {
 
   const handleAdd = async () => {
     // バリデーション
-    if (!url.trim()) {
-      Alert.alert('エラー', 'Feed URLを入力してください');
-      return;
-    }
-
-    // URLの簡易チェック
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      Alert.alert('エラー', '有効なURLを入力してください');
+    const validation = validateUrl(url);
+    if (!validation.valid) {
+      Alert.alert('エラー', validation.message || 'URLが無効です');
       return;
     }
 
@@ -148,9 +188,12 @@ export default function FeedAddScreen() {
               <Text style={styles.label}>Feed URL</Text>
               <TextInput
                 ref={urlInputRef}
-                style={styles.input}
+                style={[
+                  styles.input,
+                  urlError && styles.inputError
+                ]}
                 value={url}
-                onChangeText={setUrl}
+                onChangeText={handleUrlChange}
                 placeholder="https://example.com/feed.xml"
                 placeholderTextColor="#999"
                 autoCapitalize="none"
@@ -159,6 +202,9 @@ export default function FeedAddScreen() {
                 returnKeyType="next"
                 selectTextOnFocus={true}
               />
+              {urlError && (
+                <Text style={styles.errorText}>{urlError}</Text>
+              )}
             </View>
 
             {/* Paste Button */}
@@ -285,6 +331,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     backgroundColor: '#fff',
+  },
+  inputError: {
+    borderColor: '#f44336',
+    borderWidth: 2,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#f44336',
+    marginTop: 4,
   },
   hint: {
     fontSize: 14,

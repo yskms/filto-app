@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import * as Encoding from 'encoding-japanese';
 
 import { Article } from '@/types/Article';
 
@@ -40,6 +41,9 @@ function toIsoDateOrNow(dateLike: unknown): string {
   return new Date(ms).toISOString();
 }
 
+/**
+ * エンコーディングを自動検出してテキストを取得
+ */
 async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -49,7 +53,35 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string>
     if (!response.ok) {
       throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
     }
-    return await response.text();
+
+    // バイナリとして取得
+    const arrayBuffer = await response.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+
+    // エンコーディングを検出
+    const encoding = detectEncoding(bytes, url);
+    console.log(`[RssService] URL: ${url}`);
+    console.log(`[RssService] Detected encoding: ${encoding}`);
+
+    // encoding-japaneseでデコード
+    let text: string;
+    if (encoding === 'shift_jis') {
+      // Shift_JIS → Unicodeの配列に変換
+      const unicodeArray = Encoding.convert(Array.from(bytes), {
+        to: 'UNICODE',
+        from: 'SJIS',
+      });
+      // Unicodeの配列 → 文字列
+      text = Encoding.codeToString(unicodeArray);
+      console.log(`[RssService] Decoded with Shift_JIS (encoding-japanese)`);
+    } else {
+      // UTF-8
+      const decoder = new TextDecoder('utf-8');
+      text = decoder.decode(bytes);
+      console.log(`[RssService] Decoded with UTF-8`);
+    }
+
+    return text;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.toLowerCase().includes('aborted') || message.toLowerCase().includes('abort')) {
@@ -61,8 +93,44 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string>
   }
 }
 
+/**
+ * エンコーディングを検出（シンプル版）
+ */
+function detectEncoding(bytes: Uint8Array, url: string): 'utf-8' | 'shift_jis' {
+  // 1. ドメインベースの判定
+  try {
+    const domain = new URL(url).hostname;
+    if (domain.endsWith('.go.jp')) {
+      console.log(`[RssService] .go.jp domain detected, using Shift_JIS`);
+      return 'shift_jis';
+    }
+  } catch (e) {
+    // URL パースエラーは無視
+  }
+
+  // 2. UTF-8 BOMチェック
+  if (bytes.length >= 3) {
+    if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+      console.log(`[RssService] UTF-8 BOM detected`);
+      return 'utf-8';
+    }
+  }
+
+  // 3. XML宣言をチェック
+  try {
+    const header = new TextDecoder('utf-8').decode(bytes.slice(0, 200));
+    if (header.includes('encoding="Shift_JIS"') || header.includes("encoding='Shift_JIS'")) {
+      return 'shift_jis';
+    }
+  } catch (e) {
+    // デコードエラーは無視
+  }
+
+  // 4. デフォルト: UTF-8
+  return 'utf-8';
+}
+
 function extractAtomLink(linkNode: unknown): string | undefined {
-  // entry.link can be: { "@_href": "..." } | [{ "@_href": "..." }, ...] | "..."
   if (typeof linkNode === 'string') return linkNode;
 
   const links = ensureArray(linkNode as unknown);
@@ -74,7 +142,6 @@ function extractAtomLink(linkNode: unknown): string | undefined {
     }
   }
 
-  // fallback for odd shapes
   if (typeof linkNode === 'object' && linkNode !== null) {
     const href = getText((linkNode as Record<string, unknown>)['@_href']);
     if (href) return href;
@@ -107,7 +174,6 @@ function extractAtomIconUrl(feedNode: Record<string, unknown>): string | undefin
 function extractImageUrl(html: string | undefined): string | undefined {
   if (!html) return undefined;
   
-  // <img src="..." /> を抽出
   const imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
   const match = html.match(imgRegex);
   
@@ -119,26 +185,35 @@ function extractImageUrl(html: string | undefined): string | undefined {
 }
 
 export const RssService = {
-  /**
-   * フィードURLからタイトルとアイコンURLを取得
-   * - RSS 2.0 / Atom 対応
-   * - タイムアウト: 10秒
-   * - エラーはthrow（呼び出し側でcatch）
-   */
   async fetchMeta(url: string): Promise<{ title: string; iconUrl?: string }> {
     const xml = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
     const parsed = parser.parse(xml) as Record<string, unknown>;
 
+    // RSS 1.0 (RDF) チェック
+    const rdf = parsed['rdf:RDF'] as Record<string, unknown> | undefined;
+    if (rdf) {
+      const channel = rdf['channel'] as Record<string, unknown> | undefined;
+      if (channel) {
+        const title = getText(channel['title']);
+        const image = channel['image'] as Record<string, unknown> | undefined;
+        const iconUrl = image ? getText(image['url']) : undefined;
+        if (!title) throw new Error('Failed to parse feed title (RSS 1.0)');
+        return { title, iconUrl: iconUrl || undefined };
+      }
+    }
+
+    // RSS 2.0 チェック
     const rss = parsed['rss'] as Record<string, unknown> | undefined;
     if (rss?.['channel']) {
       const channel = rss['channel'] as Record<string, unknown>;
       const title = getText(channel['title']);
       const image = channel['image'] as Record<string, unknown> | undefined;
       const iconUrl = image ? getText(image['url']) : undefined;
-      if (!title) throw new Error('Failed to parse feed title (RSS)');
+      if (!title) throw new Error('Failed to parse feed title (RSS 2.0)');
       return { title, iconUrl: iconUrl || undefined };
     }
 
+    // Atom チェック
     const feed = parsed['feed'] as Record<string, unknown> | undefined;
     if (feed) {
       const title = getText(feed['title']);
@@ -147,16 +222,9 @@ export const RssService = {
       return { title, iconUrl: iconUrl || undefined };
     }
 
-    throw new Error('Unsupported feed format (not RSS 2.0 nor Atom)');
+    throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');
   },
 
-  /**
-   * フィードURLから記事一覧を取得
-   * - RSS 2.0 / Atom 対応
-   * - 最大50件
-   * - published_atがない場合は現在時刻
-   * - エラーはthrow（呼び出し側でcatch）
-   */
   async fetchArticles(url: string): Promise<Article[]> {
     const xml = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
     const parsed = parser.parse(xml) as Record<string, unknown>;
@@ -169,6 +237,56 @@ export const RssService = {
       return `article_${now}_${Math.random()}_${counter}`;
     };
 
+    // RSS 1.0 (RDF) チェック
+    const rdf = parsed['rdf:RDF'] as Record<string, unknown> | undefined;
+    if (rdf) {
+      const items = ensureArray(rdf['item'] as unknown).slice(0, MAX_ARTICLES);
+
+      const result: Article[] = [];
+      for (const item of items) {
+        if (typeof item !== 'object' || item === null) continue;
+        const obj = item as Record<string, unknown>;
+
+        const link = getText(obj['link']);
+        if (!link) continue;
+
+        const title = getText(obj['title']) ?? link;
+        const summary = getText(obj['description']);
+        
+        const dcDate = getText(obj['dc:date']);
+        const publishedAt = toIsoDateOrNow(dcDate);
+
+        let thumbnailUrl: string | undefined;
+        
+        const enclosure = obj['enclosure'] as Record<string, unknown> | undefined;
+        if (enclosure) {
+          const type = getText(enclosure['@_type']);
+          if (type && type.startsWith('image/')) {
+            thumbnailUrl = getText(enclosure['@_url']);
+          }
+        }
+        
+        if (!thumbnailUrl && summary) {
+          thumbnailUrl = extractImageUrl(summary);
+        }
+
+        result.push({
+          id: makeId(),
+          feedId: '',
+          feedName: '',
+          title,
+          link,
+          summary: summary || undefined,
+          thumbnailUrl: thumbnailUrl || undefined,
+          publishedAt,
+          isRead: false,
+        });
+      }
+
+      return result;
+    }
+
+    // RSS 2.0 チェック
     const rss = parsed['rss'] as Record<string, unknown> | undefined;
     if (rss?.['channel']) {
       const channel = rss['channel'] as Record<string, unknown>;
@@ -186,16 +304,13 @@ export const RssService = {
         const summary = getText(obj['description']);
         const publishedAt = toIsoDateOrNow(obj['pubDate']);
 
-        // サムネイル取得
         let thumbnailUrl: string | undefined;
         
-        // 1. media:thumbnail
         const mediaThumbnail = obj['media:thumbnail'] as Record<string, unknown> | undefined;
         if (mediaThumbnail) {
           thumbnailUrl = getText(mediaThumbnail['@_url']);
         }
         
-        // 2. media:content
         if (!thumbnailUrl) {
           const mediaContent = obj['media:content'] as Record<string, unknown> | undefined;
           if (mediaContent) {
@@ -203,7 +318,6 @@ export const RssService = {
           }
         }
         
-        // 3. enclosure (type が image/* の場合のみ)
         if (!thumbnailUrl) {
           const enclosure = obj['enclosure'] as Record<string, unknown> | undefined;
           if (enclosure) {
@@ -214,7 +328,6 @@ export const RssService = {
           }
         }
         
-        // 4. description から img タグを抽出
         if (!thumbnailUrl && summary) {
           thumbnailUrl = extractImageUrl(summary);
         }
@@ -235,6 +348,7 @@ export const RssService = {
       return result;
     }
 
+    // Atom チェック
     const feed = parsed['feed'] as Record<string, unknown> | undefined;
     if (feed) {
       const entries = ensureArray(feed['entry'] as unknown).slice(0, MAX_ARTICLES);
@@ -251,10 +365,8 @@ export const RssService = {
         const summary = getText(obj['summary']) ?? getText(obj['content']);
         const publishedAt = toIsoDateOrNow(obj['published'] ?? obj['updated']);
 
-        // サムネイル取得
         let thumbnailUrl: string | undefined;
         
-        // 1. link で rel="enclosure" かつ type が image/*
         const links = ensureArray(obj['link'] as unknown);
         for (const linkNode of links) {
           if (typeof linkNode !== 'object' || linkNode === null) continue;
@@ -269,7 +381,6 @@ export const RssService = {
           }
         }
         
-        // 2. content/summary から img タグを抽出
         if (!thumbnailUrl && summary) {
           thumbnailUrl = extractImageUrl(summary);
         }
@@ -290,7 +401,6 @@ export const RssService = {
       return result;
     }
 
-    throw new Error('Unsupported feed format (not RSS 2.0 nor Atom)');
+    throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');
   },
 };
-
