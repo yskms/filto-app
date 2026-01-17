@@ -1,6 +1,16 @@
-# Filto
+<p align="center">
+  <img src="filto/assets/images/filto-logo.png" width="120" />
+</p>
 
-[English](README_EN.md) | 日本語
+<h1 align="center">Filto</h1>
+
+<p align="center">
+  Simple RSS Reader with Powerful Filters
+</p>
+
+<p align="center">
+  <a href="README_EN.md">English</a> | 日本語
+</p>
 
 **ローカルフィルタ特化型の軽量RSSリーダー**
 
