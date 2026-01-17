@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Linking,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -16,92 +17,9 @@ import { FeedSelectModal } from '@/components/FeedSelectModal';
 import { Feed } from '@/types/Feed';
 import { FilterEngine } from '@/services/FilterEngine';
 import { FilterService, Filter } from '@/services/FilterService';
-
-// ダミーフィードデータ
-const dummyFeeds: Feed[] = [
-  {
-    id: 'feed1',
-    title: 'TechCrunch',
-    url: 'https://techcrunch.com/feed/',
-    orderNo: 1,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'feed2',
-    title: 'Qiita',
-    url: 'https://qiita.com/feed',
-    orderNo: 2,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'feed3',
-    title: 'Medium',
-    url: 'https://medium.com/feed',
-    orderNo: 3,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'feed4',
-    title: 'Dev.to',
-    url: 'https://dev.to/feed',
-    orderNo: 4,
-    createdAt: new Date().toISOString(),
-  },
-];
-
-// ダミーデータ
-const dummyArticles: Article[] = [
-  {
-    id: '1',
-    feedId: 'feed1',
-    feedName: 'TechCrunch',
-    title: 'React 19 Released: What\'s New in the Latest Version',
-    link: 'https://example.com/article1',
-    summary: 'React 19の新機能を詳しく解説します。',
-    publishedAt: new Date(Date.now() - 3600 * 1000).toISOString(),
-    isRead: false,
-  },
-  {
-    id: '2',
-    feedId: 'feed2',
-    feedName: 'Qiita',
-    title: 'FXで稼ぐ自動トレード術', // ← フィルタテスト用
-    link: 'https://example.com/article2',
-    summary: 'TypeScript 5.5で追加された便利な機能。',
-    publishedAt: new Date(Date.now() - 7200 * 1000).toISOString(),
-    isRead: false,
-  },
-  {
-    id: '3',
-    feedId: 'feed3',
-    feedName: 'Medium',
-    title: 'Expo Router のベストプラクティス',
-    link: 'https://example.com/article3',
-    summary: 'Expo Routerを使った効率的な開発手法。',
-    publishedAt: new Date(Date.now() - 86400 * 1000).toISOString(),
-    isRead: true,
-  },
-  {
-    id: '4',
-    feedId: 'feed1',
-    feedName: 'TechBlog',
-    title: '炎上したスタートアップの教訓', // ← フィルタテスト用
-    link: 'https://example.com/article4',
-    summary: '2025年のモバイル開発動向をまとめました。',
-    publishedAt: new Date(Date.now() - 172800 * 1000).toISOString(),
-    isRead: false,
-  },
-  {
-    id: '5',
-    feedId: 'feed4',
-    feedName: 'Dev.to',
-    title: 'RSSリーダーアプリの設計思想',
-    link: 'https://example.com/article5',
-    summary: 'ユーザー体験を重視したRSSリーダーの作り方。',
-    publishedAt: new Date(Date.now() - 259200 * 1000).toISOString(),
-    isRead: true,
-  },
-];
+import { FeedService } from '@/services/FeedService';
+import { ArticleService } from '@/services/ArticleService';
+import { SyncService } from '@/services/SyncService';
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string): string => {
@@ -189,8 +107,9 @@ const HomeHeader: React.FC<{
 
 export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
-  const [articles] = React.useState<Article[]>(dummyArticles);
-  const [feeds] = React.useState<Feed[]>(dummyFeeds);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [articles, setArticles] = React.useState<Article[]>([]);
+  const [feeds, setFeeds] = React.useState<Feed[]>([]);
   const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null);
   const [feedModalVisible, setFeedModalVisible] = React.useState(false);
   
@@ -205,21 +124,35 @@ export default function HomeScreen() {
     return feed?.title || 'ALL';
   }, [selectedFeedId, feeds]);
 
-  // フィルタを読み込む
-  const loadFilters = React.useCallback(async () => {
+  // データを読み込む
+  const loadData = React.useCallback(async () => {
     try {
+      setIsLoading(true);
+      
+      // フィード一覧を取得
+      const feedList = await FeedService.list();
+      setFeeds(feedList);
+      
+      // 記事一覧を取得
+      const articleList = await ArticleService.getArticles(selectedFeedId ?? undefined);
+      setArticles(articleList);
+      
+      // フィルタ一覧を取得
       const filterList = await FilterService.list();
       setFilters(filterList);
     } catch (error) {
-      console.error('Failed to load filters:', error);
+      console.error('Failed to load data:', error);
+      Alert.alert('エラー', 'データの読み込みに失敗しました');
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [selectedFeedId]);
 
-  // 画面フォーカス時にフィルタを読み込む
+  // 画面フォーカス時にデータを読み込む
   useFocusEffect(
     React.useCallback(() => {
-      loadFilters();
-    }, [loadFilters])
+      loadData();
+    }, [loadData])
   );
 
   // フィルタ適用
@@ -240,14 +173,23 @@ export default function HomeScreen() {
     setFilteredArticles(displayed);
   }, [articles, selectedFeedId, filters]);
 
-  const handleRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    // TODO: RSS取得処理
-    loadFilters(); // フィルタも再読み込み
-    setTimeout(() => {
+  const handleRefresh = React.useCallback(async () => {
+    try {
+      setRefreshing(true);
+      
+      // RSS同期を実行
+      const result = await SyncService.refresh();
+      console.log(`Sync completed: ${result.fetched} feeds, ${result.newArticles} new articles`);
+      
+      // データを再読み込み
+      await loadData();
+    } catch (error) {
+      console.error('Failed to refresh:', error);
+      Alert.alert('エラー', '更新に失敗しました');
+    } finally {
       setRefreshing(false);
-    }, 1000);
-  }, [loadFilters]);
+    }
+  }, [loadData]);
 
   const handleFeedSelect = React.useCallback(() => {
     setFeedModalVisible(true);
@@ -259,9 +201,18 @@ export default function HomeScreen() {
 
   const handlePressArticle = React.useCallback(async (article: Article) => {
     try {
+      // 記事を既読にする
+      await ArticleService.markRead(article.id);
+      
+      // ローカルの状態も更新
+      setArticles(prev => 
+        prev.map(a => a.id === article.id ? { ...a, isRead: true } : a)
+      );
+      
+      // ブラウザで開く
       await Linking.openURL(article.link);
-      // TODO: 既読にする処理
     } catch (error) {
+      console.error('Failed to open article:', error);
       Alert.alert('エラー', '記事を開けませんでした');
     }
   }, []);
@@ -274,26 +225,33 @@ export default function HomeScreen() {
         onPressRefresh={handleRefresh}
       />
       
-      <FlatList
-        data={filteredArticles}
-        renderItem={({ item }) => (
-          <ArticleItem 
-            article={item} 
-            onPress={() => handlePressArticle(item)}
-          />
-        )}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>📭</Text>
-            <Text style={styles.emptyMessage}>記事がありません</Text>
-          </View>
-        }
-      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1976d2" />
+          <Text style={styles.loadingText}>読み込み中...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredArticles}
+          renderItem={({ item }) => (
+            <ArticleItem 
+              article={item} 
+              onPress={() => handlePressArticle(item)}
+            />
+          )}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>📭</Text>
+              <Text style={styles.emptyMessage}>記事がありません</Text>
+            </View>
+          }
+        />
+      )}
 
       {/* フィード選択モーダル */}
       <FeedSelectModal
@@ -415,6 +373,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyMessage: {
+    fontSize: 16,
+    color: '#666',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
     fontSize: 16,
     color: '#666',
   },

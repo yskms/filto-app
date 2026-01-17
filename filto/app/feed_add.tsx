@@ -10,17 +10,20 @@ import {
   Platform,
   ScrollView,
   Clipboard,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { FeedService } from '@/services/FeedService';
+import { RssService } from '@/services/RssService';
 
 export default function FeedAddScreen() {
   const router = useRouter();
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMeta, setIsLoadingMeta] = useState(false);
   const urlInputRef = useRef<TextInput>(null);
 
   // 起動時に入力欄にフォーカス
@@ -42,6 +45,40 @@ export default function FeedAddScreen() {
     }
   };
 
+  const handleFetchMeta = async () => {
+    // バリデーション
+    if (!url.trim()) {
+      Alert.alert('エラー', 'Feed URLを入力してください');
+      return;
+    }
+
+    // URLの簡易チェック
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      Alert.alert('エラー', '有効なURLを入力してください');
+      return;
+    }
+
+    setIsLoadingMeta(true);
+
+    try {
+      // RSSメタデータを取得
+      const meta = await RssService.fetchMeta(url.trim());
+      
+      // タイトルを自動入力
+      setName(meta.title);
+      
+      Alert.alert('成功', 'フィード情報を取得しました');
+    } catch (error) {
+      console.error('Failed to fetch RSS meta:', error);
+      Alert.alert(
+        'エラー',
+        'フィード情報の取得に失敗しました。手動でタイトルを入力してください。'
+      );
+    } finally {
+      setIsLoadingMeta(false);
+    }
+  };
+
   const handleAdd = async () => {
     // バリデーション
     if (!url.trim()) {
@@ -58,8 +95,6 @@ export default function FeedAddScreen() {
     setIsLoading(true);
 
     try {
-      // TODO: RssService.fetchMeta() でフィード情報を取得（将来）
-
       // FeedService.create() でフィードを保存
       await FeedService.create({
         url: url.trim(),
@@ -133,6 +168,23 @@ export default function FeedAddScreen() {
               activeOpacity={0.7}
             >
               <Text style={styles.pasteButtonText}>📋 ペースト</Text>
+            </TouchableOpacity>
+
+            {/* Fetch Meta Button */}
+            <TouchableOpacity
+              style={[styles.fetchButton, isLoadingMeta && styles.fetchButtonDisabled]}
+              onPress={handleFetchMeta}
+              disabled={isLoadingMeta}
+              activeOpacity={0.7}
+            >
+              {isLoadingMeta ? (
+                <View style={styles.fetchButtonContent}>
+                  <ActivityIndicator size="small" color="#fff" />
+                  <Text style={styles.fetchButtonText}> 取得中...</Text>
+                </View>
+              ) : (
+                <Text style={styles.fetchButtonText}>🔍 フィード情報を取得</Text>
+              )}
             </TouchableOpacity>
 
             {/* Feed Name (optional) */}
@@ -253,6 +305,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#1976d2',
+  },
+  fetchButton: {
+    height: 48,
+    backgroundColor: '#2e7d32',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  fetchButtonDisabled: {
+    backgroundColor: '#b0b0b0',
+  },
+  fetchButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fetchButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
   addButton: {
     height: 48,
