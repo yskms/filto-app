@@ -9,6 +9,7 @@ import {
   Linking,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -51,9 +52,17 @@ const ArticleItem: React.FC<{
       onPress={onPress}
     >
       <View style={styles.articleContent}>
-        <View style={styles.thumbnailPlaceholder}>
-          <Text style={styles.thumbnailIcon}>📰</Text>
-        </View>
+        {article.thumbnailUrl ? (
+          <Image
+            source={{ uri: article.thumbnailUrl }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.thumbnailPlaceholder}>
+            <Text style={styles.thumbnailIcon}>📰</Text>
+          </View>
+        )}
         
         <View style={styles.textContainer}>
           <Text
@@ -328,6 +337,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  thumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#f0f0f0',
   },
   thumbnailIcon: {
     fontSize: 24,

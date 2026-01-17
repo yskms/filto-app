@@ -79,6 +79,7 @@ export async function initDatabase(): Promise<void> {
       title         TEXT NOT NULL,
       link          TEXT NOT NULL,
       description   TEXT,
+      thumbnail_url TEXT,
       published_at  INTEGER,
       fetched_at    INTEGER NOT NULL,
       is_read       INTEGER NOT NULL DEFAULT 0,

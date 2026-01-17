@@ -5,6 +5,7 @@ export interface Article {
   title: string;
   link: string;
   summary?: string;
+  thumbnailUrl?: string;
   publishedAt: string;
   isRead: boolean;
 }

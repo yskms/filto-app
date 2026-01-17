@@ -104,6 +104,20 @@ function extractAtomIconUrl(feedNode: Record<string, unknown>): string | undefin
   return undefined;
 }
 
+function extractImageUrl(html: string | undefined): string | undefined {
+  if (!html) return undefined;
+  
+  // <img src="..." /> を抽出
+  const imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
+  const match = html.match(imgRegex);
+  
+  if (match && match[1]) {
+    return match[1];
+  }
+  
+  return undefined;
+}
+
 export const RssService = {
   /**
    * フィードURLからタイトルとアイコンURLを取得
@@ -172,6 +186,39 @@ export const RssService = {
         const summary = getText(obj['description']);
         const publishedAt = toIsoDateOrNow(obj['pubDate']);
 
+        // サムネイル取得
+        let thumbnailUrl: string | undefined;
+        
+        // 1. media:thumbnail
+        const mediaThumbnail = obj['media:thumbnail'] as Record<string, unknown> | undefined;
+        if (mediaThumbnail) {
+          thumbnailUrl = getText(mediaThumbnail['@_url']);
+        }
+        
+        // 2. media:content
+        if (!thumbnailUrl) {
+          const mediaContent = obj['media:content'] as Record<string, unknown> | undefined;
+          if (mediaContent) {
+            thumbnailUrl = getText(mediaContent['@_url']);
+          }
+        }
+        
+        // 3. enclosure (type が image/* の場合のみ)
+        if (!thumbnailUrl) {
+          const enclosure = obj['enclosure'] as Record<string, unknown> | undefined;
+          if (enclosure) {
+            const type = getText(enclosure['@_type']);
+            if (type && type.startsWith('image/')) {
+              thumbnailUrl = getText(enclosure['@_url']);
+            }
+          }
+        }
+        
+        // 4. description から img タグを抽出
+        if (!thumbnailUrl && summary) {
+          thumbnailUrl = extractImageUrl(summary);
+        }
+
         result.push({
           id: makeId(),
           feedId: '',
@@ -179,6 +226,7 @@ export const RssService = {
           title,
           link,
           summary: summary || undefined,
+          thumbnailUrl: thumbnailUrl || undefined,
           publishedAt,
           isRead: false,
         });
@@ -203,6 +251,29 @@ export const RssService = {
         const summary = getText(obj['summary']) ?? getText(obj['content']);
         const publishedAt = toIsoDateOrNow(obj['published'] ?? obj['updated']);
 
+        // サムネイル取得
+        let thumbnailUrl: string | undefined;
+        
+        // 1. link で rel="enclosure" かつ type が image/*
+        const links = ensureArray(obj['link'] as unknown);
+        for (const linkNode of links) {
+          if (typeof linkNode !== 'object' || linkNode === null) continue;
+          const linkObj = linkNode as Record<string, unknown>;
+          
+          const rel = getText(linkObj['@_rel'])?.toLowerCase();
+          const type = getText(linkObj['@_type']);
+          
+          if (rel === 'enclosure' && type && type.startsWith('image/')) {
+            thumbnailUrl = getText(linkObj['@_href']);
+            break;
+          }
+        }
+        
+        // 2. content/summary から img タグを抽出
+        if (!thumbnailUrl && summary) {
+          thumbnailUrl = extractImageUrl(summary);
+        }
+
         result.push({
           id: makeId(),
           feedId: '',
@@ -210,6 +281,7 @@ export const RssService = {
           title,
           link,
           summary: summary || undefined,
+          thumbnailUrl: thumbnailUrl || undefined,
           publishedAt,
           isRead: false,
         });

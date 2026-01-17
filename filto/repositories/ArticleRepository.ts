@@ -32,6 +32,7 @@ export const ArticleRepository = {
       title: string;
       link: string;
       description: string | null;
+      thumbnail_url: string | null;
       published_at: number | null;
       fetched_at: number;
       is_read: number;
@@ -44,6 +45,7 @@ export const ArticleRepository = {
           title,
           link,
           description,
+          thumbnail_url,
           published_at,
           fetched_at,
           is_read
@@ -59,6 +61,7 @@ export const ArticleRepository = {
       title: row.title,
       link: row.link,
       summary: row.description ?? undefined,
+      thumbnailUrl: row.thumbnail_url ?? undefined,
       publishedAt: unixSecondsToIsoString(row.published_at, row.fetched_at),
       isRead: row.is_read === 1,
     }));
@@ -77,6 +80,7 @@ export const ArticleRepository = {
       title: string;
       link: string;
       description: string | null;
+      thumbnail_url: string | null;
       published_at: number | null;
       fetched_at: number;
       is_read: number;
@@ -89,6 +93,7 @@ export const ArticleRepository = {
           title,
           link,
           description,
+          thumbnail_url,
           published_at,
           fetched_at,
           is_read
@@ -106,6 +111,7 @@ export const ArticleRepository = {
       title: row.title,
       link: row.link,
       summary: row.description ?? undefined,
+      thumbnailUrl: row.thumbnail_url ?? undefined,
       publishedAt: unixSecondsToIsoString(row.published_at, row.fetched_at),
       isRead: row.is_read === 1,
     }));
@@ -113,7 +119,7 @@ export const ArticleRepository = {
 
   /**
    * 記事を一括挿入（トランザクション）
-   * NOTE: 重複チェックは呼び出し側で行う想定（ここでは単純にINSERT）
+   * NOTE: INSERT OR IGNOREで重複を自動的にスキップ
    */
   async insertMany(articles: Article[]): Promise<void> {
     if (articles.length === 0) return;
@@ -123,32 +129,38 @@ export const ArticleRepository = {
 
     db.withTransactionSync(() => {
       for (const article of articles) {
-        db.runSync(
-          `
-            INSERT INTO articles (
-              feed_id,
-              feed_name,
-              title,
-              link,
-              description,
-              published_at,
-              fetched_at,
-              is_read,
-              is_blocked
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `,
-          [
-            article.feedId,
-            article.feedName,
-            article.title,
-            article.link,
-            article.summary ?? null,
-            isoStringToUnixSecondsOrNull(article.publishedAt),
-            fetchedAt,
-            article.isRead ? 1 : 0,
-            0,
-          ]
-        );
+        try {
+          db.runSync(
+            `
+              INSERT OR IGNORE INTO articles (
+                feed_id,
+                feed_name,
+                title,
+                link,
+                description,
+                thumbnail_url,
+                published_at,
+                fetched_at,
+                is_read,
+                is_blocked
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            [
+              article.feedId,
+              article.feedName,
+              article.title,
+              article.link,
+              article.summary ?? null,
+              article.thumbnailUrl ?? null,
+              isoStringToUnixSecondsOrNull(article.publishedAt),
+              fetchedAt,
+              article.isRead ? 1 : 0,
+              0,
+            ]
+          );
+        } catch (error) {
+          console.warn(`Failed to insert article ${article.id}:`, error);
+        }
       }
     });
   },
