@@ -22,6 +22,7 @@ export default function FeedAddScreen() {
   const router = useRouter();
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
+  const [iconUrl, setIconUrl] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMeta, setIsLoadingMeta] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
@@ -109,8 +110,11 @@ export default function FeedAddScreen() {
       // RSSメタデータを取得
       const meta = await RssService.fetchMeta(url.trim());
       
-      // タイトルを自動入力
+      // タイトルとアイコンURLを自動入力
       setName(meta.title);
+      setIconUrl(meta.iconUrl);
+      
+      console.log('[FeedAdd] Fetched meta:', { title: meta.title, iconUrl: meta.iconUrl });
       
       Alert.alert('成功', 'フィード情報を取得しました');
     } catch (error) {
@@ -139,7 +143,10 @@ export default function FeedAddScreen() {
       await FeedService.create({
         url: url.trim(),
         title: name.trim() || undefined,  // 空文字の場合はundefinedに
+        iconUrl: iconUrl,  // アイコンURLも保存
       });
+
+      console.log('[FeedAdd] Created feed with iconUrl:', iconUrl);
 
       Alert.alert('成功', 'フィードを追加しました', [
         {

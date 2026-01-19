@@ -37,8 +37,12 @@ export const SyncService = {
           // 保存前の記事数を取得
           const beforeCount = (await ArticleService.getArticles(feed.id)).length;
 
-          // RSS取得
-          const articles = await RssService.fetchArticles(feed.url);
+          // RSS取得（フィードアイコンをサムネイルのフォールバックとして渡す）
+          console.log(`[SyncService] Fetching articles from ${feed.title}`);
+          console.log(`[SyncService] Feed URL: ${feed.url}`);
+          console.log(`[SyncService] Feed icon URL: ${feed.iconUrl || 'none'}`);
+          
+          const articles = await RssService.fetchArticles(feed.url, feed.iconUrl);
           console.log(`[SyncService] Fetched ${articles.length} articles from ${feed.title}`);
 
           // 保存（重複チェックは ArticleService 内で実施）

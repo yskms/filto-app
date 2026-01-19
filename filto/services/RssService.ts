@@ -44,6 +44,138 @@ function toIsoDateOrNow(dateLike: unknown): string {
 }
 
 /**
+ * ファビコンAPIでフォールバック画像を生成
+ */
+function getFaviconUrl(feedUrl: string): string {
+  try {
+    const domain = new URL(feedUrl).hostname;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * RSS 1.0 (RDF) のアイコンURL抽出
+ */
+function extractRss1IconUrl(channel: Record<string, unknown>, feedUrl: string): string | undefined {
+  // 1. <webfeeds:icon> を確認
+  const webfeedsIcon = getText(channel['webfeeds:icon']);
+  if (webfeedsIcon) {
+    console.log(`[RssService] Found RSS 1.0 feed icon from <webfeeds:icon>: ${webfeedsIcon}`);
+    return webfeedsIcon;
+  }
+
+  // 2. <webfeeds:logo> を確認
+  const webfeedsLogo = getText(channel['webfeeds:logo']);
+  if (webfeedsLogo) {
+    console.log(`[RssService] Found RSS 1.0 feed icon from <webfeeds:logo>: ${webfeedsLogo}`);
+    return webfeedsLogo;
+  }
+
+  // 3. <image><url> を確認
+  const image = channel['image'] as Record<string, unknown> | undefined;
+  if (image) {
+    const url = getText(image['url']);
+    if (url) {
+      console.log(`[RssService] Found RSS 1.0 feed icon from <image>: ${url}`);
+      return url;
+    }
+  }
+  
+  // 4. ファビコンAPIをフォールバック
+  const faviconUrl = getFaviconUrl(feedUrl);
+  console.log(`[RssService] Using favicon API as fallback: ${faviconUrl}`);
+  return faviconUrl || undefined;
+}
+
+/**
+ * RSS 2.0 のアイコンURL抽出
+ */
+function extractRss2IconUrl(channel: Record<string, unknown>, feedUrl: string): string | undefined {
+  // 1. <webfeeds:icon> を確認（note.comなど）
+  const webfeedsIcon = getText(channel['webfeeds:icon']);
+  if (webfeedsIcon) {
+    console.log(`[RssService] Found RSS 2.0 feed icon from <webfeeds:icon>: ${webfeedsIcon}`);
+    return webfeedsIcon;
+  }
+
+  // 2. <webfeeds:logo> を確認
+  const webfeedsLogo = getText(channel['webfeeds:logo']);
+  if (webfeedsLogo) {
+    console.log(`[RssService] Found RSS 2.0 feed icon from <webfeeds:logo>: ${webfeedsLogo}`);
+    return webfeedsLogo;
+  }
+
+  // 3. <image><url> を確認
+  const image = channel['image'] as Record<string, unknown> | undefined;
+  if (image) {
+    const url = getText(image['url']);
+    if (url) {
+      console.log(`[RssService] Found RSS 2.0 feed icon from <image>: ${url}`);
+      return url;
+    }
+  }
+  
+  // 4. ファビコンAPIをフォールバック
+  const faviconUrl = getFaviconUrl(feedUrl);
+  console.log(`[RssService] Using favicon API as fallback: ${faviconUrl}`);
+  return faviconUrl || undefined;
+}
+
+/**
+ * Atom のアイコンURL抽出
+ */
+function extractAtomIconUrl(feedNode: Record<string, unknown>, feedUrl: string): string | undefined {
+  // 1. <webfeeds:icon> を確認（Qiitaなど）
+  const webfeedsIcon = getText(feedNode['webfeeds:icon']);
+  if (webfeedsIcon) {
+    console.log(`[RssService] Found Atom feed icon from <webfeeds:icon>: ${webfeedsIcon}`);
+    return webfeedsIcon;
+  }
+
+  // 2. <webfeeds:logo> を確認
+  const webfeedsLogo = getText(feedNode['webfeeds:logo']);
+  if (webfeedsLogo) {
+    console.log(`[RssService] Found Atom feed icon from <webfeeds:logo>: ${webfeedsLogo}`);
+    return webfeedsLogo;
+  }
+
+  // 3. <icon> を確認
+  const icon = getText(feedNode['icon']);
+  if (icon) {
+    console.log(`[RssService] Found Atom feed icon from <icon>: ${icon}`);
+    return icon;
+  }
+
+  // 4. <logo> を確認
+  const logo = getText(feedNode['logo']);
+  if (logo) {
+    console.log(`[RssService] Found Atom feed icon from <logo>: ${logo}`);
+    return logo;
+  }
+
+  // 5. <link rel="icon"> を確認
+  const links = ensureArray(feedNode['link'] as unknown);
+  for (const link of links) {
+    if (typeof link !== 'object' || link === null) continue;
+    const rel = getText((link as Record<string, unknown>)['@_rel'])?.toLowerCase();
+    if (rel === 'icon' || rel === 'shortcut icon') {
+      const href = getText((link as Record<string, unknown>)['@_href']);
+      if (href) {
+        console.log(`[RssService] Found Atom feed icon from <link rel="icon">: ${href}`);
+        return href;
+      }
+    }
+  }
+  
+  // 6. ファビコンAPIをフォールバック
+  const faviconUrl = getFaviconUrl(feedUrl);
+  console.log(`[RssService] Using favicon API as fallback: ${faviconUrl}`);
+  return faviconUrl || undefined;
+}
+
+/**
  * エンコーディングを自動検出してテキストを取得
  */
 async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string> {
@@ -345,37 +477,78 @@ function extractAtomLink(linkNode: unknown): string | undefined {
   return undefined;
 }
 
-function extractAtomIconUrl(feedNode: Record<string, unknown>): string | undefined {
-  const icon = getText(feedNode['icon']);
-  if (icon) return icon;
-
-  const logo = getText(feedNode['logo']);
-  if (logo) return logo;
-
-  const links = ensureArray(feedNode['link'] as unknown);
-  for (const link of links) {
-    if (typeof link !== 'object' || link === null) continue;
-    const rel = getText((link as Record<string, unknown>)['@_rel'])?.toLowerCase();
-    if (rel === 'icon' || rel === 'shortcut icon') {
-      const href = getText((link as Record<string, unknown>)['@_href']);
-      if (href) return href;
-    }
-  }
-
-  return undefined;
-}
-
 function extractImageUrl(html: string | undefined): string | undefined {
   if (!html) return undefined;
   
+  // 1. 一般的な<img>タグからsrcを抽出
   const imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
   const match = html.match(imgRegex);
   
   if (match && match[1]) {
-    return match[1];
+    // 相対URLは無視（完全なURLのみ）
+    if (match[1].startsWith('http://') || match[1].startsWith('https://')) {
+      console.log(`[RssService] Found image in src:`, match[1].substring(0, 100));
+      return match[1];
+    }
   }
   
+  // 2. data-srcやsrcsetなども試す（Lazy loading対応）
+  const dataSrcRegex = /<img[^>]+data-src=["']([^"']+)["']/i;
+  const dataSrcMatch = html.match(dataSrcRegex);
+  
+  if (dataSrcMatch && dataSrcMatch[1]) {
+    if (dataSrcMatch[1].startsWith('http://') || dataSrcMatch[1].startsWith('https://')) {
+      console.log(`[RssService] Found image in data-src:`, dataSrcMatch[1].substring(0, 100));
+      return dataSrcMatch[1];
+    }
+  }
+  
+  // 3. srcsetから最初の画像を抽出
+  const srcsetRegex = /<img[^>]+srcset=["']([^"']+)["']/i;
+  const srcsetMatch = html.match(srcsetRegex);
+  
+  if (srcsetMatch && srcsetMatch[1]) {
+    // srcsetは "url1 1024w, url2 768w" の形式
+    const firstUrl = srcsetMatch[1].split(',')[0].trim().split(' ')[0];
+    if (firstUrl.startsWith('http://') || firstUrl.startsWith('https://')) {
+      console.log(`[RssService] Found image in srcset:`, firstUrl.substring(0, 100));
+      return firstUrl;
+    }
+  }
+  
+  console.log(`[RssService] No image found in HTML content`);
   return undefined;
+}
+
+/**
+ * サイト固有のサムネイルURL生成
+ * 一部のサイトはRSSに画像を含めないため、URLから推測
+ */
+function generateThumbnailFromUrl(link: string): string | undefined {
+  try {
+    const url = new URL(link);
+    
+    // Qiita: OGP画像風のサムネイルを使用
+    if (url.hostname === 'qiita.com') {
+      // 記事IDを抽出
+      const match = link.match(/\/items\/([a-f0-9]+)/);
+      if (match) {
+        // Qiitaのデフォルト記事画像を使用（ファビコンより大きい）
+        return `https://cdn.qiita.com/assets/qiita-fb-2887e7b4aad86fd8c25cea84846f2236.png`;
+      }
+    }
+    
+    // 総務省: 政府系サイトのロゴ画像を使用
+    if (url.hostname === 'www.soumu.go.jp') {
+      // 総務省のロゴ画像（公式サイトより）
+      // return `https://www.soumu.go.jp/common/image/soumu_logo.png`;
+      return `https://www.soumu.go.jp/main_content/000269738.jpg`;
+    }
+    
+    return undefined;
+  } catch (e) {
+    return undefined;
+  }
 }
 
 export const RssService = {
@@ -397,11 +570,10 @@ export const RssService = {
         const channel = rdf['channel'] as Record<string, unknown> | undefined;
         if (channel) {
           const title = getText(channel['title']);
-          const image = channel['image'] as Record<string, unknown> | undefined;
-          const iconUrl = image ? getText(image['url']) : undefined;
+          const iconUrl = extractRss1IconUrl(channel, url);
           if (!title) throw new Error('Failed to parse feed title (RSS 1.0)');
           console.log(`[RssService] RSS 1.0 detected: ${title}`);
-          return { title, iconUrl: iconUrl || undefined };
+          return { title, iconUrl };
         }
       }
 
@@ -415,21 +587,20 @@ export const RssService = {
       if (rss?.['channel']) {
         const channel = rss['channel'] as Record<string, unknown>;
         const title = getText(channel['title']);
-        const image = channel['image'] as Record<string, unknown> | undefined;
-        const iconUrl = image ? getText(image['url']) : undefined;
+        const iconUrl = extractRss2IconUrl(channel, url);
         if (!title) throw new Error('Failed to parse feed title (RSS 2.0)');
         console.log(`[RssService] RSS 2.0 detected: ${title}`);
-        return { title, iconUrl: iconUrl || undefined };
+        return { title, iconUrl };
       }
 
       // Atom チェック
       const feed = parsed['feed'] as Record<string, unknown> | undefined;
       if (feed) {
         const title = getText(feed['title']);
-        const iconUrl = extractAtomIconUrl(feed);
+        const iconUrl = extractAtomIconUrl(feed, url);
         if (!title) throw new Error('Failed to parse feed title (Atom)');
         console.log(`[RssService] Atom detected: ${title}`);
-        return { title, iconUrl: iconUrl || undefined };
+        return { title, iconUrl };
       }
 
       throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');
@@ -442,9 +613,10 @@ export const RssService = {
     }
   },
 
-  async fetchArticles(url: string): Promise<Article[]> {
+  async fetchArticles(url: string, feedIconUrl?: string): Promise<Article[]> {
     try {
       console.log(`[RssService] fetchArticles: ${url}`);
+      console.log(`[RssService] Feed icon URL: ${feedIconUrl || 'none'}`);
       const xml = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
       console.log(`[RssService] XML fetched, length: ${xml.length}`);
       
@@ -475,22 +647,50 @@ export const RssService = {
 
           const title = getText(obj['title']) ?? link;
           const summary = getText(obj['description']);
+          const content = getText(obj['content:encoded']);
           
           const dcDate = getText(obj['dc:date']);
           const publishedAt = toIsoDateOrNow(dcDate);
 
           let thumbnailUrl: string | undefined;
           
+          // enclosure を確認（Zenn対応: typeが"false"でも許可）
           const enclosure = obj['enclosure'] as Record<string, unknown> | undefined;
           if (enclosure) {
+            const enclosureUrl = getText(enclosure['@_url']);
             const type = getText(enclosure['@_type']);
-            if (type && type.startsWith('image/')) {
-              thumbnailUrl = getText(enclosure['@_url']);
+            
+            // typeがimage/*、または不正な値（"false"など）、または空の場合でもURLがあれば使用
+            if (enclosureUrl) {
+              if (!type || type === 'false' || type.startsWith('image/')) {
+                thumbnailUrl = enclosureUrl;
+                console.log(`[RssService] Found image from enclosure (RSS 1.0): ${thumbnailUrl.substring(0, 100)}`);
+              }
             }
           }
           
+          // content:encoded 内の画像を確認
+          if (!thumbnailUrl && content) {
+            thumbnailUrl = extractImageUrl(content);
+          }
+          
+          // description 内の画像を確認
           if (!thumbnailUrl && summary) {
             thumbnailUrl = extractImageUrl(summary);
+          }
+          
+          // サイト固有のサムネイル生成を試みる
+          if (!thumbnailUrl) {
+            thumbnailUrl = generateThumbnailFromUrl(link);
+            if (thumbnailUrl) {
+              console.log(`[RssService] Generated site-specific thumbnail: ${thumbnailUrl.substring(0, 100)}`);
+            }
+          }
+          
+          // フォールバック: フィードのアイコン
+          if (!thumbnailUrl && feedIconUrl) {
+            thumbnailUrl = feedIconUrl;
+            console.log(`[RssService] Using feed icon as fallback: ${thumbnailUrl.substring(0, 100)}`);
           }
 
           result.push({
@@ -527,34 +727,84 @@ export const RssService = {
 
           const title = getText(obj['title']) ?? link;
           const summary = getText(obj['description']);
+          const content = getText(obj['content:encoded']);
           const publishedAt = toIsoDateOrNow(obj['pubDate']);
 
           let thumbnailUrl: string | undefined;
           
-          const mediaThumbnail = obj['media:thumbnail'] as Record<string, unknown> | undefined;
+          // 1. media:thumbnail を確認
+          const mediaThumbnail = obj['media:thumbnail'];
           if (mediaThumbnail) {
-            thumbnailUrl = getText(mediaThumbnail['@_url']);
-          }
-          
-          if (!thumbnailUrl) {
-            const mediaContent = obj['media:content'] as Record<string, unknown> | undefined;
-            if (mediaContent) {
-              thumbnailUrl = getText(mediaContent['@_url']);
+            // テキストコンテンツとして取得（note.com形式）
+            thumbnailUrl = getText(mediaThumbnail);
+            
+            // 属性として取得も試す（他のフィード形式）
+            if (!thumbnailUrl && typeof mediaThumbnail === 'object') {
+              thumbnailUrl = getText((mediaThumbnail as Record<string, unknown>)['@_url']);
+            }
+            
+            if (thumbnailUrl) {
+              console.log(`[RssService] Found image from media:thumbnail: ${thumbnailUrl.substring(0, 100)}`);
             }
           }
           
+          // 2. media:content を確認
           if (!thumbnailUrl) {
-            const enclosure = obj['enclosure'] as Record<string, unknown> | undefined;
-            if (enclosure) {
-              const type = getText(enclosure['@_type']);
-              if (type && type.startsWith('image/')) {
-                thumbnailUrl = getText(enclosure['@_url']);
+            const mediaContent = obj['media:content'];
+            if (mediaContent) {
+              // テキストコンテンツとして取得
+              thumbnailUrl = getText(mediaContent);
+              
+              // 属性として取得も試す
+              if (!thumbnailUrl && typeof mediaContent === 'object') {
+                thumbnailUrl = getText((mediaContent as Record<string, unknown>)['@_url']);
+              }
+              
+              if (thumbnailUrl) {
+                console.log(`[RssService] Found image from media:content: ${thumbnailUrl.substring(0, 100)}`);
               }
             }
           }
           
+          // 3. enclosure を確認（Zenn対応: typeが"false"でも許可）
+          if (!thumbnailUrl) {
+            const enclosure = obj['enclosure'] as Record<string, unknown> | undefined;
+            if (enclosure) {
+              const enclosureUrl = getText(enclosure['@_url']);
+              const type = getText(enclosure['@_type']);
+              
+              // typeがimage/*、または不正な値（"false"など）、または空の場合でもURLがあれば使用
+              if (enclosureUrl) {
+                if (!type || type === 'false' || type.startsWith('image/')) {
+                  thumbnailUrl = enclosureUrl;
+                  console.log(`[RssService] Found image from enclosure: ${thumbnailUrl.substring(0, 100)}`);
+                }
+              }
+            }
+          }
+          
+          // 4. content:encoded 内の画像を確認（優先）
+          if (!thumbnailUrl && content) {
+            thumbnailUrl = extractImageUrl(content);
+          }
+          
+          // 5. description 内の画像を確認
           if (!thumbnailUrl && summary) {
             thumbnailUrl = extractImageUrl(summary);
+          }
+          
+          // サイト固有のサムネイル生成を試みる
+          if (!thumbnailUrl) {
+            thumbnailUrl = generateThumbnailFromUrl(link);
+            if (thumbnailUrl) {
+              console.log(`[RssService] Generated site-specific thumbnail: ${thumbnailUrl.substring(0, 100)}`);
+            }
+          }
+          
+          // 6. フォールバック: フィードのアイコン
+          if (!thumbnailUrl && feedIconUrl) {
+            thumbnailUrl = feedIconUrl;
+            console.log(`[RssService] Using feed icon as fallback: ${thumbnailUrl.substring(0, 100)}`);
           }
 
           result.push({
@@ -589,11 +839,13 @@ export const RssService = {
           if (!link) continue;
 
           const title = getText(obj['title']) ?? link;
-          const summary = getText(obj['summary']) ?? getText(obj['content']);
+          const summary = getText(obj['summary']);
+          const content = getText(obj['content']);
           const publishedAt = toIsoDateOrNow(obj['published'] ?? obj['updated']);
 
           let thumbnailUrl: string | undefined;
           
+          // link要素内のenclosureを確認（Zenn対応: typeが"false"でも許可）
           const links = ensureArray(obj['link'] as unknown);
           for (const linkNode of links) {
             if (typeof linkNode !== 'object' || linkNode === null) continue;
@@ -601,15 +853,40 @@ export const RssService = {
             
             const rel = getText(linkObj['@_rel'])?.toLowerCase();
             const type = getText(linkObj['@_type']);
+            const href = getText(linkObj['@_href']);
             
-            if (rel === 'enclosure' && type && type.startsWith('image/')) {
-              thumbnailUrl = getText(linkObj['@_href']);
-              break;
+            // relがenclosureで、typeがimage/*または不正/空の場合
+            if (rel === 'enclosure' && href) {
+              if (!type || type === 'false' || type.startsWith('image/')) {
+                thumbnailUrl = href;
+                console.log(`[RssService] Found image from Atom link enclosure: ${thumbnailUrl.substring(0, 100)}`);
+                break;
+              }
             }
           }
           
+          // content 内の画像を確認
+          if (!thumbnailUrl && content) {
+            thumbnailUrl = extractImageUrl(content);
+          }
+          
+          // summary 内の画像を確認
           if (!thumbnailUrl && summary) {
             thumbnailUrl = extractImageUrl(summary);
+          }
+          
+          // サイト固有のサムネイル生成を試みる
+          if (!thumbnailUrl) {
+            thumbnailUrl = generateThumbnailFromUrl(link);
+            if (thumbnailUrl) {
+              console.log(`[RssService] Generated site-specific thumbnail: ${thumbnailUrl.substring(0, 100)}`);
+            }
+          }
+          
+          // フォールバック: フィードのアイコン
+          if (!thumbnailUrl && feedIconUrl) {
+            thumbnailUrl = feedIconUrl;
+            console.log(`[RssService] Using feed icon as fallback: ${thumbnailUrl.substring(0, 100)}`);
           }
 
           result.push({

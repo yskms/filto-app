@@ -26,6 +26,7 @@ export const FeedService = {
   async create(input: {
     url: string;
     title?: string;
+    iconUrl?: string;
   }): Promise<string> {
     // IDを生成（UUID的なもの）
     const id = `feed_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -41,6 +42,7 @@ export const FeedService = {
       id,
       title,
       url: input.url,
+      iconUrl: input.iconUrl,
       orderNo,
     };
 

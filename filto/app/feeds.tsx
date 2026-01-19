@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -141,7 +142,15 @@ const FeedItem: React.FC<{
         </View>
       )}
       <View style={styles.feedContent}>
-        <Text style={styles.feedIcon}>📰</Text>
+        {feed.iconUrl ? (
+          <Image
+            source={{ uri: feed.iconUrl }}
+            style={styles.feedIconImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.feedIcon}>📰</Text>
+        )}
         <View style={styles.feedTextContainer}>
           <Text style={styles.feedTitle}>{feed.title}</Text>
           <Text style={styles.feedUrl}>{feed.url}</Text>
@@ -500,6 +509,13 @@ const styles = StyleSheet.create({
   feedIcon: {
     fontSize: 24,
     marginRight: 12,
+  },
+  feedIconImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    marginRight: 12,
+    backgroundColor: '#f0f0f0',
   },
   feedTextContainer: {
     flex: 1,
