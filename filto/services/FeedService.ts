@@ -1,6 +1,7 @@
 import { FeedRepository } from '@/repositories/FeedRepository';
 import { Feed } from '@/types/Feed';
 import { RssService } from '@/services/RssService';
+import { FeedSortType } from '@/components/FeedSortModal';
 
 /**
  * FeedService
@@ -12,6 +13,13 @@ export const FeedService = {
    */
   async list(): Promise<Feed[]> {
     return await FeedRepository.list();
+  },
+
+  /**
+   * ソート順を指定してフィードを取得
+   */
+  async listWithSort(sortType: FeedSortType): Promise<Feed[]> {
+    return await FeedRepository.listWithSort(sortType);
   },
 
   /**

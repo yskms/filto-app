@@ -1,5 +1,6 @@
 import { openDatabase } from '@/database/init';
 import { Feed } from '@/types/Feed';
+import { FeedSortType } from '@/components/FeedSortModal';
 
 /**
  * FeedRepository
@@ -103,6 +104,53 @@ export const FeedRepository = {
         db.runSync('UPDATE feeds SET order_no = ? WHERE id = ?', [index + 1, feed.id]);
       });
     });
+  },
+
+  /**
+   * ソート順を指定してフィードを取得
+   */
+  async listWithSort(sortType: FeedSortType): Promise<Feed[]> {
+    const db = openDatabase();
+    
+    let orderBy = 'created_at DESC';
+    switch (sortType) {
+      case 'created_at_desc':
+        orderBy = 'created_at DESC';
+        break;
+      case 'created_at_asc':
+        orderBy = 'created_at ASC';
+        break;
+      case 'title_asc':
+        orderBy = 'title COLLATE NOCASE ASC';
+        break;
+      case 'title_desc':
+        orderBy = 'title COLLATE NOCASE DESC';
+        break;
+      case 'url_asc':
+        orderBy = 'url ASC';
+        break;
+      case 'url_desc':
+        orderBy = 'url DESC';
+        break;
+    }
+
+    const rows = db.getAllSync<{
+      id: string;
+      title: string;
+      url: string;
+      icon_url: string | null;
+      order_no: number;
+      created_at: number;
+    }>(`SELECT * FROM feeds ORDER BY ${orderBy}`);
+
+    return rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      url: row.url,
+      iconUrl: row.icon_url || undefined,
+      orderNo: row.order_no,
+      createdAt: new Date(row.created_at * 1000).toISOString(),
+    }));
   },
 
   /**

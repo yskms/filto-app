@@ -143,6 +143,50 @@ await FeedService.reorder(reorderedFeeds);
 
 ---
 
+### listWithSort(sortType: FeedSortType): Promise<Feed[]>
+
+ソート順を指定してフィードを取得する。
+
+**パラメータ:**
+- `sortType`: ソートタイプ（`FeedSortType`）
+
+**FeedSortType:**
+```typescript
+type FeedSortType = 
+  | 'created_at_desc'  // 作成日時（新しい順）
+  | 'created_at_asc'   // 作成日時（古い順）
+  | 'title_asc'        // フィード名（昇順）
+  | 'title_desc'       // フィード名（降順）
+  | 'url_asc'          // URL（昇順）
+  | 'url_desc';        // URL（降順）
+```
+
+**戻り値:**
+- `Promise<Feed[]>`: ソート済みフィードの配列
+
+**処理:**
+```typescript
+FeedRepository.listWithSort(sortType)を呼び出すだけ
+```
+
+**使用例:**
+```typescript
+// 作成日時が新しい順（デフォルト）
+const feeds = await FeedService.listWithSort('created_at_desc');
+
+// フィード名のアルファベット順
+const feeds = await FeedService.listWithSort('title_asc');
+```
+
+**UI連携:**
+- Feeds画面の🔄ボタンでソートモーダル表示
+- ユーザーがソートオプションを選択
+- `currentSort` Stateが更新される
+- `listWithSort(currentSort)`で再取得
+- フィード一覧が自動的に再ソート
+
+---
+
 ### count(): Promise<number>
 
 フィード数を取得する。

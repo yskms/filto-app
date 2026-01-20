@@ -249,6 +249,66 @@ await FeedRepository.bulkUpdateOrder(reorderedFeeds);
 
 ---
 
+### listWithSort(sortType: FeedSortType): Promise<Feed[]>
+
+ソート順を指定してフィードを取得する。
+
+**パラメータ:**
+- `sortType`: ソートタイプ（`FeedSortType`）
+
+**FeedSortType:**
+```typescript
+type FeedSortType = 
+  | 'created_at_desc'  // 作成日時（新しい順）
+  | 'created_at_asc'   // 作成日時（古い順）
+  | 'title_asc'        // フィード名（昇順）
+  | 'title_desc'       // フィード名（降順）
+  | 'url_asc'          // URL（昇順）
+  | 'url_desc';        // URL（降順）
+```
+
+**SQL ORDER BY:**
+| sortType | ORDER BY |
+|----------|----------|
+| `created_at_desc` | `created_at DESC` |
+| `created_at_asc` | `created_at ASC` |
+| `title_asc` | `title COLLATE NOCASE ASC` |
+| `title_desc` | `title COLLATE NOCASE DESC` |
+| `url_asc` | `url ASC` |
+| `url_desc` | `url DESC` |
+
+**実装:**
+```typescript
+async listWithSort(sortType: FeedSortType): Promise<Feed[]> {
+  let orderBy = 'created_at DESC';
+  switch (sortType) {
+    case 'created_at_desc': orderBy = 'created_at DESC'; break;
+    case 'created_at_asc': orderBy = 'created_at ASC'; break;
+    case 'title_asc': orderBy = 'title COLLATE NOCASE ASC'; break;
+    case 'title_desc': orderBy = 'title COLLATE NOCASE DESC'; break;
+    case 'url_asc': orderBy = 'url ASC'; break;
+    case 'url_desc': orderBy = 'url DESC'; break;
+  }
+  const rows = db.getAllSync(`SELECT * FROM feeds ORDER BY ${orderBy}`);
+  return rows.map(/* 型変換 */);
+}
+```
+
+**COLLATE NOCASE:**
+- タイトルのソートでは大文字小文字を区別しない
+- SQLiteの`COLLATE NOCASE`を使用
+
+**使用例:**
+```typescript
+// 作成日時が新しい順
+const feeds = await FeedRepository.listWithSort('created_at_desc');
+
+// フィード名のアルファベット順
+const feeds = await FeedRepository.listWithSort('title_asc');
+```
+
+---
+
 ### count(): Promise<number>
 
 フィード数を取得する。

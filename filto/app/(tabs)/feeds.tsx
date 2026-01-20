@@ -17,13 +17,15 @@ import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSw
 import Reanimated from 'react-native-reanimated';
 import { Feed } from '@/types/Feed';
 import { FeedService } from '@/services/FeedService';
+import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
 
 // FeedsHeader（通常モード）
 const FeedsHeader: React.FC<{
   onPressBack: () => void;
+  onPressSort: () => void;
   onPressDelete: () => void;
   onPressAdd: () => void;
-}> = ({ onPressBack, onPressDelete, onPressAdd }) => {
+}> = ({ onPressBack, onPressSort, onPressDelete, onPressAdd }) => {
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -36,6 +38,13 @@ const FeedsHeader: React.FC<{
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Feeds</Text>
       <View style={styles.headerButtons}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={onPressSort}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.sortIcon}>🔄</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressDelete}
@@ -188,6 +197,8 @@ export default function FeedsScreen() {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const [sortModalVisible, setSortModalVisible] = useState(false);
+  const [currentSort, setCurrentSort] = useState<FeedSortType>('created_at_desc');
 
   // 各フィードのSwipeable refを管理
   const swipeableRefs = useRef<Map<string, React.RefObject<SwipeableMethods | null>>>(new Map());
@@ -198,12 +209,12 @@ export default function FeedsScreen() {
   // フィードを読み込む
   const loadFeeds = React.useCallback(async () => {
     try {
-      const feedList = await FeedService.list();
+      const feedList = await FeedService.listWithSort(currentSort);
       setFeeds(feedList);
     } catch (error) {
       console.error('Failed to load feeds:', error);
     }
-  }, []);
+  }, [currentSort]);
 
   // Swipeable refを取得または作成
   const getSwipeableRef = React.useCallback((feedId: string) => {
@@ -248,11 +259,28 @@ export default function FeedsScreen() {
     }, [isDeleteMode, loadFeeds])
   );
 
+  // currentSort が変更されたときにフィルタを再読み込み
+  React.useEffect(() => {
+    loadFeeds();
+  }, [currentSort, loadFeeds]);
+
   const handlePressBack = () => {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
     setOpenSwipeId(null);
     router.push('/(tabs)/settings');
+  };
+
+  const handlePressSortButton = () => {
+    closeOpenSwipe();
+    openSwipeIdRef.current = null;
+    setOpenSwipeId(null);
+    setSortModalVisible(true);
+  };
+
+  const handleSelectSort = (sortType: FeedSortType) => {
+    setCurrentSort(sortType);
+    setSortModalVisible(false);
   };
 
   const handlePressDelete = () => {
@@ -379,6 +407,7 @@ export default function FeedsScreen() {
         ) : (
           <FeedsHeader
             onPressBack={handlePressBack}
+            onPressSort={handlePressSortButton}
             onPressDelete={handlePressDelete}
             onPressAdd={handlePressAdd}
           />
@@ -414,6 +443,13 @@ export default function FeedsScreen() {
               </Text>
             </View>
           }
+        />
+
+        <FeedSortModal
+          visible={sortModalVisible}
+          currentSort={currentSort}
+          onClose={() => setSortModalVisible(false)}
+          onSelectSort={handleSelectSort}
         />
       </SafeAreaView>
     </>
@@ -457,6 +493,9 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 8,
+  },
+  sortIcon: {
+    fontSize: 20,
   },
   deleteIcon: {
     fontSize: 20,
