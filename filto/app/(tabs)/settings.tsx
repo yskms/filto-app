@@ -11,6 +11,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { id: 'feeds', title: 'Feeds' },
+  { id: 'global_allow_keywords', title: 'Global Allow Keywords' },
   { id: 'preferences', title: 'Preferences' },
   { id: 'pro', title: 'Pro', disabled: true },
 ];
@@ -50,8 +51,10 @@ export default function SettingsScreen() {
   const handlePressMenuItem = React.useCallback((itemId: string) => {
     switch (itemId) {
       case 'feeds':
-        // console.log('go to feeds');
         router.push('/(tabs)/feeds');
+        break;
+      case 'global_allow_keywords':
+        router.push('/global_allow_keywords');
         break;
       case 'preferences':
         console.log('go to preferences');

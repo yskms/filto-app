@@ -101,4 +101,17 @@ export async function initDatabase(): Promise<void> {
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_articles_is_read ON articles(is_read);
   `);
+
+  // global_allow_keywords テーブル作成
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS global_allow_keywords (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      keyword     TEXT NOT NULL UNIQUE,
+      created_at  INTEGER NOT NULL
+    );
+  `);
+
+  database.execSync(`
+    CREATE INDEX IF NOT EXISTS idx_global_allow_keyword ON global_allow_keywords(keyword);
+  `);
 }
