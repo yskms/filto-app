@@ -51,7 +51,7 @@ export default function SettingsScreen() {
     switch (itemId) {
       case 'feeds':
         // console.log('go to feeds');
-        router.push('/feeds');
+        router.push('/(tabs)/feeds');
         break;
       case 'preferences':
         console.log('go to preferences');

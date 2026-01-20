@@ -252,7 +252,7 @@ export default function FeedsScreen() {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
     setOpenSwipeId(null);
-    router.back();
+    router.push('/(tabs)/settings');
   };
 
   const handlePressDelete = () => {

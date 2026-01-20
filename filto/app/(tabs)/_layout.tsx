@@ -37,6 +37,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="feeds"
+        options={{
+          href: null,  // タブバーには表示しない
+        }}
+      />
     </Tabs>
   );
 }

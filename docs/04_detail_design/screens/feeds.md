@@ -3,17 +3,26 @@
 ## 概要
 登録済みRSSフィードの一覧・並び替え・削除を行う画面。
 
+## 画面配置
+- **パス**: `app/(tabs)/feeds.tsx`
+- **タブグループ**: タブグループ内（ボトムタブ表示あり）
+- **タブバー表示**: なし（`href: null`）
+- **ボトムタブ**: 表示される（Home / Filters / Settings の3タブ）
+
+**注意**: Feeds画面はタブグループ内にあるため、画面下部にボトムタブが表示される。ただし、タブバー自体には表示されない（3タブのまま）。これにより、Feeds画面からも他の主要画面（Home、Filters、Settings）に簡単に遷移できる。
+
 ## UI構成
 
 ### 通常モード
 - ヘッダー
-  - 左：←ボタン（戻る）
+  - 左：←ボタン（戻る → Settingsに遷移）
   - 中央：Feeds
   - 右：🗑アイコン（削除モード切替）
 - フィードリスト
   - 左：☰ドラッグハンドル
   - 中：アイコン + フィード名 + URL
 - 右下：＋ボタン（追加）
+- **下部：ボトムタブバー**（Home / Filters / Settings）
 
 ### 削除モード
 - ヘッダー（切り替わる）
@@ -26,6 +35,7 @@
   - ドラッグ無効
   - スワイプ無効
 - 右下：＋ボタン（表示維持、操作は可能）
+- **下部：ボトムタブバー**（Home / Filters / Settings）
 
 ## 表示仕様
 - 並び順：feeds.order_no ASC
@@ -97,5 +107,17 @@
 - FeedService.delete(ids: number[])  // 一括削除
 
 ## 遷移
-- → FeedAdd
-- ← Settings
+
+### ヘッダーからの遷移
+- **＋ボタン** → FeedAdd
+- **←ボタン** → Settings（常にSettingsに遷移）
+
+### ボトムタブからの遷移
+- **Homeタブ** → Home画面
+- **Filtersタブ** → Filters画面
+- **Settingsタブ** → Settings画面
+
+**実装パス**:
+- Feeds: `app/(tabs)/feeds.tsx`
+- Settings: `app/(tabs)/settings.tsx`
+- FeedAdd: `app/feed_add.tsx`（タブグループ外）
