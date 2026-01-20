@@ -107,21 +107,54 @@ export default function FeedAddScreen() {
     setIsLoadingMeta(true);
 
     try {
-      // RSSメタデータを取得
-      const meta = await RssService.fetchMeta(url.trim());
+      // 1. まず入力されたURLで試す
+      try {
+        console.log('[FeedAdd] Trying direct URL:', url.trim());
+        const meta = await RssService.fetchMeta(url.trim());
+        
+        // タイトルとアイコンURLを自動入力
+        setName(meta.title);
+        setIconUrl(meta.iconUrl);
+        
+        console.log('[FeedAdd] Fetched meta:', { title: meta.title, iconUrl: meta.iconUrl });
+        
+        Alert.alert('成功', 'フィード情報を取得しました');
+        return;
+      } catch (firstError) {
+        console.log('[FeedAdd] Direct fetch failed, trying auto-detection...');
+      }
       
-      // タイトルとアイコンURLを自動入力
-      setName(meta.title);
-      setIconUrl(meta.iconUrl);
+      // 2. 失敗したら自動検出を試みる
+      const detectedUrl = await FeedService.detectRssUrl(url.trim());
       
-      console.log('[FeedAdd] Fetched meta:', { title: meta.title, iconUrl: meta.iconUrl });
-      
-      Alert.alert('成功', 'フィード情報を取得しました');
+      if (detectedUrl) {
+        // 検出成功：メタデータを取得
+        const meta = await RssService.fetchMeta(detectedUrl);
+        
+        // URLを自動更新
+        setUrl(detectedUrl);
+        setName(meta.title);
+        setIconUrl(meta.iconUrl);
+        
+        console.log('[FeedAdd] Auto-detected RSS:', { url: detectedUrl, title: meta.title });
+        
+        Alert.alert(
+          '成功', 
+          `RSSフィードを自動検出しました\n\n${detectedUrl}`
+        );
+      } else {
+        // すべて失敗
+        console.error('[FeedAdd] RSS auto-detection failed');
+        Alert.alert(
+          'エラー',
+          'RSSフィードが見つかりませんでした。\n正しいRSS URLを入力してください。'
+        );
+      }
     } catch (error) {
-      console.error('Failed to fetch RSS meta:', error);
+      console.error('[FeedAdd] Failed to fetch RSS meta:', error);
       Alert.alert(
         'エラー',
-        'フィード情報の取得に失敗しました。手動でタイトルを入力してください。'
+        'フィード情報の取得に失敗しました。\n手動でタイトルを入力してください。'
       );
     } finally {
       setIsLoadingMeta(false);

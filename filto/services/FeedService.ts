@@ -1,5 +1,6 @@
 import { FeedRepository } from '@/repositories/FeedRepository';
 import { Feed } from '@/types/Feed';
+import { RssService } from '@/services/RssService';
 
 /**
  * FeedService
@@ -77,6 +78,47 @@ export const FeedService = {
    */
   async count(): Promise<number> {
     return await FeedRepository.count();
+  },
+
+  /**
+   * RSS URLを自動検出
+   * @param baseUrl ベースURL（例: https://example.com）
+   * @returns 検出されたRSS URL、見つからない場合はnull
+   */
+  async detectRssUrl(baseUrl: string): Promise<string | null> {
+    // 一般的なRSSパス（優先度順）
+    const commonPaths = [
+      '/feed',
+      '/feed.xml',
+      '/rss',
+      '/rss.xml',
+      '/atom.xml',
+      '/index.xml',
+      '/feeds',
+      '/feeds/posts/default',
+    ];
+
+    console.log(`[FeedService] Starting RSS auto-detection for: ${baseUrl}`);
+
+    for (const path of commonPaths) {
+      try {
+        const testUrl = new URL(path, baseUrl).href;
+        console.log(`[FeedService] Trying: ${testUrl}`);
+        
+        // RSSメタデータが取得できるか確認
+        await RssService.fetchMeta(testUrl);
+        
+        console.log(`[FeedService] ✅ Found RSS at: ${testUrl}`);
+        return testUrl;
+      } catch (error) {
+        // 失敗したら次を試す
+        console.log(`[FeedService] ❌ Failed: ${path}`);
+        continue;
+      }
+    }
+
+    console.log(`[FeedService] RSS auto-detection failed for: ${baseUrl}`);
+    return null;
   },
 };
 
