@@ -94,10 +94,32 @@ interface Feed {
 4. 記事を再フィルタリング
 ```
 
-### 更新
+### 起動時自動更新
+```
+1. アプリ起動時に自動的に実行
+2. Preferencesの設定を確認（デフォルト: ON）
+3. SyncService.shouldSync()で同期が必要かチェック（30分以上経過時のみ）
+4. 必要な場合のみバックグラウンドで同期実行
+5. 同期完了後、データを再読み込み
+```
+
+**動作詳細:**
+- 画面表示から1.5秒後に実行（画面表示を優先）
+- 一度だけ実行（`hasAutoSynced`フラグで制御）
+- エラーが発生してもアプリは正常に動作
+
+**ログ出力例:**
+```
+[AutoSync] Starting background sync...
+[SyncService] Start syncing 3 feeds...
+[SyncService] Sync completed: 3/3 feeds, 5 new articles
+[AutoSync] Completed
+```
+
+### 手動更新
 ```
 1. 更新アイコンタップ or Pull to Refresh
-2. (将来) RSS再取得
+2. RSS再取得
 3. フィルタを再読み込み
 4. 記事リストを更新
 ```

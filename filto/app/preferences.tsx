@@ -11,6 +11,7 @@ export type ReadDisplayMode = 'dim' | 'hide';
 
 // 設定のストレージキー
 const STORAGE_KEY_READ_DISPLAY = '@filto/preferences/readDisplay';
+const STORAGE_KEY_AUTO_SYNC_ON_STARTUP = '@filto/preferences/autoSyncOnStartup';
 
 // ヘッダーコンポーネント
 const PreferencesHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
@@ -62,6 +63,7 @@ const SelectButton: React.FC<{
 export default function PreferencesScreen() {
   const router = useRouter();
   const [readDisplay, setReadDisplay] = useState<ReadDisplayMode>('dim');
+  const [autoSyncOnStartup, setAutoSyncOnStartup] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   // 設定を読み込む
@@ -71,6 +73,11 @@ export default function PreferencesScreen() {
       const savedReadDisplay = await AsyncStorage.getItem(STORAGE_KEY_READ_DISPLAY);
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
         setReadDisplay(savedReadDisplay);
+      }
+
+      const savedAutoSync = await AsyncStorage.getItem(STORAGE_KEY_AUTO_SYNC_ON_STARTUP);
+      if (savedAutoSync !== null) {
+        setAutoSyncOnStartup(savedAutoSync === 'true');
       }
     } catch (error) {
       console.error('Failed to load preferences:', error);
@@ -102,12 +109,42 @@ export default function PreferencesScreen() {
     }
   };
 
+  // 起動時自動更新を変更
+  const handleToggleAutoSync = async () => {
+    try {
+      const newValue = !autoSyncOnStartup;
+      setAutoSyncOnStartup(newValue);
+      await AsyncStorage.setItem(STORAGE_KEY_AUTO_SYNC_ON_STARTUP, newValue.toString());
+    } catch (error) {
+      console.error('Failed to save auto sync setting:', error);
+      Alert.alert('エラー', '設定の保存に失敗しました');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       <PreferencesHeader onPressBack={handlePressBack} />
 
       <View style={styles.content}>
+        <SettingSection title="起動時に更新">
+          <TouchableOpacity
+            style={styles.toggleRow}
+            onPress={handleToggleAutoSync}
+            activeOpacity={0.7}
+          >
+            <View style={styles.toggleLabel}>
+              {/* <Text style={styles.toggleTitle}>自動でRSSを取得</Text> */}
+              <Text style={styles.toggleDescription}>
+                アプリ起動時に自動的にRSSフィードを更新します（30分以上経過時のみ）
+              </Text>
+            </View>
+            <View style={[styles.toggle, autoSyncOnStartup && styles.toggleActive]}>
+              <View style={[styles.toggleThumb, autoSyncOnStartup && styles.toggleThumbActive]} />
+            </View>
+          </TouchableOpacity>
+        </SettingSection>
+
         <SettingSection title="既読の表示方法">
           <View style={styles.buttonGroup}>
             <SelectButton
@@ -205,6 +242,46 @@ const styles = StyleSheet.create({
   selectButtonTextActive: {
     color: '#1976d2',
     fontWeight: '600',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  toggleLabel: {
+    flex: 1,
+    marginRight: 12,
+  },
+  toggleTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000',
+    marginBottom: 4,
+  },
+  toggleDescription: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
+  },
+  toggle: {
+    width: 50,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#ccc',
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleActive: {
+    backgroundColor: '#1976d2',
+  },
+  toggleThumb: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#fff',
+  },
+  toggleThumbActive: {
+    alignSelf: 'flex-end',
   },
   comingSoonSection: {
     marginTop: 40,

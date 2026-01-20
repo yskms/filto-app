@@ -54,14 +54,14 @@
 - [x] FilterEngine実装
 - [x] SQLite設計・CRUD（残りのテーブル）
 - [x] RSS取得・パーサ
-追加実装した内容:
-✅ ArticleRepository（記事データのDB操作）
-✅ FeedRepository（フィードデータのDB操作）
-✅ ArticleService（記事のビジネスロジック）
-✅ FeedService（RSS自動検出機能付き）
-✅ RssService（RSS 1.0/2.0/Atom対応、文字エンコーディング自動検出）
-✅ SyncService（RSS同期処理）
-✅ 全Service・Repositoryのドキュメント作成
+**追加実装した内容:**
+- ✅ ArticleRepository（記事データのDB操作）
+- ✅ FeedRepository（フィードデータのDB操作）
+- ✅ ArticleService（記事のビジネスロジック）
+- ✅ FeedService（RSS自動検出機能付き）
+- ✅ RssService（RSS 1.0/2.0/Atom対応、文字エンコーディング自動検出）
+- ✅ SyncService（RSS同期処理）
+- ✅ 全Service・Repositoryのドキュメント作成
 
 **実装中・今後**:
 - [ ] テーマ対応（基礎：Context + 色定義）
@@ -80,6 +80,7 @@
   - RSS取得の実装にかなり工数がかかった。実際のデータは想像以上に多種多様だった。。
 - **改善**: 
   - ドキュメントに大幅な刷新が出ている。後半になってからブレないように早めに詰めておく必要がある
+  - ボトムタブにFeedsを含めるか否かの検討を行う必要がある
 ---
 
 ## フェーズ2：主要機能UI実装（2月）
@@ -89,10 +90,15 @@
 - [x] フィード切替モーダル（FeedSelectModal）
 - [x] 既読管理（markRead実装済み）
 - [x] 手動更新（Pull to Refresh）
-- [ ] 起動時自動更新
+- [x] 起動時自動更新（動作確認はフェーズ3で行う）
+  - Preferencesで設定ON/OFF
+  - 最終同期時刻の記録（SyncService）
+  - 30分以内は同期スキップ
+  - バックグラウンド実行（画面表示を妨げない）
 - [x] Settings画面
 - [x] Preferences実装（Phase 1完了）
   - 既読の表示方法設定（dim / hide）
+  - 起動時自動更新設定（ON / OFF）
   - AsyncStorageでの永続化
   - Home画面との連携
 - [x] グローバル許可キーワード画面実装
@@ -108,7 +114,7 @@
 → 自分が毎日使える状態
 
 **進捗**:
-- 完了: 10/12タスク（83%）
+- 完了: 11/12タスク（92%）
 
 ---
 
@@ -125,10 +131,12 @@
 - [ ] バグ修正・動作確認
 - [ ] パフォーマンス調整
 - [ ] 多言語対応（ja / en）
+- [ ] 起動時自動更新の動作確認
 - [ ] バグ修正・動作確認
 
 **ゴール：普段使いできる品質**
 → 快適に使える状態
+- ボトムタブにFeedsを含めるか否かの検討を行う必要がある
 
 ---
 

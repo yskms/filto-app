@@ -11,6 +11,8 @@ RSSフィードの同期処理を担当するサービス。
 - フィード単位のエラーハンドリング
 - 多重実行防止
 - 同期結果のレポート
+- 最終同期時刻の記録と管理
+- 起動時自動更新のサポート
 
 ## メソッド仕様
 
@@ -36,7 +38,8 @@ RSSフィードの同期処理を担当するサービス。
    c. ArticleService.saveArticles()で保存（重複チェック込み）
    d. 保存後の記事数を取得
    e. 新規記事数を計算
-4. 同期結果を返す
+4. 最終同期時刻をAsyncStorageに保存
+5. 同期結果を返す
 ```
 
 **シーケンス図:**
@@ -86,6 +89,66 @@ console.log(`${result.fetched}件のフィードから${result.newArticles}件�
 [SyncService] Fetched 20 articles from 総務省
 [SyncService] Saved 20 new articles for 総務省
 [SyncService] Sync completed: 3/3 feeds, 95 new articles
+```
+
+---
+
+### shouldSync(minIntervalMs?: number): Promise<boolean>
+
+同期が必要かどうかをチェックする。起動時自動更新で使用。
+
+**引数:**
+- `minIntervalMs` (optional): 最小同期間隔（ミリ秒）、デフォルト: 30分（1800000ms）
+
+**戻り値:**
+- `true`: 同期が必要（初回 or 指定時間以上経過）
+- `false`: 最近同期済み
+
+**処理フロー:**
+```
+1. AsyncStorageから最終同期時刻を取得
+2. 最終同期時刻がない場合 → true（初回）
+3. 経過時間を計算
+4. 経過時間 >= minIntervalMs → true（同期が必要）
+5. 経過時間 < minIntervalMs → false（最近同期済み）
+```
+
+**使用例:**
+```typescript
+// 起動時自動更新（30分以上経過時のみ同期）
+const shouldSync = await SyncService.shouldSync();
+if (shouldSync) {
+  await SyncService.refresh();
+}
+
+// カスタム間隔（10分）
+const shouldSync = await SyncService.shouldSync(10 * 60 * 1000);
+```
+
+**ログ出力例:**
+```
+[SyncService] No sync history, should sync
+[SyncService] 45 minutes since last sync, should sync
+[SyncService] Only 15 minutes since last sync, skipping
+```
+
+---
+
+### getLastSyncTime(): Promise<number | null>
+
+最終同期時刻を取得する。
+
+**戻り値:**
+- 最終同期時刻（UnixTime: ミリ秒）
+- 同期履歴がない場合は `null`
+
+**使用例:**
+```typescript
+const lastSyncTime = await SyncService.getLastSyncTime();
+if (lastSyncTime) {
+  const elapsed = Date.now() - lastSyncTime;
+  console.log(`前回の同期から ${Math.floor(elapsed / 60000)} 分経過`);
+}
 ```
 
 ---

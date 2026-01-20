@@ -131,15 +131,18 @@
     const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
     const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
     
-    // Preferences
+  // Preferences
     const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
+    
+    // 起動時自動同期の実行済みフラグ
+    const [hasAutoSynced, setHasAutoSynced] = React.useState(false);
 
-    // 選択中のフィード名を取得
-    const selectedFeedName = React.useMemo(() => {
-      if (selectedFeedId === null) return 'ALL';
-      const feed = feeds.find(f => f.id === selectedFeedId);
-      return feed?.title || 'ALL';
-    }, [selectedFeedId, feeds]);
+  // 選択中のフィード名を取得
+  const selectedFeedName = React.useMemo(() => {
+    if (selectedFeedId === null) return 'ALL';
+    const feed = feeds.find(f => f.id === selectedFeedId);
+    return feed?.title || 'ALL';
+  }, [selectedFeedId, feeds]);
 
     // データを読み込む
     const loadData = React.useCallback(async () => {
@@ -175,15 +178,64 @@
       }
     }, [selectedFeedId]);
 
-    // 画面フォーカス時にデータを読み込む
-    useFocusEffect(
-      React.useCallback(() => {
-        loadData();
-      }, [loadData])
-    );
+  // 画面フォーカス時にデータを読み込む
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
-    // フィルタ適用
-    React.useEffect(() => {
+  // 起動時自動同期（一度だけ実行）
+  React.useEffect(() => {
+    const autoSync = async () => {
+      if (hasAutoSynced) {
+        console.log('[AutoSync] Already synced, skipping');
+        return;
+      }
+
+      try {
+        // 設定を確認
+        const autoSyncEnabled = await AsyncStorage.getItem('@filto/preferences/autoSyncOnStartup');
+        if (autoSyncEnabled === 'false') {
+          console.log('[AutoSync] Auto sync is disabled');
+          setHasAutoSynced(true); // 無効の場合も実行済みフラグを立てる
+          return;
+        }
+
+        // 同期が必要かチェック（30分以上経過時のみ）
+        const shouldSync = await SyncService.shouldSync();
+        if (!shouldSync) {
+          console.log('[AutoSync] Recently synced, skipping');
+          setHasAutoSynced(true);
+          return;
+        }
+
+        // バックグラウンドで同期実行
+        console.log('[AutoSync] Starting background sync...');
+        await SyncService.refresh();
+        console.log('[AutoSync] Completed');
+        
+        // データを再読み込み
+        await loadData();
+        
+        setHasAutoSynced(true);
+      } catch (error) {
+        console.error('[AutoSync] Failed:', error);
+        // エラーでもアプリは正常に動作
+        setHasAutoSynced(true);
+      }
+    };
+
+    // 少し遅延させて、画面表示を優先
+    const timer = setTimeout(() => {
+      autoSync();
+    }, 1500); // 1.5秒後に開始
+
+    return () => clearTimeout(timer);
+  }, [hasAutoSynced, loadData]); // hasAutoSyncedを依存配列に追加
+
+  // フィルタ適用
+  React.useEffect(() => {
       // フィードでフィルタリング
       let filtered = articles;
       if (selectedFeedId !== null) {
