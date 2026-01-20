@@ -523,14 +523,22 @@ function extractImageUrl(html: string | undefined): string | undefined {
 /**
  * サイト固有のサムネイルURL生成
  * 一部のサイトはRSSに画像を含めないため、URLから推測
+ * 
+ * 使い方: USE_SITE_SPECIFIC_THUMBNAILS を true に変更すると有効化されます
  */
 function generateThumbnailFromUrl(link: string): string | undefined {
+  // フラグで制御: true にするとサイト固有のサムネイルを使用
+  const USE_SITE_SPECIFIC_THUMBNAILS = false;
+  
+  if (!USE_SITE_SPECIFIC_THUMBNAILS) {
+    return undefined;
+  }
+  
   try {
     const url = new URL(link);
     
     // Qiita: OGP画像風のサムネイルを使用
     if (url.hostname === 'qiita.com') {
-      // 記事IDを抽出
       const match = link.match(/\/items\/([a-f0-9]+)/);
       if (match) {
         // Qiitaのデフォルト記事画像を使用（ファビコンより大きい）
@@ -541,9 +549,13 @@ function generateThumbnailFromUrl(link: string): string | undefined {
     // 総務省: 政府系サイトのロゴ画像を使用
     if (url.hostname === 'www.soumu.go.jp') {
       // 総務省のロゴ画像（公式サイトより）
-      // return `https://www.soumu.go.jp/common/image/soumu_logo.png`;
       return `https://www.soumu.go.jp/main_content/000269738.jpg`;
     }
+    
+    // 他のサイトを追加する場合はここに記述
+    // if (url.hostname === 'example.com') {
+    //   return `https://example.com/default-image.jpg`;
+    // }
     
     return undefined;
   } catch (e) {
