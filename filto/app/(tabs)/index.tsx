@@ -21,6 +21,8 @@
   import { FeedService } from '@/services/FeedService';
   import { ArticleService } from '@/services/ArticleService';
   import { SyncService } from '@/services/SyncService';
+  import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
+  import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 
   // 経過時間を計算
   const getTimeAgo = (publishedAt: string): string => {
@@ -124,6 +126,7 @@
     
     // フィルタ関連
     const [filters, setFilters] = React.useState<Filter[]>([]);
+    const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
     const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
 
     // 選択中のフィード名を取得
@@ -149,6 +152,10 @@
         // フィルタ一覧を取得
         const filterList = await FilterService.list();
         setFilters(filterList);
+        
+        // グローバル許可キーワード一覧を取得
+        const globalAllowList = await GlobalAllowKeywordService.list();
+        setGlobalAllowKeywords(globalAllowList);
       } catch (error) {
         console.error('Failed to load data:', error);
         Alert.alert('エラー', 'データの読み込みに失敗しました');
@@ -172,15 +179,17 @@
         filtered = articles.filter(a => a.feedId === selectedFeedId);
       }
 
+      // グローバル許可キーワードを文字列配列に変換
+      const allowKeywords = globalAllowKeywords.map(k => k.keyword);
+      
       // フィルタエンジンで評価
-      const globalAllowKeywords: string[] = []; // TODO: グローバル許可リスト
       const displayed = filtered.filter(article => {
-        const shouldBlock = FilterEngine.evaluate(article, filters, globalAllowKeywords);
+        const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
         return !shouldBlock; // ブロックされない記事のみ表示
       });
 
       setFilteredArticles(displayed);
-    }, [articles, selectedFeedId, filters]);
+    }, [articles, selectedFeedId, filters, globalAllowKeywords]);
 
     const handleRefresh = React.useCallback(async () => {
       try {

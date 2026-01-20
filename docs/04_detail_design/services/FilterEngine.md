@@ -446,11 +446,45 @@ return totalScore >= BLOCK_THRESHOLD;
 ## 使用箇所
 
 ### 現在
-- テスト画面（`app/test_filter_engine.tsx`）
+- **Home画面**（`app/(tabs)/index.tsx`）
+  - 記事一覧表示時にフィルタ適用
+  - グローバル許可キーワードと連携
+- **テスト画面**（`app/test_filter_engine.tsx`）
 
-### 将来
-- ArticleService（記事一覧取得時にフィルタ適用）
-- Home画面（フィルタ済み記事の表示）
+### Home画面での使用例
+```typescript
+// Home画面でのフィルタ適用
+useEffect(() => {
+  // グローバル許可キーワードを文字列配列に変換
+  const allowKeywords = globalAllowKeywords.map(k => k.keyword);
+  
+  // フィルタエンジンで評価
+  const displayed = articles.filter(article => {
+    const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
+    return !shouldBlock; // ブロックされない記事のみ表示
+  });
+
+  setFilteredArticles(displayed);
+}, [articles, filters, globalAllowKeywords]);
+```
+
+### グローバル許可キーワードとの連携フロー
+```
+1. Home画面読み込み
+   ↓
+2. GlobalAllowKeywordService.list() でキーワード取得
+   ↓
+3. State: globalAllowKeywords に保存
+   ↓
+4. useEffect（フィルタ適用）
+   ↓
+5. キーワード配列を文字列配列に変換
+   allowKeywords = globalAllowKeywords.map(k => k.keyword)
+   ↓
+6. FilterEngine.evaluate(article, filters, allowKeywords)
+   ↓
+7. 結果に基づいて記事を表示/非表示
+```
 
 ---
 

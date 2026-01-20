@@ -155,52 +155,126 @@ if (readDisplay === 'hide') {
 - feeds テーブル
 - settings テーブル
 - filters テーブル
+- global_allow_keywords テーブル
 
 ---
 
 ## 使用API / Service
-- **ArticleService.getArticles(feedId?)** - 記事一覧取得（将来）
-- **FilterService.list()** - フィルタ一覧取得
-- **FilterEngine.evaluate()** - フィルタ評価
-- **SyncService.refresh()** - RSS再取得（将来）
+- **ArticleService.getArticles(feedId?)** - 記事一覧取得 ✅
+- **FeedService.list()** - フィード一覧取得 ✅
+- **FilterService.list()** - フィルタ一覧取得 ✅
+- **GlobalAllowKeywordService.list()** - グローバル許可キーワード一覧取得 ✅
+- **FilterEngine.evaluate()** - フィルタ評価 ✅
+- **SyncService.refresh()** - RSS再取得 ✅
 
 ---
 
 ## 実装例
 
-### 基本構造
+### 基本構造（実装済み）
 ```typescript
 export default function HomeScreen() {
-  const [articles] = React.useState<Article[]>(dummyArticles);
-  const [feeds] = React.useState<Feed[]>(dummyFeeds);
+  const [articles, setArticles] = React.useState<Article[]>([]);
+  const [feeds, setFeeds] = React.useState<Feed[]>([]);
   const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null);
   const [filters, setFilters] = React.useState<Filter[]>([]);
+  const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
   const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  // フィルタ読み込み
+  // データ読み込み
+  const loadData = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // フィード一覧を取得
+      const feedList = await FeedService.list();
+      setFeeds(feedList);
+      
+      // 記事一覧を取得
+      const articleList = await ArticleService.getArticles(selectedFeedId ?? undefined);
+      setArticles(articleList);
+      
+      // フィルタ一覧を取得
+      const filterList = await FilterService.list();
+      setFilters(filterList);
+      
+      // グローバル許可キーワード一覧を取得
+      const globalAllowList = await GlobalAllowKeywordService.list();
+      setGlobalAllowKeywords(globalAllowList);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      Alert.alert('エラー', 'データの読み込みに失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedFeedId]);
+
+  // 画面フォーカス時にデータを読み込む
   useFocusEffect(
     React.useCallback(() => {
-      loadFilters();
-    }, [loadFilters])
+      loadData();
+    }, [loadData])
   );
 
   // フィルタ適用
   React.useEffect(() => {
+    // フィードでフィルタリング
     let filtered = articles;
-    
-    // フィード別
     if (selectedFeedId !== null) {
       filtered = articles.filter(a => a.feedId === selectedFeedId);
     }
 
+    // グローバル許可キーワードを文字列配列に変換
+    const allowKeywords = globalAllowKeywords.map(k => k.keyword);
+    
     // FilterEngine評価
     const displayed = filtered.filter(article => {
-      const shouldBlock = FilterEngine.evaluate(article, filters, []);
-      return !shouldBlock;
+      const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
+      return !shouldBlock; // ブロックされない記事のみ表示
     });
 
     setFilteredArticles(displayed);
-  }, [articles, selectedFeedId, filters]);
+  }, [articles, selectedFeedId, filters, globalAllowKeywords]);
+
+  // RSS同期
+  const handleRefresh = React.useCallback(async () => {
+    try {
+      setRefreshing(true);
+      
+      // RSS同期を実行
+      const result = await SyncService.refresh();
+      console.log(`Sync completed: ${result.fetched} feeds, ${result.newArticles} new articles`);
+      
+      // データを再読み込み
+      await loadData();
+    } catch (error) {
+      console.error('Failed to refresh:', error);
+      Alert.alert('エラー', '更新に失敗しました');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadData]);
+
+  // 記事タップ
+  const handlePressArticle = React.useCallback(async (article: Article) => {
+    try {
+      // 記事を既読にする
+      await ArticleService.markRead(article.id);
+      
+      // ローカルの状態も更新
+      setArticles(prev => 
+        prev.map(a => a.id === article.id ? { ...a, isRead: true } : a)
+      );
+      
+      // ブラウザで開く
+      await Linking.openURL(article.link);
+    } catch (error) {
+      console.error('Failed to open article:', error);
+      Alert.alert('エラー', '記事を開けませんでした');
+    }
+  }, []);
 
   // ...
 }
@@ -227,35 +301,125 @@ HomeScreen
 
 ---
 
-## 将来の実装
+## 実装済み機能
 
-### 既読管理
+### ✅ 既読管理
 ```typescript
 const handlePressArticle = async (article: Article) => {
-  await Linking.openURL(article.link);
   await ArticleService.markRead(article.id);
-  // 記事リストを更新
+  setArticles(prev => 
+    prev.map(a => a.id === article.id ? { ...a, isRead: true } : a)
+  );
+  await Linking.openURL(article.link);
 };
 ```
 
-### RSS取得
+### ✅ RSS取得
 ```typescript
 const handleRefresh = async () => {
   await SyncService.refresh();
-  const articles = await ArticleService.getArticles(selectedFeedId);
-  setArticles(articles);
+  await loadData();
 };
 ```
 
-### グローバル許可リスト
+### ✅ グローバル許可キーワード
 ```typescript
-const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<string[]>([]);
-// FilterEngine.evaluate() に渡す
+// データ読み込み時に取得
+const globalAllowList = await GlobalAllowKeywordService.list();
+setGlobalAllowKeywords(globalAllowList);
+
+// フィルタ適用時に使用
+const allowKeywords = globalAllowKeywords.map(k => k.keyword);
+const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
+```
+
+---
+
+## グローバル許可キーワード統合詳細
+
+### データフロー
+```
+1. Home画面読み込み
+   ↓
+2. loadData() 実行
+   ↓
+3. GlobalAllowKeywordService.list() でキーワード取得
+   ↓
+4. State: globalAllowKeywords に保存
+   ↓
+5. useEffect（フィルタ適用）
+   ↓
+6. キーワード配列を文字列配列に変換
+   allowKeywords = globalAllowKeywords.map(k => k.keyword)
+   ↓
+7. FilterEngine.evaluate(article, filters, allowKeywords)
+   ↓
+8. 結果に基づいて記事を表示/非表示
+```
+
+### 優先順位
+```
+1. グローバル許可キーワード（最優先）
+   - マッチすれば無条件で表示
+   ↓ マッチしない場合のみ
+2. 個別フィルタの評価
+   - ブロックキーワード
+   - 許可キーワード
+```
+
+### 具体例
+```
+【設定】
+- グローバル許可キーワード: 「React」
+- フィルタ: ブロックキーワード = 「FX」
+
+【記事】
+タイトル: 「FXでReact開発を学ぶ」
+
+【評価】
+1. グローバル許可キーワードチェック
+   - 「React」が含まれる → ✅ 表示
+
+2. フィルタ評価はスキップ
+   - 「FX」が含まれてもブロックされない
+```
+
+---
+
+## 将来の実装
+
+### 既読表示設定
+```typescript
+// Settings から読み込み
+const [readDisplay, setReadDisplay] = React.useState<'dim' | 'hide'>('dim');
+
+// フィルタ適用時
+if (readDisplay === 'hide') {
+  displayed = displayed.filter(a => !a.isRead);
+}
+```
+
+### 自動更新
+```typescript
+// アプリ起動時、または定期的に自動更新
+useEffect(() => {
+  const interval = setInterval(() => {
+    handleRefresh();
+  }, 30 * 60 * 1000); // 30分ごと
+  
+  return () => clearInterval(interval);
+}, []);
 ```
 
 ---
 
 ## 関連ドキュメント
-- [`FilterEngine.md`](../services/FilterEngine.md)
-- [`FeedSelectModal.md`](../components/FeedSelectModal.md)
+- [`FilterEngine.md`](../services/FilterEngine.md) - フィルタ評価ロジック
+- [`FilterService.md`](../services/FilterService.md) - フィルタ管理
+- [`GlobalAllowKeywordService.md`](../services/GlobalAllowKeywordService.md) - グローバル許可キーワード管理
+- [`ArticleService.md`](../services/ArticleService.md) - 記事データ管理
+- [`FeedService.md`](../services/FeedService.md) - フィード管理
+- [`SyncService.md`](../services/SyncService.md) - RSS同期
+- [`FeedSelectModal.md`](./feed_select_modal.md) - フィード選択モーダル
+- [`global_allow_keywords.md`](./global_allow_keywords.md) - グローバル許可キーワード画面
 - [`FilterService.md`](../services/FilterService.md)
