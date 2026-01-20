@@ -57,7 +57,7 @@ export default function SettingsScreen() {
         router.push('/global_allow_keywords');
         break;
       case 'preferences':
-        console.log('go to preferences');
+        router.push('/preferences');
         break;
       case 'pro':
         // 無効化されているので何もしない

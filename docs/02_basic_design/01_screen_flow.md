@@ -60,19 +60,24 @@ flowchart TB
 
 ### タブグループ内の画面
 
-**ボトムタブ表示あり**（タブグループ内）:
-- **Home** - タブバーに表示
-- **Filters** - タブバーに表示
-- **Settings** - タブバーに表示
-- **Feeds** - タブバーには非表示だが、ボトムタブは表示される
+**ボトムタブ表示あり**（タブグループ内、`app/(tabs)/`配下）:
+- **Home** (`app/(tabs)/index.tsx`) - タブバーに表示
+- **Filters** (`app/(tabs)/filters.tsx`) - タブバーに表示
+- **Settings** (`app/(tabs)/settings.tsx`) - タブバーに表示
+- **Feeds** (`app/(tabs)/feeds.tsx`) - タブバーには非表示（`href: null`）だが、ボトムタブは表示される
 
-**ボトムタブ表示なし**（タブグループ外）:
-- **FeedAdd** - フィード追加・編集画面
-- **FilterEdit** - フィルタ追加・編集画面
-- **Preferences** - 設定詳細画面
-- **Global Allow Keywords** - グローバル許可キーワード管理画面
+**ボトムタブ表示なし**（タブグループ外、`app/`直下）:
+- **FeedAdd** (`app/feed_add.tsx`) - フィード追加・編集画面
+- **FilterEdit** (`app/filter_edit.tsx`) - フィルタ追加・編集画面
+- **Preferences** (`app/preferences.tsx`) - 設定詳細画面
+- **Global Allow Keywords** (`app/global_allow_keywords.tsx`) - グローバル許可キーワード管理画面
 
-**実装**: `app/(tabs)/`配下の画面はボトムタブが表示される。`href: null`を指定することでタブバーには非表示だが、ボトムタブは表示される。
+**実装メモ**: 
+- `app/(tabs)/`配下: ボトムタブバー表示
+  - `href: null`でタブバー非表示、ボトムタブは表示（Feedsのみ）
+- `app/`直下: ボトムタブバー非表示
+  - `<Stack.Screen options={{ headerShown: false }} />`でデフォルトヘッダーを非表示
+  - 独自ヘッダーを実装（2重ヘッダー防止）
 
 ---
 

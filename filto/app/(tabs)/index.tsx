@@ -23,6 +23,8 @@
   import { SyncService } from '@/services/SyncService';
   import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
   import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
+  import AsyncStorage from '@react-native-async-storage/async-storage';
+  import type { ReadDisplayMode } from '../preferences';
 
   // 経過時間を計算
   const getTimeAgo = (publishedAt: string): string => {
@@ -128,6 +130,9 @@
     const [filters, setFilters] = React.useState<Filter[]>([]);
     const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
     const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
+    
+    // Preferences
+    const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
 
     // 選択中のフィード名を取得
     const selectedFeedName = React.useMemo(() => {
@@ -156,6 +161,12 @@
         // グローバル許可キーワード一覧を取得
         const globalAllowList = await GlobalAllowKeywordService.list();
         setGlobalAllowKeywords(globalAllowList);
+        
+        // Preferences を取得
+        const savedReadDisplay = await AsyncStorage.getItem('@filto/preferences/readDisplay');
+        if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
+          setReadDisplay(savedReadDisplay);
+        }
       } catch (error) {
         console.error('Failed to load data:', error);
         Alert.alert('エラー', 'データの読み込みに失敗しました');
@@ -183,13 +194,18 @@
       const allowKeywords = globalAllowKeywords.map(k => k.keyword);
       
       // フィルタエンジンで評価
-      const displayed = filtered.filter(article => {
+      let displayed = filtered.filter(article => {
         const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
         return !shouldBlock; // ブロックされない記事のみ表示
       });
 
+      // 既読表示設定に基づいてフィルタリング
+      if (readDisplay === 'hide') {
+        displayed = displayed.filter(a => !a.isRead);
+      }
+
       setFilteredArticles(displayed);
-    }, [articles, selectedFeedId, filters, globalAllowKeywords]);
+    }, [articles, selectedFeedId, filters, globalAllowKeywords, readDisplay]);
 
     const handleRefresh = React.useCallback(async () => {
       try {
