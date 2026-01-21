@@ -25,6 +25,7 @@
   import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
   import AsyncStorage from '@react-native-async-storage/async-storage';
   import type { ReadDisplayMode } from '../preferences';
+  import { ErrorHandler } from '@/utils/errorHandler';
 
   // 経過時間を計算
   const getTimeAgo = (publishedAt: string): string => {
@@ -172,7 +173,7 @@
         }
       } catch (error) {
         console.error('Failed to load data:', error);
-        Alert.alert('エラー', 'データの読み込みに失敗しました');
+        ErrorHandler.showLoadError();
       } finally {
         setIsLoading(false);
       }
@@ -271,7 +272,7 @@
         await loadData();
       } catch (error) {
         console.error('Failed to refresh:', error);
-        Alert.alert('エラー', '更新に失敗しました');
+        ErrorHandler.showSyncError();
       } finally {
         setRefreshing(false);
       }
@@ -299,7 +300,7 @@
         await Linking.openURL(article.link);
       } catch (error) {
         console.error('Failed to open article:', error);
-        Alert.alert('エラー', '記事を開けませんでした');
+        ErrorHandler.showGenericError('記事を開けませんでした');
       }
     }, []);
 

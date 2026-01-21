@@ -18,6 +18,7 @@ import Reanimated from 'react-native-reanimated';
 import { Feed } from '@/types/Feed';
 import { FeedService } from '@/services/FeedService';
 import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
+import { ErrorHandler } from '@/utils/errorHandler';
 
 // FeedsHeader（通常モード）
 const FeedsHeader: React.FC<{
@@ -332,7 +333,7 @@ export default function FeedsScreen() {
             await loadFeeds();
           } catch (error) {
             console.error('Failed to delete feeds:', error);
-            Alert.alert('エラー', 'フィードの削除に失敗しました');
+            ErrorHandler.showDatabaseError('フィードの削除');
           }
         },
       },
@@ -368,7 +369,7 @@ export default function FeedsScreen() {
             await loadFeeds();
           } catch (error) {
             console.error('Failed to delete feed:', error);
-            Alert.alert('エラー', 'フィードの削除に失敗しました');
+            ErrorHandler.showDatabaseError('フィードの削除');
           }
         },
       },

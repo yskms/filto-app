@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { FilterService, Filter } from '@/services/FilterService';
 import { FilterSortModal, FilterSortType } from '@/components/FilterSortModal';
+import { ErrorHandler } from '@/utils/errorHandler';
 
 // フィルタアイテムコンポーネント
 const FilterItem: React.FC<{
@@ -190,7 +191,7 @@ export default function FiltersScreen() {
       const filterList = await FilterService.listWithSort(currentSort);
       setFilters(filterList);
     } catch (error) {
-      Alert.alert('エラー', 'フィルタの読み込みに失敗しました');
+      ErrorHandler.showLoadError('フィルタ');
     }
   }, [currentSort]);
 
@@ -337,7 +338,7 @@ export default function FiltersScreen() {
                 // フィルタ一覧を再読み込み
                 await loadFilters();
               } catch (error) {
-                Alert.alert('エラー', 'フィルタの削除に失敗しました');
+                ErrorHandler.showDatabaseError('フィルタの削除');
               }
             },
           },
@@ -372,7 +373,7 @@ export default function FiltersScreen() {
               // フィルタ一覧を再読み込み
               await loadFilters();
             } catch (error) {
-              Alert.alert('エラー', 'フィルタの削除に失敗しました');
+              ErrorHandler.showDatabaseError('フィルタの削除');
             }
           },
         },

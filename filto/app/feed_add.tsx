@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { FeedService } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
+import { ErrorHandler } from '@/utils/errorHandler';
 
 export default function FeedAddScreen() {
   const router = useRouter();
@@ -100,7 +101,7 @@ export default function FeedAddScreen() {
     // バリデーション
     const validation = validateUrl(url);
     if (!validation.valid) {
-      Alert.alert('エラー', validation.message || 'URLが無効です');
+      ErrorHandler.showValidationError('URL', validation.message || 'URLが無効です');
       return;
     }
 
@@ -145,17 +146,11 @@ export default function FeedAddScreen() {
       } else {
         // すべて失敗
         console.error('[FeedAdd] RSS auto-detection failed');
-        Alert.alert(
-          'エラー',
-          'RSSフィードが見つかりませんでした。\n正しいRSS URLを入力してください。'
-        );
+        ErrorHandler.showRssError();
       }
     } catch (error) {
       console.error('[FeedAdd] Failed to fetch RSS meta:', error);
-      Alert.alert(
-        'エラー',
-        'フィード情報の取得に失敗しました。\n手動でタイトルを入力してください。'
-      );
+      ErrorHandler.showRssError();
     } finally {
       setIsLoadingMeta(false);
     }
@@ -165,16 +160,27 @@ export default function FeedAddScreen() {
     // バリデーション
     const validation = validateUrl(url);
     if (!validation.valid) {
-      Alert.alert('エラー', validation.message || 'URLが無効です');
+      ErrorHandler.showValidationError('URL', validation.message || 'URLが無効です');
       return;
     }
 
     setIsLoading(true);
 
     try {
+      // 重複チェック
+      const existingFeeds = await FeedService.list();
+      const trimmedUrl = url.trim();
+      const isDuplicate = existingFeeds.some(feed => feed.url === trimmedUrl);
+      
+      if (isDuplicate) {
+        ErrorHandler.showDuplicateError('フィードURL');
+        setIsLoading(false);
+        return;
+      }
+
       // FeedService.create() でフィードを保存
       await FeedService.create({
-        url: url.trim(),
+        url: trimmedUrl,
         title: name.trim() || undefined,  // 空文字の場合はundefinedに
         iconUrl: iconUrl,  // アイコンURLも保存
       });
@@ -189,7 +195,7 @@ export default function FeedAddScreen() {
       ]);
     } catch (error) {
       console.error('Failed to add feed:', error);
-      Alert.alert('エラー', 'フィードの追加に失敗しました');
+      ErrorHandler.showDatabaseError('フィードの追加');
     } finally {
       setIsLoading(false);
     }
