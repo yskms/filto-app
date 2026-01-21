@@ -8,5 +8,6 @@ export interface Article {
   thumbnailUrl?: string;
   publishedAt: string;
   isRead: boolean;
+  isStarred: boolean;
 }
 

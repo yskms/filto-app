@@ -84,6 +84,7 @@ export async function initDatabase(): Promise<void> {
       fetched_at    INTEGER NOT NULL,
       is_read       INTEGER NOT NULL DEFAULT 0,
       is_blocked    INTEGER NOT NULL DEFAULT 0,
+      is_starred    INTEGER NOT NULL DEFAULT 0,
 
       UNIQUE(feed_id, link),
       FOREIGN KEY(feed_id) REFERENCES feeds(id) ON DELETE CASCADE
@@ -100,6 +101,10 @@ export async function initDatabase(): Promise<void> {
 
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_articles_is_read ON articles(is_read);
+  `);
+
+  database.execSync(`
+    CREATE INDEX IF NOT EXISTS idx_articles_is_starred ON articles(is_starred);
   `);
 
   // global_allow_keywords テーブル作成

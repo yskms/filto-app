@@ -713,6 +713,7 @@ export const RssService = {
             thumbnailUrl: thumbnailUrl || undefined,
             publishedAt,
             isRead: false,
+            isStarred: false,
           });
         }
 
@@ -839,6 +840,7 @@ export const RssService = {
             thumbnailUrl: thumbnailUrl || undefined,
             publishedAt,
             isRead: false,
+            isStarred: false,
           });
         }
 
@@ -921,6 +923,7 @@ export const RssService = {
             thumbnailUrl: thumbnailUrl || undefined,
             publishedAt,
             isRead: false,
+            isStarred: false,
           });
         }
 

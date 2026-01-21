@@ -20,6 +20,7 @@
   import { FilterService, Filter } from '@/services/FilterService';
   import { FeedService } from '@/services/FeedService';
   import { ArticleService } from '@/services/ArticleService';
+  import { ArticleRepository } from '@/repositories/ArticleRepository';
   import { SyncService } from '@/services/SyncService';
   import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
   import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
@@ -47,7 +48,8 @@
   const ArticleItem: React.FC<{ 
     article: Article;
     onPress: () => void;
-  }> = ({ article, onPress }) => {
+    onLongPress: () => void;
+  }> = ({ article, onPress, onLongPress }) => {
     const timeAgo = getTimeAgo(article.publishedAt);
 
     return (
@@ -55,6 +57,7 @@
         style={[styles.articleContainer, article.isRead && styles.readContainer]}
         activeOpacity={0.7}
         onPress={onPress}
+        onLongPress={onLongPress}
       >
         <View style={styles.articleContent}>
           {article.thumbnailUrl ? (
@@ -70,12 +73,17 @@
           )}
           
           <View style={styles.textContainer}>
-            <Text
-              style={[styles.title, article.isRead && styles.readTitle]}
-              numberOfLines={2}
-            >
-              {article.title}
-            </Text>
+            <View style={styles.titleRow}>
+              <Text
+                style={[styles.title, article.isRead && styles.readTitle]}
+                numberOfLines={2}
+              >
+                {article.title}
+              </Text>
+              {article.isStarred && (
+                <Text style={styles.starIcon}>⭐</Text>
+              )}
+            </View>
             <View style={styles.metaContainer}>
               <Text style={[styles.metaText, article.isRead && styles.readMetaText]}>
                 {article.feedName}
@@ -96,28 +104,66 @@
     feedName: string;
     onPressFeedSelect: () => void;
     onPressRefresh: () => void;
-  }> = ({ feedName, onPressFeedSelect, onPressRefresh }) => {
+    articleFilter: ArticleFilterType;
+    onChangeFilter: (filter: ArticleFilterType) => void;
+  }> = ({ feedName, onPressFeedSelect, onPressRefresh, articleFilter, onChangeFilter }) => {
     return (
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.feedSelector}
-          onPress={onPressFeedSelect}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.feedName}>{feedName}</Text>
-          <Text style={styles.dropdownIcon}>⬇️</Text>
-        </TouchableOpacity>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.feedSelector}
+            onPress={onPressFeedSelect}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.feedName}>{feedName}</Text>
+            <Text style={styles.dropdownIcon}>⬇️</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={onPressRefresh}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.refreshIcon}>⟳</Text>
+          </TouchableOpacity>
+        </View>
         
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={onPressRefresh}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.refreshIcon}>⟳</Text>
-        </TouchableOpacity>
+        <View style={styles.filterBar}>
+          <TouchableOpacity
+            style={[styles.filterButton, articleFilter === 'all' && styles.filterButtonActive]}
+            onPress={() => onChangeFilter('all')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.filterButtonText, articleFilter === 'all' && styles.filterButtonTextActive]}>
+              ALL
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.filterButton, articleFilter === 'starred' && styles.filterButtonActive]}
+            onPress={() => onChangeFilter('starred')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.filterButtonText, articleFilter === 'starred' && styles.filterButtonTextActive]}>
+              ⭐ お気に入り
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.filterButton, articleFilter === 'unread' && styles.filterButtonActive]}
+            onPress={() => onChangeFilter('unread')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.filterButtonText, articleFilter === 'unread' && styles.filterButtonTextActive]}>
+              未読
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
+
+  type ArticleFilterType = 'all' | 'starred' | 'unread';
 
   export default function HomeScreen() {
     const [refreshing, setRefreshing] = React.useState(false);
@@ -131,6 +177,7 @@
     const [filters, setFilters] = React.useState<Filter[]>([]);
     const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
     const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
+    const [articleFilter, setArticleFilter] = React.useState<ArticleFilterType>('all');
     
   // Preferences
     const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
@@ -243,6 +290,13 @@
         filtered = articles.filter(a => a.feedId === selectedFeedId);
       }
 
+      // 記事フィルタを適用（お気に入り/未読）
+      if (articleFilter === 'starred') {
+        filtered = filtered.filter(a => a.isStarred);
+      } else if (articleFilter === 'unread') {
+        filtered = filtered.filter(a => !a.isRead);
+      }
+
       // グローバル許可キーワードを文字列配列に変換
       const allowKeywords = globalAllowKeywords.map(k => k.keyword);
       
@@ -258,7 +312,7 @@
       }
 
       setFilteredArticles(displayed);
-    }, [articles, selectedFeedId, filters, globalAllowKeywords, readDisplay]);
+    }, [articles, selectedFeedId, filters, globalAllowKeywords, readDisplay, articleFilter]);
 
     const handleRefresh = React.useCallback(async () => {
       try {
@@ -304,12 +358,37 @@
       }
     }, []);
 
+    const handleLongPressArticle = React.useCallback(async (article: Article) => {
+      try {
+        // お気に入りを切り替え
+        await ArticleRepository.toggleStarred(article.id);
+        
+        // ローカルの状態も更新
+        setArticles(prev => 
+          prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
+        );
+        
+        // フィードバック
+        const message = !article.isStarred ? 'お気に入りに追加しました' : 'お気に入りから削除しました';
+        Alert.alert('', message);
+      } catch (error) {
+        console.error('Failed to toggle star:', error);
+        ErrorHandler.showDatabaseError('お気に入りの変更に失敗しました');
+      }
+    }, []);
+
+    const handleChangeFilter = React.useCallback((filter: ArticleFilterType) => {
+      setArticleFilter(filter);
+    }, []);
+
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <HomeHeader
           feedName={selectedFeedName}
           onPressFeedSelect={handleFeedSelect}
           onPressRefresh={handleRefresh}
+          articleFilter={articleFilter}
+          onChangeFilter={handleChangeFilter}
         />
         
         {isLoading ? (
@@ -324,6 +403,7 @@
               <ArticleItem 
                 article={item} 
                 onPress={() => handlePressArticle(item)}
+                onLongPress={() => handleLongPressArticle(item)}
               />
             )}
             keyExtractor={(item) => item.id}
@@ -357,15 +437,48 @@
       flex: 1,
       backgroundColor: '#fff',
     },
+    headerContainer: {
+      backgroundColor: '#fff',
+      borderBottomWidth: 1,
+      borderBottomColor: '#e0e0e0',
+    },
     header: {
       height: 48,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: '#e0e0e0',
       backgroundColor: '#fff',
+    },
+    filterBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      backgroundColor: '#f5f5f5',
+      gap: 8,
+    },
+    filterButton: {
+      flex: 1,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      backgroundColor: '#fff',
+      borderWidth: 1,
+      borderColor: '#e0e0e0',
+      alignItems: 'center',
+    },
+    filterButtonActive: {
+      backgroundColor: '#1976d2',
+      borderColor: '#1976d2',
+    },
+    filterButtonText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: '#666',
+    },
+    filterButtonTextActive: {
+      color: '#fff',
     },  
     feedSelector: {
       flexDirection: 'row',
@@ -429,12 +542,22 @@
     textContainer: {
       flex: 1,
     },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 6,
+      marginBottom: 4,
+    },
     title: {
+      flex: 1,
       fontSize: 16,
       fontWeight: '600',
       color: '#000',
-      marginBottom: 4,
       lineHeight: 22,
+    },
+    starIcon: {
+      fontSize: 14,
+      marginTop: 2,
     },
     readTitle: {
       color: '#666',
