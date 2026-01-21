@@ -190,7 +190,6 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string>
         'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
         'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*',
         'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
         'Referer': 'https://journal.meti.go.jp/',
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
@@ -222,7 +221,6 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string>
             'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
             'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*',
             'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
             'Referer': 'https://journal.meti.go.jp/',
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache',
@@ -778,7 +776,19 @@ export const RssService = {
             }
           }
           
-          // 3. enclosure を確認（Zenn対応: typeが"false"でも許可）
+          // 3. image タグを確認（Yahoo!ニュース対応）
+          if (!thumbnailUrl) {
+            const imageTag = obj['image'];
+            if (imageTag) {
+              thumbnailUrl = getText(imageTag);
+              
+              if (thumbnailUrl) {
+                console.log(`[RssService] Found image from <image> tag: ${thumbnailUrl.substring(0, 100)}`);
+              }
+            }
+          }
+          
+          // 4. enclosure を確認（Zenn対応: typeが"false"でも許可）
           if (!thumbnailUrl) {
             const enclosure = obj['enclosure'] as Record<string, unknown> | undefined;
             if (enclosure) {
@@ -795,12 +805,12 @@ export const RssService = {
             }
           }
           
-          // 4. content:encoded 内の画像を確認（優先）
+          // 5. content:encoded 内の画像を確認（優先）
           if (!thumbnailUrl && content) {
             thumbnailUrl = extractImageUrl(content);
           }
           
-          // 5. description 内の画像を確認
+          // 6. description 内の画像を確認
           if (!thumbnailUrl && summary) {
             thumbnailUrl = extractImageUrl(summary);
           }
@@ -813,7 +823,7 @@ export const RssService = {
             }
           }
           
-          // 6. フォールバック: フィードのアイコン
+          // 7. フォールバック: フィードのアイコン
           if (!thumbnailUrl && feedIconUrl) {
             thumbnailUrl = feedIconUrl;
             console.log(`[RssService] Using feed icon as fallback: ${thumbnailUrl.substring(0, 100)}`);
