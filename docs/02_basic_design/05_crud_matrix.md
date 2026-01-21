@@ -17,10 +17,34 @@
 |------|------------|------|
 | **Create** | 同期処理 | RSS取得時に新規保存 |
 | **Read** | Home | 記事一覧・詳細表示 |
-| **Update** | Home / フィルタ評価 | 既読更新（is_read）、ブロックフラグ更新（is_blocked） |
+| **Update** | Home / フィルタ評価 | 既読更新（is_read）、**お気に入り切り替え（is_starred）**、ブロックフラグ更新（is_blocked） |
 | **Delete** | メンテナンス | フィード削除時（CASCADE）、古い記事削除 |
 
 ※ 通常UIからの「記事手動削除」は想定しない
+
+### お気に入り機能（追加）
+
+**操作**: 記事セルを長押し
+
+**処理フロー**:
+1. `ArticleRepository.toggleStarred(id)` でis_starredを反転
+2. ハプティックフィードバック（`Haptics.ImpactFeedbackStyle.Light`）
+3. セルハイライトアニメーション
+   - 追加時: 素早く2回光る（100ms × 4回 = 450ms）
+   - 削除時: ゆっくり1回光る（150ms + 300ms = 450ms）
+4. ⭐アイコンの表示/非表示
+
+**フィルタリング**:
+```typescript
+// Home画面でお気に入りフィルター適用
+if (showStarredOnly) {
+  filtered = filtered.filter(a => a.isStarred);
+}
+```
+
+**UI表示**:
+- Home画面ヘッダー: ⭐トグルボタン
+- 記事セル: ⭐アイコン（お気に入り登録済み）
 
 ---
 

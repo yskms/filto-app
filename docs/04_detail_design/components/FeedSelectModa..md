@@ -4,6 +4,8 @@
 フィード選択のためのボトムシート型モーダル。
 ALL または個別フィードを選択し、記事一覧のフィルタリングに使用する。
 
+**注意**: お気に入り機能はHome画面ヘッダーの⭐トグルボタンで制御するため、このモーダルには含まれません。
+
 ---
 
 ## 責務
@@ -55,7 +57,7 @@ interface Feed {
 ┌──────────────────────┐
 │ フィード選択      ✕  │ ← ヘッダー
 ├──────────────────────┤
-│ ▶ 📱 ALL             │ ← 選択中
+│ ▶ 📰 ALL             │ ← 選択中
 │   📰 TechCrunch      │
 │   📰 Qiita           │
 │   📰 Medium          │
@@ -64,6 +66,9 @@ interface Feed {
 │ Manage Feeds →        │ ← フッター
 └──────────────────────┘
 ```
+
+**注意**: 以前のバージョンでは「⭐ お気に入り」項目がありましたが、
+お気に入り機能はHome画面ヘッダーの⭐トグルボタンで制御するため削除されました。
 
 ---
 
@@ -82,13 +87,14 @@ interface Feed {
 ### フィード一覧
 
 **要素**:
-- **ALLオプション**: 先頭固定、📱アイコン
-- **フィードアイテム**: 📰アイコン + フィード名
-- **選択中マーク**: ▶（選択中のフィードのみ）
+- **ALLオプション**: 先頭固定、📰アイコン
+- **フィードアイテム**: 📰アイコン（またはフィードアイコン） + フィード名
+- **選択中マーク**: ✓（選択中のフィードのみ）
 
 **スタイル**:
-- 各アイテム: パディング上下14px、左右20px
-- 最大高さ: 400px（スクロール可能）
+- 各アイテム: パディング上下12px、左右20px
+- 最大高さ: 80%（スクロール可能）
+- 選択中の背景色: #e3f2fd（薄い青）
 
 ---
 
@@ -173,8 +179,6 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   onClose,
   onSelectFeed,
 }) => {
-  const router = useRouter();
-
   const handleSelectFeed = (feedId: string | null) => {
     onSelectFeed(feedId);
     onClose();
@@ -182,33 +186,76 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
 
   const handleManageFeeds = () => {
     onClose();
-    router.push('/(tabs)/feeds');
+    router.push('/feeds');
   };
-
-  // ALLオプション + フィード一覧
-  const allOption = { id: null, title: 'ALL', icon: '📱' };
-  const feedOptions = feeds.map(feed => ({
-    id: feed.id,
-    title: feed.title,
-    icon: '📰',
-  }));
-  const options = [allOption, ...feedOptions];
 
   return (
     <Modal
       visible={visible}
-      transparent={true}
       animationType="slide"
+      transparent
       onRequestClose={onClose}
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable 
-          style={styles.modalContainer}
-          onPress={(e) => e.stopPropagation()}
-        >
-          {/* ヘッダー、フィード一覧、Manage Feeds */}
-        </Pressable>
-      </Pressable>
+      <TouchableOpacity
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+          {/* ヘッダー */}
+          <View style={styles.header}>
+            <Text style={styles.title}>フィード選択</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeIcon}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* フィード一覧 */}
+          <ScrollView style={styles.listContainer}>
+            {/* ALL */}
+            <TouchableOpacity
+              style={[styles.feedItem, selectedFeedId === null && styles.feedItemSelected]}
+              onPress={() => handleSelectFeed(null)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.feedIcon}>
+                <Text style={styles.feedIconText}>📰</Text>
+              </View>
+              <Text style={styles.feedName}>ALL</Text>
+              {selectedFeedId === null && <Text style={styles.checkmark}>✓</Text>}
+            </TouchableOpacity>
+
+            {/* 各フィード */}
+            {feeds.map((feed) => (
+              <TouchableOpacity
+                key={feed.id}
+                style={[styles.feedItem, selectedFeedId === feed.id && styles.feedItemSelected]}
+                onPress={() => handleSelectFeed(feed.id)}
+                activeOpacity={0.7}
+              >
+                {feed.iconUrl ? (
+                  <Image source={{ uri: feed.iconUrl }} style={styles.feedIconImage} />
+                ) : (
+                  <View style={styles.feedIcon}>
+                    <Text style={styles.feedIconText}>📰</Text>
+                  </View>
+                )}
+                <Text style={styles.feedName}>{feed.title}</Text>
+                {selectedFeedId === feed.id && <Text style={styles.checkmark}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* フッター */}
+          <TouchableOpacity
+            style={styles.manageButton}
+            onPress={handleManageFeeds}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.manageButtonText}>Manage Feeds →</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
     </Modal>
   );
 };
@@ -216,41 +263,15 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
 
 ---
 
-### オプション生成
-
-```typescript
-// ALLオプション
-const allOption = { 
-  id: null,        // null = ALL
-  title: 'ALL', 
-  icon: '📱' 
-};
-
-// フィードオプション
-const feedOptions = feeds.map(feed => ({
-  id: feed.id,
-  title: feed.title,
-  icon: '📰',
-}));
-
-// 結合
-const options = [allOption, ...feedOptions];
-```
-
----
-
 ### 選択中マークの表示
 
 ```typescript
-<Text style={styles.feedTitle}>
-  {selectedFeedId === item.id && '▶ '}
-  {item.title}
-</Text>
+{selectedFeedId === feed.id && <Text style={styles.checkmark}>✓</Text>}
 ```
 
 **ロジック**:
-- `selectedFeedId === null` かつ `item.id === null` → ▶ ALL
-- `selectedFeedId === item.id` → ▶ フィード名
+- `selectedFeedId === null` かつ `item.id === null` → ✓ ALL
+- `selectedFeedId === item.id` → ✓ フィード名
 
 ---
 
@@ -264,12 +285,12 @@ backdrop: {
   backgroundColor: 'rgba(0, 0, 0, 0.5)',  // 半透明の黒
   justifyContent: 'flex-end',              // 下寄せ
 },
-modalContainer: {
+modalContent: {
   backgroundColor: '#fff',
-  borderTopLeftRadius: 16,                 // 上部の角を丸く
-  borderTopRightRadius: 16,
+  borderTopLeftRadius: 20,                 // 上部の角を丸く
+  borderTopRightRadius: 20,
   maxHeight: '80%',                        // 画面の80%まで
-  paddingBottom: 20,                       // 下部余白（iPhoneのホームインジケーター対応）
+  minHeight: '60%',
 },
 ```
 
@@ -309,16 +330,40 @@ closeIcon: {
 feedItem: {
   flexDirection: 'row',
   alignItems: 'center',
-  paddingVertical: 14,
+  paddingVertical: 12,
   paddingHorizontal: 20,
+  borderBottomWidth: 1,
+  borderBottomColor: '#f0f0f0',
+},
+feedItemSelected: {
+  backgroundColor: '#e3f2fd',
 },
 feedIcon: {
-  fontSize: 20,
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: '#f0f0f0',
+  justifyContent: 'center',
+  alignItems: 'center',
   marginRight: 12,
 },
-feedTitle: {
+feedIconImage: {
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  marginRight: 12,
+},
+feedIconText: {
+  fontSize: 18,
+},
+feedName: {
+  flex: 1,
   fontSize: 16,
   color: '#000',
+},
+checkmark: {
+  fontSize: 18,
+  color: '#1976d2',
 },
 ```
 
@@ -328,13 +373,13 @@ feedTitle: {
 
 ```typescript
 manageButton: {
-  marginTop: 8,
   paddingVertical: 16,
   paddingHorizontal: 20,
   borderTopWidth: 1,
   borderTopColor: '#e0e0e0',
+  alignItems: 'center',
 },
-manageText: {
+manageButtonText: {
   fontSize: 16,
   color: '#1976d2',  // 青色
   fontWeight: '500',
@@ -351,7 +396,7 @@ manageText: {
 export default function HomeScreen() {
   const [feedModalVisible, setFeedModalVisible] = React.useState(false);
   const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null);
-  const [feeds] = React.useState<Feed[]>(dummyFeeds);
+  const [feeds, setFeeds] = React.useState<Feed[]>([]);
 
   const handleFeedSelect = () => {
     setFeedModalVisible(true);
@@ -388,7 +433,7 @@ export default function HomeScreen() {
 
 ### インポート
 ```typescript
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { Feed } from '@/types/Feed';
 ```
 
@@ -399,24 +444,10 @@ import { Feed } from '@/types/Feed';
 
 ## 将来の拡張
 
-### フィードアイコン表示
-
-```typescript
-// Feed型にiconUrlがある場合
-{feed.iconUrl ? (
-  <Image source={{ uri: feed.iconUrl }} style={styles.feedIconImage} />
-) : (
-  <Text style={styles.feedIcon}>📰</Text>
-)}
-```
-
----
-
 ### フィード数の表示
 
 ```typescript
 <Text style={styles.feedTitle}>
-  {selectedFeedId === item.id && '▶ '}
   {item.title}
   <Text style={styles.feedCount}> ({item.articleCount})</Text>
 </Text>
@@ -448,7 +479,22 @@ const filteredFeeds = feeds.filter(feed =>
 
 ---
 
+## お気に入り機能との関係
+
+以前のバージョンでは、このモーダルに「⭐ お気に入り」項目がありましたが、
+以下の理由で削除されました：
+
+1. **概念的な正しさ**: お気に入りは「フィード」ではなく「表示フィルター」
+2. **操作性**: ヘッダーのトグルボタンとして機能する方が直感的
+3. **フィルタの組み合わせ**: フィード選択とお気に入りフィルターを独立して制御できる
+
+**現在の実装**:
+- フィード選択: このモーダル
+- お気に入りフィルター: Home画面ヘッダーの⭐トグルボタン
+
+---
+
 ## 関連ドキュメント
 
-- [`home_screen.md`](../screens/home_screen.md) - Home画面（使用箇所）
+- [`home.md`](./home.md) - Home画面（使用箇所）
 - [`Feed.ts`](../../types/Feed.ts) - Feed型定義

@@ -2,11 +2,12 @@
 
 ## 概要
 登録されたRSSフィードから取得した記事を一覧表示するメイン画面。
-フィード切替、手動更新、既読管理、フィルタ適用を行う。
+フィード切替、手動更新、既読管理、お気に入り管理、フィルタ適用を行う。
 
 ## 目的
 - ユーザーが記事を素早く閲覧・選別できること
 - フィルタ結果が即座に反映されること
+- お気に入り記事を簡単に管理できること
 
 ---
 
@@ -14,16 +15,91 @@
 
 ### ヘッダー
 - 左：現在のフィード名 or "ALL"（タップでフィード選択モーダル）
+- 中央：⭐お気に入りフィルタートグル（円形ボタン）
 - 右：更新アイコン（手動更新）
 
 ### 記事リスト
 - サムネイル（あれば）
 - タイトル（最大2行）
+- お気に入りアイコン（⭐、お気に入り登録済みの場合）
 - サブ：フィード名 / 経過時間
 
 ### フッター
-- タブ：Home / Filters / Feeds / Settings
+- タブ：Home / Filters / Settings
 - 下スクロール時に非表示、上スクロールで表示
+
+---
+
+## お気に入り機能
+
+### ⭐トグルボタン（ヘッダー中央）
+**表示**:
+- 非選択時: グレー背景（#f5f5f5）、透明度60%
+- 選択時: 薄い黄色背景（#fff3cd）
+
+**動作**:
+- タップでON/OFF切り替え
+- ON時: お気に入り記事のみ表示
+- OFF時: 通常のフィード表示
+
+**フィルタの組み合わせ**:
+- `ALL` + ⭐OFF → 全記事表示
+- `ALL` + ⭐ON → 全フィードのお気に入り記事
+- `フィードA` + ⭐OFF → フィードAの全記事
+- `フィードA` + ⭐ON → フィードAのお気に入り記事のみ
+
+### お気に入り追加/削除
+**操作**: 記事セルを長押し
+
+**フィードバック**:
+1. **ハプティック**: 軽い振動（`Haptics.ImpactFeedbackStyle.Light`）
+2. **視覚効果**: セルハイライトアニメーション
+   - **追加時**: 素早く2回光る
+     ```
+     白 → 黄色 → 白 → 黄色 → 白
+        100ms  100ms  100ms  150ms
+     合計: 450ms
+     ```
+   - **削除時**: ゆっくり1回光る
+     ```
+     白 → 黄色 → 白
+        150ms  300ms
+     合計: 450ms
+     ```
+   - ハイライト色: 薄い黄色（#fff3cd）
+3. **表示変化**: ⭐アイコンの表示/非表示
+
+### 実装詳細
+
+```typescript
+// 状態管理
+const [showStarredOnly, setShowStarredOnly] = React.useState(false);
+const highlightAnims = React.useRef<Map<string, Animated.Value>>(new Map());
+
+// 長押し処理
+const handleLongPressArticle = async (article: Article) => {
+  const isAdding = !article.isStarred;
+  
+  // DB更新
+  await ArticleRepository.toggleStarred(article.id);
+  
+  // ハプティックフィードバック
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  
+  // アニメーション（追加時は2回、削除時は1回）
+  const anim = getHighlightAnim(article.id);
+  if (isAdding) {
+    // 2回光る
+  } else {
+    // 1回光る
+  }
+  
+  // 状態更新
+  setArticles(prev => 
+    prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
+  );
+};
+```
 
 ---
 
@@ -40,6 +116,7 @@ interface Article {
   summary?: string;
   publishedAt: string;
   isRead: boolean;
+  isStarred: boolean;  // お気に入りフラグ
 }
 ```
 
@@ -83,7 +160,15 @@ interface Feed {
 ### 記事タップ
 ```
 1. 外部ブラウザでURLを開く
-2. 既読フラグON（将来実装）
+2. 既読フラグON
+```
+
+### 記事長押し
+```
+1. お気に入りを切り替え（toggleStarred）
+2. ハプティックフィードバック
+3. セルハイライトアニメーション
+4. ⭐アイコンの表示/非表示
 ```
 
 ### フィード選択
@@ -92,6 +177,13 @@ interface Feed {
 2. FeedSelectModal を表示
 3. フィード選択
 4. 記事を再フィルタリング
+```
+
+### お気に入りフィルター
+```
+1. ヘッダー中央の⭐ボタンをタップ
+2. showStarredOnly を切り替え
+3. 記事を再フィルタリング
 ```
 
 ### 起動時自動更新
@@ -136,7 +228,14 @@ if (selectedFeedId !== null) {
 }
 ```
 
-### Step 2: FilterEngine評価
+### Step 2: お気に入りフィルター
+```typescript
+if (showStarredOnly) {
+  filtered = filtered.filter(a => a.isStarred);
+}
+```
+
+### Step 3: FilterEngine評価
 ```typescript
 const displayed = filtered.filter(article => {
   const shouldBlock = FilterEngine.evaluate(article, filters, globalAllowKeywords);
@@ -144,7 +243,7 @@ const displayed = filtered.filter(article => {
 });
 ```
 
-### Step 3: 既読表示設定
+### Step 4: 既読表示設定
 ```typescript
 // readDisplay = 'hide' の場合
 if (readDisplay === 'hide') {
@@ -158,8 +257,23 @@ if (readDisplay === 'hide') {
 
 ## 状態管理
 
+### 状態
+```typescript
+const [articles, setArticles] = React.useState<Article[]>([]);
+const [feeds, setFeeds] = React.useState<Feed[]>([]);
+const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null);
+const [showStarredOnly, setShowStarredOnly] = React.useState(false);
+const [filters, setFilters] = React.useState<Filter[]>([]);
+const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
+const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
+const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
+
+// アニメーション管理
+const highlightAnims = React.useRef<Map<string, Animated.Value>>(new Map());
+```
+
 ### 初期状態
-- ローディング表示（将来実装）
+- ローディング表示
 
 ### 空状態
 ```
@@ -168,7 +282,7 @@ if (readDisplay === 'hide') {
 ```
 
 ### エラー状態
-- トースト表示（将来実装）
+- トースト表示（ErrorHandler使用）
 
 ---
 
@@ -183,6 +297,8 @@ if (readDisplay === 'hide') {
 
 ## 使用API / Service
 - **ArticleService.getArticles(feedId?)** - 記事一覧取得 ✅
+- **ArticleService.markRead(id)** - 既読更新 ✅
+- **ArticleRepository.toggleStarred(id)** - お気に入り切り替え ✅
 - **FeedService.list()** - フィード一覧取得 ✅
 - **FilterService.list()** - フィルタ一覧取得 ✅
 - **GlobalAllowKeywordService.list()** - グローバル許可キーワード一覧取得 ✅
@@ -199,35 +315,41 @@ export default function HomeScreen() {
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [feeds, setFeeds] = React.useState<Feed[]>([]);
   const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null);
+  const [showStarredOnly, setShowStarredOnly] = React.useState(false);
   const [filters, setFilters] = React.useState<Filter[]>([]);
   const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
   const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
+
+  // アニメーション管理
+  const highlightAnims = React.useRef<Map<string, Animated.Value>>(new Map());
 
   // データ読み込み
   const loadData = React.useCallback(async () => {
     try {
       setIsLoading(true);
       
-      // フィード一覧を取得
       const feedList = await FeedService.list();
       setFeeds(feedList);
       
-      // 記事一覧を取得
       const articleList = await ArticleService.getArticles(selectedFeedId ?? undefined);
       setArticles(articleList);
       
-      // フィルタ一覧を取得
       const filterList = await FilterService.list();
       setFilters(filterList);
       
-      // グローバル許可キーワード一覧を取得
       const globalAllowList = await GlobalAllowKeywordService.list();
       setGlobalAllowKeywords(globalAllowList);
+      
+      const savedReadDisplay = await AsyncStorage.getItem('@filto/preferences/readDisplay');
+      if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
+        setReadDisplay(savedReadDisplay);
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
-      Alert.alert('エラー', 'データの読み込みに失敗しました');
+      ErrorHandler.showLoadError();
     } finally {
       setIsLoading(false);
     }
@@ -242,38 +364,46 @@ export default function HomeScreen() {
 
   // フィルタ適用
   React.useEffect(() => {
-    // フィードでフィルタリング
+    // 1. フィードでフィルタリング
     let filtered = articles;
     if (selectedFeedId !== null) {
       filtered = articles.filter(a => a.feedId === selectedFeedId);
     }
 
-    // グローバル許可キーワードを文字列配列に変換
+    // 2. お気に入りフィルター
+    if (showStarredOnly) {
+      filtered = filtered.filter(a => a.isStarred);
+    }
+
+    // 3. グローバル許可キーワード
     const allowKeywords = globalAllowKeywords.map(k => k.keyword);
     
-    // FilterEngine評価
-    const displayed = filtered.filter(article => {
+    // 4. FilterEngine評価
+    let displayed = filtered.filter(article => {
       const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
-      return !shouldBlock; // ブロックされない記事のみ表示
+      return !shouldBlock;
     });
 
+    // 5. 既読表示設定
+    if (readDisplay === 'hide') {
+      displayed = displayed.filter(a => !a.isRead);
+    }
+
     setFilteredArticles(displayed);
-  }, [articles, selectedFeedId, filters, globalAllowKeywords]);
+  }, [articles, selectedFeedId, showStarredOnly, filters, globalAllowKeywords, readDisplay]);
 
   // RSS同期
   const handleRefresh = React.useCallback(async () => {
     try {
       setRefreshing(true);
       
-      // RSS同期を実行
       const result = await SyncService.refresh();
       console.log(`Sync completed: ${result.fetched} feeds, ${result.newArticles} new articles`);
       
-      // データを再読み込み
       await loadData();
     } catch (error) {
       console.error('Failed to refresh:', error);
-      Alert.alert('エラー', '更新に失敗しました');
+      ErrorHandler.showSyncError();
     } finally {
       setRefreshing(false);
     }
@@ -282,19 +412,52 @@ export default function HomeScreen() {
   // 記事タップ
   const handlePressArticle = React.useCallback(async (article: Article) => {
     try {
-      // 記事を既読にする
       await ArticleService.markRead(article.id);
       
-      // ローカルの状態も更新
       setArticles(prev => 
         prev.map(a => a.id === article.id ? { ...a, isRead: true } : a)
       );
       
-      // ブラウザで開く
       await Linking.openURL(article.link);
     } catch (error) {
       console.error('Failed to open article:', error);
-      Alert.alert('エラー', '記事を開けませんでした');
+      ErrorHandler.showGenericError('記事を開けませんでした');
+    }
+  }, []);
+
+  // 記事長押し（お気に入り切り替え）
+  const handleLongPressArticle = React.useCallback(async (article: Article) => {
+    try {
+      const isAdding = !article.isStarred;
+      
+      await ArticleRepository.toggleStarred(article.id);
+      
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
+      const anim = getHighlightAnim(article.id);
+      
+      if (isAdding) {
+        // 追加時: 素早く2回光る
+        Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration: 100, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 0, duration: 100, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 1, duration: 100, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 0, duration: 150, useNativeDriver: false }),
+        ]).start();
+      } else {
+        // 削除時: ゆっくり1回光る
+        Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration: 150, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 0, duration: 300, useNativeDriver: false }),
+        ]).start();
+      }
+      
+      setArticles(prev => 
+        prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
+      );
+    } catch (error) {
+      console.error('Failed to toggle star:', error);
+      ErrorHandler.showDatabaseError('お気に入りの変更に失敗しました');
     }
   }, []);
 
@@ -309,9 +472,10 @@ export default function HomeScreen() {
 HomeScreen
 ├─ HomeHeader
 │  ├─ FeedSelector
+│  ├─ StarFilterToggle（⭐ボタン）
 │  └─ RefreshButton
 ├─ FlatList
-│  └─ ArticleItem
+│  └─ ArticleItem（ハイライトアニメーション対応）
 └─ FeedSelectModal
 ```
 
@@ -336,6 +500,15 @@ const handlePressArticle = async (article: Article) => {
 };
 ```
 
+### ✅ お気に入り管理
+```typescript
+const handleLongPressArticle = async (article: Article) => {
+  await ArticleRepository.toggleStarred(article.id);
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // アニメーション + 状態更新
+};
+```
+
 ### ✅ RSS取得
 ```typescript
 const handleRefresh = async () => {
@@ -346,11 +519,9 @@ const handleRefresh = async () => {
 
 ### ✅ グローバル許可キーワード
 ```typescript
-// データ読み込み時に取得
 const globalAllowList = await GlobalAllowKeywordService.list();
 setGlobalAllowKeywords(globalAllowList);
 
-// フィルタ適用時に使用
 const allowKeywords = globalAllowKeywords.map(k => k.keyword);
 const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
 ```
@@ -389,41 +560,13 @@ const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
    - 許可キーワード
 ```
 
-### 具体例
-```
-【設定】
-- グローバル許可キーワード: 「React」
-- フィルタ: ブロックキーワード = 「FX」
-
-【記事】
-タイトル: 「FXでReact開発を学ぶ」
-
-【評価】
-1. グローバル許可キーワードチェック
-   - 「React」が含まれる → ✅ 表示
-
-2. フィルタ評価はスキップ
-   - 「FX」が含まれてもブロックされない
-```
-
 ---
 
 ## 将来の実装
 
-### 既読表示設定
-```typescript
-// Settings から読み込み
-const [readDisplay, setReadDisplay] = React.useState<'dim' | 'hide'>('dim');
-
-// フィルタ適用時
-if (readDisplay === 'hide') {
-  displayed = displayed.filter(a => !a.isRead);
-}
-```
-
 ### 自動更新
 ```typescript
-// アプリ起動時、または定期的に自動更新
+// 定期的に自動更新
 useEffect(() => {
   const interval = setInterval(() => {
     handleRefresh();
@@ -440,8 +583,8 @@ useEffect(() => {
 - [`FilterService.md`](../services/FilterService.md) - フィルタ管理
 - [`GlobalAllowKeywordService.md`](../services/GlobalAllowKeywordService.md) - グローバル許可キーワード管理
 - [`ArticleService.md`](../services/ArticleService.md) - 記事データ管理
+- [`ArticleRepository.md`](../repositories/ArticleRepository.md) - 記事DB操作
 - [`FeedService.md`](../services/FeedService.md) - フィード管理
 - [`SyncService.md`](../services/SyncService.md) - RSS同期
 - [`FeedSelectModal.md`](./feed_select_modal.md) - フィード選択モーダル
 - [`global_allow_keywords.md`](./global_allow_keywords.md) - グローバル許可キーワード画面
-- [`FilterService.md`](../services/FilterService.md)
