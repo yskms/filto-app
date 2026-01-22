@@ -1,10 +1,13 @@
 import { FeedService } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
 import { ArticleService } from '@/services/ArticleService';
+import { ArticleRepository } from '@/repositories/ArticleRepository';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ストレージキー
 const STORAGE_KEY_LAST_SYNC_TIME = '@filto/lastSyncTime';
+const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/preferences/articleRetentionDays';
+const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/preferences/deleteStarredInAutoDelete';
 
 /**
  * SyncService
@@ -18,7 +21,7 @@ export const SyncService = {
    * 全フィードを同期
    * @returns 取得成功フィード数と新規記事数
    */
-  async refresh(): Promise<{ fetched: number; newArticles: number }> {
+  async refresh(): Promise<{ fetched: number; newArticles: number; deleted?: number }> {
     // 多重実行防止
     if (this.isRefreshing) {
       console.log('[SyncService] Already refreshing, skipping...');
@@ -73,9 +76,42 @@ export const SyncService = {
       // 最終同期時刻を保存
       await AsyncStorage.setItem(STORAGE_KEY_LAST_SYNC_TIME, Date.now().toString());
 
-      return { fetched, newArticles };
+      // 古い記事を自動削除
+      const deletedCount = await this.deleteOldArticlesAuto();
+
+      return { fetched, newArticles, deleted: deletedCount };
     } finally {
       this.isRefreshing = false;
+    }
+  },
+
+  /**
+   * 古い記事を自動削除（設定に基づく）
+   * @returns 削除された記事数
+   */
+  async deleteOldArticlesAuto(): Promise<number> {
+    try {
+      // 設定から保持期間を取得
+      const retentionDaysStr = await AsyncStorage.getItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS);
+      const retentionDays = retentionDaysStr ? parseInt(retentionDaysStr, 10) : 30; // デフォルト: 30日
+
+      // お気に入りも削除するかの設定を取得
+      const deleteStarredStr = await AsyncStorage.getItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO);
+      const deleteStarred = deleteStarredStr === 'true'; // デフォルト: false
+
+      console.log(`[SyncService] Auto-deleting articles older than ${retentionDays} days (includeStarred: ${deleteStarred})...`);
+
+      // 古い記事を削除
+      const deletedCount = await ArticleRepository.deleteOldArticles(retentionDays, deleteStarred);
+
+      if (deletedCount > 0) {
+        console.log(`[SyncService] Auto-deleted ${deletedCount} old articles`);
+      }
+
+      return deletedCount;
+    } catch (error) {
+      console.error('[SyncService] Failed to auto-delete old articles:', error);
+      return 0;
     }
   },
 
