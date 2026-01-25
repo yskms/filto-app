@@ -20,23 +20,14 @@ import { FeedService } from '@/services/FeedService';
 import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
 import { ErrorHandler } from '@/utils/errorHandler';
 
-// FeedsHeader（通常モード）
+// FeedsHeader（通常モード）- タブ画面のため戻るボタンなし
 const FeedsHeader: React.FC<{
-  onPressBack: () => void;
   onPressSort: () => void;
   onPressDelete: () => void;
   onPressAdd: () => void;
-}> = ({ onPressBack, onPressSort, onPressDelete, onPressAdd }) => {
+}> = ({ onPressSort, onPressDelete, onPressAdd }) => {
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={onPressBack}
-        activeOpacity={0.7}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={styles.backIcon}>←</Text>
-      </TouchableOpacity>
       <Text style={styles.headerTitle}>Feeds</Text>
       <View style={styles.headerButtons}>
         <TouchableOpacity
@@ -44,21 +35,21 @@ const FeedsHeader: React.FC<{
           onPress={onPressSort}
           activeOpacity={0.7}
         >
-          <Text style={styles.sortIcon}>🔄</Text>
+          <Text style={styles.headerIcon}>🔄</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressDelete}
           activeOpacity={0.7}
         >
-          <Text style={styles.deleteIcon}>🗑</Text>
+          <Text style={styles.headerIcon}>🗑</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressAdd}
           activeOpacity={0.7}
         >
-          <Text style={styles.addIcon}>＋</Text>
+          <Text style={styles.headerIcon}>＋</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -265,12 +256,6 @@ export default function FeedsScreen() {
     loadFeeds();
   }, [currentSort, loadFeeds]);
 
-  const handlePressBack = () => {
-    closeOpenSwipe();
-    openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
-    router.push('/(tabs)/settings');
-  };
 
   const handlePressSortButton = () => {
     closeOpenSwipe();
@@ -407,7 +392,6 @@ export default function FeedsScreen() {
           />
         ) : (
           <FeedsHeader
-            onPressBack={handlePressBack}
             onPressSort={handlePressSortButton}
             onPressDelete={handlePressDelete}
             onPressAdd={handlePressAdd}
@@ -470,40 +454,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-  },
-  backIcon: {
-    fontSize: 24,
-    color: '#000',
+    backgroundColor: '#fff',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#000',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    zIndex: -1,
   },
   headerButtons: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   headerButton: {
     padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 40,
   },
-  sortIcon: {
+  headerIcon: {
     fontSize: 20,
-  },
-  deleteIcon: {
-    fontSize: 20,
-  },
-  addIcon: {
-    fontSize: 24,
-    color: '#1976d2',
   },
   cancelText: {
     fontSize: 16,

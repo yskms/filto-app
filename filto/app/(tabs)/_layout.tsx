@@ -31,16 +31,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="feeds"
+        options={{
+          title: 'Feeds',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="newspaper.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="feeds"
-        options={{
-          href: null,  // タブバーには表示しない
         }}
       />
     </Tabs>

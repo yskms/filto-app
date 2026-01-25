@@ -8,8 +8,9 @@ flowchart TB
   subgraph Tabs["Tabs"]
     direction LR
     Home["Home"]
-    Settings["Settings"]
     Filters["Filters"]
+    Feeds["Feeds"]
+    Settings["Settings"]
   end
   
   %% Home flow
@@ -17,12 +18,13 @@ flowchart TB
   Home --> FeedSelect --> Home
   FeedSelect --> Feeds
   
-  %% Settings flow
-  Feeds["Feeds"]
+  %% Feeds flow
   FeedAdd["FeedAdd"]
+  Feeds --> FeedAdd
+  
+  %% Settings flow
   Preferences["Preferences"]
   GlobalAllowKeywords["Global Allow Keywords"]
-  Settings --> Feeds --> FeedAdd
   Settings --> Preferences --> GlobalAllowKeywords
   
   %% Filters flow
@@ -52,19 +54,19 @@ flowchart TB
 ## タブ構成
 
 ```
-[ Home ][ Filters ][ Settings ]
+[ Home ][ Filters ][ Feeds ][ Settings ]
 ```
 
 - 常に下部タブで相互遷移可能
-- Home ⇄ Filters ⇄ Settings は自由に行き来
+- Home ⇄ Filters ⇄ Feeds ⇄ Settings は自由に行き来
 
 ### タブグループ内の画面
 
 **ボトムタブ表示あり**（タブグループ内、`app/(tabs)/`配下）:
 - **Home** (`app/(tabs)/index.tsx`) - タブバーに表示
 - **Filters** (`app/(tabs)/filters.tsx`) - タブバーに表示
+- **Feeds** (`app/(tabs)/feeds.tsx`) - タブバーに表示
 - **Settings** (`app/(tabs)/settings.tsx`) - タブバーに表示
-- **Feeds** (`app/(tabs)/feeds.tsx`) - タブバーには非表示（`href: null`）だが、ボトムタブは表示される
 
 **ボトムタブ表示なし**（タブグループ外、`app/`直下）:
 - **FeedAdd** (`app/feed_add.tsx`) - フィード追加・編集画面
@@ -73,8 +75,7 @@ flowchart TB
 - **Global Allow Keywords** (`app/global_allow_keywords.tsx`) - グローバル許可キーワード管理画面
 
 **実装メモ**: 
-- `app/(tabs)/`配下: ボトムタブバー表示
-  - `href: null`でタブバー非表示、ボトムタブは表示（Feedsのみ）
+- `app/(tabs)/`配下: ボトムタブバー表示（4タブ）
 - `app/`直下: ボトムタブバー非表示
   - `<Stack.Screen options={{ headerShown: false }} />`でデフォルトヘッダーを非表示
   - 独自ヘッダーを実装（2重ヘッダー防止）
@@ -126,18 +127,19 @@ flowchart TB
 
 | タップ | 遷移先 |
 |--------|--------|
-| Feeds | → Feeds |
 | Preferences | → Preferences |
+| Global Allow Keywords | → Global Allow Keywords |
+
+※ Feeds はボトムタブから直接アクセスする。Settings からのリンクはなし。
 
 ---
 
 ### 📚 Feeds
 
 - **＋** → FeedAdd
-- **← 戻る** → Settings（常にSettingsに遷移）
-- **ボトムタブ** → Home / Filters / Settings に自由に遷移可能
+- **ボトムタブ** → Home / Filters / Feeds / Settings に自由に遷移可能
 
-**注意**: Feeds画面はタブグループ内にあるため、ボトムタブが表示される。ただし、タブバー自体には表示されない（3タブのまま）。
+**注意**: Feeds は4つのボトムタブのひとつ。タブで他画面へ切り替える。Settings からの遷移はない。
 
 ---
 

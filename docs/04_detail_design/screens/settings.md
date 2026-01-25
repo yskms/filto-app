@@ -20,8 +20,6 @@
 ### メニューリスト
 ```
 ┌────────────────────────────────────────┐
-│ Feeds                              >   │
-├────────────────────────────────────────┤
 │ Global Allow Keywords              >   │
 ├────────────────────────────────────────┤
 │ Preferences                        >   │
@@ -31,14 +29,11 @@
 └────────────────────────────────────────┘
 ```
 
+※ Feeds はボトムタブから直接アクセスするため、Settings のメニューには含めない。
+
 ### メニュー項目
 
-#### 1. Feeds
-- **説明**: フィード管理
-- **遷移先**: Feeds画面
-- **状態**: 有効
-
-#### 2. Global Allow Keywords
+#### 1. Global Allow Keywords
 - **説明**: グローバル許可キーワード管理
 - **遷移先**: Global Allow Keywords画面
 - **状態**: 有効
@@ -46,12 +41,12 @@
   - 全フィルタに対して優先的に適用される許可キーワードの管理
   - 無料版は3件まで、Pro版は無制限
 
-#### 3. Preferences
+#### 2. Preferences
 - **説明**: 各種設定
 - **遷移先**: Preferences画面
 - **状態**: 有効（将来実装）
 
-#### 4. Pro
+#### 3. Pro
 - **説明**: Pro版案内
 - **遷移先**: Pro版案内画面
 - **状態**: 無効化（将来実装）
@@ -68,14 +63,11 @@
 ```typescript
 const handlePressMenuItem = (id: string) => {
   switch (id) {
-    case 'feeds':
-      router.push('/(tabs)/feeds');
-      break;
     case 'global_allow_keywords':
-      router.push('/(tabs)/global_allow_keywords');
+      router.push('/global_allow_keywords');
       break;
     case 'preferences':
-      router.push('/(tabs)/preferences');
+      router.push('/preferences');
       break;
     case 'pro':
       // TODO: Pro版案内画面へ遷移
@@ -115,10 +107,11 @@ router.push(path)
 ### 遷移先
 | メニュー項目 | 遷移先 | パス |
 |------------|-------|------|
-| Feeds | Feeds画面 | `/(tabs)/feeds` |
-| Global Allow Keywords | Global Allow Keywords画面 | `/(tabs)/global_allow_keywords` |
-| Preferences | Preferences画面 | `/(tabs)/preferences` |
+| Global Allow Keywords | Global Allow Keywords画面 | `/global_allow_keywords` |
+| Preferences | Preferences画面 | `/preferences` |
 | Pro | Pro版案内画面 | （TODO） |
+
+※ Feeds はボトムタブでアクセス。Settings からのリンクはない。
 
 ### タブバー
 - Settings画面はタブグループ内にあるため、タブバーが表示される
@@ -166,7 +159,7 @@ router.push(path)
 
 ### 実装済み
 - [x] 基本UI作成
-- [x] Feeds画面への遷移
+- [x] Feeds はボトムタブでアクセスするため、Settings からのリンクは削除済み
 - [x] Global Allow Keywords画面への遷移
 
 ### 未実装
@@ -179,6 +172,6 @@ router.push(path)
 ---
 
 ## 参考
-- [feeds.md](./feeds.md) - Feeds画面
+- [feeds.md](./feeds.md) - Feeds画面（ボトムタブでアクセス）
 - [global_allow_keywords.md](./global_allow_keywords.md) - Global Allow Keywords画面
 - [preferences.md](./preferences.md) - Preferences画面（TODO）
