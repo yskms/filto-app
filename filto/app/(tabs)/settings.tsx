@@ -6,13 +6,16 @@ import { useRouter } from 'expo-router';
 interface MenuItem {
   id: string;
   title: string;
+  icon?: string;
   disabled?: boolean;
 }
 
 const menuItems: MenuItem[] = [
-  { id: 'global_allow_keywords', title: 'Global Allow Keywords' },
-  { id: 'preferences', title: 'Preferences' },
-  { id: 'pro', title: 'Pro', disabled: true },
+  { id: 'global_allow_keywords', title: 'Global Allow Keywords', icon: '📚' },
+  { id: 'display_behavior', title: 'Display & Behavior', icon: '👁' },
+  { id: 'data_management', title: 'Data Management', icon: '💾' },
+  { id: 'pro', title: 'Pro', icon: '⭐', disabled: true },
+  { id: 'about', title: 'About', icon: 'ℹ' },
 ];
 
 // メニューアイテムコンポーネント
@@ -27,9 +30,12 @@ const MenuItemRow: React.FC<{
       disabled={item.disabled}
       activeOpacity={0.7}
     >
-      <Text style={[styles.menuItemText, item.disabled && styles.menuItemTextDisabled]}>
-        {item.title}
-      </Text>
+      <View style={styles.menuItemLeft}>
+        {item.icon != null && <Text style={styles.menuItemIcon}>{item.icon}</Text>}
+        <Text style={[styles.menuItemText, item.disabled && styles.menuItemTextDisabled]}>
+          {item.title}
+        </Text>
+      </View>
       {!item.disabled && <Text style={styles.arrow}>›</Text>}
     </TouchableOpacity>
   );
@@ -52,11 +58,17 @@ export default function SettingsScreen() {
       case 'global_allow_keywords':
         router.push('/global_allow_keywords');
         break;
-      case 'preferences':
-        router.push('/preferences');
+      case 'display_behavior':
+        router.push('/display_behavior');
+        break;
+      case 'data_management':
+        router.push('/data_management');
         break;
       case 'pro':
         // 無効化されているので何もしない
+        break;
+      case 'about':
+        router.push('/about');
         break;
     }
   }, [router]);
@@ -113,6 +125,14 @@ const styles = StyleSheet.create({
   },
   menuItemDisabled: {
     opacity: 0.5,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuItemIcon: {
+    fontSize: 20,
   },
   menuItemText: {
     fontSize: 16,

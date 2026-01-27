@@ -421,5 +421,5 @@ try {
 
 ### グローバル許可リストとの関係
 - グローバル許可リストに登録されたキーワードは、すべてのフィルタより優先して許可される
-- FilterEdit では設定できない（Preferences画面で管理）
+- FilterEdit では設定できない（Settings 配下の Global Allow Keywords 画面で管理）
 - フィルタ評価時に FilterService が自動的にチェック

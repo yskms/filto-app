@@ -500,7 +500,7 @@
 | **Home** | `GET /api/articles`<br>`PUT /api/articles/{id}/read`<br>`POST /api/sync` |
 | **Feeds** | `GET /api/feeds`<br>`POST /api/feeds`<br>`PUT /api/feeds/{id}`<br>`DELETE /api/feeds/{id}` |
 | **Filters** | `GET /api/filters`<br>`POST /api/filters`<br>`PUT /api/filters/{id}`<br>`DELETE /api/filters/{id}`<br>`POST /api/filters/evaluate` |
-| **Preferences** | `GET /api/settings`<br>`PUT /api/settings`<br>`GET /api/global-allow-keywords`<br>`POST /api/global-allow-keywords`<br>`DELETE /api/global-allow-keywords/{id}` |
+| **Display & Behavior / Data Management / Global Allow Keywords** | `GET /api/settings`<br>`PUT /api/settings`<br>`GET /api/global-allow-keywords`<br>`POST /api/global-allow-keywords`<br>`DELETE /api/global-allow-keywords/{id}` |
 | **起動/手動更新** | `POST /api/sync` |
 
 ---

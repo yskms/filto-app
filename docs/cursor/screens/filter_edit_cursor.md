@@ -479,7 +479,7 @@ Target: ☑タイトル ☑概要
 
 ### Global Allow List Relationship
 - Global allow list keywords override ALL filters
-- Managed in Preferences screen (not in FilterEdit)
+- Managed in Global Allow Keywords screen (Settings 配下). Not in FilterEdit.
 - FilterService automatically checks global allow list first
 
 ---

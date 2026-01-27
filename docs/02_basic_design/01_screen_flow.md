@@ -23,9 +23,14 @@ flowchart TB
   Feeds --> FeedAdd
   
   %% Settings flow
-  Preferences["Preferences"]
   GlobalAllowKeywords["Global Allow Keywords"]
-  Settings --> Preferences --> GlobalAllowKeywords
+  DisplayBehavior["Display & Behavior"]
+  DataManagement["Data Management"]
+  About["About"]
+  Settings --> GlobalAllowKeywords
+  Settings --> DisplayBehavior
+  Settings --> DataManagement
+  Settings --> About
   
   %% Filters flow
   FilterEdit["FilterEdit"]
@@ -46,7 +51,9 @@ flowchart TB
 - **Feeds**：フィード一覧
 - **FeedAdd**：RSSフィード追加/編集
 - **Settings**：設定
-- **Preferences**：表示・同期・その他
+- **Display & Behavior**：表示・挙動（既読表示/テーマ/言語/起動時更新）
+- **Data Management**：データ管理（保持期間/手動削除/WiFi取得/更新間隔等）
+- **About**：バージョン・アプリ情報
 - **Global Allow Keywords**：グローバル許可キーワード管理
 
 ---
@@ -71,7 +78,9 @@ flowchart TB
 **ボトムタブ表示なし**（タブグループ外、`app/`直下）:
 - **FeedAdd** (`app/feed_add.tsx`) - フィード追加・編集画面
 - **FilterEdit** (`app/filter_edit.tsx`) - フィルタ追加・編集画面
-- **Preferences** (`app/preferences.tsx`) - 設定詳細画面
+- **Display & Behavior** (`app/display_behavior.tsx`) - 表示・挙動設定
+- **Data Management** (`app/data_management.tsx`) - データ管理設定
+- **About** (`app/about.tsx`) - アプリ情報
 - **Global Allow Keywords** (`app/global_allow_keywords.tsx`) - グローバル許可キーワード管理画面
 
 **実装メモ**: 
@@ -127,8 +136,11 @@ flowchart TB
 
 | タップ | 遷移先 |
 |--------|--------|
-| Preferences | → Preferences |
-| Global Allow Keywords | → Global Allow Keywords |
+| 📚 Global Allow Keywords | → Global Allow Keywords |
+| 👁 Display & Behavior | → Display & Behavior |
+| 💾 Data Management | → Data Management |
+| ⭐ Pro | （無効） |
+| ℹ About | → About |
 
 ※ Feeds はボトムタブから直接アクセスする。Settings からのリンクはなし。
 
@@ -150,9 +162,19 @@ flowchart TB
 
 ---
 
-### ⚙ Preferences
+### 👁 Display & Behavior
 
-- **グローバル許可** → Global Allow Keywords
+- **既読の表示方法**（dim / hide）、**テーマ**（Light / Dark / System）、**言語**（日本語 / English）、**起動時の挙動**（自動更新 ON/OFF）
+- **←** → Settings
+
+### 💾 Data Management
+
+- **記事保持期間**（7日/30日/90日/無制限）、**手動削除オプション**、**WiFi時のみ取得**、**最低更新間隔**、（将来）OPML Import/Export・バックアップ/復元
+- **←** → Settings
+
+### ℹ About
+
+- アプリ名・バージョン等
 - **←** → Settings
 
 ---
@@ -162,4 +184,4 @@ flowchart TB
 - **＋ボタン** → キーワード追加（Pro版チェックあり）
 - **✕ボタン** → キーワード削除（確認ダイアログ）
 - **Pro版ボタン**（無料版のみ） → Pro案内画面
-- **←** → Preferences
+- **←** → Settings

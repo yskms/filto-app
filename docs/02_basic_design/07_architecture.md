@@ -8,7 +8,8 @@ flowchart TB
     Home["Home<br/>記事一覧"]
     FiltersUI["Filters<br/>フィルタ管理"]
     SettingsUI["Settings<br/>設定・Feeds管理"]
-    PreferencesUI["Preferences<br/>詳細設定"]
+    DisplayBehaviorUI["Display & Behavior<br/>表示・挙動設定"]
+    DataManagementUI["Data Management<br/>データ管理設定"]
     FeedAddUI["FeedAdd"]
     FilterEditUI["FilterEdit"]
   end
@@ -38,7 +39,8 @@ flowchart TB
   Home --> Api
   FiltersUI --> Api
   SettingsUI --> Api
-  PreferencesUI --> Api
+  DisplayBehaviorUI --> Api
+  DataManagementUI --> Api
   FeedAddUI --> Api
   FilterEditUI --> Api
 
@@ -78,7 +80,7 @@ flowchart TB
 - **Home**：記事取得・既読更新・手動更新
 - **Filters**：フィルタCRUD・並び替え
 - **Settings**：設定トップ + Feeds管理
-- **Preferences**：詳細設定 + グローバル許可リスト管理
+- **Display & Behavior / Data Management**：表示・挙動・データ管理設定（Settings から遷移）。グローバル許可リストは Global Allow Keywords 画面で管理
 - **FeedAdd / FilterEdit**：追加・編集画面
 
 APIを叩くだけで、ビジネスロジックは持たない
@@ -176,7 +178,7 @@ Home UI
 ### 2. グローバル許可キーワード追加
 
 ```
-Preferences UI
+Global Allow Keywords画面
  → POST /api/global-allow-keywords { keyword: "React" }
    → API Controller
      → Global Allow Service
@@ -188,7 +190,7 @@ Preferences UI
            → 全記事を再評価
            → is_blocked 更新
  → 結果返却
- → Preferences 再表示
+ → Global Allow Keywords 再表示
 ```
 
 ---

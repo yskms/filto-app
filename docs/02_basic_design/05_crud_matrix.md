@@ -80,10 +80,10 @@ if (showStarredOnly) {
 
 | 操作 | 画面 / 機能 | 内容 |
 |------|------------|------|
-| **Create** | Preferences | キーワード追加（Pro版チェックあり） |
-| **Read** | Preferences / フィルタ評価 | キーワード一覧表示、記事評価時に最優先で参照 |
+| **Create** | Global Allow Keywords画面 | キーワード追加（Pro版チェックあり） |
+| **Read** | Global Allow Keywords画面 / フィルタ評価 | キーワード一覧表示、記事評価時に最優先で参照 |
 | **Update** | — | 更新は削除+追加で対応 |
-| **Delete** | Preferences | キーワード削除 |
+| **Delete** | Global Allow Keywords画面 | キーワード削除 |
 
 ### 評価ロジック
 ```
@@ -123,8 +123,8 @@ if (global_allow_keywords のいずれかが記事に含まれる) {
 | 操作 | 画面 / 機能 | 内容 |
 |------|------------|------|
 | **Create** | 初回起動 | 初期設定レコード作成 |
-| **Read** | Preferences / 各種機能 | 設定値参照 |
-| **Update** | Preferences / Filters（ソート） | 言語、テーマ、同期設定、フィルタ並び順など更新 |
+| **Read** | Display & Behavior / Data Management / 各種機能 | 設定値参照 |
+| **Update** | Display & Behavior / Data Management / Filters（ソート） | 言語、テーマ、同期設定、フィルタ並び順など更新 |
 | **Delete** | — | 原則削除しない |
 
 ### 主要設定項目
@@ -161,7 +161,8 @@ if (global_allow_keywords のいずれかが記事に含まれる) {
 | **FilterEdit（新規）** | — | — | C | — | — | — |
 | **FilterEdit（編集）** | — | — | R/U/D | — | — | — |
 | **Settings** | — | — | — | — | R | — |
-| **Preferences** | — | — | — | C/R/D | R/U | — |
+| **Global Allow Keywords画面** | — | — | — | C/R/D | R | — |
+| **Display & Behavior / Data Management** | — | — | — | — | R/U | — |
 | **同期処理** | R | C/R/U | R | R | R | R/U |
 | **フィルタ評価** | — | U | R | R | — | — |
 
@@ -195,8 +196,8 @@ if (global_allow_keywords のいずれかが記事に含まれる) {
 ### UIから直接操作
 - **FEEDS**: FeedAdd（C）、Feeds（R/U/D）
 - **FILTERS**: FilterEdit（C/R/U/D）、Filters（R/D）、FilterSort（ソート順の保存）
-- **GLOBAL_ALLOW_KEYWORDS**: Preferences（C/R/D）
-- **SETTINGS**: Preferences（R/U）
+- **GLOBAL_ALLOW_KEYWORDS**: Global Allow Keywords画面（C/R/D）
+- **SETTINGS**: Display & Behavior / Data Management（R/U）
 
 ### 内部処理メイン
 - **ARTICLES**: 同期処理で自動管理、フィルタ評価で is_blocked 更新
@@ -207,7 +208,7 @@ if (global_allow_keywords のいずれかが記事に含まれる) {
 2. **一括削除**: 削除モード（Feeds / Filters）
 3. **CASCADE削除**: フィード削除時に記事も削除
 4. **編集画面から削除**: FilterEdit の削除ボタン
-5. **Preferences から削除**: グローバル許可キーワードの個別削除
+5. **Global Allow Keywords画面から削除**: グローバル許可キーワードの個別削除
 
 ### Pro版制限チェックのタイミング
 - **フィルタ追加時**: 件数確認（100件制限）

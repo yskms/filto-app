@@ -91,12 +91,12 @@
 - [x] 既読管理（markRead実装済み）
 - [x] 手動更新（Pull to Refresh）
 - [x] 起動時自動更新（動作確認はフェーズ3で行う）
-  - Preferencesで設定ON/OFF
+  - Display & Behavior で設定 ON/OFF
   - 最終同期時刻の記録（SyncService）
   - 30分以内は同期スキップ
   - バックグラウンド実行（画面表示を妨げない）
 - [x] Settings画面
-- [x] Preferences実装（Phase 1完了）
+- [x] Display & Behavior / Data Management 実装（Phase 1完了）
   - 既読の表示方法設定（dim / hide）
   - 起動時自動更新設定（ON / OFF）
   - AsyncStorageでの永続化
@@ -123,7 +123,7 @@
 - **達成**:
   - 主要機能すべて実装完了
   - RSS自動検出、複数フィード、フィルタ、既読管理、起動時自動更新
-  - グローバル許可キーワード、Preferences、エラーハンドリング
+  - グローバル許可キーワード、Display & Behavior / Data Management、エラーハンドリング
   - ドキュメント更新も並行実施
 - **学び**: 
   - 実機テストで発見：Yahoo!の`<image>`タグ、TechCrunchの圧縮レスポンス
@@ -143,11 +143,11 @@
   - Home画面にお気に入りフィルタ追加
   - DB: is_starred カラム追加
 - [x] 古い記事の自動削除機能
-  - Preferencesで記事保持期間を設定（7日/30日/90日/無制限）
+  - Data Management で記事保持期間を設定（7日/30日/90日/無制限）
   - 同期時に自動削除（お気に入り記事は除外）
   - Settings画面から手動削除も可能（お気に入り記事も選択可）
   - DB: fetched_at でフィルタリング
-- [ ] Preferences詳細設定（言語・テーマ切替）
+- [ ] Display & Behavior 詳細設定（言語・テーマ切替の反映）
 - [ ] 記事詳細画面（外部ブラウザで開く）
 - [ ] UI/UX調整（アニメーション、色、フォント）
 - [ ] 空/初期状態対応（GlobalAllowKeywords画面）

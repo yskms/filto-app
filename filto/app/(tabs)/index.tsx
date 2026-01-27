@@ -26,7 +26,7 @@ import { SyncService } from '@/services/SyncService';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ReadDisplayMode } from '../preferences';
+import type { ReadDisplayMode } from '../display_behavior';
 import { ErrorHandler } from '@/utils/errorHandler';
 
 // 経過時間を計算
@@ -170,7 +170,7 @@ export default function HomeScreen() {
   const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
   const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
   
-  // Preferences
+  // Display & Behavior（既読表示など）
   const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
   
   // 起動時自動同期の実行済みフラグ
@@ -215,8 +215,8 @@ export default function HomeScreen() {
       const globalAllowList = await GlobalAllowKeywordService.list();
       setGlobalAllowKeywords(globalAllowList);
       
-      // Preferences を取得
-      const savedReadDisplay = await AsyncStorage.getItem('@filto/preferences/readDisplay');
+      // Display & Behavior の設定を取得
+      const savedReadDisplay = await AsyncStorage.getItem('@filto/display_behavior/readDisplay');
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
         setReadDisplay(savedReadDisplay);
       }
@@ -245,7 +245,7 @@ export default function HomeScreen() {
 
       try {
         // 設定を確認
-        const autoSyncEnabled = await AsyncStorage.getItem('@filto/preferences/autoSyncOnStartup');
+        const autoSyncEnabled = await AsyncStorage.getItem('@filto/display_behavior/autoSyncOnStartup');
         if (autoSyncEnabled === 'false') {
           console.log('[AutoSync] Auto sync is disabled');
           setHasAutoSynced(true); // 無効の場合も実行済みフラグを立てる

@@ -6,8 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ストレージキー
 const STORAGE_KEY_LAST_SYNC_TIME = '@filto/lastSyncTime';
-const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/preferences/articleRetentionDays';
-const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/preferences/deleteStarredInAutoDelete';
+const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
+const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
 
 /**
  * SyncService

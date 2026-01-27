@@ -228,7 +228,7 @@ SELECT COUNT(*) FROM global_allow_keywords;
 ## ⑤ settings：設定（Key-Value）
 
 ### 📄 概要
-Preferences画面の各種設定を柔軟に保存する。
+Display & Behavior / Data Management などの各種設定を柔軟に保存する。
 
 ### 🧱 定義
 ```sql

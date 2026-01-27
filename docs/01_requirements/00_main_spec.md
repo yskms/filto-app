@@ -29,8 +29,9 @@
 - [FeedAdd画面](../04_detail_design/feed_add.md)
 - [Filters画面](../04_detail_design/filters.md)
 - [FilterEdit画面](../04_detail_design/filter_edit.md)
-- [Settings画面](../04_detail_design/settings.md)
-- [Preferences画面](../04_detail_design/preferences.md)
+- [Settings画面](../04_detail_design/screens/settings.md)
+- [Display & Behavior画面](../04_detail_design/screens/display_behavior.md)
+- [Data Management画面](../04_detail_design/screens/data_management.md)
 
 ### 実装制約
 - [実装制約](../cursor/CONSTRAINTS.md)

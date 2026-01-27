@@ -296,6 +296,6 @@ UI
 Home → ArticleService → FilterEngine
 Feeds → FeedService
 Filters → FilterService
-Preferences → SettingsService
+Display & Behavior / Data Management → AsyncStorage（設定永続化）
 Refresh → SyncService → RssService → ArticleService
 ```

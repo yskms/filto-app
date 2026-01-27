@@ -189,7 +189,7 @@ interface Feed {
 ### 起動時自動更新
 ```
 1. アプリ起動時に自動的に実行
-2. Preferencesの設定を確認（デフォルト: ON）
+2. Display & Behavior の設定を確認（デフォルト: ON）
 3. SyncService.shouldSync()で同期が必要かチェック（30分以上経過時のみ）
 4. 必要な場合のみバックグラウンドで同期実行
 5. 同期完了後、データを再読み込み
@@ -343,7 +343,7 @@ export default function HomeScreen() {
       const globalAllowList = await GlobalAllowKeywordService.list();
       setGlobalAllowKeywords(globalAllowList);
       
-      const savedReadDisplay = await AsyncStorage.getItem('@filto/preferences/readDisplay');
+      const savedReadDisplay = await AsyncStorage.getItem('@filto/display_behavior/readDisplay');
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
         setReadDisplay(savedReadDisplay);
       }
