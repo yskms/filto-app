@@ -1,13 +1,5 @@
 import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
@@ -19,6 +11,8 @@ import { Feed } from '@/types/Feed';
 import { FeedService } from '@/services/FeedService';
 import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
 import { ErrorHandler } from '@/utils/errorHandler';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 // FeedsHeader（通常モード）- タブ画面のため戻るボタンなし
 const FeedsHeader: React.FC<{
@@ -26,30 +20,33 @@ const FeedsHeader: React.FC<{
   onPressDelete: () => void;
   onPressAdd: () => void;
 }> = ({ onPressSort, onPressDelete, onPressAdd }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>Feeds</Text>
+    <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
+      <ThemedText style={styles.headerTitle}>Feeds</ThemedText>
       <View style={styles.headerButtons}>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressSort}
           activeOpacity={0.7}
         >
-          <Text style={styles.headerIcon}>🔄</Text>
+          <ThemedText style={styles.headerIcon}>🔄</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressDelete}
           activeOpacity={0.7}
         >
-          <Text style={styles.headerIcon}>🗑</Text>
+          <ThemedText style={styles.headerIcon}>🗑</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressAdd}
           activeOpacity={0.7}
         >
-          <Text style={styles.headerIcon}>＋</Text>
+          <ThemedText style={styles.headerIcon}>＋</ThemedText>
         </TouchableOpacity>
       </View>
     </View>
@@ -62,30 +59,33 @@ const FeedsHeaderDeleteMode: React.FC<{
   onPressCancel: () => void;
   onPressDelete: () => void;
 }> = ({ selectedCount, onPressCancel, onPressDelete }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
       <TouchableOpacity
         style={styles.headerButton}
         onPress={onPressCancel}
         activeOpacity={0.7}
       >
-        <Text style={styles.cancelText}>キャンセル</Text>
+        <ThemedText style={styles.cancelText}>キャンセル</ThemedText>
       </TouchableOpacity>
-      <Text style={styles.selectedCount}>{selectedCount}件選択中</Text>
+      <ThemedText style={styles.selectedCount}>{selectedCount}件選択中</ThemedText>
       <TouchableOpacity
         style={styles.headerButton}
         onPress={onPressDelete}
         disabled={selectedCount === 0}
         activeOpacity={0.7}
       >
-        <Text
+        <ThemedText
           style={[
             styles.deleteText,
             selectedCount === 0 && styles.deleteTextDisabled,
           ]}
         >
           削除
-        </Text>
+        </ThemedText>
       </TouchableOpacity>
     </View>
   );
@@ -444,7 +444,6 @@ export default function FeedsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     height: 48,
@@ -454,12 +453,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
   },
   headerButtons: {
     flexDirection: 'row',

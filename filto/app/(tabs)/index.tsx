@@ -28,6 +28,8 @@ import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ReadDisplayMode } from '../display_behavior';
 import { ErrorHandler } from '@/utils/errorHandler';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string): string => {
@@ -122,16 +124,20 @@ const HomeHeader: React.FC<{
   onPressStarFilter: () => void;
   onPressRefresh: () => void;
 }> = ({ feedName, showStarredOnly, onPressFeedSelect, onPressStarFilter, onPressRefresh }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'icon');
+
   return (
-    <View style={styles.headerContainer}>
+    <View style={[styles.headerContainer, { borderBottomColor: borderColor, backgroundColor }]}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.feedSelector}
           onPress={onPressFeedSelect}
           activeOpacity={0.7}
         >
-          <Text style={styles.feedName}>{feedName}</Text>
-          <Text style={styles.dropdownIcon}>⬇️</Text>
+          <ThemedText style={styles.feedName}>{feedName}</ThemedText>
+          <ThemedText style={[styles.dropdownIcon, { color: iconColor }]}>⬇️</ThemedText>
         </TouchableOpacity>
         
         <View style={styles.headerButtons}>
@@ -140,7 +146,7 @@ const HomeHeader: React.FC<{
             onPress={onPressStarFilter}
             activeOpacity={0.7}
           >
-            <Text style={styles.starButtonIcon}>⭐</Text>
+            <ThemedText style={styles.starButtonIcon}>⭐</ThemedText>
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -148,7 +154,7 @@ const HomeHeader: React.FC<{
             onPress={onPressRefresh}
             activeOpacity={0.7}
           >
-            <Text style={styles.refreshIcon}>⟳</Text>
+            <ThemedText style={styles.refreshIcon}>⟳</ThemedText>
           </TouchableOpacity>
         </View>
       </View>
@@ -483,12 +489,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   headerContainer: {
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   header: {
     height: 48,
@@ -496,7 +499,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
   },
   feedSelector: {
     flexDirection: 'row',
@@ -506,7 +508,6 @@ const styles = StyleSheet.create({
   feedName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
     marginRight: 8,
   },
   dropdownIcon: {

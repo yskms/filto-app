@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppTheme } from '@/providers/theme';
 
 // 既読表示モード（Home は当画面から import）
 export type ReadDisplayMode = 'dim' | 'hide';
@@ -90,6 +91,7 @@ const DropdownModal: React.FC<{
 
 export default function DisplayBehaviorScreen() {
   const router = useRouter();
+  const { setPreference } = useAppTheme();
   const [readDisplay, setReadDisplay] = useState<ReadDisplayMode>('dim');
   const [autoSyncOnStartup, setAutoSyncOnStartup] = useState(true);
   const [theme, setTheme] = useState('system');
@@ -141,6 +143,7 @@ export default function DisplayBehaviorScreen() {
   const handleTheme = async (value: string) => {
     try {
       setTheme(value);
+      setPreference(value as 'light' | 'dark' | 'system');
       await AsyncStorage.setItem(STORAGE_KEY_THEME, value);
     } catch (e) {
       console.error(e);

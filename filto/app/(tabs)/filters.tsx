@@ -1,12 +1,5 @@
 import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -16,6 +9,8 @@ import { useRouter } from 'expo-router';
 import { FilterService, Filter } from '@/services/FilterService';
 import { FilterSortModal, FilterSortType } from '@/components/FilterSortModal';
 import { ErrorHandler } from '@/utils/errorHandler';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 // フィルタアイテムコンポーネント
 const FilterItem: React.FC<{
@@ -103,22 +98,30 @@ const FiltersHeader: React.FC<{
   onPressSortButton: () => void;
   onPressAdd: () => void;
   onConfirmDelete: () => void;
-}> = ({ deleteMode, selectedCount, onToggleDeleteMode, onPressSortButton, onPressAdd, onConfirmDelete }) => {
+}> = ({
+  deleteMode,
+  selectedCount,
+  onToggleDeleteMode,
+  onPressSortButton,
+  onPressAdd,
+  onConfirmDelete,
+}) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
   if (deleteMode) {
     // 削除モード時のヘッダー
     return (
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
         <TouchableOpacity
           onPress={onToggleDeleteMode}
           style={styles.headerButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.cancelText}>キャンセル</Text>
+          <ThemedText style={styles.cancelText}>キャンセル</ThemedText>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>
-          {selectedCount}件選択
-        </Text>
+        <ThemedText style={styles.headerTitle}>{selectedCount}件選択</ThemedText>
 
         <TouchableOpacity
           onPress={onConfirmDelete}
@@ -126,12 +129,11 @@ const FiltersHeader: React.FC<{
           disabled={selectedCount === 0}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={[
-            styles.deleteText,
-            selectedCount === 0 && styles.disabledText
-          ]}>
+          <ThemedText
+            style={[styles.deleteText, selectedCount === 0 && styles.disabledText]}
+          >
             削除
-          </Text>
+          </ThemedText>
         </TouchableOpacity>
       </View>
     );
@@ -139,29 +141,29 @@ const FiltersHeader: React.FC<{
 
   // 通常モード時のヘッダー
   return (
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>Filters</Text>
+    <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
+      <ThemedText style={styles.headerTitle}>Filters</ThemedText>
       <View style={styles.headerButtons}>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressSortButton}
           activeOpacity={0.7}
         >
-          <Text style={styles.headerIcon}>🔄</Text>
+          <ThemedText style={styles.headerIcon}>🔄</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onToggleDeleteMode}
           activeOpacity={0.7}
         >
-          <Text style={styles.headerIcon}>🗑</Text>
+          <ThemedText style={styles.headerIcon}>🗑</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressAdd}
           activeOpacity={0.7}
         >
-          <Text style={styles.headerIcon}>＋</Text>
+          <ThemedText style={styles.headerIcon}>＋</ThemedText>
         </TouchableOpacity>
       </View>
     </View>
@@ -447,7 +449,6 @@ export default function FiltersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     height: 48,
@@ -457,12 +458,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },  
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
   },
   headerButtons: {
     flexDirection: 'row',

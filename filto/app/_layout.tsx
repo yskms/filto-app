@@ -1,11 +1,11 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Paths, File, Directory } from 'expo-file-system';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AppThemeProvider, useAppTheme } from '@/providers/theme';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase } from '@/database/init';
 
@@ -13,9 +13,8 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
+function RootNavigation() {
+  const { mode } = useAppTheme();
   useEffect(() => {
     const resetAndInitDatabase = async () => {
       // 🚨 開発中のみ: DBファイルを確実に削除
@@ -47,14 +46,22 @@ export default function RootLayout() {
   }, []);
 
   return (
+    <NavigationThemeProvider value={mode === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+      </Stack>
+      <StatusBar style="dark" />
+    </NavigationThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-        </Stack>
-        <StatusBar style="dark" />
-      </ThemeProvider>
+      <AppThemeProvider>
+        <RootNavigation />
+      </AppThemeProvider>
     </GestureHandlerRootView>
   );
 }

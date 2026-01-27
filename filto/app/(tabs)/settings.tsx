@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 interface MenuItem {
   id: string;
@@ -23,35 +25,52 @@ const MenuItemRow: React.FC<{
   item: MenuItem;
   onPress: () => void;
 }> = ({ item, onPress }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const iconColor = useThemeColor({}, 'icon');
+
   return (
     <TouchableOpacity
-      style={[styles.menuItem, item.disabled && styles.menuItemDisabled]}
+      style={[
+        styles.menuItem,
+        { borderBottomColor: borderColor },
+        item.disabled && styles.menuItemDisabled,
+      ]}
       onPress={onPress}
       disabled={item.disabled}
       activeOpacity={0.7}
     >
       <View style={styles.menuItemLeft}>
-        {item.icon != null && <Text style={styles.menuItemIcon}>{item.icon}</Text>}
-        <Text style={[styles.menuItemText, item.disabled && styles.menuItemTextDisabled]}>
+        {item.icon != null && (
+          <ThemedText style={[styles.menuItemIcon, { color: iconColor }]}>{item.icon}</ThemedText>
+        )}
+        <ThemedText
+          style={[styles.menuItemText, item.disabled && styles.menuItemTextDisabled]}
+        >
           {item.title}
-        </Text>
+        </ThemedText>
       </View>
-      {!item.disabled && <Text style={styles.arrow}>›</Text>}
+      {!item.disabled && (
+        <ThemedText style={[styles.arrow, { color: iconColor }]}>›</ThemedText>
+      )}
     </TouchableOpacity>
   );
 };
 
 // ヘッダーコンポーネント
 const SettingsHeader: React.FC = () => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>Settings</Text>
+    <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
+      <ThemedText style={styles.headerTitle}>Settings</ThemedText>
     </View>
   );
 };
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const backgroundColor = useThemeColor({}, 'background');
 
   const handlePressMenuItem = React.useCallback((itemId: string) => {
     switch (itemId) {
@@ -74,7 +93,7 @@ export default function SettingsScreen() {
   }, [router]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <SettingsHeader />
       
       <FlatList
@@ -95,20 +114,16 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     height: 48,
     paddingHorizontal: 16,
     justifyContent: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },  
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
   },
   listContent: {
     paddingBottom: 20,
@@ -120,8 +135,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   menuItemDisabled: {
     opacity: 0.5,
@@ -136,13 +149,11 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 16,
-    color: '#000',
   },
   menuItemTextDisabled: {
-    color: '#999',
+    opacity: 0.5,
   },
   arrow: {
     fontSize: 20,
-    color: '#666',
   },
 });
