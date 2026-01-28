@@ -5,10 +5,12 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
 const AboutHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -18,9 +20,9 @@ const AboutHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => 
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ThemedText style={styles.backIcon}>←</ThemedText>
+        <ThemedText style={styles.backIcon}>{t.common.back}</ThemedText>
       </TouchableOpacity>
-      <ThemedText style={styles.headerTitle}>About</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t.about.title}</ThemedText>
       <View style={styles.headerRight} />
     </View>
   );
@@ -29,6 +31,7 @@ const AboutHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => 
 export default function AboutScreen() {
   const router = useRouter();
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <>
@@ -37,9 +40,9 @@ export default function AboutScreen() {
         <AboutHeader onPressBack={() => router.back()} />
         <View style={[styles.content, { backgroundColor }]}>
           <ThemedText style={styles.appName}>Filto</ThemedText>
-          <ThemedText style={styles.version}>Version 1.0.0</ThemedText>
+          <ThemedText style={styles.version}>{t.about.version} 1.0.0</ThemedText>
           <ThemedText style={styles.description}>
-            RSSリーダー with キーワードフィルター
+            {t.about.description}
           </ThemedText>
         </View>
       </SafeAreaView>

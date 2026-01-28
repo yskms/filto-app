@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 import { Paths, File, Directory } from 'expo-file-system';
 
 import { AppThemeProvider, useAppTheme } from '@/providers/theme';
+import { LanguageProvider } from '@/providers/language';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase } from '@/database/init';
 
@@ -73,7 +74,9 @@ function RootNavigation() {
 export default function RootLayout() {
   return (
     <AppThemeProvider>
-      <RootNavigation />
+      <LanguageProvider>
+        <RootNavigation />
+      </LanguageProvider>
     </AppThemeProvider>
   );
 }

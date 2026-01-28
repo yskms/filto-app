@@ -6,8 +6,10 @@ import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppTheme } from '@/providers/theme';
+import { useLanguage } from '@/providers/language';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
 // 既読表示モード（Home は当画面から import）
 export type ReadDisplayMode = 'dim' | 'hide';
@@ -15,28 +17,11 @@ export type ReadDisplayMode = 'dim' | 'hide';
 // 設定のストレージキー
 const STORAGE_KEY_READ_DISPLAY = '@filto/display_behavior/readDisplay';
 const STORAGE_KEY_AUTO_SYNC_ON_STARTUP = '@filto/display_behavior/autoSyncOnStartup';
-const STORAGE_KEY_THEME = '@filto/display_behavior/theme';
-const STORAGE_KEY_LANGUAGE = '@filto/display_behavior/language';
-
-const READ_DISPLAY_OPTIONS = [
-  { value: 'dim' as const, label: '薄く表示' },
-  { value: 'hide' as const, label: '非表示' },
-];
-
-const THEME_OPTIONS = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'System' },
-];
-
-const LANGUAGE_OPTIONS = [
-  { value: 'ja', label: '日本語' },
-  { value: 'en', label: 'English' },
-];
 
 const DisplayBehaviorHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -45,9 +30,9 @@ const DisplayBehaviorHeader: React.FC<{ onPressBack: () => void }> = ({ onPressB
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Text style={styles.backIcon}>←</Text>
+        <Text style={styles.backIcon}>{t.common.back}</Text>
       </TouchableOpacity>
-      <ThemedText style={styles.headerTitle}>Display & Behavior</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t.displayBehavior.title}</ThemedText>
       <View style={styles.headerRight} />
     </View>
   );
@@ -132,26 +117,43 @@ const DropdownModal: React.FC<{
 export default function DisplayBehaviorScreen() {
   const router = useRouter();
   const { setPreference } = useAppTheme();
+  const { language, setLanguage } = useLanguage();
+  const t = useTranslation();
+  
   const [readDisplay, setReadDisplay] = useState<ReadDisplayMode>('dim');
   const [autoSyncOnStartup, setAutoSyncOnStartup] = useState(true);
   const [theme, setTheme] = useState('system');
-  const [language, setLanguage] = useState('ja');
   const [readDisplayModalVisible, setReadDisplayModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
+  // オプションを翻訳から取得
+  const READ_DISPLAY_OPTIONS = [
+    { value: 'dim' as const, label: t.displayBehavior.dimDisplay },
+    { value: 'hide' as const, label: t.displayBehavior.hideDisplay },
+  ];
+
+  const THEME_OPTIONS = [
+    { value: 'light', label: t.displayBehavior.light },
+    { value: 'dark', label: t.displayBehavior.dark },
+    { value: 'system', label: t.displayBehavior.system },
+  ];
+
+  const LANGUAGE_OPTIONS = [
+    { value: 'ja', label: t.displayBehavior.japanese },
+    { value: 'en', label: t.displayBehavior.english },
+  ];
+
   const loadSettings = useCallback(async () => {
     try {
-      const [savedRead, savedAuto, savedTheme, savedLang] = await Promise.all([
+      const [savedRead, savedAuto, savedTheme] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY_READ_DISPLAY),
         AsyncStorage.getItem(STORAGE_KEY_AUTO_SYNC_ON_STARTUP),
-        AsyncStorage.getItem(STORAGE_KEY_THEME),
-        AsyncStorage.getItem(STORAGE_KEY_LANGUAGE),
+        AsyncStorage.getItem('@filto/display_behavior/theme'),
       ]);
       if (savedRead === 'dim' || savedRead === 'hide') setReadDisplay(savedRead);
       if (savedAuto !== null) setAutoSyncOnStartup(savedAuto === 'true');
       if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system') setTheme(savedTheme);
-      if (savedLang === 'ja' || savedLang === 'en') setLanguage(savedLang);
     } catch (e) {
       console.error('Failed to load display/behavior settings:', e);
     }
@@ -165,7 +167,7 @@ export default function DisplayBehaviorScreen() {
       await AsyncStorage.setItem(STORAGE_KEY_READ_DISPLAY, mode);
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '設定の保存に失敗しました');
+      Alert.alert(t.common.error, 'Failed to save settings');
     }
   };
 
@@ -176,7 +178,7 @@ export default function DisplayBehaviorScreen() {
       await AsyncStorage.setItem(STORAGE_KEY_AUTO_SYNC_ON_STARTUP, next.toString());
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '設定の保存に失敗しました');
+      Alert.alert(t.common.error, 'Failed to save settings');
     }
   };
 
@@ -184,26 +186,25 @@ export default function DisplayBehaviorScreen() {
     try {
       setTheme(value);
       setPreference(value as 'light' | 'dark' | 'system');
-      await AsyncStorage.setItem(STORAGE_KEY_THEME, value);
+      await AsyncStorage.setItem('@filto/display_behavior/theme', value);
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '設定の保存に失敗しました');
+      Alert.alert(t.common.error, 'Failed to save settings');
     }
   };
 
   const handleLanguage = async (value: string) => {
     try {
-      setLanguage(value);
-      await AsyncStorage.setItem(STORAGE_KEY_LANGUAGE, value);
+      setLanguage(value as 'ja' | 'en');
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '設定の保存に失敗しました');
+      Alert.alert(t.common.error, 'Failed to save settings');
     }
   };
 
-  const getReadDisplayLabel = () => READ_DISPLAY_OPTIONS.find((o) => o.value === readDisplay)?.label ?? '薄く表示';
-  const getThemeLabel = () => THEME_OPTIONS.find((o) => o.value === theme)?.label ?? 'System';
-  const getLanguageLabel = () => LANGUAGE_OPTIONS.find((o) => o.value === language)?.label ?? '日本語';
+  const getReadDisplayLabel = () => READ_DISPLAY_OPTIONS.find((o) => o.value === readDisplay)?.label ?? t.displayBehavior.dimDisplay;
+  const getThemeLabel = () => THEME_OPTIONS.find((o) => o.value === theme)?.label ?? t.displayBehavior.system;
+  const getLanguageLabel = () => LANGUAGE_OPTIONS.find((o) => o.value === language)?.label ?? t.displayBehavior.japanese;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -211,23 +212,23 @@ export default function DisplayBehaviorScreen() {
       <DisplayBehaviorHeader onPressBack={() => router.back()} />
 
       <ScrollView style={styles.content}>
-        <SettingSection title="既読の表示方法">
-          <Dropdown label="表示方法" value={getReadDisplayLabel()} onPress={() => setReadDisplayModalVisible(true)} />
+        <SettingSection title={t.displayBehavior.readDisplayMode}>
+          <Dropdown label={t.displayBehavior.displayMethod} value={getReadDisplayLabel()} onPress={() => setReadDisplayModalVisible(true)} />
         </SettingSection>
 
-        <SettingSection title="テーマ">
-          <Dropdown label="テーマ" value={getThemeLabel()} onPress={() => setThemeModalVisible(true)} />
+        <SettingSection title={t.displayBehavior.theme}>
+          <Dropdown label={t.displayBehavior.themeLabel} value={getThemeLabel()} onPress={() => setThemeModalVisible(true)} />
         </SettingSection>
 
-        <SettingSection title="言語">
-          <Dropdown label="言語" value={getLanguageLabel()} onPress={() => setLanguageModalVisible(true)} />
+        <SettingSection title={t.displayBehavior.language}>
+          <Dropdown label={t.displayBehavior.languageLabel} value={getLanguageLabel()} onPress={() => setLanguageModalVisible(true)} />
         </SettingSection>
 
-        <SettingSection title="起動時の挙動">
+        <SettingSection title={t.displayBehavior.startupBehavior}>
           <TouchableOpacity style={styles.toggleRow} onPress={handleToggleAutoSync} activeOpacity={0.7}>
             <View style={styles.toggleLabel}>
               <Text style={styles.toggleDescription}>
-                アプリ起動時に自動的にRSSフィードを更新します（30分以上経過時のみ）
+                {t.displayBehavior.autoSyncDescription}
               </Text>
             </View>
             <View style={[styles.toggle, autoSyncOnStartup && styles.toggleActive]}>
@@ -239,7 +240,7 @@ export default function DisplayBehaviorScreen() {
 
       <DropdownModal
         visible={readDisplayModalVisible}
-        title="表示方法を選択"
+        title={t.displayBehavior.selectDisplayMethod}
         options={READ_DISPLAY_OPTIONS}
         selectedValue={readDisplay}
         onSelect={(v) => handleReadDisplay(v as ReadDisplayMode)}
@@ -247,7 +248,7 @@ export default function DisplayBehaviorScreen() {
       />
       <DropdownModal
         visible={themeModalVisible}
-        title="テーマを選択"
+        title={t.displayBehavior.selectTheme}
         options={THEME_OPTIONS}
         selectedValue={theme}
         onSelect={handleTheme}
@@ -255,7 +256,7 @@ export default function DisplayBehaviorScreen() {
       />
       <DropdownModal
         visible={languageModalVisible}
-        title="言語を選択"
+        title={t.displayBehavior.selectLanguage}
         options={LANGUAGE_OPTIONS}
         selectedValue={language}
         onSelect={handleLanguage}

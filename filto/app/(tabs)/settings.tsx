@@ -4,20 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface MenuItem {
   id: string;
-  title: string;
+  titleKey: keyof typeof import('@/locales/ja').ja.settings;
   icon?: string;
   disabled?: boolean;
 }
 
 const menuItems: MenuItem[] = [
-  { id: 'global_allow_keywords', title: 'グローバル許可キーワード', icon: '📚' },
-  { id: 'display_behavior', title: '表示と動作', icon: '👁' },
-  { id: 'data_management', title: 'データ管理', icon: '💾' },
-  { id: 'pro', title: 'Pro', icon: '⭐', disabled: true },
-  { id: 'about', title: 'About', icon: 'ℹ' },
+  { id: 'global_allow_keywords', titleKey: 'globalAllowKeywords', icon: '📚' },
+  { id: 'display_behavior', titleKey: 'displayBehavior', icon: '👁' },
+  { id: 'data_management', titleKey: 'dataManagement', icon: '💾' },
+  { id: 'pro', titleKey: 'pro', icon: '⭐', disabled: true },
+  { id: 'about', titleKey: 'about', icon: 'ℹ' },
 ];
 
 // メニューアイテムコンポーネント
@@ -28,6 +29,7 @@ const MenuItemRow: React.FC<{
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const iconColor = useThemeColor({}, 'icon');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <TouchableOpacity
@@ -47,7 +49,7 @@ const MenuItemRow: React.FC<{
         <ThemedText
           style={[styles.menuItemText, item.disabled && styles.menuItemTextDisabled]}
         >
-          {item.title}
+          {t.settings[item.titleKey]}
         </ThemedText>
       </View>
       {!item.disabled && (
@@ -61,10 +63,11 @@ const MenuItemRow: React.FC<{
 const SettingsHeader: React.FC = () => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-      <ThemedText style={styles.headerTitle}>Settings</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t.settings.title}</ThemedText>
     </View>
   );
 };
