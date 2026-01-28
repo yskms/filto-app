@@ -13,9 +13,9 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { id: 'global_allow_keywords', title: 'Global Allow Keywords', icon: '📚' },
-  { id: 'display_behavior', title: 'Display & Behavior', icon: '👁' },
-  { id: 'data_management', title: 'Data Management', icon: '💾' },
+  { id: 'global_allow_keywords', title: 'グローバル許可キーワード', icon: '📚' },
+  { id: 'display_behavior', title: '表示と動作', icon: '👁' },
+  { id: 'data_management', title: 'データ管理', icon: '💾' },
   { id: 'pro', title: 'Pro', icon: '⭐', disabled: true },
   { id: 'about', title: 'About', icon: 'ℹ' },
 ];
