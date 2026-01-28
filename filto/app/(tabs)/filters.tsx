@@ -1,159 +1,45 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Reanimated from 'react-native-reanimated';
-import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { FilterService, Filter } from '@/services/FilterService';
-import { FilterSortModal, FilterSortType } from '@/components/FilterSortModal';
-import { ErrorHandler } from '@/utils/errorHandler';
+import { useFocusEffect } from '@react-navigation/native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { FilterService, Filter, FilterSortType } from '@/services/FilterService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
-// フィルタアイテムコンポーネント
-const FilterItem: React.FC<{
-  filter: Filter;
-  isSelected: boolean;
-  deleteMode: boolean;
-  swipeableRef: React.RefObject<SwipeableMethods | null>;
-  isSwipeOpen: boolean;
-  onPress: () => void;
-  onPressDelete: () => void;
-  onSwipeableWillOpen: () => void;
-  onSwipeableWillClose: (filterId: number) => void;
-}> = ({
-  filter,
-  isSelected,
-  deleteMode,
-  swipeableRef,
-  isSwipeOpen,
-  onPress,
-  onPressDelete,
-  onSwipeableWillOpen,
-  onSwipeableWillClose,
-}) => {
-  // 削除アクション（右側）- Reanimated版
-  const renderRightActions = () => {
-    return (
-      <Reanimated.View style={styles.deleteAction}>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={onPressDelete}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.deleteIcon}>🗑️</Text>
-        </TouchableOpacity>
-      </Reanimated.View>
-    );
-  };
-
-  const handlePress = () => {
-    // スワイプが開いている場合は閉じる
-    if (swipeableRef.current && isSwipeOpen) {
-      swipeableRef.current.close();
-    }
-    onPress();
-  };
-
-  return (
-    <Swipeable
-      ref={swipeableRef}
-      renderRightActions={renderRightActions}
-      enabled={!deleteMode}
-      rightThreshold={40}
-      onSwipeableWillOpen={onSwipeableWillOpen}
-      onSwipeableWillClose={() => onSwipeableWillClose(filter.id!)}
-      overshootRight={false}
-    >
-      <TouchableOpacity
-        style={[
-          styles.filterContainer,
-          deleteMode && isSelected && styles.selectedContainer,
-        ]}
-        onPress={handlePress}
-        activeOpacity={0.7}
-      >
-        <View style={styles.filterContent}>
-          <View style={styles.textContainer}>
-            <Text style={styles.blockKeyword}>{filter.block_keyword}</Text>
-            {filter.allow_keyword && (
-              <Text style={styles.allowKeyword}>
-                許可: {filter.allow_keyword}
-              </Text>
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
-    </Swipeable>
-  );
-};
-
-// ヘッダーコンポーネント
+// フィルタヘッダー（通常モード）
 const FiltersHeader: React.FC<{
-  deleteMode: boolean;
-  selectedCount: number;
-  onToggleDeleteMode: () => void;
-  onPressSortButton: () => void;
+  onPressSort: () => void;
+  onPressDelete: () => void;
   onPressAdd: () => void;
-  onConfirmDelete: () => void;
-}> = ({
-  deleteMode,
-  selectedCount,
-  onToggleDeleteMode,
-  onPressSortButton,
-  onPressAdd,
-  onConfirmDelete,
-}) => {
+}> = ({ onPressSort, onPressDelete, onPressAdd }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
-  if (deleteMode) {
-    // 削除モード時のヘッダー
-    return (
-      <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-        <TouchableOpacity
-          onPress={onToggleDeleteMode}
-          style={styles.headerButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <ThemedText style={styles.cancelText}>キャンセル</ThemedText>
-        </TouchableOpacity>
-
-        <ThemedText style={styles.headerTitle}>{selectedCount}件選択</ThemedText>
-
-        <TouchableOpacity
-          onPress={onConfirmDelete}
-          style={styles.headerButton}
-          disabled={selectedCount === 0}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <ThemedText
-            style={[styles.deleteText, selectedCount === 0 && styles.disabledText]}
-          >
-            削除
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // 通常モード時のヘッダー
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-      <ThemedText style={styles.headerTitle}>Filters</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t.filters.title}</ThemedText>
       <View style={styles.headerButtons}>
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={onPressSortButton}
+          onPress={onPressSort}
           activeOpacity={0.7}
         >
           <ThemedText style={styles.headerIcon}>🔄</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={onToggleDeleteMode}
+          onPress={onPressDelete}
           activeOpacity={0.7}
         >
           <ThemedText style={styles.headerIcon}>🗑</ThemedText>
@@ -170,45 +56,171 @@ const FiltersHeader: React.FC<{
   );
 };
 
+// フィルタヘッダー（削除モード）
+const FiltersHeaderDeleteMode: React.FC<{
+  selectedCount: number;
+  onPressCancel: () => void;
+  onPressDelete: () => void;
+}> = ({ selectedCount, onPressCancel, onPressDelete }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
+
+  return (
+    <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
+      <TouchableOpacity
+        style={styles.headerButton}
+        onPress={onPressCancel}
+        activeOpacity={0.7}
+      >
+        <ThemedText style={styles.cancelText}>{t.filters.cancel}</ThemedText>
+      </TouchableOpacity>
+      <ThemedText style={styles.selectedCount}>{selectedCount}{t.filters.selected}</ThemedText>
+      <TouchableOpacity
+        style={styles.headerButton}
+        onPress={onPressDelete}
+        disabled={selectedCount === 0}
+        activeOpacity={0.7}
+      >
+        <ThemedText style={[styles.deleteText, selectedCount === 0 && styles.disabledText]}>
+          {t.filters.delete}
+        </ThemedText>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// 並び替えモーダル
+const FilterSortModal: React.FC<{
+  visible: boolean;
+  currentSort: FilterSortType;
+  onClose: () => void;
+  onSelectSort: (sortType: FilterSortType) => void;
+}> = ({ visible, currentSort, onClose, onSelectSort }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
+
+  const sortOptions: Array<{ type: FilterSortType; label: string }> = [
+    { type: 'created_asc', label: t.feeds.sortDateAsc },
+    { type: 'created_desc', label: t.feeds.sortDateDesc },
+    { type: 'updated_asc', label: t.feeds.sortDateAsc.replace('追加', '更新').replace('Added', 'Updated') },
+    { type: 'updated_desc', label: t.feeds.sortDateDesc.replace('追加', '更新').replace('Added', 'Updated') },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onClose}>
+        <View style={[styles.sortModalContent, { backgroundColor }]}>
+          <ThemedText style={styles.sortModalTitle}>{t.feeds.sortTitle}</ThemedText>
+          <View style={styles.sortModalOptions}>
+            {sortOptions.map((option) => (
+              <TouchableOpacity
+                key={option.type}
+                style={styles.sortOption}
+                onPress={() => onSelectSort(option.type)}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.sortOptionText}>{option.label}</ThemedText>
+                {currentSort === option.type && (
+                  <ThemedText style={styles.sortOptionCheck}>✓</ThemedText>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+};
+
+// フィルタアイテム
+const FilterItem: React.FC<{
+  filter: Filter;
+  isSelected: boolean;
+  deleteMode: boolean;
+  onPress: () => void;
+  onPressDelete: () => void;
+  swipeableRef: React.RefObject<Swipeable>;
+  onSwipeableOpen: () => void;
+}> = ({ filter, isSelected, deleteMode, onPress, onPressDelete, swipeableRef, onSwipeableOpen }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
+  const renderRightActions = () => (
+    <View style={styles.deleteAction}>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={onPressDelete}
+        activeOpacity={0.7}
+      >
+        <ThemedText style={styles.deleteIcon}>🗑</ThemedText>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={deleteMode ? undefined : renderRightActions}
+      enabled={!deleteMode}
+      onSwipeableOpen={onSwipeableOpen}
+    >
+      <TouchableOpacity
+        style={[
+          styles.filterContainer,
+          { borderBottomColor: borderColor, backgroundColor },
+          isSelected && styles.selectedContainer,
+        ]}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <View style={styles.filterContent}>
+          <View style={styles.textContainer}>
+            <ThemedText style={styles.blockKeyword}>{filter.blockKeyword}</ThemedText>
+            {filter.allowKeywords && (
+              <ThemedText style={styles.allowKeyword}>許可: {filter.allowKeywords}</ThemedText>
+            )}
+          </View>
+          {deleteMode && (
+            <ThemedText style={styles.checkbox}>{isSelected ? '☑' : '☐'}</ThemedText>
+          )}
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
+  );
+};
+
 export default function FiltersScreen() {
   const router = useRouter();
+  const t = useTranslation();
   const [filters, setFilters] = useState<Filter[]>([]);
-  const [deleteMode, setDeleteMode] = useState<boolean>(false);
+  const [deleteMode, setDeleteMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [openSwipeId, setOpenSwipeId] = useState<number | null>(null);
-  
-  // ソート関連のState
+  const [currentSort, setCurrentSort] = useState<FilterSortType>('created_desc');
   const [sortModalVisible, setSortModalVisible] = useState(false);
-  const [currentSort, setCurrentSort] = useState<FilterSortType>('created_at_desc');
-  
-  // 各フィルタのSwipeable refを管理
-  const swipeableRefs = useRef<Map<number, React.RefObject<SwipeableMethods | null>>>(new Map());
-  
-  // 開いているスワイプのIDを保持（refで直接管理）
+  const [openSwipeId, setOpenSwipeId] = useState<number | null>(null);
   const openSwipeIdRef = useRef<number | null>(null);
+  const swipeableRefs = useRef<Map<number, React.RefObject<Swipeable>>>(new Map());
 
-  // フィルタ一覧を読み込む
-  const loadFilters = React.useCallback(async () => {
+  const loadFilters = useCallback(async () => {
     try {
-      const filterList = await FilterService.listWithSort(currentSort);
+      const filterList = await FilterService.list(currentSort);
       setFilters(filterList);
     } catch (error) {
-      ErrorHandler.showLoadError('フィルタ');
+      console.error('Failed to load filters:', error);
     }
   }, [currentSort]);
 
-  // Swipeable refを取得または作成
-  const getSwipeableRef = React.useCallback((filterId: number) => {
+  const getSwipeableRef = (filterId: number): React.RefObject<Swipeable> => {
     if (!swipeableRefs.current.has(filterId)) {
-      swipeableRefs.current.set(filterId, React.createRef<SwipeableMethods>());
+      swipeableRefs.current.set(filterId, React.createRef<Swipeable>());
     }
     return swipeableRefs.current.get(filterId)!;
-  }, []);
+  };
 
-  // 開いているスワイプを閉じる（useCallback を使わない）
-  const closeOpenSwipe = (excludeId?: number) => {
+  const closeOpenSwipe = () => {
     const currentOpenId = openSwipeIdRef.current;
-    if (currentOpenId !== null && currentOpenId !== excludeId) {
+    if (currentOpenId !== null) {
       const ref = swipeableRefs.current.get(currentOpenId);
       if (ref?.current) {
         ref.current.close();
@@ -216,17 +228,10 @@ export default function FiltersScreen() {
     }
   };
 
-  // currentSort が変更されたときにフィルタを再読み込み
-  React.useEffect(() => {
-    loadFilters();
-  }, [currentSort, loadFilters]);
-
-  // 画面がフォーカスされた時にフィルタを読み込む
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       loadFilters();
       return () => {
-        // クリーンアップ関数：フォーカスを失う時に実行
         const currentOpenId = openSwipeIdRef.current;
         if (currentOpenId !== null) {
           const ref = swipeableRefs.current.get(currentOpenId);
@@ -236,7 +241,6 @@ export default function FiltersScreen() {
           openSwipeIdRef.current = null;
           setOpenSwipeId(null);
         }
-        // 削除モードをオフにする
         if (deleteMode) {
           setDeleteMode(false);
           setSelectedIds([]);
@@ -245,44 +249,23 @@ export default function FiltersScreen() {
     }, [deleteMode, loadFilters])
   );
 
-  const handleToggleDeleteMode = React.useCallback(() => {
-    setDeleteMode((prev) => {
-      const newMode = !prev;
-      if (!newMode) {
-        // 削除モードをオフにする際、選択をクリア
-        setSelectedIds([]);
-      }
-      // 開いているスワイプを閉じる
-      closeOpenSwipe();
-      openSwipeIdRef.current = null;
-      setOpenSwipeId(null);
-      return newMode;
-    });
-  }, []);
+  React.useEffect(() => {
+    loadFilters();
+  }, [currentSort, loadFilters]);
 
-  const handlePressAdd = React.useCallback(() => {
-    // 開いているスワイプを閉じる
-    closeOpenSwipe();
-    openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
-    router.push('/filter_edit');
-  }, [router]);
-
-  const handlePressSortButton = React.useCallback(() => {
+  const handlePressSortButton = useCallback(() => {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
     setOpenSwipeId(null);
     setSortModalVisible(true);
   }, []);
 
-  const handleSelectSort = React.useCallback((sortType: FilterSortType) => {
+  const handleSelectSort = useCallback((sortType: FilterSortType) => {
     setCurrentSort(sortType);
-    // loadFilters は currentSort の変更で自動的に再実行される
   }, []);
 
-  const handlePressFilter = React.useCallback(
+  const handlePressFilter = useCallback(
     (filterId: number) => {
-      // スワイプが開いている場合は閉じるのみ
       if (openSwipeIdRef.current !== null) {
         closeOpenSwipe();
         openSwipeIdRef.current = null;
@@ -291,7 +274,6 @@ export default function FiltersScreen() {
       }
 
       if (deleteMode) {
-        // 削除モード時：選択をトグル
         setSelectedIds((prev) => {
           if (prev.includes(filterId)) {
             return prev.filter((id) => id !== filterId);
@@ -300,24 +282,22 @@ export default function FiltersScreen() {
           }
         });
       } else {
-        // 通常モード時：編集画面に遷移
         router.push(`/filter_edit?filterId=${filterId}`);
       }
     },
     [deleteMode, router]
   );
 
-  const handlePressDelete = React.useCallback(
+  const handlePressDelete = useCallback(
     (filterId: number) => {
       Alert.alert(
-        'フィルタを削除',
-        'このフィルタを削除しますか？',
+        t.filters.deleteConfirmTitle,
+        t.filters.deleteConfirmMessage,
         [
           {
-            text: 'キャンセル',
+            text: t.common.cancel,
             style: 'cancel',
             onPress: () => {
-              // キャンセル時もスワイプを閉じる
               const ref = swipeableRefs.current.get(filterId);
               if (ref?.current) {
                 ref.current.close();
@@ -325,115 +305,118 @@ export default function FiltersScreen() {
             },
           },
           {
-            text: '削除',
+            text: t.common.delete,
             style: 'destructive',
             onPress: async () => {
               try {
-                // 削除後、スワイプを閉じる
-                const ref = swipeableRefs.current.get(filterId);
-                if (ref?.current) {
-                  ref.current.close();
-                }
-                openSwipeIdRef.current = null;
-                setOpenSwipeId(null);
                 await FilterService.delete(filterId);
-                // フィルタ一覧を再読み込み
                 await loadFilters();
               } catch (error) {
-                ErrorHandler.showDatabaseError('フィルタの削除');
+                console.error('Failed to delete filter:', error);
+                Alert.alert(t.common.error, 'Failed to delete filter');
               }
             },
           },
         ]
       );
     },
-    [loadFilters]
+    [loadFilters, t]
   );
 
-  const handleConfirmDelete = React.useCallback(async () => {
+  const handlePressDeleteMode = useCallback(() => {
+    closeOpenSwipe();
+    openSwipeIdRef.current = null;
+    setOpenSwipeId(null);
+    setDeleteMode(true);
+  }, []);
+
+  const handlePressAdd = useCallback(() => {
+    closeOpenSwipe();
+    openSwipeIdRef.current = null;
+    setOpenSwipeId(null);
+    router.push('/filter_edit');
+  }, [router]);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeleteMode(false);
+    setSelectedIds([]);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
     if (selectedIds.length === 0) return;
 
-    Alert.alert(
-      `${selectedIds.length}件のフィルタを削除しますか？`,
-      'この操作は取り消せません',
-      [
-        {
-          text: 'キャンセル',
-          style: 'cancel',
-        },
-        {
-          text: '削除',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // 複数削除を順次実行
-              for (const id of selectedIds) {
-                await FilterService.delete(id);
-              }
-              setSelectedIds([]);
-              setDeleteMode(false);
-              // フィルタ一覧を再読み込み
-              await loadFilters();
-            } catch (error) {
-              ErrorHandler.showDatabaseError('フィルタの削除');
+    Alert.alert(t.common.confirm, `${selectedIds.length}${t.filters.deleteConfirm}`, [
+      { text: t.common.cancel, style: 'cancel' },
+      {
+        text: t.common.delete,
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            for (const id of selectedIds) {
+              await FilterService.delete(id);
             }
-          },
+            setDeleteMode(false);
+            setSelectedIds([]);
+            await loadFilters();
+          } catch (error) {
+            console.error('Failed to delete filters:', error);
+            Alert.alert(t.common.error, 'Failed to delete filters');
+          }
         },
-      ]
-    );
-  }, [selectedIds, loadFilters]);
+      },
+    ]);
+  }, [selectedIds, loadFilters, t]);
 
-  const handleSwipeableWillOpen = (filterId: number) => {
-    // 古いスワイプを閉じる（新しいIDは除外）
-    closeOpenSwipe(filterId);
-    
-    // 新しいIDを設定
+  const handleSwipeableOpen = useCallback((filterId: number) => {
+    if (openSwipeIdRef.current !== null && openSwipeIdRef.current !== filterId) {
+      const ref = swipeableRefs.current.get(openSwipeIdRef.current);
+      if (ref?.current) {
+        ref.current.close();
+      }
+    }
     openSwipeIdRef.current = filterId;
     setOpenSwipeId(filterId);
-  };
+  }, []);
 
-  const handleSwipeableWillClose = (filterId: number) => {
-    // 自分が開いていた場合のみクリア
-    if (openSwipeIdRef.current === filterId) {
-      openSwipeIdRef.current = null;
-      setOpenSwipeId(null);
-    }
-  };
+  const backgroundColor = useThemeColor({}, 'background');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <FiltersHeader
-        deleteMode={deleteMode}
-        selectedCount={selectedIds.length}
-        onToggleDeleteMode={handleToggleDeleteMode}
-        onPressSortButton={handlePressSortButton}
-        onPressAdd={handlePressAdd}
-        onConfirmDelete={handleConfirmDelete}
-      />
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      {deleteMode ? (
+        <FiltersHeaderDeleteMode
+          selectedCount={selectedIds.length}
+          onPressCancel={handleCancelDelete}
+          onPressDelete={handleConfirmDelete}
+        />
+      ) : (
+        <FiltersHeader
+          onPressSort={handlePressSortButton}
+          onPressDelete={handlePressDeleteMode}
+          onPressAdd={handlePressAdd}
+        />
+      )}
 
       <FlatList
         data={filters}
-        renderItem={({ item }) => {
-          if (!item.id) return null;
-          const filterId = item.id;
-          const swipeableRef = getSwipeableRef(filterId);
-          const isSwipeOpen = openSwipeId === filterId;
-          return (
-            <FilterItem
-              filter={item}
-              isSelected={selectedIds.includes(filterId)}
-              deleteMode={deleteMode}
-              swipeableRef={swipeableRef}
-              isSwipeOpen={isSwipeOpen}
-              onPress={() => handlePressFilter(filterId)}
-              onPressDelete={() => handlePressDelete(filterId)}
-              onSwipeableWillOpen={() => handleSwipeableWillOpen(filterId)}
-              onSwipeableWillClose={() => handleSwipeableWillClose(filterId)}
-            />
-          );
-        }}
+        renderItem={({ item }) => (
+          <FilterItem
+            filter={item}
+            isSelected={selectedIds.includes(item.id!)}
+            deleteMode={deleteMode}
+            onPress={() => handlePressFilter(item.id!)}
+            onPressDelete={() => handlePressDelete(item.id!)}
+            swipeableRef={getSwipeableRef(item.id!)}
+            onSwipeableOpen={() => handleSwipeableOpen(item.id!)}
+          />
+        )}
         keyExtractor={(item) => (item.id ?? 0).toString()}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyText}>{t.filters.emptyIcon}</ThemedText>
+            <ThemedText style={styles.emptyMessage}>{t.filters.emptyMessage}</ThemedText>
+          </View>
+        }
       />
 
       <FilterSortModal
@@ -457,8 +440,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },  
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -489,14 +471,16 @@ const styles = StyleSheet.create({
   disabledText: {
     opacity: 0.3,
   },
+  selectedCount: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   listContent: {
     paddingBottom: 20,
   },
   filterContainer: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   selectedContainer: {
     backgroundColor: '#e3f2fd',
@@ -512,12 +496,14 @@ const styles = StyleSheet.create({
   blockKeyword: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 4,
   },
   allowKeyword: {
     fontSize: 14,
     color: '#666',
+  },
+  checkbox: {
+    fontSize: 24,
   },
   deleteAction: {
     justifyContent: 'center',
@@ -534,5 +520,55 @@ const styles = StyleSheet.create({
   deleteIcon: {
     fontSize: 24,
     color: '#fff',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyMessage: {
+    fontSize: 16,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sortModalContent: {
+    borderRadius: 12,
+    padding: 20,
+    width: '80%',
+    maxWidth: 300,
+  },
+  sortModalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  sortModalOptions: {
+    gap: 4,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  sortOptionText: {
+    fontSize: 16,
+  },
+  sortOptionCheck: {
+    fontSize: 18,
+    color: '#1976d2',
+    fontWeight: '600',
   },
 });

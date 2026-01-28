@@ -3,9 +3,9 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
+  FlatList,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -14,10 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
+import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
 // ヘッダーコンポーネント
 const GlobalAllowKeywordsHeader: React.FC<{
@@ -26,6 +27,7 @@ const GlobalAllowKeywordsHeader: React.FC<{
 }> = ({ onPressBack, remainingCount }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -35,12 +37,14 @@ const GlobalAllowKeywordsHeader: React.FC<{
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ThemedText style={styles.backIcon}>←</ThemedText>
+        <ThemedText style={styles.backIcon}>{t.common.back}</ThemedText>
       </TouchableOpacity>
       <View style={styles.headerCenter}>
-        <ThemedText style={styles.headerTitle}>Global Allow Keywords</ThemedText>
+        <ThemedText style={styles.headerTitle}>{t.globalAllowKeywords.title}</ThemedText>
         {remainingCount !== null && (
-          <ThemedText style={styles.remainingText}>残り {remainingCount} 件</ThemedText>
+          <ThemedText style={styles.remainingText}>
+            {t.globalAllowKeywords.remaining}: {remainingCount}
+          </ThemedText>
         )}
       </View>
       <View style={styles.headerRight} />
@@ -69,6 +73,7 @@ const KeywordItem: React.FC<{
 
 export default function GlobalAllowKeywordsScreen() {
   const router = useRouter();
+  const t = useTranslation();
   const [keywords, setKeywords] = useState<GlobalAllowKeyword[]>([]);
   const [inputText, setInputText] = useState('');
   const [remainingCount, setRemainingCount] = useState<number | null>(null);
@@ -100,7 +105,7 @@ export default function GlobalAllowKeywordsScreen() {
 
   const handleAdd = async () => {
     if (!inputText.trim()) {
-      Alert.alert('エラー', 'キーワードを入力してください');
+      Alert.alert(t.common.error, t.globalAllowKeywords.errorEmpty);
       return;
     }
 
@@ -110,25 +115,25 @@ export default function GlobalAllowKeywordsScreen() {
       setInputText('');
       inputRef.current?.blur();
       await loadKeywords();
-      Alert.alert('成功', 'キーワードを追加しました');
+      Alert.alert(t.common.success, t.globalAllowKeywords.addSuccess);
     } else {
       if (result.requiresPro) {
         // Pro版が必要
-        Alert.alert('制限', result.message || '');
+        Alert.alert(t.common.limit, result.message || '');
       } else {
-        Alert.alert('エラー', result.message || '追加に失敗しました');
+        Alert.alert(t.common.error, result.message || t.globalAllowKeywords.errorFailed);
       }
     }
   };
 
   const handlePressDelete = (keyword: GlobalAllowKeyword) => {
     Alert.alert(
-      'キーワードを削除',
-      `「${keyword.keyword}」を削除しますか？`,
+      t.globalAllowKeywords.deleteConfirmTitle,
+      `「${keyword.keyword}」${t.globalAllowKeywords.deleteConfirmMessage}`,
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: '削除',
+          text: t.common.delete,
           style: 'destructive',
           onPress: async () => {
             try {
@@ -136,7 +141,7 @@ export default function GlobalAllowKeywordsScreen() {
               await loadKeywords();
             } catch (error) {
               console.error('Failed to delete keyword:', error);
-              Alert.alert('エラー', '削除に失敗しました');
+              Alert.alert(t.common.error, t.globalAllowKeywords.deleteError);
             }
           },
         },
@@ -166,7 +171,7 @@ export default function GlobalAllowKeywordsScreen() {
             <TextInput
               ref={inputRef}
               style={styles.input}
-              placeholder="キーワードを入力"
+              placeholder={t.globalAllowKeywords.inputPlaceholder}
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={handleAdd}
@@ -179,18 +184,18 @@ export default function GlobalAllowKeywordsScreen() {
               onPress={handleAdd}
               activeOpacity={0.7}
             >
-              <ThemedText style={styles.addButtonText}>追加</ThemedText>
+              <ThemedText style={styles.addButtonText}>{t.globalAllowKeywords.add}</ThemedText>
             </TouchableOpacity>
           </View>
 
           {/* 説明 */}
           <View style={styles.descriptionContainer}>
             <ThemedText style={styles.descriptionText}>
-              グローバル許可キーワードは、すべてのフィルタより優先して記事を表示します。
+              {t.globalAllowKeywords.description}
             </ThemedText>
             {remainingCount !== null && remainingCount === 0 && (
               <ThemedText style={styles.limitText}>
-                無料版は3件までです。Pro版で無制限に追加できます。
+                {t.globalAllowKeywords.freeLimit}
               </ThemedText>
             )}
           </View>
@@ -209,9 +214,9 @@ export default function GlobalAllowKeywordsScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyIcon}>🌟</Text>
-                <ThemedText style={styles.emptyText}>キーワードがありません</ThemedText>
+                <ThemedText style={styles.emptyText}>{t.globalAllowKeywords.emptyMessage}</ThemedText>
                 <ThemedText style={styles.emptyHint}>
-                  重要なキーワードを追加してください
+                  {t.globalAllowKeywords.emptyHint}
                 </ThemedText>
               </View>
             }

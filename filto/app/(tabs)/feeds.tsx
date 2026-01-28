@@ -1,20 +1,23 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Reanimated from 'react-native-reanimated';
-import { Feed } from '@/types/Feed';
-import { FeedService } from '@/services/FeedService';
-import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { FeedService, Feed, FeedSortType } from '@/services/FeedService';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
-// FeedsHeader（通常モード）- タブ画面のため戻るボタンなし
+// フィードヘッダー（通常モード）
 const FeedsHeader: React.FC<{
   onPressSort: () => void;
   onPressDelete: () => void;
@@ -22,10 +25,11 @@ const FeedsHeader: React.FC<{
 }> = ({ onPressSort, onPressDelete, onPressAdd }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-      <ThemedText style={styles.headerTitle}>Feeds</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t.feeds.title}</ThemedText>
       <View style={styles.headerButtons}>
         <TouchableOpacity
           style={styles.headerButton}
@@ -53,7 +57,7 @@ const FeedsHeader: React.FC<{
   );
 };
 
-// FeedsHeader（削除モード）
+// フィードヘッダー（削除モード）
 const FeedsHeaderDeleteMode: React.FC<{
   selectedCount: number;
   onPressCancel: () => void;
@@ -61,6 +65,7 @@ const FeedsHeaderDeleteMode: React.FC<{
 }> = ({ selectedCount, onPressCancel, onPressDelete }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -69,154 +74,152 @@ const FeedsHeaderDeleteMode: React.FC<{
         onPress={onPressCancel}
         activeOpacity={0.7}
       >
-        <ThemedText style={styles.cancelText}>キャンセル</ThemedText>
+        <ThemedText style={styles.cancelText}>{t.feeds.cancel}</ThemedText>
       </TouchableOpacity>
-      <ThemedText style={styles.selectedCount}>{selectedCount}件選択中</ThemedText>
+      <ThemedText style={styles.selectedCount}>{selectedCount}{t.feeds.selected}</ThemedText>
       <TouchableOpacity
         style={styles.headerButton}
         onPress={onPressDelete}
         disabled={selectedCount === 0}
         activeOpacity={0.7}
       >
-        <ThemedText
-          style={[
-            styles.deleteText,
-            selectedCount === 0 && styles.deleteTextDisabled,
-          ]}
-        >
-          削除
+        <ThemedText style={[styles.deleteText, selectedCount === 0 && styles.disabledText]}>
+          {t.feeds.cancel}
         </ThemedText>
       </TouchableOpacity>
     </View>
   );
 };
 
-// FeedItem コンポーネント
+// 並び替えモーダル
+const FeedSortModal: React.FC<{
+  visible: boolean;
+  currentSort: FeedSortType;
+  onClose: () => void;
+  onSelectSort: (sortType: FeedSortType) => void;
+}> = ({ visible, currentSort, onClose, onSelectSort }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
+
+  const sortOptions: Array<{ type: FeedSortType; label: string }> = [
+    { type: 'name_asc', label: t.feeds.sortNameAsc },
+    { type: 'name_desc', label: t.feeds.sortNameDesc },
+    { type: 'created_asc', label: t.feeds.sortDateAsc },
+    { type: 'created_desc', label: t.feeds.sortDateDesc },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onClose}>
+        <View style={[styles.sortModalContent, { backgroundColor }]}>
+          <ThemedText style={styles.sortModalTitle}>{t.feeds.sortTitle}</ThemedText>
+          <View style={styles.sortModalOptions}>
+            {sortOptions.map((option) => (
+              <TouchableOpacity
+                key={option.type}
+                style={styles.sortOption}
+                onPress={() => {
+                  onSelectSort(option.type);
+                  onClose();
+                }}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.sortOptionText}>{option.label}</ThemedText>
+                {currentSort === option.type && (
+                  <ThemedText style={styles.sortOptionCheck}>✓</ThemedText>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+};
+
+// フィードアイテム
 const FeedItem: React.FC<{
   feed: Feed;
-  isDeleteMode: boolean;
   isSelected: boolean;
-  isSwipeOpen: boolean;
-  onToggleSelect: () => void;
-  onSwipeDelete: () => void;
-  swipeableRef: React.RefObject<SwipeableMethods | null>;
-  onSwipeableWillOpen: () => void;
-  onSwipeableWillClose: (feedId: string) => void;
-}> = ({
-  feed,
-  isDeleteMode,
-  isSelected,
-  isSwipeOpen,
-  onToggleSelect,
-  onSwipeDelete,
-  swipeableRef,
-  onSwipeableWillOpen,
-  onSwipeableWillClose,
-}) => {
-  const renderRightActions = () => {
-    return (
-      <Reanimated.View style={styles.deleteAction}>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={onSwipeDelete}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.deleteButtonText}>削除</Text>
-        </TouchableOpacity>
-      </Reanimated.View>
-    );
-  };
+  isDeleteMode: boolean;
+  onPress: () => void;
+  onPressDelete: () => void;
+  swipeableRef: React.RefObject<Swipeable>;
+  onSwipeableOpen: () => void;
+}> = ({ feed, isSelected, isDeleteMode, onPress, onPressDelete, swipeableRef, onSwipeableOpen }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
 
-  const handlePress = () => {
-    // スワイプが開いている場合は閉じる
-    if (swipeableRef.current && isSwipeOpen) {
-      swipeableRef.current.close();
-    }
-    onToggleSelect();
-  };
-
-  const content = (
-    <View style={[styles.feedItem, isDeleteMode && styles.feedItemDeleteMode]}>
-      {isDeleteMode && (
-        <View style={styles.checkbox}>
-          <Text style={styles.checkboxText}>{isSelected ? '☑' : '☐'}</Text>
-        </View>
-      )}
-      <View style={styles.feedContent}>
-        {feed.iconUrl ? (
-          <Image
-            source={{ uri: feed.iconUrl }}
-            style={styles.feedIconImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <Text style={styles.feedIcon}>📰</Text>
-        )}
-        <View style={styles.feedTextContainer}>
-          <Text style={styles.feedTitle}>{feed.title}</Text>
-          <Text style={styles.feedUrl}>{feed.url}</Text>
-        </View>
-      </View>
+  const renderRightActions = () => (
+    <View style={styles.deleteAction}>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={onPressDelete}
+        activeOpacity={0.7}
+      >
+        <ThemedText style={styles.deleteIcon}>🗑</ThemedText>
+      </TouchableOpacity>
     </View>
   );
-
-  if (isDeleteMode) {
-    return (
-      <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
-        {content}
-      </TouchableOpacity>
-    );
-  }
 
   return (
     <Swipeable
       ref={swipeableRef}
-      renderRightActions={renderRightActions}
+      renderRightActions={isDeleteMode ? undefined : renderRightActions}
       enabled={!isDeleteMode}
-      rightThreshold={40}
-      onSwipeableWillOpen={onSwipeableWillOpen}
-      onSwipeableWillClose={() => onSwipeableWillClose(feed.id)}
-      overshootRight={false}
+      onSwipeableOpen={onSwipeableOpen}
     >
-      {content}
+      <TouchableOpacity
+        style={[
+          styles.feedContainer,
+          { borderBottomColor: borderColor, backgroundColor },
+          isSelected && styles.selectedContainer,
+        ]}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <View style={styles.feedContent}>
+          <View style={styles.textContainer}>
+            <ThemedText style={styles.feedTitle}>{feed.title}</ThemedText>
+            <ThemedText style={styles.feedUrl} numberOfLines={1}>{feed.url}</ThemedText>
+          </View>
+          {isDeleteMode && (
+            <ThemedText style={styles.checkbox}>{isSelected ? '☑' : '☐'}</ThemedText>
+          )}
+        </View>
+      </TouchableOpacity>
     </Swipeable>
   );
 };
 
 export default function FeedsScreen() {
   const router = useRouter();
+  const t = useTranslation();
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const [currentSort, setCurrentSort] = useState<FeedSortType>('created_desc');
   const [sortModalVisible, setSortModalVisible] = useState(false);
-  const [currentSort, setCurrentSort] = useState<FeedSortType>('created_at_desc');
-
-  // 各フィードのSwipeable refを管理
-  const swipeableRefs = useRef<Map<string, React.RefObject<SwipeableMethods | null>>>(new Map());
-  
-  // 開いているスワイプのIDを保持（refで直接管理）
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const openSwipeIdRef = useRef<string | null>(null);
+  const swipeableRefs = useRef<Map<string, React.RefObject<Swipeable>>>(new Map());
 
-  // フィードを読み込む
-  const loadFeeds = React.useCallback(async () => {
+  const loadFeeds = useCallback(async () => {
     try {
-      const feedList = await FeedService.listWithSort(currentSort);
+      const feedList = await FeedService.list(currentSort);
       setFeeds(feedList);
     } catch (error) {
       console.error('Failed to load feeds:', error);
     }
   }, [currentSort]);
 
-  // Swipeable refを取得または作成
-  const getSwipeableRef = React.useCallback((feedId: string) => {
+  const getSwipeableRef = (feedId: string): React.RefObject<Swipeable> => {
     if (!swipeableRefs.current.has(feedId)) {
-      swipeableRefs.current.set(feedId, React.createRef<SwipeableMethods>());
+      swipeableRefs.current.set(feedId, React.createRef<Swipeable>());
     }
     return swipeableRefs.current.get(feedId)!;
-  }, []);
+  };
 
-  // 開いているスワイプを閉じる（useCallback を使わない）
   const closeOpenSwipe = (excludeId?: string) => {
     const currentOpenId = openSwipeIdRef.current;
     if (currentOpenId !== null && currentOpenId !== excludeId) {
@@ -227,12 +230,10 @@ export default function FeedsScreen() {
     }
   };
 
-  // 画面フォーカス時にフィードを読み込む
   useFocusEffect(
     React.useCallback(() => {
       loadFeeds();
       return () => {
-        // クリーンアップ：フォーカスを失う時
         const currentOpenId = openSwipeIdRef.current;
         if (currentOpenId !== null) {
           const ref = swipeableRefs.current.get(currentOpenId);
@@ -242,7 +243,6 @@ export default function FeedsScreen() {
           openSwipeIdRef.current = null;
           setOpenSwipeId(null);
         }
-        // 削除モードをオフ
         if (isDeleteMode) {
           setIsDeleteMode(false);
           setSelectedIds(new Set());
@@ -251,11 +251,9 @@ export default function FeedsScreen() {
     }, [isDeleteMode, loadFeeds])
   );
 
-  // currentSort が変更されたときにフィルタを再読み込み
   React.useEffect(() => {
     loadFeeds();
   }, [currentSort, loadFeeds]);
-
 
   const handlePressSortButton = () => {
     closeOpenSwipe();
@@ -303,10 +301,10 @@ export default function FeedsScreen() {
   const handleConfirmDelete = async () => {
     if (selectedIds.size === 0) return;
 
-    Alert.alert('確認', `${selectedIds.size}件のフィードを削除しますか？`, [
-      { text: 'キャンセル', style: 'cancel' },
+    Alert.alert(t.feeds.confirmTitle, `${selectedIds.size}${t.feeds.deleteConfirm}`, [
+      { text: t.feeds.cancel, style: 'cancel' },
       {
-        text: '削除',
+        text: t.common.delete,
         style: 'destructive',
         onPress: async () => {
           try {
@@ -318,7 +316,7 @@ export default function FeedsScreen() {
             await loadFeeds();
           } catch (error) {
             console.error('Failed to delete feeds:', error);
-            ErrorHandler.showDatabaseError('フィードの削除');
+            ErrorHandler.showDatabaseError(t.feeds.errorDelete);
           }
         },
       },
@@ -326,12 +324,11 @@ export default function FeedsScreen() {
   };
 
   const handleSwipeDelete = async (feed: Feed) => {
-    Alert.alert('確認', `「${feed.title}」を削除しますか？`, [
+    Alert.alert(t.feeds.confirmTitle, `「${feed.title}」${t.feeds.deleteOneConfirm}`, [
       {
-        text: 'キャンセル',
+        text: t.feeds.cancel,
         style: 'cancel',
         onPress: () => {
-          // キャンセル時もスワイプを閉じる
           const ref = swipeableRefs.current.get(feed.id);
           if (ref?.current) {
             ref.current.close();
@@ -339,105 +336,90 @@ export default function FeedsScreen() {
         },
       },
       {
-        text: '削除',
+        text: t.common.delete,
         style: 'destructive',
         onPress: async () => {
           try {
-            // 削除後、スワイプを閉じる
-            const ref = swipeableRefs.current.get(feed.id);
-            if (ref?.current) {
-              ref.current.close();
-            }
-            openSwipeIdRef.current = null;
-            setOpenSwipeId(null);
             await FeedService.delete(feed.id);
             await loadFeeds();
           } catch (error) {
             console.error('Failed to delete feed:', error);
-            ErrorHandler.showDatabaseError('フィードの削除');
+            ErrorHandler.showDatabaseError(t.feeds.errorDelete);
           }
         },
       },
     ]);
   };
 
-  const handleSwipeableWillOpen = (feedId: string) => {
-    // 古いスワイプを閉じる（新しいIDは除外）
-    closeOpenSwipe(feedId);
-    
-    // 新しいIDを設定
+  const handleSwipeableOpen = (feedId: string) => {
+    if (openSwipeIdRef.current !== null && openSwipeIdRef.current !== feedId) {
+      const ref = swipeableRefs.current.get(openSwipeIdRef.current);
+      if (ref?.current) {
+        ref.current.close();
+      }
+    }
     openSwipeIdRef.current = feedId;
     setOpenSwipeId(feedId);
   };
 
-  const handleSwipeableWillClose = (feedId: string) => {
-    // 自分が開いていた場合のみクリア
-    if (openSwipeIdRef.current === feedId) {
-      openSwipeIdRef.current = null;
-      setOpenSwipeId(null);
-    }
-  };
+  const backgroundColor = useThemeColor({}, 'background');
 
   return (
-    <>
-      {/* Expo Router のヘッダーを非表示 */}
-      <Stack.Screen options={{ headerShown: false }} />
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      {isDeleteMode ? (
+        <FeedsHeaderDeleteMode
+          selectedCount={selectedIds.size}
+          onPressCancel={handleCancelDelete}
+          onPressDelete={handleConfirmDelete}
+        />
+      ) : (
+        <FeedsHeader
+          onPressSort={handlePressSortButton}
+          onPressDelete={handlePressDelete}
+          onPressAdd={handlePressAdd}
+        />
+      )}
 
-      <SafeAreaView style={styles.container} edges={['top']}>
-        {isDeleteMode ? (
-          <FeedsHeaderDeleteMode
-            selectedCount={selectedIds.size}
-            onPressCancel={handleCancelDelete}
-            onPressDelete={handleConfirmDelete}
-          />
-        ) : (
-          <FeedsHeader
-            onPressSort={handlePressSortButton}
-            onPressDelete={handlePressDelete}
-            onPressAdd={handlePressAdd}
+      <FlatList
+        data={feeds}
+        renderItem={({ item }) => (
+          <FeedItem
+            feed={item}
+            isSelected={selectedIds.has(item.id)}
+            isDeleteMode={isDeleteMode}
+            onPress={() => {
+              if (openSwipeIdRef.current !== null) {
+                closeOpenSwipe();
+                openSwipeIdRef.current = null;
+                setOpenSwipeId(null);
+                return;
+              }
+              if (isDeleteMode) {
+                handleToggleSelect(item.id);
+              }
+            }}
+            onPressDelete={() => handleSwipeDelete(item)}
+            swipeableRef={getSwipeableRef(item.id)}
+            onSwipeableOpen={() => handleSwipeableOpen(item.id)}
           />
         )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyText}>{t.feeds.emptyIcon}</ThemedText>
+            <ThemedText style={styles.emptyMessage}>{t.feeds.emptyMessage}</ThemedText>
+          </View>
+        }
+      />
 
-        <FlatList
-          data={feeds}
-          renderItem={({ item }) => {
-            const swipeableRef = getSwipeableRef(item.id);
-            const isSwipeOpen = openSwipeId === item.id;
-            return (
-              <FeedItem
-                feed={item}
-                isDeleteMode={isDeleteMode}
-                isSelected={selectedIds.has(item.id)}
-                isSwipeOpen={isSwipeOpen}
-                onToggleSelect={() => handleToggleSelect(item.id)}
-                onSwipeDelete={() => handleSwipeDelete(item)}
-                swipeableRef={swipeableRef}
-                onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
-                onSwipeableWillClose={handleSwipeableWillClose}
-              />
-            );
-          }}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>📭</Text>
-              <Text style={styles.emptyMessage}>フィードがありません</Text>
-              <Text style={styles.emptyHint}>
-                右上の＋ボタンから追加できます
-              </Text>
-            </View>
-          }
-        />
-
-        <FeedSortModal
-          visible={sortModalVisible}
-          currentSort={currentSort}
-          onClose={() => setSortModalVisible(false)}
-          onSelectSort={handleSelectSort}
-        />
-      </SafeAreaView>
-    </>
+      <FeedSortModal
+        visible={sortModalVisible}
+        currentSort={currentSort}
+        onClose={() => setSortModalVisible(false)}
+        onSelectSort={handleSelectSort}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -452,7 +434,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   headerTitle: {
     fontSize: 18,
@@ -476,66 +457,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1976d2',
   },
-  selectedCount: {
-    fontSize: 14,
-    color: '#666',
-  },
   deleteText: {
     fontSize: 16,
-    color: '#d32f2f',
+    color: '#ff3b30',
     fontWeight: '600',
   },
-  deleteTextDisabled: {
-    color: '#b0b0b0',
+  disabledText: {
+    opacity: 0.3,
+  },
+  selectedCount: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   listContent: {
     paddingBottom: 20,
   },
-  feedItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  feedContainer: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
-  feedItemDeleteMode: {
-    backgroundColor: '#fafafa',
-  },
-  checkbox: {
-    marginRight: 12,
-  },
-  checkboxText: {
-    fontSize: 24,
+  selectedContainer: {
+    backgroundColor: '#e3f2fd',
   },
   feedContent: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    flex: 1,
   },
-  feedIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  feedIconImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    marginRight: 12,
-    backgroundColor: '#f0f0f0',
-  },
-  feedTextContainer: {
+  textContainer: {
     flex: 1,
   },
   feedTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 4,
   },
   feedUrl: {
     fontSize: 14,
     color: '#666',
+  },
+  checkbox: {
+    fontSize: 24,
   },
   deleteAction: {
     justifyContent: 'center',
@@ -549,12 +511,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  deleteButtonText: {
+  deleteIcon: {
+    fontSize: 24,
     color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
   },
   emptyContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
@@ -565,11 +527,42 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
   },
-  emptyHint: {
-    fontSize: 14,
-    color: '#999',
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sortModalContent: {
+    borderRadius: 12,
+    padding: 20,
+    width: '80%',
+    maxWidth: 300,
+  },
+  sortModalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  sortModalOptions: {
+    gap: 4,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  sortOptionText: {
+    fontSize: 16,
+  },
+  sortOptionCheck: {
+    fontSize: 18,
+    color: '#1976d2',
+    fontWeight: '600',
   },
 });

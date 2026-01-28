@@ -4,6 +4,7 @@ import { Feed } from '@/types/Feed';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface FeedSelectModalProps {
   visible: boolean;
@@ -23,6 +24,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const iconBg = useThemeColor({}, 'tabIconDefault');
+  const t = useTranslation();
 
   const handleSelectFeed = (feedId: string | null) => {
     onSelectFeed(feedId);
@@ -53,7 +55,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
         >
           {/* ヘッダー */}
           <View style={[styles.header, { borderBottomColor: borderColor }]}>
-            <ThemedText style={styles.title}>フィード選択</ThemedText>
+            <ThemedText style={styles.title}>{t.home.selectFeed}</ThemedText>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <ThemedText style={styles.closeIcon}>✕</ThemedText>
             </TouchableOpacity>
@@ -73,7 +75,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
               <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
                 <ThemedText style={styles.feedIconText}>📰</ThemedText>
               </View>
-              <ThemedText style={styles.feedName}>ALL</ThemedText>
+              <ThemedText style={styles.feedName}>{t.home.all}</ThemedText>
               {selectedFeedId === null && <ThemedText style={styles.checkmark}>✓</ThemedText>}
             </TouchableOpacity>
 
@@ -92,23 +94,27 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
                   <Image source={{ uri: feed.iconUrl }} style={styles.feedIconImage} />
                 ) : (
                   <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
-                    <ThemedText style={styles.feedIconText}>📰</ThemedText>
+                    <ThemedText style={styles.feedIconText}>📡</ThemedText>
                   </View>
                 )}
-                <ThemedText style={styles.feedName}>{feed.title}</ThemedText>
+                <ThemedText style={styles.feedName} numberOfLines={1}>
+                  {feed.title}
+                </ThemedText>
                 {selectedFeedId === feed.id && <ThemedText style={styles.checkmark}>✓</ThemedText>}
               </TouchableOpacity>
             ))}
           </ScrollView>
 
           {/* フッター */}
-          <TouchableOpacity
-            style={styles.manageButton}
-            onPress={handleManageFeeds}
-            activeOpacity={0.7}
-          >
-            <ThemedText style={styles.manageButtonText}>Manage Feeds →</ThemedText>
-          </TouchableOpacity>
+          <View style={[styles.footer, { borderTopColor: borderColor }]}>
+            <TouchableOpacity
+              style={styles.manageButton}
+              onPress={handleManageFeeds}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.manageButtonText}>⚙️ {t.feeds.title}</ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
       </TouchableOpacity>
     </Modal>
@@ -125,14 +131,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
-    minHeight: '60%',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
     paddingVertical: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
   },
   title: {
@@ -143,56 +148,58 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   closeIcon: {
-    fontSize: 20,
+    fontSize: 24,
+    color: '#999',
   },
   listContainer: {
-    flex: 1,
+    maxHeight: 400,
   },
   feedItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   feedItemSelected: {
+    opacity: 0.7,
   },
   feedIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   feedIconImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 8,
     marginRight: 12,
   },
   feedIconText: {
-    fontSize: 18,
+    fontSize: 20,
   },
   feedName: {
     flex: 1,
     fontSize: 16,
   },
   checkmark: {
-    fontSize: 18,
+    fontSize: 20,
     color: '#1976d2',
+    fontWeight: '600',
+  },
+  footer: {
+    borderTopWidth: 1,
+    padding: 16,
   },
   manageButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    paddingVertical: 12,
     alignItems: 'center',
   },
   manageButtonText: {
     fontSize: 16,
     color: '#1976d2',
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

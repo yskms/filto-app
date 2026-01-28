@@ -17,28 +17,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
 const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
 const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
 
-const RETENTION_OPTIONS = [
-  { value: 7, label: '7日' },
-  { value: 30, label: '30日' },
-  { value: 90, label: '90日' },
-  { value: 0, label: '無制限' },
-];
-
-const MANUAL_DELETE_OPTIONS = [
-  { value: -1, label: '全て削除' },
-  { value: 1, label: '1日より古い記事' },
-  { value: 3, label: '3日より古い記事' },
-  { value: 7, label: '7日より古い記事' },
-  { value: 14, label: '14日より古い記事' },
-];
-
 const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const t = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -47,9 +34,9 @@ const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBa
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Text style={styles.backIcon}>←</Text>
+        <Text style={styles.backIcon}>{t.common.back}</Text>
       </TouchableOpacity>
-      <ThemedText style={styles.headerTitle}>Data Management</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t.dataManagement.title}</ThemedText>
       <View style={styles.headerRight} />
     </View>
   );
@@ -131,137 +118,38 @@ const DropdownModal: React.FC<{
   );
 };
 
-const ManualDeleteModal: React.FC<{
-  visible: boolean;
-  selectedDays: number;
-  includeStarred: boolean;
-  stats: { total: number; unread: number; read: number; starred: number } | null;
-  onChangeDays: (days: number) => void;
-  onChangeIncludeStarred: (value: boolean) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
-}> = ({
-  visible,
-  selectedDays,
-  includeStarred,
-  stats,
-  onChangeDays,
-  onChangeIncludeStarred,
-  onConfirm,
-  onCancel,
-}) => {
-  const hasTarget = stats && stats.total > 0;
-  const backgroundColor = useThemeColor({}, 'background');
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={styles.modalBackdrop}>
-        <View style={[styles.modalContent, { backgroundColor }]}>
-          <ThemedText style={styles.modalTitle}>記事の手動削除</ThemedText>
-          <View style={styles.modalBody}>
-            <ThemedText style={styles.modalLabel}>削除する期間を選択:</ThemedText>
-            <ScrollView style={styles.radioScrollView} showsVerticalScrollIndicator={false}>
-              {MANUAL_DELETE_OPTIONS.map((opt) => (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={styles.radioItem}
-                  onPress={() => onChangeDays(opt.value)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.radio, selectedDays === opt.value && styles.radioSelected]}>
-                    {selectedDays === opt.value && <View style={styles.radioDot} />}
-                  </View>
-                  <ThemedText style={styles.radioLabel}>{opt.label}</ThemedText>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <View style={styles.divider} />
-            {stats && (
-              <View style={styles.statsSection}>
-                <ThemedText style={styles.modalLabel}>削除対象:</ThemedText>
-                {hasTarget ? (
-                  <View style={styles.statsContainer}>
-                    <ThemedText style={styles.modalInfo}>・未読: {stats.unread}件</ThemedText>
-                    <ThemedText style={styles.modalInfo}>・既読: {stats.read}件</ThemedText>
-                    {stats.starred > 0 && (
-                      <ThemedText style={styles.modalInfo}>・お気に入り: {stats.starred}件</ThemedText>
-                    )}
-                  </View>
-                ) : (
-                  <ThemedText style={styles.modalInfo}>削除対象の記事はありません</ThemedText>
-                )}
-                <TouchableOpacity
-                  style={[styles.checkboxRow, !hasTarget && styles.checkboxRowDisabled]}
-                  onPress={() => hasTarget && onChangeIncludeStarred(!includeStarred)}
-                  activeOpacity={hasTarget ? 0.7 : 1}
-                  disabled={!hasTarget}
-                >
-                  <View style={[styles.checkbox, includeStarred && styles.checkboxChecked, !hasTarget && styles.checkboxDisabled]}>
-                    {includeStarred && hasTarget && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
-                  <ThemedText
-                    style={[styles.checkboxLabel, !hasTarget && styles.checkboxLabelDisabled]}
-                  >
-                    お気に入りも削除
-                  </ThemedText>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-          <View style={styles.modalButtons}>
-            <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={onCancel} activeOpacity={0.7}>
-            <ThemedText style={styles.modalButtonTextCancel}>キャンセル</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonConfirm]}
-              onPress={onConfirm}
-              activeOpacity={0.7}
-              disabled={!hasTarget}
-            >
-            <ThemedText
-              style={[styles.modalButtonTextConfirm, !hasTarget && styles.modalButtonTextDisabled]}
-            >
-              削除
-            </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
-const ComingSoonRow: React.FC<{ title: string }> = ({ title }) => (
-  <View style={styles.comingSoonRow}>
-    <ThemedText style={styles.comingSoonRowText}>{title}</ThemedText>
-    <ThemedText style={styles.comingSoonBadge}>今後対応予定</ThemedText>
-  </View>
-);
-
 export default function DataManagementScreen() {
   const router = useRouter();
-  const [articleRetentionDays, setArticleRetentionDays] = useState(30);
+  const t = useTranslation();
+  const [retentionDays, setRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
-  const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
+  const [retentionModalVisible, setRetentionModalVisible] = useState(false);
   const [manualDeleteModalVisible, setManualDeleteModalVisible] = useState(false);
-  const [manualDeleteDays, setManualDeleteDays] = useState(-1);
-  const [manualDeleteIncludeStarred, setManualDeleteIncludeStarred] = useState(false);
-  const [manualDeleteStats, setManualDeleteStats] = useState<{
-    total: number;
-    unread: number;
-    read: number;
-    starred: number;
-  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const RETENTION_OPTIONS = [
+    { value: 7, label: `7${t.dataManagement.days}` },
+    { value: 30, label: `30${t.dataManagement.days}` },
+    { value: 90, label: `90${t.dataManagement.days}` },
+    { value: 0, label: t.dataManagement.unlimited },
+  ];
+
+  const MANUAL_DELETE_OPTIONS = [
+    { value: -1, label: t.dataManagement.deleteAll },
+    { value: 1, label: `1${t.dataManagement.days}${t.dataManagement.olderThan}` },
+    { value: 3, label: `3${t.dataManagement.days}${t.dataManagement.olderThan}` },
+    { value: 7, label: `7${t.dataManagement.days}${t.dataManagement.olderThan}` },
+    { value: 14, label: `14${t.dataManagement.days}${t.dataManagement.olderThan}` },
+  ];
 
   const loadSettings = useCallback(async () => {
     try {
-      const [savedRetention, savedStarred] = await Promise.all([
+      const [savedRetention, savedDeleteStarred] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS),
         AsyncStorage.getItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO),
       ]);
-      if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
-      if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
+      if (savedRetention !== null) setRetentionDays(parseInt(savedRetention, 10));
+      if (savedDeleteStarred !== null) setDeleteStarredInAuto(savedDeleteStarred === 'true');
     } catch (e) {
       console.error('Failed to load data management settings:', e);
     }
@@ -269,151 +157,125 @@ export default function DataManagementScreen() {
 
   useFocusEffect(useCallback(() => { loadSettings(); }, [loadSettings]));
 
-  const handleChangeRetentionDays = async (days: number) => {
+  const handleRetentionDays = async (days: number) => {
     try {
-      setArticleRetentionDays(days);
+      setRetentionDays(days);
       await AsyncStorage.setItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS, days.toString());
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '設定の保存に失敗しました');
+      Alert.alert(t.common.error, 'Failed to save settings');
     }
   };
 
-  const handleToggleDeleteStarredInAuto = async () => {
+  const handleToggleDeleteStarred = async () => {
     try {
       const next = !deleteStarredInAuto;
       setDeleteStarredInAuto(next);
       await AsyncStorage.setItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO, next.toString());
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '設定の保存に失敗しました');
+      Alert.alert(t.common.error, 'Failed to save settings');
     }
   };
 
-  const handleOpenManualDelete = async () => {
-    try {
-      const stats = await ArticleRepository.getOldArticlesStats(manualDeleteDays, manualDeleteIncludeStarred);
-      setManualDeleteStats(stats);
-      setManualDeleteModalVisible(true);
-    } catch (e) {
-      console.error(e);
-      Alert.alert('エラー', '削除対象の確認に失敗しました');
-    }
+  const handleManualDelete = async (days: number) => {
+    const isDeleteAll = days === -1;
+    const confirmMessage = isDeleteAll 
+      ? t.dataManagement.deleteConfirmAll
+      : `${days}${t.dataManagement.days}${t.dataManagement.deleteConfirmOlder}`;
+
+    Alert.alert(
+      t.dataManagement.deleteConfirmTitle,
+      confirmMessage,
+      [
+        { text: t.common.cancel, style: 'cancel' },
+        {
+          text: t.common.delete,
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              const deletedCount = await ArticleRepository.deleteOldArticles(days, deleteStarredInAuto);
+              Alert.alert(t.common.success, `${deletedCount}${t.dataManagement.deleteSuccess}`);
+            } catch (error) {
+              console.error('Failed to delete articles:', error);
+              Alert.alert(t.common.error, 'Failed to delete articles');
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const handleChangeManualDeleteDays = async (days: number) => {
-    setManualDeleteDays(days);
-    try {
-      const stats = await ArticleRepository.getOldArticlesStats(days, manualDeleteIncludeStarred);
-      setManualDeleteStats(stats);
-    } catch (_) {}
+  const getRetentionLabel = () => {
+    const option = RETENTION_OPTIONS.find((o) => o.value === retentionDays);
+    return option?.label ?? `30${t.dataManagement.days}`;
   };
-
-  const handleChangeManualDeleteIncludeStarred = async (value: boolean) => {
-    setManualDeleteIncludeStarred(value);
-    try {
-      const stats = await ArticleRepository.getOldArticlesStats(manualDeleteDays, value);
-      setManualDeleteStats(stats);
-    } catch (_) {}
-  };
-
-  const handleConfirmManualDelete = async () => {
-    if (!manualDeleteStats || manualDeleteStats.total === 0) {
-      setManualDeleteModalVisible(false);
-      return;
-    }
-    try {
-      setIsDeleting(true);
-      setManualDeleteModalVisible(false);
-      const deletedCount = await ArticleRepository.deleteOldArticles(manualDeleteDays, manualDeleteIncludeStarred);
-      Alert.alert('完了', `${deletedCount}件の記事を削除しました`);
-      setManualDeleteDays(-1);
-      setManualDeleteIncludeStarred(false);
-      setManualDeleteStats(null);
-    } catch (e) {
-      console.error(e);
-      Alert.alert('エラー', '記事の削除に失敗しました');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleCancelManualDelete = () => {
-    setManualDeleteModalVisible(false);
-    setManualDeleteDays(-1);
-    setManualDeleteIncludeStarred(false);
-  };
-
-  const getRetentionLabel = () => RETENTION_OPTIONS.find((o) => o.value === articleRetentionDays)?.label ?? '30日';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DataManagementHeader onPressBack={() => router.back()} />
 
-      {isDeleting && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#1976d2" />
-          <ThemedText style={styles.loadingText}>削除中...</ThemedText>
-        </View>
-      )}
-
       <ScrollView style={styles.content}>
-        <SettingSection title="記事保持期間">
-          <View style={styles.retentionDescription}>
-            <ThemedText style={styles.retentionDescriptionText}>
-              設定した期間より古い記事は同期時に自動的に削除されます
-            </ThemedText>
-            <TouchableOpacity style={styles.toggleRow} onPress={handleToggleDeleteStarredInAuto} activeOpacity={0.7}>
-              <ThemedText style={styles.toggleLabelText}>お気に入りも削除</ThemedText>
-              <View style={[styles.toggle, deleteStarredInAuto && styles.toggleActive]}>
-                <View style={[styles.toggleThumb, deleteStarredInAuto && styles.toggleThumbActive]} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <Dropdown label="保持期間" value={getRetentionLabel()} onPress={() => setRetentionDropdownVisible(true)} />
+        <SettingSection title={t.dataManagement.cachePeriod}>
+          <Dropdown
+            label={t.dataManagement.cachePeriod}
+            value={getRetentionLabel()}
+            onPress={() => setRetentionModalVisible(true)}
+          />
         </SettingSection>
 
-        <SettingSection title="手動削除オプション">
-          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleOpenManualDelete} activeOpacity={0.7}>
-            <ThemedText style={styles.manualDeleteText}>記事を今すぐ削除</ThemedText>
-            <ThemedText style={styles.arrow}>›</ThemedText>
+        <SettingSection title={t.dataManagement.deleteStarredOption}>
+          <TouchableOpacity style={styles.toggleRow} onPress={handleToggleDeleteStarred} activeOpacity={0.7}>
+            <View style={styles.toggleLabel}>
+              <ThemedText style={styles.toggleDescription}>
+                {t.dataManagement.deleteStarredOption}
+              </ThemedText>
+            </View>
+            <View style={[styles.toggle, deleteStarredInAuto && styles.toggleActive]}>
+              <View style={[styles.toggleThumb, deleteStarredInAuto && styles.toggleThumbActive]} />
+            </View>
           </TouchableOpacity>
         </SettingSection>
 
-        <SettingSection title="WiFi時のみ取得">
-          <ComingSoonRow title="WiFi接続時のみRSSを取得" />
-        </SettingSection>
-
-        <SettingSection title="最低更新間隔">
-          <ComingSoonRow title="連打防止の最低更新間隔" />
-        </SettingSection>
-
-        <SettingSection title="（将来）">
-          <ComingSoonRow title="OPML Import / Export" />
-          <View style={styles.comingSoonDivider} />
-          <ComingSoonRow title="データのバックアップ / 復元" />
+        <SettingSection title={t.dataManagement.manualDelete}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => setManualDeleteModalVisible(true)}
+            disabled={isDeleting}
+            activeOpacity={0.7}
+          >
+            {isDeleting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <ThemedText style={styles.deleteButtonText}>{t.dataManagement.deleteButton}</ThemedText>
+            )}
+          </TouchableOpacity>
         </SettingSection>
       </ScrollView>
 
       <DropdownModal
-        visible={retentionDropdownVisible}
-        title="保持期間を選択"
+        visible={retentionModalVisible}
+        title={t.dataManagement.selectCachePeriod}
         options={RETENTION_OPTIONS}
-        selectedValue={articleRetentionDays}
-        onSelect={handleChangeRetentionDays}
-        onClose={() => setRetentionDropdownVisible(false)}
+        selectedValue={retentionDays}
+        onSelect={handleRetentionDays}
+        onClose={() => setRetentionModalVisible(false)}
       />
 
-      <ManualDeleteModal
+      <DropdownModal
         visible={manualDeleteModalVisible}
-        selectedDays={manualDeleteDays}
-        includeStarred={manualDeleteIncludeStarred}
-        stats={manualDeleteStats}
-        onChangeDays={handleChangeManualDeleteDays}
-        onChangeIncludeStarred={handleChangeManualDeleteIncludeStarred}
-        onConfirm={handleConfirmManualDelete}
-        onCancel={handleCancelManualDelete}
+        title={t.dataManagement.selectDays}
+        options={MANUAL_DELETE_OPTIONS}
+        selectedValue={-2}
+        onSelect={(days) => {
+          setManualDeleteModalVisible(false);
+          handleManualDelete(days);
+        }}
+        onClose={() => setManualDeleteModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -443,7 +305,8 @@ const styles = StyleSheet.create({
   },
   sectionContent: { borderRadius: 12, padding: 16 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  toggleLabelText: { fontSize: 14 },
+  toggleLabel: { flex: 1, marginRight: 12 },
+  toggleDescription: { fontSize: 14, color: '#666', lineHeight: 18 },
   toggle: {
     width: 50,
     height: 30,
@@ -455,9 +318,7 @@ const styles = StyleSheet.create({
   toggleActive: { backgroundColor: '#1976d2' },
   toggleThumb: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff' },
   toggleThumbActive: { alignSelf: 'flex-end' },
-  retentionDescription: { marginBottom: 16 },
-  retentionDescriptionText: { fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 12 },
-  dropdownLabel: { fontSize: 14, fontWeight: '500', marginBottom: 8 },
+  dropdownLabel: { fontSize: 14, fontWeight: '500', color: '#666', marginBottom: 8 },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -468,14 +329,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dropdownValue: { fontSize: 16 },
-  dropdownIcon: { fontSize: 12 },
-  manualDeleteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
-  manualDeleteText: { fontSize: 16, color: '#000' },
-  arrow: { fontSize: 20, color: '#666' },
-  comingSoonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
-  comingSoonRowText: { fontSize: 14 },
-  comingSoonBadge: { fontSize: 12, fontStyle: 'italic' },
-  comingSoonDivider: { height: 1, marginVertical: 4 },
+  dropdownIcon: { fontSize: 12, color: '#666' },
+  deleteButton: {
+    height: 48,
+    backgroundColor: '#d32f2f',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   dropdownModalContent: { borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },
   dropdownModalTitle: { fontSize: 16, fontWeight: '600', marginBottom: 16, textAlign: 'center' },
@@ -490,63 +356,4 @@ const styles = StyleSheet.create({
   },
   dropdownOptionText: { fontSize: 16 },
   dropdownOptionCheck: { fontSize: 18, color: '#1976d2', fontWeight: '600' },
-  modalContent: {
-    borderRadius: 16,
-    padding: 24,
-    width: '90%',
-    maxWidth: 400,
-    height: '70%',
-  },
-  modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16, textAlign: 'center' },
-  modalBody: { flex: 1 },
-  modalLabel: { fontSize: 14, fontWeight: '600', marginBottom: 12 },
-  radioScrollView: { maxHeight: 180, marginBottom: 8 },
-  radioItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-  radio: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioSelected: { borderColor: '#1976d2' },
-  radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#1976d2' },
-  radioLabel: { fontSize: 14 },
-  divider: { height: 1, marginVertical: 12 },
-  statsSection: {},
-  statsContainer: { marginBottom: 8 },
-  modalInfo: { fontSize: 14, marginBottom: 4, paddingLeft: 8 },
-  checkboxRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  checkboxRowDisabled: { opacity: 0.5 },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {},
-  checkboxDisabled: {},
-  checkmark: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  checkboxLabel: { fontSize: 14 },
-  checkboxLabelDisabled: { opacity: 0.5 },
-  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  modalButtonCancel: {},
-  modalButtonConfirm: {},
-  modalButtonTextCancel: { fontSize: 16, fontWeight: '500' },
-  modalButtonTextConfirm: { fontSize: 16, fontWeight: '600' },
-  modalButtonTextDisabled: { opacity: 0.5 },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  loadingText: { marginTop: 12, fontSize: 16, color: '#fff', fontWeight: '500' },
 });

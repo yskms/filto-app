@@ -30,6 +30,7 @@ import type { ReadDisplayMode } from '../display_behavior';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string): string => {
@@ -163,6 +164,7 @@ const HomeHeader: React.FC<{
 };
 
 export default function HomeScreen() {
+  const t = useTranslation();
   const [refreshing, setRefreshing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   const [articles, setArticles] = React.useState<Article[]>([]);
@@ -195,10 +197,10 @@ export default function HomeScreen() {
 
   // 選択中のフィード名を取得
   const selectedFeedName = React.useMemo(() => {
-    if (selectedFeedId === null) return 'ALL';
+    if (selectedFeedId === null) return t.home.all;
     const feed = feeds.find(f => f.id === selectedFeedId);
-    return feed?.title || 'ALL';
-  }, [selectedFeedId, feeds]);
+    return feed?.title || t.home.all;
+  }, [selectedFeedId, feeds, t]);
 
   // データを読み込む
   const loadData = React.useCallback(async () => {
@@ -210,29 +212,66 @@ export default function HomeScreen() {
       setFeeds(feedList);
       
       // 記事一覧を取得
-      const articleList = await ArticleService.getArticles(selectedFeedId ?? undefined);
+      const articleList = await ArticleService.getArticles(selectedFeedId ?? undefined, showStarredOnly);
       setArticles(articleList);
-      
+
       // フィルタ一覧を取得
       const filterList = await FilterService.list();
       setFilters(filterList);
-      
+
       // グローバル許可キーワード一覧を取得
-      const globalAllowList = await GlobalAllowKeywordService.list();
-      setGlobalAllowKeywords(globalAllowList);
-      
-      // Display & Behavior の設定を取得
+      const keywordList = await GlobalAllowKeywordService.list();
+      setGlobalAllowKeywords(keywordList);
+
+      // Display & Behavior設定を読み込み
       const savedReadDisplay = await AsyncStorage.getItem('@filto/display_behavior/readDisplay');
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
         setReadDisplay(savedReadDisplay);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
-      ErrorHandler.showLoadError();
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFeedId]);
+  }, [selectedFeedId, showStarredOnly]);
+
+  // フィルタ適用
+  React.useEffect(() => {
+    const filtered = FilterEngine.filterArticles(articles, filters, globalAllowKeywords);
+    setFilteredArticles(filtered);
+  }, [articles, filters, globalAllowKeywords]);
+
+  // 起動時の自動同期
+  React.useEffect(() => {
+    const checkAndSync = async () => {
+      if (hasAutoSynced) return;
+
+      try {
+        const autoSync = await AsyncStorage.getItem('@filto/display_behavior/autoSyncOnStartup');
+        if (autoSync !== 'true') {
+          setHasAutoSynced(true);
+          return;
+        }
+
+        const lastSyncStr = await AsyncStorage.getItem('@filto/lastSyncTime');
+        const lastSync = lastSyncStr ? parseInt(lastSyncStr, 10) : 0;
+        const now = Math.floor(Date.now() / 1000);
+        const diffMinutes = (now - lastSync) / 60;
+
+        if (diffMinutes >= 30) {
+          await SyncService.refresh();
+          await loadData();
+        }
+
+        setHasAutoSynced(true);
+      } catch (error) {
+        console.error('Auto sync failed:', error);
+        setHasAutoSynced(true);
+      }
+    };
+
+    checkAndSync();
+  }, [hasAutoSynced, loadData]);
 
   // 画面フォーカス時にデータを読み込む
   useFocusEffect(
@@ -241,119 +280,40 @@ export default function HomeScreen() {
     }, [loadData])
   );
 
-  // 起動時自動同期（一度だけ実行）
-  React.useEffect(() => {
-    const autoSync = async () => {
-      if (hasAutoSynced) {
-        console.log('[AutoSync] Already synced, skipping');
-        return;
-      }
-
-      try {
-        // 設定を確認
-        const autoSyncEnabled = await AsyncStorage.getItem('@filto/display_behavior/autoSyncOnStartup');
-        if (autoSyncEnabled === 'false') {
-          console.log('[AutoSync] Auto sync is disabled');
-          setHasAutoSynced(true); // 無効の場合も実行済みフラグを立てる
-          return;
-        }
-
-        // 同期が必要かチェック（30分以上経過時のみ）
-        const shouldSync = await SyncService.shouldSync();
-        if (!shouldSync) {
-          console.log('[AutoSync] Recently synced, skipping');
-          setHasAutoSynced(true);
-          return;
-        }
-
-        // バックグラウンドで同期実行
-        console.log('[AutoSync] Starting background sync...');
-        await SyncService.refresh();
-        console.log('[AutoSync] Completed');
-        
-        // データを再読み込み
-        await loadData();
-        
-        setHasAutoSynced(true);
-      } catch (error) {
-        console.error('[AutoSync] Failed:', error);
-        // エラーでもアプリは正常に動作
-        setHasAutoSynced(true);
-      }
-    };
-
-    // 少し遅延させて、画面表示を優先
-    const timer = setTimeout(() => {
-      autoSync();
-    }, 1500); // 1.5秒後に開始
-
-    return () => clearTimeout(timer);
-  }, [hasAutoSynced, loadData]);
-
-  // フィルタ適用
-  React.useEffect(() => {
-    // フィードでフィルタリング
-    let filtered = articles;
-    if (selectedFeedId !== null) {
-      filtered = articles.filter(a => a.feedId === selectedFeedId);
-    }
-
-    // お気に入りフィルタを適用
-    if (showStarredOnly) {
-      filtered = filtered.filter(a => a.isStarred);
-    }
-
-    // グローバル許可キーワードを文字列配列に変換
-    const allowKeywords = globalAllowKeywords.map(k => k.keyword);
-    
-    // フィルタエンジンで評価
-    let displayed = filtered.filter(article => {
-      const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
-      return !shouldBlock; // ブロックされない記事のみ表示
-    });
-
-    // 既読表示設定に基づいてフィルタリング
-    if (readDisplay === 'hide') {
-      displayed = displayed.filter(a => !a.isRead);
-    }
-
-    setFilteredArticles(displayed);
-  }, [articles, selectedFeedId, showStarredOnly, filters, globalAllowKeywords, readDisplay]);
-
+  // リフレッシュ処理
   const handleRefresh = React.useCallback(async () => {
+    setRefreshing(true);
     try {
-      setRefreshing(true);
-      
-      // RSS同期を実行
-      const result = await SyncService.refresh();
-      console.log(`Sync completed: ${result.fetched} feeds, ${result.newArticles} new articles`);
-      
-      // データを再読み込み
+      await SyncService.refresh();
       await loadData();
     } catch (error) {
       console.error('Failed to refresh:', error);
-      ErrorHandler.showSyncError();
+      ErrorHandler.showGenericError('更新に失敗しました');
     } finally {
       setRefreshing(false);
     }
   }, [loadData]);
 
+  // フィード選択
   const handleFeedSelect = React.useCallback(() => {
     setFeedModalVisible(true);
   }, []);
 
   const handleSelectFeed = React.useCallback((feedId: string | null) => {
     setSelectedFeedId(feedId);
+    setFeedModalVisible(false);
   }, []);
 
+  // お気に入りフィルタ切り替え
   const handleToggleStarFilter = React.useCallback(() => {
     setShowStarredOnly(prev => !prev);
   }, []);
 
+  // 記事タップ
   const handlePressArticle = React.useCallback(async (article: Article) => {
     try {
-      // 記事を既読にする
-      await ArticleService.markRead(article.id);
+      // 既読にする
+      await ArticleRepository.markRead(article.id);
       
       // ローカルの状態も更新
       setArticles(prev => 
@@ -447,11 +407,11 @@ export default function HomeScreen() {
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1976d2" />
-          <Text style={styles.loadingText}>読み込み中...</Text>
+          <Text style={styles.loadingText}>{t.home.loading}</Text>
         </View>
       ) : (
         <FlatList
-          data={filteredArticles}
+          data={readDisplay === 'hide' ? filteredArticles.filter(a => !a.isRead) : filteredArticles}
           renderItem={({ item }) => (
             <ArticleItem 
               article={item} 
@@ -467,8 +427,8 @@ export default function HomeScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>📭</Text>
-              <Text style={styles.emptyMessage}>記事がありません</Text>
+              <Text style={styles.emptyText}>{t.home.emptyIcon}</Text>
+              <Text style={styles.emptyMessage}>{t.home.emptyMessage}</Text>
             </View>
           }
         />

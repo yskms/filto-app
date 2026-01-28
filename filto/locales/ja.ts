@@ -46,6 +46,18 @@ export const ja = {
       cachePeriod: 'キャッシュ期間',
       days: '日',
       selectCachePeriod: 'キャッシュ期間を選択',
+      unlimited: '無制限',
+      deleteStarredOption: 'お気に入り記事も削除',
+      manualDelete: '手動で記事を削除',
+      deleteButton: '削除',
+      deleting: '削除中...',
+      selectDays: '削除する記事を選択',
+      deleteAll: '全て削除',
+      olderThan: 'より古い記事',
+      deleteConfirmTitle: '記事を削除',
+      deleteConfirmAll: '全ての記事を削除しますか？',
+      deleteConfirmOlder: 'より古い記事を削除しますか？',
+      deleteSuccess: '件の記事を削除しました',
     },
   
     // About画面
@@ -69,10 +81,10 @@ export const ja = {
       errorDuplicate: 'このキーワードは既に登録されています',
       errorLimit: '無料版は3件までです。Pro版にアップグレードしてください。',
       errorFailed: '登録に失敗しました',
-      deleteConfirm: 'を削除しますか？',
-      deleteTitle: 'キーワードを削除',
-      cancel: 'キャンセル',
-      delete: '削除',
+      addSuccess: 'キーワードを追加しました',
+      deleteConfirmTitle: 'キーワードを削除',
+      deleteConfirmMessage: 'を削除しますか？',
+      deleteError: '削除に失敗しました',
     },
   
     // Filter Edit画面
@@ -94,8 +106,8 @@ export const ja = {
       errorBlockKeywordRequired: 'ブロックキーワードを入力してください',
       errorTargetRequired: 'タイトルまたは本文のいずれかを選択してください',
       errorSaveFailed: '保存に失敗しました。もう一度お試しください。',
-      deleteConfirmTitle: '確認',
-      deleteConfirmMessage: 'を削除しますか？',
+      deleteConfirmTitle: 'フィルタを削除',
+      deleteConfirmMessage: 'このフィルタを削除しますか？',
       errorDeleteFailed: '削除に失敗しました。もう一度お試しください。',
     },
   
@@ -127,6 +139,7 @@ export const ja = {
       emptyIcon: '📭',
       emptyMessage: '記事がありません',
       selectFeed: 'フィードを選択',
+      close: '閉じる',
     },
   
     // Filters画面
@@ -134,8 +147,10 @@ export const ja = {
       title: 'Filters',
       cancel: 'キャンセル',
       delete: '削除',
+      selected: '件選択中',
       deleteConfirm: '件のフィルタを削除しますか？',
-      confirmTitle: '確認',
+      deleteConfirmTitle: 'フィルタを削除',
+      deleteConfirmMessage: 'このフィルタを削除しますか？',
       emptyIcon: '🔍',
       emptyMessage: 'フィルタがありません',
     },
@@ -146,7 +161,7 @@ export const ja = {
       cancel: 'キャンセル',
       selected: '件選択中',
       deleteConfirm: '件のフィードを削除しますか？',
-      deleteOne: 'を削除しますか？',
+      deleteOneConfirm: 'を削除しますか？',
       confirmTitle: '確認',
       sortTitle: '並び替え',
       sortNameAsc: '名前順（昇順）',
@@ -155,6 +170,7 @@ export const ja = {
       sortDateDesc: '追加日時順（新しい順）',
       emptyIcon: '📡',
       emptyMessage: 'フィードがありません',
+      errorDelete: 'フィードの削除',
     },
   
     // 共通
@@ -167,6 +183,7 @@ export const ja = {
       error: 'エラー',
       success: '成功',
       confirm: '確認',
+      limit: '制限',
     },
   };
   

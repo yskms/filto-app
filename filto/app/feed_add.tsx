@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -20,9 +19,11 @@ import { RssService } from '@/services/RssService';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function FeedAddScreen() {
   const router = useRouter();
+  const t = useTranslation();
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [iconUrl, setIconUrl] = useState<string | undefined>(undefined);
@@ -46,7 +47,7 @@ export default function FeedAddScreen() {
   // URLバリデーション関数
   const validateUrl = (urlString: string): { valid: boolean; message?: string } => {
     if (!urlString.trim()) {
-      return { valid: false, message: 'URLを入力してください' };
+      return { valid: false, message: t.feedAdd.errorUrlRequired };
     }
 
     try {
@@ -54,12 +55,12 @@ export default function FeedAddScreen() {
       
       // プロトコルチェック
       if (!['http:', 'https:'].includes(urlObj.protocol)) {
-        return { valid: false, message: 'http または https で始まるURLを入力してください' };
+        return { valid: false, message: t.feedAdd.errorUrlProtocol };
       }
 
       return { valid: true };
     } catch {
-      return { valid: false, message: '有効なURLを入力してください' };
+      return { valid: false, message: t.feedAdd.errorUrlInvalid };
     }
   };
 
@@ -88,7 +89,7 @@ export default function FeedAddScreen() {
   const handleFetchMeta = async () => {
     const validation = validateUrl(url);
     if (!validation.valid) {
-      setUrlError(validation.message || '無効なURLです');
+      setUrlError(validation.message || t.feedAdd.errorUrlInvalid);
       return;
     }
 
@@ -106,10 +107,10 @@ export default function FeedAddScreen() {
         setIconUrl(meta.iconUrl);
       }
 
-      Alert.alert('成功', 'フィード情報を取得しました');
+      Alert.alert(t.common.success, t.feedAdd.fetchSuccess);
     } catch (error) {
       console.error('Failed to fetch feed meta:', error);
-      setUrlError('フィード情報の取得に失敗しました');
+      setUrlError(t.feedAdd.errorFetchFailed);
     } finally {
       setIsLoadingMeta(false);
     }
@@ -119,7 +120,7 @@ export default function FeedAddScreen() {
   const handleAdd = async () => {
     const validation = validateUrl(url);
     if (!validation.valid) {
-      setUrlError(validation.message || '無効なURLです');
+      setUrlError(validation.message || t.feedAdd.errorUrlInvalid);
       return;
     }
 
@@ -155,9 +156,9 @@ export default function FeedAddScreen() {
             onPress={() => router.back()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <ThemedText style={styles.backIcon}>←</ThemedText>
+            <ThemedText style={styles.backIcon}>{t.common.back}</ThemedText>
           </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>Add Feed</ThemedText>
+          <ThemedText style={styles.headerTitle}>{t.feedAdd.title}</ThemedText>
           <View style={styles.headerRight} />
         </View>
 
@@ -172,7 +173,7 @@ export default function FeedAddScreen() {
           >
             {/* Feed URL */}
             <View style={styles.section}>
-              <ThemedText style={styles.label}>Feed URL</ThemedText>
+              <ThemedText style={styles.label}>{t.feedAdd.feedUrl}</ThemedText>
               <TextInput
                 ref={urlInputRef}
                 style={[
@@ -182,7 +183,7 @@ export default function FeedAddScreen() {
                 ]}
                 value={url}
                 onChangeText={handleUrlChange}
-                placeholder="https://example.com/feed.xml"
+                placeholder={t.feedAdd.feedUrlPlaceholder}
                 placeholderTextColor="#999"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -201,7 +202,7 @@ export default function FeedAddScreen() {
               onPress={handlePaste}
               activeOpacity={0.7}
             >
-              <ThemedText style={styles.pasteButtonText}>📋 ペースト</ThemedText>
+              <ThemedText style={styles.pasteButtonText}>{t.feedAdd.paste}</ThemedText>
             </TouchableOpacity>
 
             {/* Fetch Meta Button */}
@@ -214,29 +215,29 @@ export default function FeedAddScreen() {
               {isLoadingMeta ? (
                 <View style={styles.fetchButtonContent}>
                   <ActivityIndicator size="small" color="#fff" />
-                  <ThemedText style={styles.fetchButtonText}> 取得中...</ThemedText>
+                  <ThemedText style={styles.fetchButtonText}> {t.feedAdd.fetching}</ThemedText>
                 </View>
               ) : (
-                <ThemedText style={styles.fetchButtonText}>🔍 フィード情報を取得</ThemedText>
+                <ThemedText style={styles.fetchButtonText}>{t.feedAdd.fetchMeta}</ThemedText>
               )}
             </TouchableOpacity>
 
             {/* Feed Name (optional) */}
             <View style={styles.section}>
               <ThemedText style={styles.label}>
-                Feed Name <ThemedText style={styles.optional}>(optional)</ThemedText>
+                {t.feedAdd.feedName} <ThemedText style={styles.optional}>{t.feedAdd.optional}</ThemedText>
               </ThemedText>
               <TextInput
                 style={[styles.input, { color: textColor, borderColor, backgroundColor }]}
                 value={name}
                 onChangeText={setName}
-                placeholder="My Favorite Blog"
+                placeholder={t.feedAdd.feedNamePlaceholder}
                 placeholderTextColor="#999"
                 returnKeyType="done"
                 onSubmitEditing={handleAdd}
               />
               <ThemedText style={styles.hint}>
-                空欄の場合、URLをタイトルとして使用します
+                {t.feedAdd.feedNameHint}
               </ThemedText>
             </View>
 
@@ -248,7 +249,7 @@ export default function FeedAddScreen() {
               activeOpacity={0.7}
             >
               <ThemedText style={styles.addButtonText}>
-                {isLoading ? '追加中...' : '追加する'}
+                {isLoading ? t.feedAdd.adding : t.feedAdd.add}
               </ThemedText>
             </TouchableOpacity>
           </ScrollView>

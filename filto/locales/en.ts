@@ -48,6 +48,18 @@ export const en: Translation = {
     cachePeriod: 'Cache Period',
     days: 'days',
     selectCachePeriod: 'Select Cache Period',
+    unlimited: 'Unlimited',
+    deleteStarredOption: 'Also delete starred articles',
+    manualDelete: 'Manually Delete Articles',
+    deleteButton: 'Delete',
+    deleting: 'Deleting...',
+    selectDays: 'Select articles to delete',
+    deleteAll: 'Delete All',
+    olderThan: 'Older than',
+    deleteConfirmTitle: 'Delete Articles',
+    deleteConfirmAll: 'Delete all articles?',
+    deleteConfirmOlder: 'Delete articles older than',
+    deleteSuccess: 'articles deleted',
   },
 
   // About screen
@@ -71,10 +83,10 @@ export const en: Translation = {
     errorDuplicate: 'This keyword is already registered',
     errorLimit: 'Free version is limited to 3 keywords. Please upgrade to Pro.',
     errorFailed: 'Failed to register',
-    deleteConfirm: '?',
-    deleteTitle: 'Delete Keyword',
-    cancel: 'Cancel',
-    delete: 'Delete',
+    addSuccess: 'Keyword added successfully',
+    deleteConfirmTitle: 'Delete Keyword',
+    deleteConfirmMessage: '?',
+    deleteError: 'Failed to delete',
   },
 
   // Filter Edit screen
@@ -96,8 +108,8 @@ export const en: Translation = {
     errorBlockKeywordRequired: 'Please enter a block keyword',
     errorTargetRequired: 'Please select at least title or description',
     errorSaveFailed: 'Failed to save. Please try again.',
-    deleteConfirmTitle: 'Confirm',
-    deleteConfirmMessage: '?',
+    deleteConfirmTitle: 'Delete Filter',
+    deleteConfirmMessage: 'Delete this filter?',
     errorDeleteFailed: 'Failed to delete. Please try again.',
   },
 
@@ -129,6 +141,7 @@ export const en: Translation = {
     emptyIcon: '📭',
     emptyMessage: 'No articles',
     selectFeed: 'Select Feed',
+    close: 'Close',
   },
 
   // Filters screen
@@ -136,8 +149,10 @@ export const en: Translation = {
     title: 'Filters',
     cancel: 'Cancel',
     delete: 'Delete',
+    selected: ' selected',
     deleteConfirm: ' filters?',
-    confirmTitle: 'Confirm',
+    deleteConfirmTitle: 'Delete Filter',
+    deleteConfirmMessage: 'Delete this filter?',
     emptyIcon: '🔍',
     emptyMessage: 'No filters',
   },
@@ -148,7 +163,7 @@ export const en: Translation = {
     cancel: 'Cancel',
     selected: ' selected',
     deleteConfirm: ' feeds?',
-    deleteOne: '?',
+    deleteOneConfirm: '?',
     confirmTitle: 'Confirm',
     sortTitle: 'Sort',
     sortNameAsc: 'Name (A-Z)',
@@ -157,6 +172,7 @@ export const en: Translation = {
     sortDateDesc: 'Date Added (Newest)',
     emptyIcon: '📡',
     emptyMessage: 'No feeds',
+    errorDelete: 'Delete Feed',
   },
 
   // Common
@@ -169,5 +185,6 @@ export const en: Translation = {
     error: 'Error',
     success: 'Success',
     confirm: 'Confirm',
+    limit: 'Limit',
   },
 };

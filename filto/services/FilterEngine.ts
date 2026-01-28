@@ -1,11 +1,33 @@
 import { Filter } from './FilterService';
 import { Article } from '@/types/Article';
+import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 
 /**
  * FilterEngine
  * 記事がフィルタ条件に一致するかを評価する純粋ロジック
  */
 export const FilterEngine = {
+  /**
+   * 記事リストをフィルタリング
+   * @param articles - 評価対象の記事リスト
+   * @param filters - 適用するフィルタ一覧
+   * @param globalAllowKeywords - グローバル許可キーワード（最優先）
+   * @returns フィルタリング後の記事リスト
+   */
+  filterArticles(
+    articles: Article[],
+    filters: Filter[],
+    globalAllowKeywords: GlobalAllowKeyword[] = []
+  ): Article[] {
+    // グローバル許可キーワードを文字列配列に変換
+    const allowKeywordStrings = globalAllowKeywords.map(k => k.keyword);
+
+    return articles.filter(article => {
+      const shouldBlock = this.evaluate(article, filters, allowKeywordStrings);
+      return !shouldBlock; // ブロックされない記事のみ返す
+    });
+  },
+
   /**
    * 記事がブロックされるべきかを判定
    * @param article - 評価対象の記事
@@ -78,4 +100,3 @@ export const FilterEngine = {
     return text.toLowerCase();
   },
 };
-
