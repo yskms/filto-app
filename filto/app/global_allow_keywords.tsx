@@ -16,26 +16,31 @@ import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 // ヘッダーコンポーネント
 const GlobalAllowKeywordsHeader: React.FC<{
   onPressBack: () => void;
   remainingCount: number | null;
 }> = ({ onPressBack, remainingCount }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={onPressBack}
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Text style={styles.backIcon}>←</Text>
+        <ThemedText style={styles.backIcon}>←</ThemedText>
       </TouchableOpacity>
       <View style={styles.headerCenter}>
-        <Text style={styles.headerTitle}>Global Allow Keywords</Text>
+        <ThemedText style={styles.headerTitle}>Global Allow Keywords</ThemedText>
         {remainingCount !== null && (
-          <Text style={styles.remainingText}>残り {remainingCount} 件</Text>
+          <ThemedText style={styles.remainingText}>残り {remainingCount} 件</ThemedText>
         )}
       </View>
       <View style={styles.headerRight} />
@@ -50,13 +55,13 @@ const KeywordItem: React.FC<{
 }> = ({ keyword, onPressDelete }) => {
   return (
     <View style={styles.keywordItem}>
-      <Text style={styles.keywordText}>{keyword.keyword}</Text>
+      <ThemedText style={styles.keywordText}>{keyword.keyword}</ThemedText>
       <TouchableOpacity
         style={styles.deleteButton}
         onPress={onPressDelete}
         activeOpacity={0.7}
       >
-        <Text style={styles.deleteButtonText}>✕</Text>
+        <ThemedText style={styles.deleteButtonText}>✕</ThemedText>
       </TouchableOpacity>
     </View>
   );
@@ -139,10 +144,13 @@ export default function GlobalAllowKeywordsScreen() {
     );
   };
 
+  const backgroundColor = useThemeColor({}, 'background');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
         <GlobalAllowKeywordsHeader
           onPressBack={handlePressBack}
           remainingCount={remainingCount}
@@ -154,7 +162,7 @@ export default function GlobalAllowKeywordsScreen() {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
           {/* 入力欄 */}
-          <View style={styles.inputContainer}>
+          <View style={[styles.inputContainer, { borderBottomColor: borderColor, backgroundColor }]}>
             <TextInput
               ref={inputRef}
               style={styles.input}
@@ -171,19 +179,19 @@ export default function GlobalAllowKeywordsScreen() {
               onPress={handleAdd}
               activeOpacity={0.7}
             >
-              <Text style={styles.addButtonText}>追加</Text>
+              <ThemedText style={styles.addButtonText}>追加</ThemedText>
             </TouchableOpacity>
           </View>
 
           {/* 説明 */}
           <View style={styles.descriptionContainer}>
-            <Text style={styles.descriptionText}>
+            <ThemedText style={styles.descriptionText}>
               グローバル許可キーワードは、すべてのフィルタより優先して記事を表示します。
-            </Text>
+            </ThemedText>
             {remainingCount !== null && remainingCount === 0 && (
-              <Text style={styles.limitText}>
+              <ThemedText style={styles.limitText}>
                 無料版は3件までです。Pro版で無制限に追加できます。
-              </Text>
+              </ThemedText>
             )}
           </View>
 
@@ -201,10 +209,10 @@ export default function GlobalAllowKeywordsScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyIcon}>🌟</Text>
-                <Text style={styles.emptyText}>キーワードがありません</Text>
-                <Text style={styles.emptyHint}>
+                <ThemedText style={styles.emptyText}>キーワードがありません</ThemedText>
+                <ThemedText style={styles.emptyHint}>
                   重要なキーワードを追加してください
-                </Text>
+                </ThemedText>
               </View>
             }
           />
@@ -217,7 +225,6 @@ export default function GlobalAllowKeywordsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     height: 48,
@@ -225,8 +232,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   backButton: {
     padding: 8,
@@ -234,7 +239,6 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 24,
-    color: '#1976d2',
   },
   headerCenter: {
     flex: 1,
@@ -244,11 +248,9 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
   },
   remainingText: {
     fontSize: 12,
-    color: '#666',
     marginTop: 2,
   },
   headerRight: {
@@ -262,8 +264,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   input: {
     flex: 1,
@@ -273,7 +273,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 16,
-    backgroundColor: '#fff',
   },
   addButton: {
     marginLeft: 8,
@@ -285,22 +284,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
   descriptionContainer: {
     padding: 16,
-    backgroundColor: '#f5f5f5',
   },
   descriptionText: {
     fontSize: 14,
-    color: '#666',
     lineHeight: 20,
   },
   limitText: {
     fontSize: 14,
-    color: '#d32f2f',
     marginTop: 8,
     fontWeight: '600',
   },
@@ -341,11 +336,9 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
     marginBottom: 8,
   },
   emptyHint: {
     fontSize: 14,
-    color: '#ccc',
   },
 });

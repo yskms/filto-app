@@ -1,15 +1,9 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-} from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Feed } from '@/types/Feed';
 import { router } from 'expo-router';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 interface FeedSelectModalProps {
   visible: boolean;
@@ -26,6 +20,10 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   onClose,
   onSelectFeed,
 }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const iconBg = useThemeColor({}, 'tabIconDefault');
+
   const handleSelectFeed = (feedId: string | null) => {
     onSelectFeed(feedId);
     onClose();
@@ -49,12 +47,15 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
         activeOpacity={1}
         onPress={onClose}
       >
-        <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+        <View
+          style={[styles.modalContent, { backgroundColor }]}
+          onStartShouldSetResponder={() => true}
+        >
           {/* ヘッダー */}
-          <View style={styles.header}>
-            <Text style={styles.title}>フィード選択</Text>
+          <View style={[styles.header, { borderBottomColor: borderColor }]}>
+            <ThemedText style={styles.title}>フィード選択</ThemedText>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeIcon}>✕</Text>
+              <ThemedText style={styles.closeIcon}>✕</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -62,34 +63,40 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
           <ScrollView style={styles.listContainer}>
             {/* ALL */}
             <TouchableOpacity
-              style={[styles.feedItem, selectedFeedId === null && styles.feedItemSelected]}
+              style={[
+                styles.feedItem,
+                selectedFeedId === null && [styles.feedItemSelected, { backgroundColor: iconBg }],
+              ]}
               onPress={() => handleSelectFeed(null)}
               activeOpacity={0.7}
             >
-              <View style={styles.feedIcon}>
-                <Text style={styles.feedIconText}>📰</Text>
+              <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
+                <ThemedText style={styles.feedIconText}>📰</ThemedText>
               </View>
-              <Text style={styles.feedName}>ALL</Text>
-              {selectedFeedId === null && <Text style={styles.checkmark}>✓</Text>}
+              <ThemedText style={styles.feedName}>ALL</ThemedText>
+              {selectedFeedId === null && <ThemedText style={styles.checkmark}>✓</ThemedText>}
             </TouchableOpacity>
 
             {/* 各フィード */}
             {feeds.map((feed) => (
               <TouchableOpacity
                 key={feed.id}
-                style={[styles.feedItem, selectedFeedId === feed.id && styles.feedItemSelected]}
+                style={[
+                  styles.feedItem,
+                  selectedFeedId === feed.id && [styles.feedItemSelected, { backgroundColor: iconBg }],
+                ]}
                 onPress={() => handleSelectFeed(feed.id)}
                 activeOpacity={0.7}
               >
                 {feed.iconUrl ? (
                   <Image source={{ uri: feed.iconUrl }} style={styles.feedIconImage} />
                 ) : (
-                  <View style={styles.feedIcon}>
-                    <Text style={styles.feedIconText}>📰</Text>
+                  <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
+                    <ThemedText style={styles.feedIconText}>📰</ThemedText>
                   </View>
                 )}
-                <Text style={styles.feedName}>{feed.title}</Text>
-                {selectedFeedId === feed.id && <Text style={styles.checkmark}>✓</Text>}
+                <ThemedText style={styles.feedName}>{feed.title}</ThemedText>
+                {selectedFeedId === feed.id && <ThemedText style={styles.checkmark}>✓</ThemedText>}
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -100,7 +107,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
             onPress={handleManageFeeds}
             activeOpacity={0.7}
           >
-            <Text style={styles.manageButtonText}>Manage Feeds →</Text>
+            <ThemedText style={styles.manageButtonText}>Manage Feeds →</ThemedText>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -115,7 +122,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -128,19 +134,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
   },
   closeButton: {
     padding: 4,
   },
   closeIcon: {
     fontSize: 20,
-    color: '#666',
   },
   listContainer: {
     flex: 1,
@@ -154,13 +157,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
   },
   feedItemSelected: {
-    backgroundColor: '#e3f2fd',
   },
   feedIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -177,7 +178,6 @@ const styles = StyleSheet.create({
   feedName: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
   },
   checkmark: {
     fontSize: 18,

@@ -18,6 +18,8 @@ import { Stack } from 'expo-router';
 import { FeedService } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
 import { ErrorHandler } from '@/utils/errorHandler';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 export default function FeedAddScreen() {
   const router = useRouter();
@@ -201,22 +203,25 @@ export default function FeedAddScreen() {
     }
   };
 
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
     <>
       {/* Expo Router のヘッダーを非表示 */}
       <Stack.Screen options={{ headerShown: false }} />
       
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
         {/* ヘッダー */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: borderColor }]}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <ThemedText style={styles.backIcon}>←</ThemedText>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add Feed</Text>
+          <ThemedText style={styles.headerTitle}>Add Feed</ThemedText>
           <View style={styles.headerRight} />
         </View>
 
@@ -231,7 +236,7 @@ export default function FeedAddScreen() {
           >
             {/* Feed URL */}
             <View style={styles.section}>
-              <Text style={styles.label}>Feed URL</Text>
+              <ThemedText style={styles.label}>Feed URL</ThemedText>
               <TextInput
                 ref={urlInputRef}
                 style={[
@@ -249,7 +254,7 @@ export default function FeedAddScreen() {
                 selectTextOnFocus={true}
               />
               {urlError && (
-                <Text style={styles.errorText}>{urlError}</Text>
+                <ThemedText style={styles.errorText}>{urlError}</ThemedText>
               )}
             </View>
 
@@ -259,7 +264,7 @@ export default function FeedAddScreen() {
               onPress={handlePaste}
               activeOpacity={0.7}
             >
-              <Text style={styles.pasteButtonText}>📋 ペースト</Text>
+              <ThemedText style={styles.pasteButtonText}>📋 ペースト</ThemedText>
             </TouchableOpacity>
 
             {/* Fetch Meta Button */}
@@ -272,18 +277,18 @@ export default function FeedAddScreen() {
               {isLoadingMeta ? (
                 <View style={styles.fetchButtonContent}>
                   <ActivityIndicator size="small" color="#fff" />
-                  <Text style={styles.fetchButtonText}> 取得中...</Text>
+                  <ThemedText style={styles.fetchButtonText}> 取得中...</ThemedText>
                 </View>
               ) : (
-                <Text style={styles.fetchButtonText}>🔍 フィード情報を取得</Text>
+                <ThemedText style={styles.fetchButtonText}>🔍 フィード情報を取得</ThemedText>
               )}
             </TouchableOpacity>
 
             {/* Feed Name (optional) */}
             <View style={styles.section}>
-              <Text style={styles.label}>
-                Feed Name <Text style={styles.optional}>(optional)</Text>
-              </Text>
+              <ThemedText style={styles.label}>
+                Feed Name <ThemedText style={styles.optional}>(optional)</ThemedText>
+              </ThemedText>
               <TextInput
                 style={styles.input}
                 value={name}
@@ -293,9 +298,9 @@ export default function FeedAddScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleAdd}
               />
-              <Text style={styles.hint}>
+              <ThemedText style={styles.hint}>
                 空欄の場合、URLをタイトルとして使用します
-              </Text>
+              </ThemedText>
             </View>
 
             {/* Add Button */}
@@ -305,9 +310,9 @@ export default function FeedAddScreen() {
               disabled={isLoading}
               activeOpacity={0.7}
             >
-              <Text style={styles.addButtonText}>
+              <ThemedText style={styles.addButtonText}>
                 {isLoading ? '追加中...' : '追加する'}
-              </Text>
+              </ThemedText>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>

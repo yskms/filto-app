@@ -6,6 +6,8 @@ import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppTheme } from '@/providers/theme';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 // 既読表示モード（Home は当画面から import）
 export type ReadDisplayMode = 'dim' | 'hide';
@@ -32,32 +34,61 @@ const LANGUAGE_OPTIONS = [
   { value: 'en', label: 'English' },
 ];
 
-const DisplayBehaviorHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => (
-  <View style={styles.header}>
-    <TouchableOpacity onPress={onPressBack} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-      <Text style={styles.backIcon}>←</Text>
-    </TouchableOpacity>
-    <Text style={styles.headerTitle}>Display & Behavior</Text>
-    <View style={styles.headerRight} />
-  </View>
-);
+const DisplayBehaviorHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
 
-const SettingSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    <View style={styles.sectionContent}>{children}</View>
-  </View>
-);
+  return (
+    <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
+      <TouchableOpacity
+        onPress={onPressBack}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Text style={styles.backIcon}>←</Text>
+      </TouchableOpacity>
+      <ThemedText style={styles.headerTitle}>Display & Behavior</ThemedText>
+      <View style={styles.headerRight} />
+    </View>
+  );
+};
 
-const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> = ({ label, value, onPress }) => (
-  <View>
-    <Text style={styles.dropdownLabel}>{label}</Text>
-    <TouchableOpacity style={styles.dropdown} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.dropdownValue}>{value}</Text>
-      <Text style={styles.dropdownIcon}>▼</Text>
-    </TouchableOpacity>
-  </View>
-);
+const SettingSection: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => {
+  const backgroundColor = useThemeColor({}, 'background');
+
+  return (
+    <View style={styles.section}>
+      <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
+      <View style={[styles.sectionContent, { backgroundColor }]}>{children}</View>
+    </View>
+  );
+};
+
+const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> = ({
+  label,
+  value,
+  onPress,
+}) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
+  return (
+    <View>
+      <ThemedText style={styles.dropdownLabel}>{label}</ThemedText>
+      <TouchableOpacity
+        style={[styles.dropdown, { borderColor, backgroundColor }]}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <ThemedText style={styles.dropdownValue}>{value}</ThemedText>
+        <ThemedText style={styles.dropdownIcon}>▼</ThemedText>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const DropdownModal: React.FC<{
   visible: boolean;
@@ -66,28 +97,37 @@ const DropdownModal: React.FC<{
   selectedValue: string;
   onSelect: (value: string) => void;
   onClose: () => void;
-}> = ({ visible, title, options, selectedValue, onSelect, onClose }) => (
-  <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-    <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onClose}>
-      <View style={styles.dropdownModalContent}>
-        <Text style={styles.dropdownModalTitle}>{title}</Text>
-        <View style={styles.dropdownModalOptions}>
-          {options.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={styles.dropdownOption}
-              onPress={() => { onSelect(opt.value); onClose(); }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.dropdownOptionText}>{opt.label}</Text>
-              {selectedValue === opt.value && <Text style={styles.dropdownOptionCheck}>✓</Text>}
-            </TouchableOpacity>
-          ))}
+}> = ({ visible, title, options, selectedValue, onSelect, onClose }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onClose}>
+        <View style={[styles.dropdownModalContent, { backgroundColor }]}>
+          <ThemedText style={styles.dropdownModalTitle}>{title}</ThemedText>
+          <View style={styles.dropdownModalOptions}>
+            {options.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={styles.dropdownOption}
+                onPress={() => {
+                  onSelect(opt.value);
+                  onClose();
+                }}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.dropdownOptionText}>{opt.label}</ThemedText>
+                {selectedValue === opt.value && (
+                  <ThemedText style={styles.dropdownOptionCheck}>✓</ThemedText>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  </Modal>
-);
+      </TouchableOpacity>
+    </Modal>
+  );
+};
 
 export default function DisplayBehaviorScreen() {
   const router = useRouter();
@@ -226,7 +266,7 @@ export default function DisplayBehaviorScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f8f8' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -234,23 +274,20 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   backIcon: { fontSize: 24, color: '#1976d2' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '600' },
   headerRight: { width: 24 },
   content: { flex: 1 },
   section: { marginTop: 24, paddingHorizontal: 16 },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  sectionContent: { backgroundColor: '#fff', borderRadius: 12, padding: 16 },
+  sectionContent: { borderRadius: 12, padding: 16 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toggleLabel: { flex: 1, marginRight: 12 },
   toggleDescription: { fontSize: 13, color: '#666', lineHeight: 18 },
@@ -274,14 +311,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#fff',
   },
-  dropdownValue: { fontSize: 16, color: '#000' },
+  dropdownValue: { fontSize: 16 },
   dropdownIcon: { fontSize: 12, color: '#666' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  dropdownModalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },
-  dropdownModalTitle: { fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 16, textAlign: 'center' },
+  dropdownModalContent: { borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },
+  dropdownModalTitle: { fontSize: 16, fontWeight: '600', marginBottom: 16, textAlign: 'center' },
   dropdownModalOptions: { gap: 4 },
   dropdownOption: {
     flexDirection: 'row',
@@ -291,6 +326,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
   },
-  dropdownOptionText: { fontSize: 16, color: '#000' },
+  dropdownOptionText: { fontSize: 16 },
   dropdownOptionCheck: { fontSize: 18, color: '#1976d2', fontWeight: '600' },
 });

@@ -1,12 +1,13 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Modal,
   Pressable,
 } from 'react-native';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 export type FilterSortType = 
   | 'created_at_desc'
@@ -38,6 +39,9 @@ export const FilterSortModal: React.FC<FilterSortModalProps> = ({
   onClose,
   onSelectSort,
 }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+
   const handleSelectSort = (sortType: FilterSortType) => {
     onSelectSort(sortType);
     onClose();
@@ -53,8 +57,10 @@ export const FilterSortModal: React.FC<FilterSortModalProps> = ({
       <Pressable style={styles.backdrop} onPress={onClose}>
         <View style={styles.modalContainer}>
           <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={styles.modalContent}>
-              <Text style={styles.title}>並び替え</Text>
+            <View style={[styles.modalContent, { backgroundColor }]}>
+              <ThemedText style={[styles.title, { borderBottomColor: borderColor }]}>
+                並び替え
+              </ThemedText>
               
               <View style={styles.optionsList}>
                 {SORT_OPTIONS.map((option) => (
@@ -64,10 +70,10 @@ export const FilterSortModal: React.FC<FilterSortModalProps> = ({
                     onPress={() => handleSelectSort(option.type)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.optionLabel}>
+                    <ThemedText style={styles.optionLabel}>
                       {currentSort === option.type && '▶ '}
                       {option.label}
-                    </Text>
+                    </ThemedText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -91,7 +97,6 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     paddingVertical: 16,
     shadowColor: '#000',
@@ -103,11 +108,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   optionsList: {
     paddingTop: 8,
@@ -118,7 +121,6 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 16,
-    color: '#000',
   },
 });
 

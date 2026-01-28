@@ -12,24 +12,29 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { FilterService, Filter } from '@/services/FilterService';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 // ヘッダーコンポーネント
 const FilterEditHeader: React.FC<{
   isEditMode: boolean;
   onPressBack: () => void;
 }> = ({ isEditMode, onPressBack }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor, borderBottomColor: borderColor }]}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={onPressBack}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Text style={styles.backIcon}>←</Text>
+        <ThemedText style={styles.backIcon}>←</ThemedText>
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>
+      <ThemedText style={styles.headerTitle}>
         {isEditMode ? 'Edit Filter' : 'Add Filter'}
-      </Text>
+      </ThemedText>
       <View style={styles.headerRight} />
     </View>
   );
@@ -47,8 +52,8 @@ const Checkbox: React.FC<{
       onPress={onToggle}
       activeOpacity={0.7}
     >
-      <Text style={styles.checkboxIcon}>{checked ? '☑' : '☐'}</Text>
-      <Text style={styles.checkboxLabel}>{label}</Text>
+      <ThemedText style={styles.checkboxIcon}>{checked ? '☑' : '☐'}</ThemedText>
+      <ThemedText style={styles.checkboxLabel}>{label}</ThemedText>
     </TouchableOpacity>
   );
 };
@@ -174,13 +179,15 @@ export default function FilterEditScreen() {
     isSaving ||
     isLoading;
 
+  const backgroundColor = useThemeColor({}, 'background');
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>読み込み中...</Text>
+          <ThemedText style={styles.loadingText}>読み込み中...</ThemedText>
         </View>
       </SafeAreaView>
     );
@@ -189,7 +196,7 @@ export default function FilterEditScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
         {/* Step 1: ヘッダー */}
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
 
@@ -200,7 +207,7 @@ export default function FilterEditScreen() {
         >
           {/* Step 2: ブロックキーワード */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>ブロックキーワード</Text>
+            <ThemedText style={styles.label}>ブロックキーワード</ThemedText>
             <TextInput
               style={styles.textInput}
               value={blockKeyword}
@@ -213,8 +220,8 @@ export default function FilterEditScreen() {
 
           {/* Step 2: 許可キーワード */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>許可キーワード（任意）</Text>
-            <Text style={styles.hint}>1行に1キーワード</Text>
+            <ThemedText style={styles.label}>許可キーワード（任意）</ThemedText>
+            <ThemedText style={styles.hint}>1行に1キーワード</ThemedText>
             <TextInput
               style={[styles.textInput, styles.multilineInput]}
               value={allowKeywords}
@@ -230,7 +237,7 @@ export default function FilterEditScreen() {
 
           {/* Step 2: 対象 */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>対象</Text>
+            <ThemedText style={styles.label}>対象</ThemedText>
             <View style={styles.checkboxRow}>
               <Checkbox
                 checked={targetTitle}
@@ -256,7 +263,7 @@ export default function FilterEditScreen() {
               {isSaving ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.saveButtonText}>保存</Text>
+                <ThemedText style={styles.saveButtonText}>保存</ThemedText>
               )}
             </TouchableOpacity>
 
@@ -270,7 +277,7 @@ export default function FilterEditScreen() {
                 {isDeleting ? (
                   <ActivityIndicator size="small" color="#ff3b30" />
                 ) : (
-                  <Text style={styles.deleteButtonText}>削除</Text>
+                  <ThemedText style={styles.deleteButtonText}>削除</ThemedText>
                 )}
               </TouchableOpacity>
             )}

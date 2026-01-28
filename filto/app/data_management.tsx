@@ -15,6 +15,8 @@ import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
 const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
@@ -34,32 +36,61 @@ const MANUAL_DELETE_OPTIONS = [
   { value: 14, label: '14日より古い記事' },
 ];
 
-const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => (
-  <View style={styles.header}>
-    <TouchableOpacity onPress={onPressBack} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-      <Text style={styles.backIcon}>←</Text>
-    </TouchableOpacity>
-    <Text style={styles.headerTitle}>Data Management</Text>
-    <View style={styles.headerRight} />
-  </View>
-);
+const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
 
-const SettingSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    <View style={styles.sectionContent}>{children}</View>
-  </View>
-);
+  return (
+    <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
+      <TouchableOpacity
+        onPress={onPressBack}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Text style={styles.backIcon}>←</Text>
+      </TouchableOpacity>
+      <ThemedText style={styles.headerTitle}>Data Management</ThemedText>
+      <View style={styles.headerRight} />
+    </View>
+  );
+};
 
-const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> = ({ label, value, onPress }) => (
-  <View>
-    <Text style={styles.dropdownLabel}>{label}</Text>
-    <TouchableOpacity style={styles.dropdown} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.dropdownValue}>{value}</Text>
-      <Text style={styles.dropdownIcon}>▼</Text>
-    </TouchableOpacity>
-  </View>
-);
+const SettingSection: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => {
+  const backgroundColor = useThemeColor({}, 'background');
+
+  return (
+    <View style={styles.section}>
+      <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
+      <View style={[styles.sectionContent, { backgroundColor }]}>{children}</View>
+    </View>
+  );
+};
+
+const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> = ({
+  label,
+  value,
+  onPress,
+}) => {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const backgroundColor = useThemeColor({}, 'background');
+
+  return (
+    <View>
+      <ThemedText style={styles.dropdownLabel}>{label}</ThemedText>
+      <TouchableOpacity
+        style={[styles.dropdown, { borderColor, backgroundColor }]}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <ThemedText style={styles.dropdownValue}>{value}</ThemedText>
+        <ThemedText style={styles.dropdownIcon}>▼</ThemedText>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const DropdownModal: React.FC<{
   visible: boolean;
@@ -68,28 +99,37 @@ const DropdownModal: React.FC<{
   selectedValue: number;
   onSelect: (value: number) => void;
   onClose: () => void;
-}> = ({ visible, title, options, selectedValue, onSelect, onClose }) => (
-  <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-    <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onClose}>
-      <View style={styles.dropdownModalContent}>
-        <Text style={styles.dropdownModalTitle}>{title}</Text>
-        <View style={styles.dropdownModalOptions}>
-          {options.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={styles.dropdownOption}
-              onPress={() => { onSelect(opt.value); onClose(); }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.dropdownOptionText}>{opt.label}</Text>
-              {selectedValue === opt.value && <Text style={styles.dropdownOptionCheck}>✓</Text>}
-            </TouchableOpacity>
-          ))}
+}> = ({ visible, title, options, selectedValue, onSelect, onClose }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onClose}>
+        <View style={[styles.dropdownModalContent, { backgroundColor }]}>
+          <ThemedText style={styles.dropdownModalTitle}>{title}</ThemedText>
+          <View style={styles.dropdownModalOptions}>
+            {options.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={styles.dropdownOption}
+                onPress={() => {
+                  onSelect(opt.value);
+                  onClose();
+                }}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.dropdownOptionText}>{opt.label}</ThemedText>
+                {selectedValue === opt.value && (
+                  <ThemedText style={styles.dropdownOptionCheck}>✓</ThemedText>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  </Modal>
-);
+      </TouchableOpacity>
+    </Modal>
+  );
+};
 
 const ManualDeleteModal: React.FC<{
   visible: boolean;
@@ -100,15 +140,26 @@ const ManualDeleteModal: React.FC<{
   onChangeIncludeStarred: (value: boolean) => void;
   onConfirm: () => void;
   onCancel: () => void;
-}> = ({ visible, selectedDays, includeStarred, stats, onChangeDays, onChangeIncludeStarred, onConfirm, onCancel }) => {
+}> = ({
+  visible,
+  selectedDays,
+  includeStarred,
+  stats,
+  onChangeDays,
+  onChangeIncludeStarred,
+  onConfirm,
+  onCancel,
+}) => {
   const hasTarget = stats && stats.total > 0;
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.modalBackdrop}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>記事の手動削除</Text>
+        <View style={[styles.modalContent, { backgroundColor }]}>
+          <ThemedText style={styles.modalTitle}>記事の手動削除</ThemedText>
           <View style={styles.modalBody}>
-            <Text style={styles.modalLabel}>削除する期間を選択:</Text>
+            <ThemedText style={styles.modalLabel}>削除する期間を選択:</ThemedText>
             <ScrollView style={styles.radioScrollView} showsVerticalScrollIndicator={false}>
               {MANUAL_DELETE_OPTIONS.map((opt) => (
                 <TouchableOpacity
@@ -120,22 +171,24 @@ const ManualDeleteModal: React.FC<{
                   <View style={[styles.radio, selectedDays === opt.value && styles.radioSelected]}>
                     {selectedDays === opt.value && <View style={styles.radioDot} />}
                   </View>
-                  <Text style={styles.radioLabel}>{opt.label}</Text>
+                  <ThemedText style={styles.radioLabel}>{opt.label}</ThemedText>
                 </TouchableOpacity>
               ))}
             </ScrollView>
             <View style={styles.divider} />
             {stats && (
               <View style={styles.statsSection}>
-                <Text style={styles.modalLabel}>削除対象:</Text>
+                <ThemedText style={styles.modalLabel}>削除対象:</ThemedText>
                 {hasTarget ? (
                   <View style={styles.statsContainer}>
-                    <Text style={styles.modalInfo}>・未読: {stats.unread}件</Text>
-                    <Text style={styles.modalInfo}>・既読: {stats.read}件</Text>
-                    {stats.starred > 0 && <Text style={styles.modalInfo}>・お気に入り: {stats.starred}件</Text>}
+                    <ThemedText style={styles.modalInfo}>・未読: {stats.unread}件</ThemedText>
+                    <ThemedText style={styles.modalInfo}>・既読: {stats.read}件</ThemedText>
+                    {stats.starred > 0 && (
+                      <ThemedText style={styles.modalInfo}>・お気に入り: {stats.starred}件</ThemedText>
+                    )}
                   </View>
                 ) : (
-                  <Text style={styles.modalInfo}>削除対象の記事はありません</Text>
+                  <ThemedText style={styles.modalInfo}>削除対象の記事はありません</ThemedText>
                 )}
                 <TouchableOpacity
                   style={[styles.checkboxRow, !hasTarget && styles.checkboxRowDisabled]}
@@ -146,14 +199,18 @@ const ManualDeleteModal: React.FC<{
                   <View style={[styles.checkbox, includeStarred && styles.checkboxChecked, !hasTarget && styles.checkboxDisabled]}>
                     {includeStarred && hasTarget && <Text style={styles.checkmark}>✓</Text>}
                   </View>
-                  <Text style={[styles.checkboxLabel, !hasTarget && styles.checkboxLabelDisabled]}>お気に入りも削除</Text>
+                  <ThemedText
+                    style={[styles.checkboxLabel, !hasTarget && styles.checkboxLabelDisabled]}
+                  >
+                    お気に入りも削除
+                  </ThemedText>
                 </TouchableOpacity>
               </View>
             )}
           </View>
           <View style={styles.modalButtons}>
             <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={onCancel} activeOpacity={0.7}>
-              <Text style={styles.modalButtonTextCancel}>キャンセル</Text>
+            <ThemedText style={styles.modalButtonTextCancel}>キャンセル</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalButton, styles.modalButtonConfirm]}
@@ -161,7 +218,11 @@ const ManualDeleteModal: React.FC<{
               activeOpacity={0.7}
               disabled={!hasTarget}
             >
-              <Text style={[styles.modalButtonTextConfirm, !hasTarget && styles.modalButtonTextDisabled]}>削除</Text>
+            <ThemedText
+              style={[styles.modalButtonTextConfirm, !hasTarget && styles.modalButtonTextDisabled]}
+            >
+              削除
+            </ThemedText>
             </TouchableOpacity>
           </View>
         </View>
@@ -172,8 +233,8 @@ const ManualDeleteModal: React.FC<{
 
 const ComingSoonRow: React.FC<{ title: string }> = ({ title }) => (
   <View style={styles.comingSoonRow}>
-    <Text style={styles.comingSoonRowText}>{title}</Text>
-    <Text style={styles.comingSoonBadge}>今後対応予定</Text>
+    <ThemedText style={styles.comingSoonRowText}>{title}</ThemedText>
+    <ThemedText style={styles.comingSoonBadge}>今後対応予定</ThemedText>
   </View>
 );
 
@@ -293,18 +354,18 @@ export default function DataManagementScreen() {
       {isDeleting && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#1976d2" />
-          <Text style={styles.loadingText}>削除中...</Text>
+          <ThemedText style={styles.loadingText}>削除中...</ThemedText>
         </View>
       )}
 
       <ScrollView style={styles.content}>
         <SettingSection title="記事保持期間">
           <View style={styles.retentionDescription}>
-            <Text style={styles.retentionDescriptionText}>
+            <ThemedText style={styles.retentionDescriptionText}>
               設定した期間より古い記事は同期時に自動的に削除されます
-            </Text>
+            </ThemedText>
             <TouchableOpacity style={styles.toggleRow} onPress={handleToggleDeleteStarredInAuto} activeOpacity={0.7}>
-              <Text style={styles.toggleLabelText}>お気に入りも削除</Text>
+              <ThemedText style={styles.toggleLabelText}>お気に入りも削除</ThemedText>
               <View style={[styles.toggle, deleteStarredInAuto && styles.toggleActive]}>
                 <View style={[styles.toggleThumb, deleteStarredInAuto && styles.toggleThumbActive]} />
               </View>
@@ -315,8 +376,8 @@ export default function DataManagementScreen() {
 
         <SettingSection title="手動削除オプション">
           <TouchableOpacity style={styles.manualDeleteRow} onPress={handleOpenManualDelete} activeOpacity={0.7}>
-            <Text style={styles.manualDeleteText}>記事を今すぐ削除</Text>
-            <Text style={styles.arrow}>›</Text>
+            <ThemedText style={styles.manualDeleteText}>記事を今すぐ削除</ThemedText>
+            <ThemedText style={styles.arrow}>›</ThemedText>
           </TouchableOpacity>
         </SettingSection>
 
@@ -359,7 +420,7 @@ export default function DataManagementScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f8f8' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,25 +428,22 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   backIcon: { fontSize: 24, color: '#1976d2' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '600' },
   headerRight: { width: 24 },
   content: { flex: 1 },
   section: { marginTop: 24, paddingHorizontal: 16 },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  sectionContent: { backgroundColor: '#fff', borderRadius: 12, padding: 16 },
+  sectionContent: { borderRadius: 12, padding: 16 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  toggleLabelText: { fontSize: 14, color: '#000' },
+  toggleLabelText: { fontSize: 14 },
   toggle: {
     width: 50,
     height: 30,
@@ -399,7 +457,7 @@ const styles = StyleSheet.create({
   toggleThumbActive: { alignSelf: 'flex-end' },
   retentionDescription: { marginBottom: 16 },
   retentionDescriptionText: { fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 12 },
-  dropdownLabel: { fontSize: 14, fontWeight: '500', color: '#666', marginBottom: 8 },
+  dropdownLabel: { fontSize: 14, fontWeight: '500', marginBottom: 8 },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -408,21 +466,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#fff',
   },
-  dropdownValue: { fontSize: 16, color: '#000' },
-  dropdownIcon: { fontSize: 12, color: '#666' },
+  dropdownValue: { fontSize: 16 },
+  dropdownIcon: { fontSize: 12 },
   manualDeleteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   manualDeleteText: { fontSize: 16, color: '#000' },
   arrow: { fontSize: 20, color: '#666' },
   comingSoonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
-  comingSoonRowText: { fontSize: 14, color: '#000' },
-  comingSoonBadge: { fontSize: 12, color: '#999', fontStyle: 'italic' },
-  comingSoonDivider: { height: 1, backgroundColor: '#eee', marginVertical: 4 },
+  comingSoonRowText: { fontSize: 14 },
+  comingSoonBadge: { fontSize: 12, fontStyle: 'italic' },
+  comingSoonDivider: { height: 1, marginVertical: 4 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  dropdownModalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },
-  dropdownModalTitle: { fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 16, textAlign: 'center' },
+  dropdownModalContent: { borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },
+  dropdownModalTitle: { fontSize: 16, fontWeight: '600', marginBottom: 16, textAlign: 'center' },
   dropdownModalOptions: { gap: 4 },
   dropdownOption: {
     flexDirection: 'row',
@@ -432,19 +488,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
   },
-  dropdownOptionText: { fontSize: 16, color: '#000' },
+  dropdownOptionText: { fontSize: 16 },
   dropdownOptionCheck: { fontSize: 18, color: '#1976d2', fontWeight: '600' },
   modalContent: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 24,
     width: '90%',
     maxWidth: 400,
     height: '70%',
   },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: '#000', marginBottom: 16, textAlign: 'center' },
+  modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16, textAlign: 'center' },
   modalBody: { flex: 1 },
-  modalLabel: { fontSize: 14, fontWeight: '600', color: '#666', marginBottom: 12 },
+  modalLabel: { fontSize: 14, fontWeight: '600', marginBottom: 12 },
   radioScrollView: { maxHeight: 180, marginBottom: 8 },
   radioItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
   radio: {
@@ -452,18 +507,17 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#ccc',
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   radioSelected: { borderColor: '#1976d2' },
   radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#1976d2' },
-  radioLabel: { fontSize: 14, color: '#000' },
-  divider: { height: 1, backgroundColor: '#e0e0e0', marginVertical: 12 },
+  radioLabel: { fontSize: 14 },
+  divider: { height: 1, marginVertical: 12 },
   statsSection: {},
   statsContainer: { marginBottom: 8 },
-  modalInfo: { fontSize: 14, color: '#666', marginBottom: 4, paddingLeft: 8 },
+  modalInfo: { fontSize: 14, marginBottom: 4, paddingLeft: 8 },
   checkboxRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   checkboxRowDisabled: { opacity: 0.5 },
   checkbox: {
@@ -471,22 +525,21 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: '#ccc',
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxChecked: { backgroundColor: '#1976d2', borderColor: '#1976d2' },
-  checkboxDisabled: { backgroundColor: '#f0f0f0', borderColor: '#e0e0e0' },
+  checkboxChecked: {},
+  checkboxDisabled: {},
   checkmark: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  checkboxLabel: { fontSize: 14, color: '#000' },
-  checkboxLabelDisabled: { color: '#999' },
+  checkboxLabel: { fontSize: 14 },
+  checkboxLabelDisabled: { opacity: 0.5 },
   modalButtons: { flexDirection: 'row', gap: 12, marginTop: 16 },
   modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  modalButtonCancel: { backgroundColor: '#f0f0f0' },
-  modalButtonConfirm: { backgroundColor: '#ff3b30' },
-  modalButtonTextCancel: { fontSize: 16, fontWeight: '500', color: '#000' },
-  modalButtonTextConfirm: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  modalButtonCancel: {},
+  modalButtonConfirm: {},
+  modalButtonTextCancel: { fontSize: 16, fontWeight: '500' },
+  modalButtonTextConfirm: { fontSize: 16, fontWeight: '600' },
   modalButtonTextDisabled: { opacity: 0.5 },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

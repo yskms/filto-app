@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FilterEngine } from '@/services/FilterEngine';
 import { Filter } from '@/services/FilterService';
 import { Article } from '@/types/Article';
+import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 // ダミー記事データ
 const createArticle = (title: string, summary?: string): Article => ({
@@ -160,44 +162,40 @@ export default function TestFilterEngineScreen() {
     setResults(testResults);
   };
 
-  const passedCount = results.filter(r => r.passed).length;
+  const passedCount = results.filter((r) => r.passed).length;
   const totalCount = results.length;
+  const backgroundColor = useThemeColor({}, 'background');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>FilterEngine テスト</Text>
-        <Text style={styles.headerSubtitle}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <View style={[styles.header, { borderBottomColor: borderColor }]}>
+        <ThemedText style={styles.headerTitle}>FilterEngine テスト</ThemedText>
+        <ThemedText style={styles.headerSubtitle}>
           {passedCount}/{totalCount} 成功
-        </Text>
+        </ThemedText>
       </View>
 
       <ScrollView style={styles.scrollView}>
         {results.map((test, index) => (
           <View
             key={index}
-            style={[
-              styles.testCard,
-              test.passed ? styles.testPassed : styles.testFailed,
-            ]}
+            style={[styles.testCard, test.passed ? styles.testPassed : styles.testFailed]}
           >
-            <Text style={styles.testName}>{test.name}</Text>
-            <Text style={styles.testDetail}>記事: {test.article}</Text>
-            <Text style={styles.testDetail}>フィルタ: {test.filter}</Text>
-            <Text style={styles.testDetail}>
+            <ThemedText style={styles.testName}>{test.name}</ThemedText>
+            <ThemedText style={styles.testDetail}>記事: {test.article}</ThemedText>
+            <ThemedText style={styles.testDetail}>フィルタ: {test.filter}</ThemedText>
+            <ThemedText style={styles.testDetail}>
               結果: {test.result ? 'ブロック' : '表示'}
-            </Text>
-            <Text style={styles.testDetail}>
+            </ThemedText>
+            <ThemedText style={styles.testDetail}>
               期待: {test.expected ? 'ブロック' : '表示'}
-            </Text>
-            <Text
-              style={[
-                styles.testStatus,
-                test.passed ? styles.statusPassed : styles.statusFailed,
-              ]}
+            </ThemedText>
+            <ThemedText
+              style={[styles.testStatus, test.passed ? styles.statusPassed : styles.statusFailed]}
             >
               {test.passed ? '✅ PASS' : '❌ FAIL'}
-            </Text>
+            </ThemedText>
           </View>
         ))}
       </ScrollView>
@@ -208,22 +206,17 @@ export default function TestFilterEngineScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     padding: 16,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#666',
     marginTop: 4,
   },
   scrollView: {
@@ -236,22 +229,18 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   testPassed: {
-    backgroundColor: '#e8f5e9',
     borderColor: '#4caf50',
   },
   testFailed: {
-    backgroundColor: '#ffebee',
     borderColor: '#f44336',
   },
   testName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 8,
   },
   testDetail: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 4,
   },
   testStatus: {
