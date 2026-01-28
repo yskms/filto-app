@@ -13,6 +13,7 @@ const AboutHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
       <TouchableOpacity
+        style={styles.backButton}
         onPress={onPressBack}
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -30,17 +31,19 @@ export default function AboutScreen() {
   const backgroundColor = useThemeColor({}, 'background');
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+    <>
       <Stack.Screen options={{ headerShown: false }} />
-      <AboutHeader onPressBack={() => router.back()} />
-      <View style={styles.content}>
-        <ThemedText style={styles.appName}>Filto</ThemedText>
-        <ThemedText style={styles.version}>Version 1.0.0</ThemedText>
-        <ThemedText style={styles.description}>
-          RSSリーダー with キーワードフィルター
-        </ThemedText>
-      </View>
-    </SafeAreaView>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+        <AboutHeader onPressBack={() => router.back()} />
+        <View style={[styles.content, { backgroundColor }]}>
+          <ThemedText style={styles.appName}>Filto</ThemedText>
+          <ThemedText style={styles.version}>Version 1.0.0</ThemedText>
+          <ThemedText style={styles.description}>
+            RSSリーダー with キーワードフィルター
+          </ThemedText>
+        </View>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -54,9 +57,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
   },
-  backIcon: { fontSize: 24 },
-  headerTitle: { fontSize: 18, fontWeight: '600' },
-  headerRight: { width: 24 },
+  backButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 40,
+  },
+  backIcon: { 
+    fontSize: 20,
+  },
+  headerTitle: { 
+    fontSize: 18, 
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerRight: { 
+    minWidth: 40,
+  },
   content: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
   appName: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
   version: { fontSize: 14, marginBottom: 16 },

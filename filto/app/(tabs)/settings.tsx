@@ -27,12 +27,13 @@ const MenuItemRow: React.FC<{
 }> = ({ item, onPress }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const iconColor = useThemeColor({}, 'icon');
+  const backgroundColor = useThemeColor({}, 'background');
 
   return (
     <TouchableOpacity
       style={[
         styles.menuItem,
-        { borderBottomColor: borderColor },
+        { borderBottomColor: borderColor, backgroundColor },
         item.disabled && styles.menuItemDisabled,
       ]}
       onPress={onPress}
@@ -105,7 +106,8 @@ export default function SettingsScreen() {
           />
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { backgroundColor }]}
+        style={{ backgroundColor }}
       />
     </SafeAreaView>
   );

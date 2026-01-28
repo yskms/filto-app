@@ -31,6 +31,10 @@ export default function FeedAddScreen() {
   const [urlError, setUrlError] = useState<string | null>(null);
   const urlInputRef = useRef<TextInput>(null);
 
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+
   // 起動時に入力欄にフォーカス
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -50,151 +54,89 @@ export default function FeedAddScreen() {
       
       // プロトコルチェック
       if (!['http:', 'https:'].includes(urlObj.protocol)) {
-        return { valid: false, message: 'http または https のURLを入力してください' };
+        return { valid: false, message: 'http または https で始まるURLを入力してください' };
       }
-      
-      // ホスト名チェック
-      if (!urlObj.hostname || urlObj.hostname.length === 0) {
-        return { valid: false, message: '有効なホスト名を含むURLを入力してください' };
-      }
-      
-      // ローカルホストの除外
-      if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
-        return { valid: false, message: 'ローカルホストのURLは使用できません' };
-      }
-      
+
       return { valid: true };
-    } catch (error) {
-      return { valid: false, message: '有効なURL形式で入力してください（例: https://example.com/feed.xml）' };
+    } catch {
+      return { valid: false, message: '有効なURLを入力してください' };
     }
   };
 
-  // URL変更時のリアルタイムバリデーション
+  // URL変更時のバリデーション
   const handleUrlChange = (text: string) => {
     setUrl(text);
-    
-    // 空欄の場合はエラーをクリア
-    if (!text.trim()) {
-      setUrlError(null);
-      return;
-    }
-    
-    // 入力中はリアルタイムでバリデーション
-    const validation = validateUrl(text);
-    if (!validation.valid) {
-      setUrlError(validation.message || null);
-    } else {
+    if (urlError) {
       setUrlError(null);
     }
   };
 
+  // クリップボードから貼り付け
   const handlePaste = async () => {
     try {
-      const text = await Clipboard.getString();
-      if (text) {
-        handleUrlChange(text.trim());
+      const clipboardText = await Clipboard.getString();
+      if (clipboardText) {
+        setUrl(clipboardText.trim());
+        setUrlError(null);
       }
     } catch (error) {
-      console.error('Clipboard error:', error);
+      console.error('Failed to paste from clipboard:', error);
     }
   };
 
+  // フィード情報を取得
   const handleFetchMeta = async () => {
-    // バリデーション
     const validation = validateUrl(url);
     if (!validation.valid) {
-      ErrorHandler.showValidationError('URL', validation.message || 'URLが無効です');
+      setUrlError(validation.message || '無効なURLです');
       return;
     }
 
     setIsLoadingMeta(true);
+    setUrlError(null);
 
     try {
-      // 1. まず入力されたURLで試す
-      try {
-        console.log('[FeedAdd] Trying direct URL:', url.trim());
-        const meta = await RssService.fetchMeta(url.trim());
-        
-        // タイトルとアイコンURLを自動入力
+      const meta = await RssService.fetchFeedMeta(url.trim());
+      
+      if (meta.title) {
         setName(meta.title);
-        setIconUrl(meta.iconUrl);
-        
-        console.log('[FeedAdd] Fetched meta:', { title: meta.title, iconUrl: meta.iconUrl });
-        
-        Alert.alert('成功', 'フィード情報を取得しました');
-        return;
-      } catch (firstError) {
-        console.log('[FeedAdd] Direct fetch failed, trying auto-detection...');
       }
       
-      // 2. 失敗したら自動検出を試みる
-      const detectedUrl = await FeedService.detectRssUrl(url.trim());
-      
-      if (detectedUrl) {
-        // 検出成功：メタデータを取得
-        const meta = await RssService.fetchMeta(detectedUrl);
-        
-        // URLを自動更新
-        setUrl(detectedUrl);
-        setName(meta.title);
+      if (meta.iconUrl) {
         setIconUrl(meta.iconUrl);
-        
-        console.log('[FeedAdd] Auto-detected RSS:', { url: detectedUrl, title: meta.title });
-        
-        Alert.alert(
-          '成功', 
-          `RSSフィードを自動検出しました\n\n${detectedUrl}`
-        );
-      } else {
-        // すべて失敗
-        console.error('[FeedAdd] RSS auto-detection failed');
-        ErrorHandler.showRssError();
       }
+
+      Alert.alert('成功', 'フィード情報を取得しました');
     } catch (error) {
-      console.error('[FeedAdd] Failed to fetch RSS meta:', error);
-      ErrorHandler.showRssError();
+      console.error('Failed to fetch feed meta:', error);
+      setUrlError('フィード情報の取得に失敗しました');
     } finally {
       setIsLoadingMeta(false);
     }
   };
 
+  // フィード追加
   const handleAdd = async () => {
-    // バリデーション
     const validation = validateUrl(url);
     if (!validation.valid) {
-      ErrorHandler.showValidationError('URL', validation.message || 'URLが無効です');
+      setUrlError(validation.message || '無効なURLです');
       return;
     }
 
     setIsLoading(true);
+    setUrlError(null);
 
     try {
-      // 重複チェック
-      const existingFeeds = await FeedService.list();
       const trimmedUrl = url.trim();
-      const isDuplicate = existingFeeds.some(feed => feed.url === trimmedUrl);
-      
-      if (isDuplicate) {
-        ErrorHandler.showDuplicateError('フィードURL');
-        setIsLoading(false);
-        return;
-      }
+      const feedName = name.trim() || trimmedUrl;
 
-      // FeedService.create() でフィードを保存
       await FeedService.create({
         url: trimmedUrl,
-        title: name.trim() || undefined,  // 空文字の場合はundefinedに
-        iconUrl: iconUrl,  // アイコンURLも保存
+        title: feedName,
+        iconUrl: iconUrl || null,
       });
 
-      console.log('[FeedAdd] Created feed with iconUrl:', iconUrl);
-
-      Alert.alert('成功', 'フィードを追加しました', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      router.back();
     } catch (error) {
       console.error('Failed to add feed:', error);
       ErrorHandler.showDatabaseError('フィードの追加');
@@ -203,17 +145,11 @@ export default function FeedAddScreen() {
     }
   };
 
-  const borderColor = useThemeColor({}, 'tabIconDefault');
-  const backgroundColor = useThemeColor({}, 'background');
-
   return (
     <>
-      {/* Expo Router のヘッダーを非表示 */}
       <Stack.Screen options={{ headerShown: false }} />
-      
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-        {/* ヘッダー */}
-        <View style={[styles.header, { borderBottomColor: borderColor }]}>
+        <View style={[styles.header, { backgroundColor, borderBottomColor: borderColor }]}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
@@ -241,6 +177,7 @@ export default function FeedAddScreen() {
                 ref={urlInputRef}
                 style={[
                   styles.input,
+                  { color: textColor, borderColor, backgroundColor },
                   urlError && styles.inputError
                 ]}
                 value={url}
@@ -260,7 +197,7 @@ export default function FeedAddScreen() {
 
             {/* Paste Button */}
             <TouchableOpacity
-              style={styles.pasteButton}
+              style={[styles.pasteButton, { borderColor }]}
               onPress={handlePaste}
               activeOpacity={0.7}
             >
@@ -290,7 +227,7 @@ export default function FeedAddScreen() {
                 Feed Name <ThemedText style={styles.optional}>(optional)</ThemedText>
               </ThemedText>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: textColor, borderColor, backgroundColor }]}
                 value={name}
                 onChangeText={setName}
                 placeholder="My Favorite Blog"
@@ -324,7 +261,6 @@ export default function FeedAddScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     height: 48,
@@ -333,19 +269,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   backButton: {
     padding: 4,
   },
   backIcon: {
     fontSize: 24,
-    color: '#000',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
   },
   headerRight: {
     width: 32,
@@ -365,7 +298,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 8,
   },
   optional: {
@@ -376,12 +308,9 @@ const styles = StyleSheet.create({
   input: {
     height: 48,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 16,
-    color: '#000',
-    backgroundColor: '#fff',
   },
   inputError: {
     borderColor: '#f44336',
@@ -400,12 +329,10 @@ const styles = StyleSheet.create({
   pasteButton: {
     height: 48,
     borderWidth: 1,
-    borderColor: '#1976d2',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    backgroundColor: '#fff',
   },
   pasteButtonText: {
     fontSize: 16,

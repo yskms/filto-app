@@ -15,6 +15,7 @@ export const unstable_settings = {
 
 function RootNavigation() {
   const { mode } = useAppTheme();
+  
   useEffect(() => {
     const resetAndInitDatabase = async () => {
       // 🚨 開発中のみ: DBファイルを確実に削除
@@ -45,24 +46,34 @@ function RootNavigation() {
     });
   }, []);
 
+  const backgroundColor = mode === 'dark' ? '#151718' : '#fff';
+
   return (
-    <NavigationThemeProvider value={mode === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="dark" />
-    </NavigationThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor }}>
+      <NavigationThemeProvider value={mode === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack
+          screenOptions={{
+            contentStyle: {
+              backgroundColor,
+            },
+            headerStyle: {
+              backgroundColor,
+            },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        </Stack>
+        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      </NavigationThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <AppThemeProvider>
-        <RootNavigation />
-      </AppThemeProvider>
-    </GestureHandlerRootView>
+    <AppThemeProvider>
+      <RootNavigation />
+    </AppThemeProvider>
   );
 }
-

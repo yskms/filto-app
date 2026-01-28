@@ -72,7 +72,11 @@ export default function FilterEditScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 編集モード時、フィルタを読み込む（Step 3: データ読み込み）
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+
+  // 編集モード時、フィルタを読み込む
   React.useEffect(() => {
     if (filterId) {
       loadFilter();
@@ -82,21 +86,15 @@ export default function FilterEditScreen() {
   const loadFilter = async () => {
     setIsLoading(true);
     try {
-      const filter = await FilterService.get(parseInt(filterId!));
-
-      setBlockKeyword(filter.block_keyword);
-
-      // カンマ区切りを改行区切りに変換
-      setAllowKeywords(
-        filter.allow_keyword
-          ?.split(',')
-          .map((k: string) => k.trim())
-          .join('\n') || ''
-      );
-
-      setTargetTitle(filter.target_title === 1);
-      setTargetDescription(filter.target_description === 1);
+      const filter = await FilterService.get(parseInt(filterId!, 10));
+      if (filter) {
+        setBlockKeyword(filter.blockKeyword);
+        setAllowKeywords(filter.allowKeywords);
+        setTargetTitle(filter.targetTitle);
+        setTargetDescription(filter.targetDescription);
+      }
     } catch (error) {
+      console.error('Failed to load filter:', error);
       Alert.alert('エラー', 'フィルタの読み込みに失敗しました');
       router.back();
     } finally {
@@ -104,54 +102,46 @@ export default function FilterEditScreen() {
     }
   };
 
-  // Step 3: 保存処理
   const handleSave = async () => {
-    // バリデーション
     if (!blockKeyword.trim()) {
       Alert.alert('エラー', 'ブロックキーワードを入力してください');
       return;
     }
 
     if (!targetTitle && !targetDescription) {
-      Alert.alert('エラー', 'タイトルまたは概要のいずれかを選択してください');
+      Alert.alert('エラー', 'タイトルまたは本文のいずれかを選択してください');
       return;
     }
 
     setIsSaving(true);
 
     try {
-      // 改行区切りをカンマ区切りに変換
-      const allowKeywordsForDB = allowKeywords
-        .split('\n')
-        .map((k) => k.trim())
-        .filter((k) => k.length > 0)
-        .join(',');
-
-      const now = Math.floor(Date.now() / 1000);
-      const filter: Filter = {
-        id: filterId ? parseInt(filterId) : undefined,
-        block_keyword: blockKeyword.trim(),
-        allow_keyword: allowKeywordsForDB || null,
-        target_title: targetTitle ? 1 : 0,
-        target_description: targetDescription ? 1 : 0,
-        created_at: now,
-        updated_at: now,
+      const filterData: Partial<Filter> = {
+        blockKeyword: blockKeyword.trim(),
+        allowKeywords: allowKeywords.trim(),
+        targetTitle,
+        targetDescription,
       };
 
-      await FilterService.save(filter);
+      if (isEditMode) {
+        await FilterService.update(parseInt(filterId!, 10), filterData);
+      } else {
+        await FilterService.create(filterData);
+      }
+
       router.back();
     } catch (error) {
+      console.error('Failed to save filter:', error);
       Alert.alert('エラー', '保存に失敗しました。もう一度お試しください。');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Step 3: 削除処理
   const handleDelete = () => {
     Alert.alert(
-      'フィルタを削除',
-      'このフィルタを削除しますか？',
+      '確認',
+      `「${blockKeyword}」を削除しますか？`,
       [
         { text: 'キャンセル', style: 'cancel' },
         {
@@ -160,7 +150,7 @@ export default function FilterEditScreen() {
           onPress: async () => {
             setIsDeleting(true);
             try {
-              await FilterService.delete(parseInt(filterId!));
+              await FilterService.delete(parseInt(filterId!, 10));
               router.back();
             } catch (error) {
               Alert.alert('エラー', '削除に失敗しました。もう一度お試しください。');
@@ -179,8 +169,6 @@ export default function FilterEditScreen() {
     isSaving ||
     isLoading;
 
-  const backgroundColor = useThemeColor({}, 'background');
-
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
@@ -197,7 +185,6 @@ export default function FilterEditScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-        {/* Step 1: ヘッダー */}
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
 
         <ScrollView
@@ -205,11 +192,11 @@ export default function FilterEditScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Step 2: ブロックキーワード */}
+          {/* ブロックキーワード */}
           <View style={styles.fieldContainer}>
             <ThemedText style={styles.label}>ブロックキーワード</ThemedText>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
               value={blockKeyword}
               onChangeText={setBlockKeyword}
               placeholder="例: FX"
@@ -218,26 +205,24 @@ export default function FilterEditScreen() {
             />
           </View>
 
-          {/* Step 2: 許可キーワード */}
+          {/* 許可キーワード */}
           <View style={styles.fieldContainer}>
             <ThemedText style={styles.label}>許可キーワード（任意）</ThemedText>
             <ThemedText style={styles.hint}>1行に1キーワード</ThemedText>
             <TextInput
-              style={[styles.textInput, styles.multilineInput]}
+              style={[styles.textInput, styles.multilineInput, { color: textColor, borderColor, backgroundColor }]}
               value={allowKeywords}
               onChangeText={setAllowKeywords}
               placeholder="例:&#10;仮想通貨&#10;web3&#10;crypto"
               placeholderTextColor="#999"
               multiline
-              numberOfLines={4}
-              textAlignVertical="top"
               editable={!isSaving && !isDeleting}
             />
           </View>
 
-          {/* Step 2: 対象 */}
+          {/* 検索対象 */}
           <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>対象</ThemedText>
+            <ThemedText style={styles.label}>検索対象</ThemedText>
             <View style={styles.checkboxRow}>
               <Checkbox
                 checked={targetTitle}
@@ -246,13 +231,13 @@ export default function FilterEditScreen() {
               />
               <Checkbox
                 checked={targetDescription}
-                label="概要"
+                label="本文"
                 onToggle={() => setTargetDescription(!targetDescription)}
               />
             </View>
           </View>
 
-          {/* Step 3: ボタン */}
+          {/* ボタン */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.saveButton, isSaveDisabled && styles.buttonDisabled]}
@@ -291,7 +276,6 @@ export default function FilterEditScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     height: 48,
@@ -300,8 +284,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   backButton: {
     padding: 8,
@@ -311,12 +293,10 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 20,
-    color: '#000',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
     flex: 1,
     textAlign: 'center',
   },
@@ -338,7 +318,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#666',
   },
   fieldContainer: {
     marginBottom: 24,
@@ -346,7 +325,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 8,
   },
   hint: {
@@ -356,12 +334,9 @@ const styles = StyleSheet.create({
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#000',
-    backgroundColor: '#fff',
   },
   multilineInput: {
     minHeight: 100,
@@ -378,11 +353,9 @@ const styles = StyleSheet.create({
   checkboxIcon: {
     fontSize: 20,
     marginRight: 8,
-    color: '#000',
   },
   checkboxLabel: {
     fontSize: 16,
-    color: '#000',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -420,4 +393,3 @@ const styles = StyleSheet.create({
     color: '#ff3b30',
   },
 });
-
