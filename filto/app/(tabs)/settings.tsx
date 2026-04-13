@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
 interface MenuItem {
   id: string;
@@ -11,14 +12,6 @@ interface MenuItem {
   icon?: string;
   disabled?: boolean;
 }
-
-const menuItems: MenuItem[] = [
-  { id: 'global_allow_keywords', title: 'グローバル許可キーワード', icon: '📚' },
-  { id: 'display_behavior', title: '表示と動作', icon: '👁' },
-  { id: 'data_management', title: 'データ管理', icon: '💾' },
-  { id: 'pro', title: 'Pro', icon: '⭐', disabled: true },
-  { id: 'about', title: 'About', icon: 'ℹ' },
-];
 
 // メニューアイテムコンポーネント
 const MenuItemRow: React.FC<{
@@ -61,10 +54,11 @@ const MenuItemRow: React.FC<{
 const SettingsHeader: React.FC = () => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-      <ThemedText style={styles.headerTitle}>Settings</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t('settings.title')}</ThemedText>
     </View>
   );
 };
@@ -72,6 +66,15 @@ const SettingsHeader: React.FC = () => {
 export default function SettingsScreen() {
   const router = useRouter();
   const backgroundColor = useThemeColor({}, 'background');
+  const { t } = useTranslation();
+
+  const menuItems: MenuItem[] = [
+    { id: 'global_allow_keywords', title: t('settings.globalAllowKeywords'), icon: '📚' },
+    { id: 'display_behavior', title: t('settings.displayBehavior'), icon: '👁' },
+    { id: 'data_management', title: t('settings.dataManagement'), icon: '💾' },
+    { id: 'pro', title: 'Pro', icon: '⭐', disabled: true },
+    { id: 'about', title: t('settings.about'), icon: 'ℹ' },
+  ];
 
   const handlePressMenuItem = React.useCallback((itemId: string) => {
     switch (itemId) {

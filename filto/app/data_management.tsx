@@ -17,28 +17,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
 const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
 const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
 
-const RETENTION_OPTIONS = [
-  { value: 7, label: '7日' },
-  { value: 30, label: '30日' },
-  { value: 90, label: '90日' },
-  { value: 0, label: '無制限' },
-];
-
-const MANUAL_DELETE_OPTIONS = [
-  { value: -1, label: '全て削除' },
-  { value: 1, label: '1日より古い記事' },
-  { value: 3, label: '3日より古い記事' },
-  { value: 7, label: '7日より古い記事' },
-  { value: 14, label: '14日より古い記事' },
-];
+const RETENTION_OPTIONS = [7, 30, 90, 0];
+const MANUAL_DELETE_OPTIONS = [-1, 1, 3, 7, 14];
 
 const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -49,7 +39,7 @@ const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBa
       >
         <Text style={styles.backIcon}>←</Text>
       </TouchableOpacity>
-      <ThemedText style={styles.headerTitle}>Data Management</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t('dataManagement.title')}</ThemedText>
       <View style={styles.headerRight} />
     </View>
   );
@@ -152,16 +142,24 @@ const ManualDeleteModal: React.FC<{
 }) => {
   const hasTarget = stats && stats.total > 0;
   const backgroundColor = useThemeColor({}, 'background');
+  const { t } = useTranslation();
+  const manualDeleteOptions = MANUAL_DELETE_OPTIONS.map((value) => ({
+    value,
+    label:
+      value === -1
+        ? t('dataManagement.manualDeleteAll')
+        : t('dataManagement.manualDeleteOlderThan', { days: value }),
+  }));
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.modalBackdrop}>
         <View style={[styles.modalContent, { backgroundColor }]}>
-          <ThemedText style={styles.modalTitle}>記事の手動削除</ThemedText>
+          <ThemedText style={styles.modalTitle}>{t('dataManagement.manualDeleteTitle')}</ThemedText>
           <View style={styles.modalBody}>
-            <ThemedText style={styles.modalLabel}>削除する期間を選択:</ThemedText>
+            <ThemedText style={styles.modalLabel}>{t('dataManagement.manualDeleteSelectPeriod')}</ThemedText>
             <ScrollView style={styles.radioScrollView} showsVerticalScrollIndicator={false}>
-              {MANUAL_DELETE_OPTIONS.map((opt) => (
+              {manualDeleteOptions.map((opt) => (
                 <TouchableOpacity
                   key={opt.value}
                   style={styles.radioItem}
@@ -178,17 +176,17 @@ const ManualDeleteModal: React.FC<{
             <View style={styles.divider} />
             {stats && (
               <View style={styles.statsSection}>
-                <ThemedText style={styles.modalLabel}>削除対象:</ThemedText>
+                <ThemedText style={styles.modalLabel}>{t('dataManagement.manualDeleteTargets')}</ThemedText>
                 {hasTarget ? (
                   <View style={styles.statsContainer}>
-                    <ThemedText style={styles.modalInfo}>・未読: {stats.unread}件</ThemedText>
-                    <ThemedText style={styles.modalInfo}>・既読: {stats.read}件</ThemedText>
+                    <ThemedText style={styles.modalInfo}>- {t('dataManagement.manualDeleteUnread', { count: stats.unread })}</ThemedText>
+                    <ThemedText style={styles.modalInfo}>- {t('dataManagement.manualDeleteRead', { count: stats.read })}</ThemedText>
                     {stats.starred > 0 && (
-                      <ThemedText style={styles.modalInfo}>・お気に入り: {stats.starred}件</ThemedText>
+                      <ThemedText style={styles.modalInfo}>- {t('dataManagement.manualDeleteStarred', { count: stats.starred })}</ThemedText>
                     )}
                   </View>
                 ) : (
-                  <ThemedText style={styles.modalInfo}>削除対象の記事はありません</ThemedText>
+                  <ThemedText style={styles.modalInfo}>{t('dataManagement.manualDeleteNoTargets')}</ThemedText>
                 )}
                 <TouchableOpacity
                   style={[styles.checkboxRow, !hasTarget && styles.checkboxRowDisabled]}
@@ -202,7 +200,7 @@ const ManualDeleteModal: React.FC<{
                   <ThemedText
                     style={[styles.checkboxLabel, !hasTarget && styles.checkboxLabelDisabled]}
                   >
-                    お気に入りも削除
+                    {t('dataManagement.deleteStarredToo')}
                   </ThemedText>
                 </TouchableOpacity>
               </View>
@@ -210,7 +208,7 @@ const ManualDeleteModal: React.FC<{
           </View>
           <View style={styles.modalButtons}>
             <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={onCancel} activeOpacity={0.7}>
-            <ThemedText style={styles.modalButtonTextCancel}>キャンセル</ThemedText>
+            <ThemedText style={styles.modalButtonTextCancel}>{t('common.cancel')}</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalButton, styles.modalButtonConfirm]}
@@ -221,7 +219,7 @@ const ManualDeleteModal: React.FC<{
             <ThemedText
               style={[styles.modalButtonTextConfirm, !hasTarget && styles.modalButtonTextDisabled]}
             >
-              削除
+              {t('common.delete')}
             </ThemedText>
             </TouchableOpacity>
           </View>
@@ -231,15 +229,19 @@ const ManualDeleteModal: React.FC<{
   );
 };
 
-const ComingSoonRow: React.FC<{ title: string }> = ({ title }) => (
-  <View style={styles.comingSoonRow}>
-    <ThemedText style={styles.comingSoonRowText}>{title}</ThemedText>
-    <ThemedText style={styles.comingSoonBadge}>今後対応予定</ThemedText>
-  </View>
-);
+const ComingSoonRow: React.FC<{ title: string }> = ({ title }) => {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.comingSoonRow}>
+      <ThemedText style={styles.comingSoonRowText}>{title}</ThemedText>
+      <ThemedText style={styles.comingSoonBadge}>{t('dataManagement.comingSoon')}</ThemedText>
+    </View>
+  );
+};
 
 export default function DataManagementScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
@@ -275,7 +277,7 @@ export default function DataManagementScreen() {
       await AsyncStorage.setItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS, days.toString());
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '設定の保存に失敗しました');
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
 
@@ -286,7 +288,7 @@ export default function DataManagementScreen() {
       await AsyncStorage.setItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO, next.toString());
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '設定の保存に失敗しました');
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
 
@@ -297,7 +299,7 @@ export default function DataManagementScreen() {
       setManualDeleteModalVisible(true);
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '削除対象の確認に失敗しました');
+      Alert.alert(t('common.error'), t('dataManagement.deleteError'));
     }
   };
 
@@ -326,13 +328,13 @@ export default function DataManagementScreen() {
       setIsDeleting(true);
       setManualDeleteModalVisible(false);
       const deletedCount = await ArticleRepository.deleteOldArticles(manualDeleteDays, manualDeleteIncludeStarred);
-      Alert.alert('完了', `${deletedCount}件の記事を削除しました`);
+      Alert.alert(t('common.done'), t('dataManagement.deleteComplete', { count: deletedCount }));
       setManualDeleteDays(-1);
       setManualDeleteIncludeStarred(false);
       setManualDeleteStats(null);
     } catch (e) {
       console.error(e);
-      Alert.alert('エラー', '記事の削除に失敗しました');
+      Alert.alert(t('common.error'), t('dataManagement.deleteError'));
     } finally {
       setIsDeleting(false);
     }
@@ -344,7 +346,12 @@ export default function DataManagementScreen() {
     setManualDeleteIncludeStarred(false);
   };
 
-  const getRetentionLabel = () => RETENTION_OPTIONS.find((o) => o.value === articleRetentionDays)?.label ?? '30日';
+  const retentionOptions = RETENTION_OPTIONS.map((value) => ({
+    value,
+    label: value === 0 ? t('dataManagement.unlimited') : t('dataManagement.days', { count: value }),
+  }));
+  const getRetentionLabel = () =>
+    retentionOptions.find((o) => o.value === articleRetentionDays)?.label ?? t('dataManagement.days', { count: 30 });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -354,52 +361,52 @@ export default function DataManagementScreen() {
       {isDeleting && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#1976d2" />
-          <ThemedText style={styles.loadingText}>削除中...</ThemedText>
+          <ThemedText style={styles.loadingText}>{t('dataManagement.deleteInProgress')}</ThemedText>
         </View>
       )}
 
       <ScrollView style={styles.content}>
-        <SettingSection title="記事保持期間">
+        <SettingSection title={t('dataManagement.articleRetention')}>
           <View style={styles.retentionDescription}>
             <ThemedText style={styles.retentionDescriptionText}>
-              設定した期間より古い記事は同期時に自動的に削除されます
+              {t('dataManagement.retentionDescription')}
             </ThemedText>
             <TouchableOpacity style={styles.toggleRow} onPress={handleToggleDeleteStarredInAuto} activeOpacity={0.7}>
-              <ThemedText style={styles.toggleLabelText}>お気に入りも削除</ThemedText>
+              <ThemedText style={styles.toggleLabelText}>{t('dataManagement.deleteStarredToo')}</ThemedText>
               <View style={[styles.toggle, deleteStarredInAuto && styles.toggleActive]}>
                 <View style={[styles.toggleThumb, deleteStarredInAuto && styles.toggleThumbActive]} />
               </View>
             </TouchableOpacity>
           </View>
-          <Dropdown label="保持期間" value={getRetentionLabel()} onPress={() => setRetentionDropdownVisible(true)} />
+          <Dropdown label={t('dataManagement.retentionPeriodLabel')} value={getRetentionLabel()} onPress={() => setRetentionDropdownVisible(true)} />
         </SettingSection>
 
-        <SettingSection title="手動削除オプション">
+        <SettingSection title={t('dataManagement.manualDeleteSection')}>
           <TouchableOpacity style={styles.manualDeleteRow} onPress={handleOpenManualDelete} activeOpacity={0.7}>
-            <ThemedText style={styles.manualDeleteText}>記事を今すぐ削除</ThemedText>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.manualDeleteNow')}</ThemedText>
             <ThemedText style={styles.arrow}>›</ThemedText>
           </TouchableOpacity>
         </SettingSection>
 
-        <SettingSection title="WiFi時のみ取得">
-          <ComingSoonRow title="WiFi接続時のみRSSを取得" />
+        <SettingSection title={t('dataManagement.sectionWifiOnly')}>
+          <ComingSoonRow title={t('dataManagement.wifiOnlyRss')} />
         </SettingSection>
 
-        <SettingSection title="最低更新間隔">
-          <ComingSoonRow title="連打防止の最低更新間隔" />
+        <SettingSection title={t('dataManagement.sectionMinRefresh')}>
+          <ComingSoonRow title={t('dataManagement.minRefreshThrottle')} />
         </SettingSection>
 
-        <SettingSection title="（将来）">
-          <ComingSoonRow title="OPML Import / Export" />
+        <SettingSection title={t('dataManagement.sectionFuture')}>
+          <ComingSoonRow title={t('dataManagement.opmlImportExport')} />
           <View style={styles.comingSoonDivider} />
-          <ComingSoonRow title="データのバックアップ / 復元" />
+          <ComingSoonRow title={t('dataManagement.dataBackupRestore')} />
         </SettingSection>
       </ScrollView>
 
       <DropdownModal
         visible={retentionDropdownVisible}
-        title="保持期間を選択"
-        options={RETENTION_OPTIONS}
+        title={t('dataManagement.selectRetentionTitle')}
+        options={retentionOptions}
         selectedValue={articleRetentionDays}
         onSelect={handleChangeRetentionDays}
         onClose={() => setRetentionDropdownVisible(false)}

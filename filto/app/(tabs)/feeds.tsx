@@ -13,6 +13,7 @@ import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
 // FeedsHeader（通常モード）- タブ画面のため戻るボタンなし
 const FeedsHeader: React.FC<{
@@ -22,10 +23,11 @@ const FeedsHeader: React.FC<{
 }> = ({ onPressSort, onPressDelete, onPressAdd }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-      <ThemedText style={styles.headerTitle}>Feeds</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t('feeds.title')}</ThemedText>
       <View style={styles.headerButtons}>
         <TouchableOpacity
           style={styles.headerButton}
@@ -61,6 +63,7 @@ const FeedsHeaderDeleteMode: React.FC<{
 }> = ({ selectedCount, onPressCancel, onPressDelete }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -69,9 +72,9 @@ const FeedsHeaderDeleteMode: React.FC<{
         onPress={onPressCancel}
         activeOpacity={0.7}
       >
-        <ThemedText style={styles.cancelText}>キャンセル</ThemedText>
+        <ThemedText style={styles.cancelText}>{t('common.cancel')}</ThemedText>
       </TouchableOpacity>
-      <ThemedText style={styles.selectedCount}>{selectedCount}件選択中</ThemedText>
+      <ThemedText style={styles.selectedCount}>{t('feeds.deleteSelected', { count: selectedCount })}</ThemedText>
       <TouchableOpacity
         style={styles.headerButton}
         onPress={onPressDelete}
@@ -84,7 +87,7 @@ const FeedsHeaderDeleteMode: React.FC<{
             selectedCount === 0 && styles.deleteTextDisabled,
           ]}
         >
-          削除
+          {t('common.delete')}
         </ThemedText>
       </TouchableOpacity>
     </View>
@@ -121,7 +124,7 @@ const FeedItem: React.FC<{
           onPress={onSwipeDelete}
           activeOpacity={0.8}
         >
-          <Text style={styles.deleteButtonText}>削除</Text>
+          <Text style={styles.deleteButtonText}>Delete</Text>
         </TouchableOpacity>
       </Reanimated.View>
     );
@@ -185,6 +188,7 @@ const FeedItem: React.FC<{
 
 export default function FeedsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -303,10 +307,10 @@ export default function FeedsScreen() {
   const handleConfirmDelete = async () => {
     if (selectedIds.size === 0) return;
 
-    Alert.alert('確認', `${selectedIds.size}件のフィードを削除しますか？`, [
-      { text: 'キャンセル', style: 'cancel' },
+    Alert.alert(t('feeds.confirmDelete'), t('feeds.confirmDeleteMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '削除',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -326,9 +330,9 @@ export default function FeedsScreen() {
   };
 
   const handleSwipeDelete = async (feed: Feed) => {
-    Alert.alert('確認', `「${feed.title}」を削除しますか？`, [
+    Alert.alert(t('feeds.confirmDelete'), t('feeds.confirmDeleteSingle'), [
       {
-        text: 'キャンセル',
+        text: t('common.cancel'),
         style: 'cancel',
         onPress: () => {
           // キャンセル時もスワイプを閉じる
@@ -339,7 +343,7 @@ export default function FeedsScreen() {
         },
       },
       {
-        text: '削除',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -422,9 +426,9 @@ export default function FeedsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>📭</Text>
-              <Text style={styles.emptyMessage}>フィードがありません</Text>
+              <Text style={styles.emptyMessage}>{t('feeds.noFeeds')}</Text>
               <Text style={styles.emptyHint}>
-                右上の＋ボタンから追加できます
+                {t('feeds.noFeedsHint')}
               </Text>
             </View>
           }

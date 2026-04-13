@@ -14,6 +14,7 @@ import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { FilterService, Filter } from '@/services/FilterService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
 // ヘッダーコンポーネント
 const FilterEditHeader: React.FC<{
@@ -22,6 +23,7 @@ const FilterEditHeader: React.FC<{
 }> = ({ isEditMode, onPressBack }) => {
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.header, { backgroundColor, borderBottomColor: borderColor }]}>
@@ -33,7 +35,7 @@ const FilterEditHeader: React.FC<{
         <ThemedText style={styles.backIcon}>←</ThemedText>
       </TouchableOpacity>
       <ThemedText style={styles.headerTitle}>
-        {isEditMode ? 'Edit Filter' : 'Add Filter'}
+        {isEditMode ? t('filters.editFilter') : t('filters.addFilter')}
       </ThemedText>
       <View style={styles.headerRight} />
     </View>
@@ -61,6 +63,7 @@ const Checkbox: React.FC<{
 export default function FilterEditScreen() {
   const router = useRouter();
   const { filterId } = useLocalSearchParams<{ filterId?: string }>();
+  const { t } = useTranslation();
 
   const isEditMode = filterId !== undefined;
 
@@ -95,7 +98,7 @@ export default function FilterEditScreen() {
       }
     } catch (error) {
       console.error('Failed to load filter:', error);
-      Alert.alert('エラー', 'フィルタの読み込みに失敗しました');
+      Alert.alert(t('common.error'), t('filters.saveError'));
       router.back();
     } finally {
       setIsLoading(false);
@@ -104,12 +107,12 @@ export default function FilterEditScreen() {
 
   const handleSave = async () => {
     if (!blockKeyword.trim()) {
-      Alert.alert('エラー', 'ブロックキーワードを入力してください');
+      Alert.alert(t('common.error'), t('filters.blockKeywordRequired'));
       return;
     }
 
     if (!targetTitle && !targetDescription) {
-      Alert.alert('エラー', 'タイトルまたは本文のいずれかを選択してください');
+      Alert.alert(t('common.error'), t('filters.atLeastOneTarget'));
       return;
     }
 
@@ -132,7 +135,7 @@ export default function FilterEditScreen() {
       router.back();
     } catch (error) {
       console.error('Failed to save filter:', error);
-      Alert.alert('エラー', '保存に失敗しました。もう一度お試しください。');
+      Alert.alert(t('common.error'), t('filters.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -140,12 +143,12 @@ export default function FilterEditScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      '確認',
-      `「${blockKeyword}」を削除しますか？`,
+      t('filters.confirmDelete'),
+      t('filters.confirmDeleteWithKeyword', { keyword: blockKeyword }),
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '削除',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             setIsDeleting(true);
@@ -153,7 +156,7 @@ export default function FilterEditScreen() {
               await FilterService.delete(parseInt(filterId!, 10));
               router.back();
             } catch (error) {
-              Alert.alert('エラー', '削除に失敗しました。もう一度お試しください。');
+              Alert.alert(t('common.error'), t('filters.deleteError'));
             } finally {
               setIsDeleting(false);
             }
@@ -175,7 +178,7 @@ export default function FilterEditScreen() {
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" />
-          <ThemedText style={styles.loadingText}>読み込み中...</ThemedText>
+          <ThemedText style={styles.loadingText}>{t('common.loading')}</ThemedText>
         </View>
       </SafeAreaView>
     );
@@ -194,12 +197,12 @@ export default function FilterEditScreen() {
         >
           {/* ブロックキーワード */}
           <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>ブロックキーワード</ThemedText>
+            <ThemedText style={styles.label}>{t('filters.blockKeyword')}</ThemedText>
             <TextInput
               style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
               value={blockKeyword}
               onChangeText={setBlockKeyword}
-              placeholder="例: FX"
+              placeholder={t('filters.blockKeywordPlaceholder')}
               placeholderTextColor="#999"
               editable={!isSaving && !isDeleting}
             />
@@ -207,13 +210,13 @@ export default function FilterEditScreen() {
 
           {/* 許可キーワード */}
           <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>許可キーワード（任意）</ThemedText>
-            <ThemedText style={styles.hint}>1行に1キーワード</ThemedText>
+            <ThemedText style={styles.label}>{t('filters.allowKeyword')}</ThemedText>
+            <ThemedText style={styles.hint}>{t('filters.allowKeywordHint')}</ThemedText>
             <TextInput
               style={[styles.textInput, styles.multilineInput, { color: textColor, borderColor, backgroundColor }]}
               value={allowKeywords}
               onChangeText={setAllowKeywords}
-              placeholder="例:&#10;仮想通貨&#10;web3&#10;crypto"
+              placeholder={t('filters.allowKeywordPlaceholder')}
               placeholderTextColor="#999"
               multiline
               editable={!isSaving && !isDeleting}
@@ -222,16 +225,16 @@ export default function FilterEditScreen() {
 
           {/* 検索対象 */}
           <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>検索対象</ThemedText>
+            <ThemedText style={styles.label}>{t('filters.searchTarget')}</ThemedText>
             <View style={styles.checkboxRow}>
               <Checkbox
                 checked={targetTitle}
-                label="タイトル"
+                label={t('filters.targetTitle')}
                 onToggle={() => setTargetTitle(!targetTitle)}
               />
               <Checkbox
                 checked={targetDescription}
-                label="本文"
+                label={t('filters.targetDescription')}
                 onToggle={() => setTargetDescription(!targetDescription)}
               />
             </View>
@@ -248,7 +251,7 @@ export default function FilterEditScreen() {
               {isSaving ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <ThemedText style={styles.saveButtonText}>保存</ThemedText>
+                <ThemedText style={styles.saveButtonText}>{t('common.save')}</ThemedText>
               )}
             </TouchableOpacity>
 
@@ -262,7 +265,7 @@ export default function FilterEditScreen() {
                 {isDeleting ? (
                   <ActivityIndicator size="small" color="#ff3b30" />
                 ) : (
-                  <ThemedText style={styles.deleteButtonText}>削除</ThemedText>
+                  <ThemedText style={styles.deleteButtonText}>{t('common.delete')}</ThemedText>
                 )}
               </TouchableOpacity>
             )}

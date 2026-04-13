@@ -30,6 +30,7 @@ import type { ReadDisplayMode } from '../display_behavior';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string): string => {
@@ -163,6 +164,7 @@ const HomeHeader: React.FC<{
 };
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   const [articles, setArticles] = React.useState<Article[]>([]);
@@ -195,10 +197,10 @@ export default function HomeScreen() {
 
   // 選択中のフィード名を取得
   const selectedFeedName = React.useMemo(() => {
-    if (selectedFeedId === null) return 'ALL';
+    if (selectedFeedId === null) return t('home.allFeeds');
     const feed = feeds.find(f => f.id === selectedFeedId);
-    return feed?.title || 'ALL';
-  }, [selectedFeedId, feeds]);
+    return feed?.title || t('home.allFeeds');
+  }, [selectedFeedId, feeds, t]);
 
   // データを読み込む
   const loadData = React.useCallback(async () => {
@@ -447,7 +449,7 @@ export default function HomeScreen() {
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1976d2" />
-          <Text style={styles.loadingText}>読み込み中...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       ) : (
         <FlatList
@@ -468,7 +470,7 @@ export default function HomeScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>📭</Text>
-              <Text style={styles.emptyMessage}>記事がありません</Text>
+              <Text style={styles.emptyMessage}>{t('home.noArticles')}</Text>
             </View>
           }
         />
