@@ -488,6 +488,7 @@ export default function HomeScreen() {
             <View style={styles.emptyContainer}>
               <Ionicons name="newspaper-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
               <ThemedText style={styles.emptyMessage}>{t('home.noArticles')}</ThemedText>
+              <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>
             </View>
           }
         />
@@ -630,5 +631,10 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     fontSize: 16,
+    marginBottom: 8,
+  },
+  emptyHint: {
+    fontSize: 14,
+    opacity: 0.6,
   },
 });

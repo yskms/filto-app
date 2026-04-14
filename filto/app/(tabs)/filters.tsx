@@ -183,6 +183,7 @@ export default function FiltersScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const backgroundColor = useThemeColor({}, 'background');
+  const emptyIconColor = useThemeColor({}, 'tabIconDefault');
   const [filters, setFilters] = useState<Filter[]>([]);
   const [deleteMode, setDeleteMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -440,6 +441,13 @@ export default function FiltersScreen() {
         }}
         keyExtractor={(item) => (item.id ?? 0).toString()}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="funnel-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
+            <ThemedText style={styles.emptyMessage}>{t('filters.noFilters')}</ThemedText>
+            <ThemedText style={styles.emptyHint}>{t('filters.noFiltersHint')}</ThemedText>
+          </View>
+        }
       />
 
       <FilterSortModal
@@ -497,6 +505,24 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyIcon: {
+    marginBottom: 16,
+    opacity: 0.4,
+  },
+  emptyMessage: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  emptyHint: {
+    fontSize: 14,
+    opacity: 0.6,
   },
   filterContainer: {
     padding: 16,

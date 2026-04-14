@@ -573,5 +573,6 @@ const styles = StyleSheet.create({
   },
   emptyHint: {
     fontSize: 14,
+    opacity: 0.6,
   },
 });
