@@ -454,6 +454,7 @@ export default function HomeScreen() {
   }, []);
 
   const backgroundColor = useThemeColor({}, 'background');
+  const emptyIconColor = useThemeColor({}, 'tabIconDefault');
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
@@ -485,7 +486,7 @@ export default function HomeScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>📭</Text>
+              <Ionicons name="newspaper-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
               <ThemedText style={styles.emptyMessage}>{t('home.noArticles')}</ThemedText>
             </View>
           }
@@ -623,9 +624,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 60,
   },
-  emptyText: {
-    fontSize: 48,
+  emptyIcon: {
     marginBottom: 16,
+    opacity: 0.4,
   },
   emptyMessage: {
     fontSize: 16,

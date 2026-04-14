@@ -201,6 +201,7 @@ export default function FeedsScreen() {
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [currentSort, setCurrentSort] = useState<FeedSortType>('created_at_desc');
+  const emptyIconColor = useThemeColor({}, 'tabIconDefault');
 
   // 各フィードのSwipeable refを管理
   const swipeableRefs = useRef<Map<string, React.RefObject<SwipeableMethods | null>>>(new Map());
@@ -433,7 +434,7 @@ export default function FeedsScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>📭</Text>
+              <Ionicons name="rss-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
               <ThemedText style={styles.emptyMessage}>{t('feeds.noFeeds')}</ThemedText>
               <ThemedText style={styles.emptyHint}>{t('feeds.noFeedsHint')}</ThemedText>
             </View>
@@ -562,9 +563,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 60,
   },
-  emptyText: {
-    fontSize: 48,
+  emptyIcon: {
     marginBottom: 16,
+    opacity: 0.4,
   },
   emptyMessage: {
     fontSize: 16,

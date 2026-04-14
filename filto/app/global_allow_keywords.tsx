@@ -158,6 +158,7 @@ export default function GlobalAllowKeywordsScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const textColor = useThemeColor({}, 'text');
+  const emptyIconColor = useThemeColor({}, 'tabIconDefault');
 
   return (
     <>
@@ -222,7 +223,7 @@ export default function GlobalAllowKeywordsScreen() {
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyIcon}>🌟</Text>
+                <Ionicons name="star-outline" size={64} color={emptyIconColor} style={styles.emptyIconStyle} />
                 <ThemedText style={styles.emptyText}>{t('globalAllowKeywords.noKeywords')}</ThemedText>
                 <ThemedText style={styles.emptyHint}>
                   {t('globalAllowKeywords.noKeywordsHint')}
@@ -341,9 +342,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 60,
   },
-  emptyIcon: {
-    fontSize: 48,
+  emptyIconStyle: {
     marginBottom: 16,
+    opacity: 0.4,
   },
   emptyText: {
     fontSize: 16,
