@@ -108,7 +108,6 @@ export default function FeedAddScreen() {
         setIconUrl(meta.iconUrl);
       }
 
-      Alert.alert(t('common.done'), t('feeds.metaFetchSuccess'));
     } catch (error) {
       console.error('Failed to fetch feed meta:', error);
       setUrlError(t('feeds.metaFetchFailed'));

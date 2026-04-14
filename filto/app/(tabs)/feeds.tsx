@@ -116,6 +116,11 @@ const FeedItem: React.FC<{
   onSwipeableWillOpen,
   onSwipeableWillClose,
 }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const subtextColor = useThemeColor({}, 'icon');
+
   const renderRightActions = () => {
     return (
       <Reanimated.View style={styles.deleteAction}>
@@ -131,7 +136,6 @@ const FeedItem: React.FC<{
   };
 
   const handlePress = () => {
-    // スワイプが開いている場合は閉じる
     if (swipeableRef.current && isSwipeOpen) {
       swipeableRef.current.close();
     }
@@ -139,10 +143,10 @@ const FeedItem: React.FC<{
   };
 
   const content = (
-    <View style={[styles.feedItem, isDeleteMode && styles.feedItemDeleteMode]}>
+    <View style={[styles.feedItem, { backgroundColor, borderBottomColor: borderColor }]}>
       {isDeleteMode && (
         <View style={styles.checkbox}>
-          <Text style={styles.checkboxText}>{isSelected ? '☑' : '☐'}</Text>
+          <ThemedText style={styles.checkboxText}>{isSelected ? '☑' : '☐'}</ThemedText>
         </View>
       )}
       <View style={styles.feedContent}>
@@ -156,8 +160,8 @@ const FeedItem: React.FC<{
           <Text style={styles.feedIcon}>📰</Text>
         )}
         <View style={styles.feedTextContainer}>
-          <Text style={styles.feedTitle}>{feed.title}</Text>
-          <Text style={styles.feedUrl}>{feed.url}</Text>
+          <Text style={[styles.feedTitle, { color: textColor }]}>{feed.title}</Text>
+          <Text style={[styles.feedUrl, { color: subtextColor }]}>{feed.url}</Text>
         </View>
       </View>
     </View>
@@ -382,12 +386,14 @@ export default function FeedsScreen() {
     }
   };
 
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
     <>
       {/* Expo Router のヘッダーを非表示 */}
       <Stack.Screen options={{ headerShown: false }} />
 
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
         {isDeleteMode ? (
           <FeedsHeaderDeleteMode
             selectedCount={selectedIds.size}
@@ -426,10 +432,8 @@ export default function FeedsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>📭</Text>
-              <Text style={styles.emptyMessage}>{t('feeds.noFeeds')}</Text>
-              <Text style={styles.emptyHint}>
-                {t('feeds.noFeedsHint')}
-              </Text>
+              <ThemedText style={styles.emptyMessage}>{t('feeds.noFeeds')}</ThemedText>
+              <ThemedText style={styles.emptyHint}>{t('feeds.noFeedsHint')}</ThemedText>
             </View>
           }
         />
@@ -500,11 +504,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
-  },
-  feedItemDeleteMode: {
-    backgroundColor: '#fafafa',
   },
   checkbox: {
     marginRight: 12,
@@ -534,12 +533,10 @@ const styles = StyleSheet.create({
   feedTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 4,
   },
   feedUrl: {
     fontSize: 14,
-    color: '#666',
   },
   deleteAction: {
     justifyContent: 'center',
@@ -569,11 +566,9 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 8,
   },
   emptyHint: {
     fontSize: 14,
-    color: '#999',
   },
 });
