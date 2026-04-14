@@ -434,7 +434,7 @@ export default function FeedsScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="globe-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
+              <Ionicons name="logo-rss" size={64} color={emptyIconColor} style={styles.emptyIcon} />
               <ThemedText style={styles.emptyMessage}>{t('feeds.noFeeds')}</ThemedText>
               <ThemedText style={styles.emptyHint}>{t('feeds.noFeedsHint')}</ThemedText>
             </View>
