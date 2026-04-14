@@ -164,12 +164,12 @@
   - FilterEdit: ブロックキーワード必須チェック
   - GlobalAllowKeywords: 空白/重複チェック
   - 全画面: 入力文字数制限
-- [ ] ローディング状態の統一
-  - `LoadingOverlay`コンポーネント作成
-  - 各画面で統一的に使用
-- [ ] 成功フィードバックの追加
-  - トースト通知 or Alert統一
-  - FilterEdit保存時のフィードバック
+- [x] ローディング状態の統一
+  - `LoadingView`（全画面ローディング）・`LoadingOverlay`（操作中オーバーレイ）作成
+  - index.tsx・filter_edit.tsx・data_management.tsx に適用
+- [x] 成功フィードバックの追加
+  - ToastProviderによるスライドインアニメーション通知
+  - FilterEdit保存・GlobalAllowKeywords追加時に表示
 
 ### テスト・確認
 - [x] 起動時自動更新の動作確認
@@ -186,7 +186,7 @@
 - ボトムタブにFeedsを含めるか否かの検討を行う必要がある
 
 **進捗**:
-- 完了: 14/18タスク（78%）
+- 完了: 16/18タスク（89%）
 
 **振り返り**:
 - **達成**:
