@@ -11,6 +11,7 @@ import { FilterSortModal, FilterSortType } from '@/components/FilterSortModal';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
 // フィルタアイテムコンポーネント
 const FilterItem: React.FC<{
@@ -34,6 +35,11 @@ const FilterItem: React.FC<{
   onSwipeableWillOpen,
   onSwipeableWillClose,
 }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const subtextColor = useThemeColor({}, 'icon');
+
   // 削除アクション（右側）- Reanimated版
   const renderRightActions = () => {
     return (
@@ -70,6 +76,7 @@ const FilterItem: React.FC<{
       <TouchableOpacity
         style={[
           styles.filterContainer,
+          { backgroundColor, borderBottomColor: borderColor },
           deleteMode && isSelected && styles.selectedContainer,
         ]}
         onPress={handlePress}
@@ -77,9 +84,9 @@ const FilterItem: React.FC<{
       >
         <View style={styles.filterContent}>
           <View style={styles.textContainer}>
-            <Text style={styles.blockKeyword}>{filter.block_keyword}</Text>
+            <Text style={[styles.blockKeyword, { color: textColor }]}>{filter.block_keyword}</Text>
             {filter.allow_keyword && (
-              <Text style={styles.allowKeyword}>
+              <Text style={[styles.allowKeyword, { color: subtextColor }]}>
                 許可: {filter.allow_keyword}
               </Text>
             )}
@@ -172,6 +179,8 @@ const FiltersHeader: React.FC<{
 
 export default function FiltersScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const backgroundColor = useThemeColor({}, 'background');
   const [filters, setFilters] = useState<Filter[]>([]);
   const [deleteMode, setDeleteMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -310,14 +319,13 @@ export default function FiltersScreen() {
   const handlePressDelete = React.useCallback(
     (filterId: number) => {
       Alert.alert(
-        'フィルタを削除',
-        'このフィルタを削除しますか？',
+        t('filters.confirmDelete'),
+        t('filters.confirmDeleteSingle'),
         [
           {
-            text: 'キャンセル',
+            text: t('common.cancel'),
             style: 'cancel',
             onPress: () => {
-              // キャンセル時もスワイプを閉じる
               const ref = swipeableRefs.current.get(filterId);
               if (ref?.current) {
                 ref.current.close();
@@ -325,11 +333,10 @@ export default function FiltersScreen() {
             },
           },
           {
-            text: '削除',
+            text: t('common.delete'),
             style: 'destructive',
             onPress: async () => {
               try {
-                // 削除後、スワイプを閉じる
                 const ref = swipeableRefs.current.get(filterId);
                 if (ref?.current) {
                   ref.current.close();
@@ -337,7 +344,6 @@ export default function FiltersScreen() {
                 openSwipeIdRef.current = null;
                 setOpenSwipeId(null);
                 await FilterService.delete(filterId);
-                // フィルタ一覧を再読み込み
                 await loadFilters();
               } catch (error) {
                 ErrorHandler.showDatabaseError('フィルタの削除');
@@ -347,32 +353,30 @@ export default function FiltersScreen() {
         ]
       );
     },
-    [loadFilters]
+    [loadFilters, t]
   );
 
   const handleConfirmDelete = React.useCallback(async () => {
     if (selectedIds.length === 0) return;
 
     Alert.alert(
-      `${selectedIds.length}件のフィルタを削除しますか？`,
-      'この操作は取り消せません',
+      t('filters.confirmDelete'),
+      t('filters.confirmDeleteMessage'),
       [
         {
-          text: 'キャンセル',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: '削除',
+          text: t('filters.deleteSelected', { count: selectedIds.length }),
           style: 'destructive',
           onPress: async () => {
             try {
-              // 複数削除を順次実行
               for (const id of selectedIds) {
                 await FilterService.delete(id);
               }
               setSelectedIds([]);
               setDeleteMode(false);
-              // フィルタ一覧を再読み込み
               await loadFilters();
             } catch (error) {
               ErrorHandler.showDatabaseError('フィルタの削除');
@@ -381,7 +385,7 @@ export default function FiltersScreen() {
         },
       ]
     );
-  }, [selectedIds, loadFilters]);
+  }, [selectedIds, loadFilters, t]);
 
   const handleSwipeableWillOpen = (filterId: number) => {
     // 古いスワイプを閉じる（新しいIDは除外）
@@ -401,7 +405,7 @@ export default function FiltersScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <FiltersHeader
         deleteMode={deleteMode}
         selectedCount={selectedIds.length}
@@ -495,8 +499,6 @@ const styles = StyleSheet.create({
   filterContainer: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   selectedContainer: {
     backgroundColor: '#e3f2fd',
@@ -512,12 +514,10 @@ const styles = StyleSheet.create({
   blockKeyword: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 4,
   },
   allowKeyword: {
     fontSize: 14,
-    color: '#666',
   },
   deleteAction: {
     justifyContent: 'center',

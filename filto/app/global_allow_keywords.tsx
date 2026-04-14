@@ -57,8 +57,11 @@ const KeywordItem: React.FC<{
   keyword: GlobalAllowKeyword;
   onPressDelete: () => void;
 }> = ({ keyword, onPressDelete }) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+
   return (
-    <View style={styles.keywordItem}>
+    <View style={[styles.keywordItem, { backgroundColor, borderBottomColor: borderColor }]}>
       <ThemedText style={styles.keywordText}>{keyword.keyword}</ThemedText>
       <TouchableOpacity
         style={styles.deleteButton}
@@ -115,10 +118,8 @@ export default function GlobalAllowKeywordsScreen() {
       setInputText('');
       inputRef.current?.blur();
       await loadKeywords();
-      Alert.alert(t('common.done'), t('common.save'));
     } else {
       if (result.requiresPro) {
-        // Pro版が必要
         Alert.alert(t('common.confirm'), result.message || t('globalAllowKeywords.freeLimitReached', { limit: 3 }));
       } else {
         Alert.alert(t('common.error'), result.message || t('globalAllowKeywords.addError'));
@@ -151,6 +152,7 @@ export default function GlobalAllowKeywordsScreen() {
 
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
+  const textColor = useThemeColor({}, 'text');
 
   return (
     <>
@@ -170,8 +172,9 @@ export default function GlobalAllowKeywordsScreen() {
           <View style={[styles.inputContainer, { borderBottomColor: borderColor, backgroundColor }]}>
             <TextInput
               ref={inputRef}
-              style={styles.input}
+              style={[styles.input, { color: textColor, borderColor }]}
               placeholder={t('globalAllowKeywords.inputPlaceholder')}
+              placeholderTextColor={borderColor}
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={handleAdd}
@@ -315,12 +318,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   keywordText: {
     fontSize: 16,
-    color: '#000',
     flex: 1,
   },
   deleteButton: {
