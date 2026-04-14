@@ -16,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { useToast } from '@/providers/toast';
+import { LoadingView } from '@/components/LoadingView';
 
 // ヘッダーコンポーネント
 const FilterEditHeader: React.FC<{
@@ -179,10 +180,7 @@ export default function FilterEditScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-          <ThemedText style={styles.loadingText}>{t('common.loading')}</ThemedText>
-        </View>
+        <LoadingView />
       </SafeAreaView>
     );
   }
@@ -317,15 +315,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 32,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
   },
   fieldContainer: {
     marginBottom: 24,

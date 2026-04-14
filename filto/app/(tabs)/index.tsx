@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   Linking,
-  ActivityIndicator,
   Image,
   Animated,
   Alert,
@@ -32,6 +31,7 @@ import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import { LoadingView } from '@/components/LoadingView';
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string): string => {
@@ -465,10 +465,7 @@ export default function HomeScreen() {
       />
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-          <ThemedText style={styles.loadingText}>{t('common.loading')}</ThemedText>
-        </View>
+        <LoadingView />
       ) : (
         <FlatList
           data={filteredArticles}
@@ -630,15 +627,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyMessage: {
-    fontSize: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
     fontSize: 16,
   },
 });

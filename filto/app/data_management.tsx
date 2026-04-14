@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +17,7 @@ import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
 const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
@@ -359,10 +359,7 @@ export default function DataManagementScreen() {
       <DataManagementHeader onPressBack={() => router.back()} />
 
       {isDeleting && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#1976d2" />
-          <ThemedText style={styles.loadingText}>{t('dataManagement.deleteInProgress')}</ThemedText>
-        </View>
+        <LoadingOverlay message={t('dataManagement.deleteInProgress')} />
       )}
 
       <ScrollView style={styles.content}>
@@ -548,12 +545,4 @@ const styles = StyleSheet.create({
   modalButtonTextCancel: { fontSize: 16, fontWeight: '500' },
   modalButtonTextConfirm: { fontSize: 16, fontWeight: '600' },
   modalButtonTextDisabled: { opacity: 0.5 },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  loadingText: { marginTop: 12, fontSize: 16, color: '#fff', fontWeight: '500' },
 });
