@@ -504,6 +504,7 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   listContent: {
+    flexGrow: 1,
     paddingBottom: 20,
   },
   emptyContainer: {

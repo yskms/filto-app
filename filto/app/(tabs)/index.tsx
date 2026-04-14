@@ -559,6 +559,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   listContent: {
+    flexGrow: 1,
     paddingBottom: 20,
   },
   articleContainer: {

@@ -500,6 +500,7 @@ const styles = StyleSheet.create({
     color: '#b0b0b0',
   },
   listContent: {
+    flexGrow: 1,
     paddingBottom: 20,
   },
   feedItem: {
