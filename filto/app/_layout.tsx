@@ -7,6 +7,7 @@ import { Paths, File, Directory } from 'expo-file-system';
 
 import { AppThemeProvider, useAppTheme } from '@/providers/theme';
 import { LanguageProvider } from '@/providers/language';
+import { ToastProvider } from '@/providers/toast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase } from '@/database/init';
 
@@ -75,7 +76,9 @@ export default function RootLayout() {
   return (
     <AppThemeProvider>
       <LanguageProvider>
-        <RootNavigation />
+        <ToastProvider>
+          <RootNavigation />
+        </ToastProvider>
       </LanguageProvider>
     </AppThemeProvider>
   );

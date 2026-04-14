@@ -19,6 +19,7 @@ import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService'
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import { useToast } from '@/providers/toast';
 
 // ヘッダーコンポーネント
 const GlobalAllowKeywordsHeader: React.FC<{
@@ -77,6 +78,7 @@ const KeywordItem: React.FC<{
 export default function GlobalAllowKeywordsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [keywords, setKeywords] = useState<GlobalAllowKeyword[]>([]);
   const [inputText, setInputText] = useState('');
   const [remainingCount, setRemainingCount] = useState<number | null>(null);
@@ -118,6 +120,7 @@ export default function GlobalAllowKeywordsScreen() {
       setInputText('');
       inputRef.current?.blur();
       await loadKeywords();
+      showToast(t('common.added'), 'success');
     } else {
       if (result.requiresPro) {
         Alert.alert(t('common.confirm'), result.message || t('globalAllowKeywords.freeLimitReached', { limit: 3 }));

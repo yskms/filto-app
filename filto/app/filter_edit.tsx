@@ -15,6 +15,7 @@ import { FilterService, Filter } from '@/services/FilterService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import { useToast } from '@/providers/toast';
 
 // ヘッダーコンポーネント
 const FilterEditHeader: React.FC<{
@@ -66,6 +67,7 @@ export default function FilterEditScreen() {
   const { t } = useTranslation();
 
   const isEditMode = filterId !== undefined;
+  const { showToast } = useToast();
 
   const [blockKeyword, setBlockKeyword] = useState('');
   const [allowKeywords, setAllowKeywords] = useState('');
@@ -132,6 +134,7 @@ export default function FilterEditScreen() {
 
       await FilterService.save(filterData);
 
+      showToast(t('common.saved'), 'success');
       router.back();
     } catch (error) {
       console.error('Failed to save filter:', error);
