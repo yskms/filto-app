@@ -43,6 +43,7 @@ export const ja = {
       newArticles: '新しい記事: {{count}}件',
       deletedArticles: '削除: {{count}}件',
       errorFetchingFeeds: 'フィードの取得に失敗しました',
+      offlineError: 'オフラインです。ネットワーク接続を確認してください。',
     },
   
     // Filters画面

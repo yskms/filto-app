@@ -43,6 +43,7 @@ export const en = {
     newArticles: 'New articles: {{count}}',
     deletedArticles: 'Deleted: {{count}}',
     errorFetchingFeeds: 'Failed to fetch feeds',
+    offlineError: 'You are offline. Please check your network connection.',
   },
 
   // Filters screen

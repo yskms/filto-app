@@ -3,6 +3,7 @@ import { RssService } from '@/services/RssService';
 import { ArticleService } from '@/services/ArticleService';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Network from 'expo-network';
 
 // ストレージキー
 const STORAGE_KEY_LAST_SYNC_TIME = '@filto/lastSyncTime';
@@ -19,9 +20,16 @@ export const SyncService = {
 
   /**
    * 全フィードを同期
-   * @returns 取得成功フィード数と新規記事数
+   * @returns 取得成功フィード数と新規記事数、オフライン時は offline: true
    */
-  async refresh(): Promise<{ fetched: number; newArticles: number; deleted?: number }> {
+  async refresh(): Promise<{ fetched: number; newArticles: number; deleted?: number; offline?: boolean }> {
+    // ネットワーク接続チェック
+    const networkState = await Network.getNetworkStateAsync();
+    if (!networkState.isConnected || !networkState.isInternetReachable) {
+      console.log('[SyncService] Offline, skipping sync');
+      return { fetched: 0, newArticles: 0, offline: true };
+    }
+
     // 多重実行防止
     if (this.isRefreshing) {
       console.log('[SyncService] Already refreshing, skipping...');

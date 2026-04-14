@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
   Animated,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -325,11 +326,17 @@ export default function HomeScreen() {
   const handleRefresh = React.useCallback(async () => {
     try {
       setRefreshing(true);
-      
+
       // RSS同期を実行
       const result = await SyncService.refresh();
+
+      if (result.offline) {
+        Alert.alert(t('common.error'), t('home.offlineError'));
+        return;
+      }
+
       console.log(`Sync completed: ${result.fetched} feeds, ${result.newArticles} new articles`);
-      
+
       // データを再読み込み
       await loadData();
     } catch (error) {
@@ -338,7 +345,7 @@ export default function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [loadData]);
+  }, [loadData, t]);
 
   const handleFeedSelect = React.useCallback(() => {
     setFeedModalVisible(true);
