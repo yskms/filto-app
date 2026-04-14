@@ -1,8 +1,8 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -25,28 +25,36 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={26} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="filters"
         options={{
           title: 'Filters',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="slider.horizontal.3" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'funnel' : 'funnel-outline'} size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="feeds"
         options={{
           title: 'Feeds',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="newspaper.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'globe' : 'globe-outline'} size={26} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'settings' : 'settings-outline'} size={26} color={color} />
+          ),
         }}
       />
     </Tabs>
