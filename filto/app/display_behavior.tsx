@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/providers/theme';
 import { useLanguage, useTranslation } from '@/providers/language';
 import { ThemedText } from '@/components/themed-text';
@@ -20,6 +21,7 @@ const STORAGE_KEY_AUTO_SYNC_ON_STARTUP = '@filto/display_behavior/autoSyncOnStar
 const DisplayBehaviorHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'text');
   const { t } = useTranslation();
 
   return (
@@ -29,7 +31,7 @@ const DisplayBehaviorHeader: React.FC<{ onPressBack: () => void }> = ({ onPressB
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ThemedText style={styles.backIcon}>←</ThemedText>
+        <Ionicons name="chevron-back" size={26} color={iconColor} />
       </TouchableOpacity>
       <ThemedText style={styles.headerTitle}>{t('displayBehavior.title')}</ThemedText>
       <View style={styles.headerRight} />
@@ -48,6 +50,7 @@ const SettingSection: React.FC<{ title: string; children: React.ReactNode }> = (
 
 const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> = ({ label, value, onPress }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
+  const iconColor = useThemeColor({}, 'text');
 
   return (
     <TouchableOpacity
@@ -58,7 +61,7 @@ const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> 
       <ThemedText style={styles.dropdownLabel}>{label}</ThemedText>
       <View style={styles.dropdownRight}>
         <ThemedText style={styles.dropdownValue}>{value}</ThemedText>
-        <ThemedText style={styles.dropdownIcon}>›</ThemedText>
+        <Ionicons name="chevron-forward" size={18} style={{ opacity: 0.4 }} color={iconColor} />
       </View>
     </TouchableOpacity>
   );
@@ -92,7 +95,7 @@ const DropdownModal: React.FC<{
               >
                 <ThemedText style={styles.dropdownOptionText}>{opt.label}</ThemedText>
                 {selectedValue === opt.value && (
-                  <ThemedText style={styles.dropdownOptionCheck}>✓</ThemedText>
+                  <Ionicons name="checkmark" size={18} color="#007AFF" />
                 )}
               </TouchableOpacity>
             ))}

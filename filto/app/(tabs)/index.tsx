@@ -27,6 +27,7 @@ import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService'
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ReadDisplayMode } from '../display_behavior';
+import { Ionicons } from '@expo/vector-icons';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -93,7 +94,7 @@ const ArticleItem: React.FC<{
             />
           ) : (
             <View style={[styles.thumbnailPlaceholder, { backgroundColor: placeholderBg }]}>
-              <Text style={styles.thumbnailIcon}>📰</Text>
+              <Ionicons name="newspaper-outline" size={24} color={subtextColor} />
             </View>
           )}
 
@@ -106,7 +107,7 @@ const ArticleItem: React.FC<{
                 {article.title}
               </Text>
               {article.isStarred && (
-                <Text style={styles.starIcon}>⭐</Text>
+                <Ionicons name="star" size={14} color="#f59e0b" style={{ marginTop: 2 }} />
               )}
             </View>
             <View style={styles.metaContainer}>
@@ -148,7 +149,7 @@ const HomeHeader: React.FC<{
           activeOpacity={0.7}
         >
           <ThemedText style={styles.feedName}>{feedName}</ThemedText>
-          <ThemedText style={[styles.dropdownIcon, { color: iconColor }]}>⬇️</ThemedText>
+          <Ionicons name="chevron-down" size={16} color={iconColor} />
         </TouchableOpacity>
 
         <View style={styles.headerButtons}>
@@ -157,7 +158,7 @@ const HomeHeader: React.FC<{
             onPress={onPressStarFilter}
             activeOpacity={0.7}
           >
-            <ThemedText style={styles.starButtonIcon}>⭐</ThemedText>
+            <Ionicons name="star" size={18} color={showStarredOnly ? '#f59e0b' : iconColor} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -165,7 +166,7 @@ const HomeHeader: React.FC<{
             onPress={onPressRefresh}
             activeOpacity={0.7}
           >
-            <ThemedText style={[styles.refreshIcon, { color: iconColor }]}>⟳</ThemedText>
+            <Ionicons name="refresh-outline" size={22} color={iconColor} />
           </TouchableOpacity>
         </View>
       </View>

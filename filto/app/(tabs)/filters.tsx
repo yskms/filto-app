@@ -6,6 +6,7 @@ import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSw
 import Reanimated from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { FilterService, Filter } from '@/services/FilterService';
 import { FilterSortModal, FilterSortType } from '@/components/FilterSortModal';
 import { ErrorHandler } from '@/utils/errorHandler';
@@ -49,7 +50,7 @@ const FilterItem: React.FC<{
           onPress={onPressDelete}
           activeOpacity={0.8}
         >
-          <Text style={styles.deleteIcon}>🗑️</Text>
+          <Ionicons name="trash-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </Reanimated.View>
     );
@@ -115,6 +116,7 @@ const FiltersHeader: React.FC<{
 }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'text');
 
   if (deleteMode) {
     // 削除モード時のヘッダー
@@ -156,21 +158,21 @@ const FiltersHeader: React.FC<{
           onPress={onPressSortButton}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.headerIcon}>🔄</ThemedText>
+          <Ionicons name="swap-vertical-outline" size={22} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onToggleDeleteMode}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.headerIcon}>🗑</ThemedText>
+          <Ionicons name="trash-outline" size={22} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressAdd}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.headerIcon}>＋</ThemedText>
+          <Ionicons name="add" size={26} color={iconColor} />
         </TouchableOpacity>
       </View>
     </View>
@@ -530,9 +532,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#d32f2f',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  deleteIcon: {
-    fontSize: 24,
-    color: '#fff',
   },
 });

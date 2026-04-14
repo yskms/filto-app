@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
 import { ThemedText } from '@/components/themed-text';
@@ -28,6 +29,7 @@ const GlobalAllowKeywordsHeader: React.FC<{
 }> = ({ onPressBack, remainingCount }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'text');
   const { t } = useTranslation();
 
   return (
@@ -38,7 +40,7 @@ const GlobalAllowKeywordsHeader: React.FC<{
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ThemedText style={styles.backIcon}>←</ThemedText>
+        <Ionicons name="chevron-back" size={26} color={iconColor} />
       </TouchableOpacity>
       <View style={styles.headerCenter}>
         <ThemedText style={styles.headerTitle}>{t('globalAllowKeywords.title')}</ThemedText>
@@ -69,7 +71,7 @@ const KeywordItem: React.FC<{
         onPress={onPressDelete}
         activeOpacity={0.7}
       >
-        <ThemedText style={styles.deleteButtonText}>✕</ThemedText>
+        <Ionicons name="close" size={20} color="#d32f2f" />
       </TouchableOpacity>
     </View>
   );

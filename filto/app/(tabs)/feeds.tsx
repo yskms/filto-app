@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated from 'react-native-reanimated';
@@ -23,6 +24,7 @@ const FeedsHeader: React.FC<{
 }> = ({ onPressSort, onPressDelete, onPressAdd }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'text');
   const { t } = useTranslation();
 
   return (
@@ -34,21 +36,21 @@ const FeedsHeader: React.FC<{
           onPress={onPressSort}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.headerIcon}>🔄</ThemedText>
+          <Ionicons name="swap-vertical-outline" size={22} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressDelete}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.headerIcon}>🗑</ThemedText>
+          <Ionicons name="trash-outline" size={22} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={onPressAdd}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.headerIcon}>＋</ThemedText>
+          <Ionicons name="add" size={26} color={iconColor} />
         </TouchableOpacity>
       </View>
     </View>
@@ -129,7 +131,7 @@ const FeedItem: React.FC<{
           onPress={onSwipeDelete}
           activeOpacity={0.8}
         >
-          <Text style={styles.deleteButtonText}>Delete</Text>
+          <Ionicons name="trash-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </Reanimated.View>
     );
@@ -146,7 +148,7 @@ const FeedItem: React.FC<{
     <View style={[styles.feedItem, { backgroundColor, borderBottomColor: borderColor }]}>
       {isDeleteMode && (
         <View style={styles.checkbox}>
-          <ThemedText style={styles.checkboxText}>{isSelected ? '☑' : '☐'}</ThemedText>
+          <Ionicons name={isSelected ? 'checkbox' : 'square-outline'} size={24} color={textColor} />
         </View>
       )}
       <View style={styles.feedContent}>
@@ -157,7 +159,7 @@ const FeedItem: React.FC<{
             resizeMode="cover"
           />
         ) : (
-          <Text style={styles.feedIcon}>📰</Text>
+          <Ionicons name="newspaper-outline" size={28} color={subtextColor} style={{ marginRight: 12 }} />
         )}
         <View style={styles.feedTextContainer}>
           <Text style={[styles.feedTitle, { color: textColor }]}>{feed.title}</Text>

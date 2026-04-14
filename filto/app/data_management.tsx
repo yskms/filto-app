@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -28,6 +29,7 @@ const MANUAL_DELETE_OPTIONS = [-1, 1, 3, 7, 14];
 const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'text');
   const { t } = useTranslation();
 
   return (
@@ -37,7 +39,7 @@ const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBa
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ThemedText style={styles.backIcon}>←</ThemedText>
+        <Ionicons name="chevron-back" size={26} color={iconColor} />
       </TouchableOpacity>
       <ThemedText style={styles.headerTitle}>{t('dataManagement.title')}</ThemedText>
       <View style={styles.headerRight} />
@@ -66,6 +68,7 @@ const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> 
 }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'text');
 
   return (
     <View>
@@ -76,7 +79,7 @@ const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> 
         activeOpacity={0.7}
       >
         <ThemedText style={styles.dropdownValue}>{value}</ThemedText>
-        <ThemedText style={styles.dropdownIcon}>▼</ThemedText>
+        <Ionicons name="chevron-down" size={14} color={iconColor} />
       </TouchableOpacity>
     </View>
   );
@@ -110,7 +113,7 @@ const DropdownModal: React.FC<{
               >
                 <ThemedText style={styles.dropdownOptionText}>{opt.label}</ThemedText>
                 {selectedValue === opt.value && (
-                  <ThemedText style={styles.dropdownOptionCheck}>✓</ThemedText>
+                  <Ionicons name="checkmark" size={18} color="#1976d2" />
                 )}
               </TouchableOpacity>
             ))}
@@ -195,7 +198,7 @@ const ManualDeleteModal: React.FC<{
                   disabled={!hasTarget}
                 >
                   <View style={[styles.checkbox, includeStarred && styles.checkboxChecked, !hasTarget && styles.checkboxDisabled]}>
-                    {includeStarred && hasTarget && <Text style={styles.checkmark}>✓</Text>}
+                    {includeStarred && hasTarget && <Ionicons name="checkmark" size={14} color="#fff" />}
                   </View>
                   <ThemedText
                     style={[styles.checkboxLabel, !hasTarget && styles.checkboxLabelDisabled]}
@@ -242,6 +245,7 @@ const ComingSoonRow: React.FC<{ title: string }> = ({ title }) => {
 export default function DataManagementScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const arrowColor = useThemeColor({}, 'icon');
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
@@ -381,7 +385,7 @@ export default function DataManagementScreen() {
         <SettingSection title={t('dataManagement.manualDeleteSection')}>
           <TouchableOpacity style={styles.manualDeleteRow} onPress={handleOpenManualDelete} activeOpacity={0.7}>
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.manualDeleteNow')}</ThemedText>
-            <ThemedText style={styles.arrow}>›</ThemedText>
+            <Ionicons name="chevron-forward" size={20} color={arrowColor} />
           </TouchableOpacity>
         </SettingSection>
 

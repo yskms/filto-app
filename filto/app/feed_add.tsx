@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { FeedService } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
 import { ThemedText } from '@/components/themed-text';
@@ -156,7 +157,7 @@ export default function FeedAddScreen() {
             onPress={() => router.back()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <ThemedText style={styles.backIcon}>←</ThemedText>
+            <Ionicons name="chevron-back" size={26} color={textColor} />
           </TouchableOpacity>
           <ThemedText style={styles.headerTitle}>{t('feeds.addFeed')}</ThemedText>
           <View style={styles.headerRight} />
@@ -202,7 +203,10 @@ export default function FeedAddScreen() {
               onPress={handlePaste}
               activeOpacity={0.7}
             >
-              <ThemedText style={styles.pasteButtonText}>📋 {t('feeds.pasteFromClipboard')}</ThemedText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="clipboard-outline" size={18} color="#1976d2" />
+                <ThemedText style={styles.pasteButtonText}>{t('feeds.pasteFromClipboard')}</ThemedText>
+              </View>
             </TouchableOpacity>
 
             {/* Fetch Meta Button */}
@@ -218,7 +222,10 @@ export default function FeedAddScreen() {
                   <ThemedText style={styles.fetchButtonText}> {t('feeds.fetchingMeta')}</ThemedText>
                 </View>
               ) : (
-                <ThemedText style={styles.fetchButtonText}>🔍 {t('feeds.fetchFeedMeta')}</ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="search-outline" size={18} color="#fff" />
+                  <ThemedText style={styles.fetchButtonText}>{t('feeds.fetchFeedMeta')}</ThemedText>
+                </View>
               )}
             </TouchableOpacity>
 

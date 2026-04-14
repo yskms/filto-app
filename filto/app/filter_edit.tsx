@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { FilterService, Filter } from '@/services/FilterService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -25,6 +26,7 @@ const FilterEditHeader: React.FC<{
 }> = ({ isEditMode, onPressBack }) => {
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
+  const iconColor = useThemeColor({}, 'text');
   const { t } = useTranslation();
 
   return (
@@ -34,7 +36,7 @@ const FilterEditHeader: React.FC<{
         onPress={onPressBack}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ThemedText style={styles.backIcon}>←</ThemedText>
+        <Ionicons name="chevron-back" size={26} color={iconColor} />
       </TouchableOpacity>
       <ThemedText style={styles.headerTitle}>
         {isEditMode ? t('filters.editFilter') : t('filters.addFilter')}
@@ -50,13 +52,19 @@ const Checkbox: React.FC<{
   label: string;
   onToggle: () => void;
 }> = ({ checked, label, onToggle }) => {
+  const iconColor = useThemeColor({}, 'text');
   return (
     <TouchableOpacity
       style={styles.checkboxContainer}
       onPress={onToggle}
       activeOpacity={0.7}
     >
-      <ThemedText style={styles.checkboxIcon}>{checked ? '☑' : '☐'}</ThemedText>
+      <Ionicons
+        name={checked ? 'checkbox' : 'square-outline'}
+        size={22}
+        color={iconColor}
+        style={{ marginRight: 8 }}
+      />
       <ThemedText style={styles.checkboxLabel}>{label}</ThemedText>
     </TouchableOpacity>
   );

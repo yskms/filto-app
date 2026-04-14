@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -9,7 +10,7 @@ import { useTranslation } from '@/providers/language';
 interface MenuItem {
   id: string;
   title: string;
-  icon?: string;
+  ionIcon?: string;
   disabled?: boolean;
 }
 
@@ -34,8 +35,8 @@ const MenuItemRow: React.FC<{
       activeOpacity={0.7}
     >
       <View style={styles.menuItemLeft}>
-        {item.icon != null && (
-          <ThemedText style={[styles.menuItemIcon, { color: iconColor }]}>{item.icon}</ThemedText>
+        {item.ionIcon != null && (
+          <Ionicons name={item.ionIcon as any} size={20} color={iconColor} />
         )}
         <ThemedText
           style={[styles.menuItemText, item.disabled && styles.menuItemTextDisabled]}
@@ -44,7 +45,7 @@ const MenuItemRow: React.FC<{
         </ThemedText>
       </View>
       {!item.disabled && (
-        <ThemedText style={[styles.arrow, { color: iconColor }]}>›</ThemedText>
+        <Ionicons name="chevron-forward" size={20} color={iconColor} />
       )}
     </TouchableOpacity>
   );
@@ -69,11 +70,11 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
 
   const menuItems: MenuItem[] = [
-    { id: 'global_allow_keywords', title: t('settings.globalAllowKeywords'), icon: '📚' },
-    { id: 'display_behavior', title: t('settings.displayBehavior'), icon: '👁' },
-    { id: 'data_management', title: t('settings.dataManagement'), icon: '💾' },
-    { id: 'pro', title: 'Pro', icon: '⭐', disabled: true },
-    { id: 'about', title: t('settings.about'), icon: 'ℹ' },
+    { id: 'global_allow_keywords', title: t('settings.globalAllowKeywords'), ionIcon: 'list-outline' },
+    { id: 'display_behavior', title: t('settings.displayBehavior'), ionIcon: 'eye-outline' },
+    { id: 'data_management', title: t('settings.dataManagement'), ionIcon: 'server-outline' },
+    { id: 'pro', title: 'Pro', ionIcon: 'star-outline', disabled: true },
+    { id: 'about', title: t('settings.about'), ionIcon: 'information-circle-outline' },
   ];
 
   const handlePressMenuItem = React.useCallback((itemId: string) => {
