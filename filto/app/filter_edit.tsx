@@ -91,10 +91,10 @@ export default function FilterEditScreen() {
     try {
       const filter = await FilterService.get(parseInt(filterId!, 10));
       if (filter) {
-        setBlockKeyword(filter.blockKeyword);
-        setAllowKeywords(filter.allowKeywords);
-        setTargetTitle(filter.targetTitle);
-        setTargetDescription(filter.targetDescription);
+        setBlockKeyword(filter.block_keyword);
+        setAllowKeywords(filter.allow_keyword ?? '');
+        setTargetTitle(filter.target_title === 1);
+        setTargetDescription(filter.target_description === 1);
       }
     } catch (error) {
       console.error('Failed to load filter:', error);
@@ -119,18 +119,18 @@ export default function FilterEditScreen() {
     setIsSaving(true);
 
     try {
-      const filterData: Partial<Filter> = {
-        blockKeyword: blockKeyword.trim(),
-        allowKeywords: allowKeywords.trim(),
-        targetTitle,
-        targetDescription,
+      const now = Math.floor(Date.now() / 1000);
+      const filterData: Filter = {
+        ...(isEditMode ? { id: parseInt(filterId!, 10) } : {}),
+        block_keyword: blockKeyword.trim(),
+        allow_keyword: allowKeywords.trim() || null,
+        target_title: targetTitle ? 1 : 0,
+        target_description: targetDescription ? 1 : 0,
+        created_at: now,
+        updated_at: now,
       };
 
-      if (isEditMode) {
-        await FilterService.update(parseInt(filterId!, 10), filterData);
-      } else {
-        await FilterService.create(filterData);
-      }
+      await FilterService.save(filterData);
 
       router.back();
     } catch (error) {
@@ -204,6 +204,7 @@ export default function FilterEditScreen() {
               onChangeText={setBlockKeyword}
               placeholder={t('filters.blockKeywordPlaceholder')}
               placeholderTextColor="#999"
+              maxLength={50}
               editable={!isSaving && !isDeleting}
             />
           </View>
@@ -219,6 +220,7 @@ export default function FilterEditScreen() {
               placeholder={t('filters.allowKeywordPlaceholder')}
               placeholderTextColor="#999"
               multiline
+              maxLength={500}
               editable={!isSaving && !isDeleting}
             />
           </View>

@@ -178,6 +178,7 @@ export default function GlobalAllowKeywordsScreen() {
               returnKeyType="done"
               autoCapitalize="none"
               autoCorrect={false}
+              maxLength={50}
             />
             <TouchableOpacity
               style={styles.addButton}

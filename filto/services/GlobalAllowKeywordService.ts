@@ -20,7 +20,7 @@ export const GlobalAllowKeywordService = {
    * キーワードを追加
    * @returns { success: boolean, message?: string, id?: number }
    */
-  async create(keyword: string): Promise<{ success: boolean; message?: string; id?: number }> {
+  async create(keyword: string): Promise<{ success: boolean; message?: string; id?: number; requiresPro?: boolean }> {
     // 入力チェック
     const trimmed = keyword.trim();
     if (!trimmed) {
