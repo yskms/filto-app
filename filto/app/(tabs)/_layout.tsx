@@ -43,8 +43,8 @@ export default function TabLayout() {
         name="feeds"
         options={{
           title: 'Feeds',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'rss' : 'rss-outline'} size={26} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="logo-rss" size={24} color={color} />
           ),
         }}
       />
