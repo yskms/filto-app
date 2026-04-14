@@ -37,7 +37,7 @@ const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBa
         activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Text style={styles.backIcon}>←</Text>
+        <ThemedText style={styles.backIcon}>←</ThemedText>
       </TouchableOpacity>
       <ThemedText style={styles.headerTitle}>{t('dataManagement.title')}</ThemedText>
       <View style={styles.headerRight} />
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
   },
-  backIcon: { fontSize: 24, color: '#1976d2' },
+  backIcon: { fontSize: 24 },
   headerTitle: { fontSize: 18, fontWeight: '600' },
   headerRight: { width: 24 },
   content: { flex: 1 },
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
   toggleThumb: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff' },
   toggleThumbActive: { alignSelf: 'flex-end' },
   retentionDescription: { marginBottom: 16 },
-  retentionDescriptionText: { fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 12 },
+  retentionDescriptionText: { fontSize: 13, lineHeight: 18, marginBottom: 12 },
   dropdownLabel: { fontSize: 14, fontWeight: '500', marginBottom: 8 },
   dropdown: {
     flexDirection: 'row',
@@ -477,8 +477,8 @@ const styles = StyleSheet.create({
   dropdownValue: { fontSize: 16 },
   dropdownIcon: { fontSize: 12 },
   manualDeleteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
-  manualDeleteText: { fontSize: 16, color: '#000' },
-  arrow: { fontSize: 20, color: '#666' },
+  manualDeleteText: { fontSize: 16 },
+  arrow: { fontSize: 20 },
   comingSoonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
   comingSoonRowText: { fontSize: 14 },
   comingSoonBadge: { fontSize: 12, fontStyle: 'italic' },

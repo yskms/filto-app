@@ -203,7 +203,7 @@ export default function FilterEditScreen() {
               value={blockKeyword}
               onChangeText={setBlockKeyword}
               placeholder={t('filters.blockKeywordPlaceholder')}
-              placeholderTextColor="#999"
+              placeholderTextColor={borderColor}
               maxLength={50}
               editable={!isSaving && !isDeleting}
             />
@@ -218,7 +218,7 @@ export default function FilterEditScreen() {
               value={allowKeywords}
               onChangeText={setAllowKeywords}
               placeholder={t('filters.allowKeywordPlaceholder')}
-              placeholderTextColor="#999"
+              placeholderTextColor={borderColor}
               multiline
               maxLength={500}
               editable={!isSaving && !isDeleting}
@@ -334,7 +334,6 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
-    color: '#666',
     marginBottom: 8,
   },
   textInput: {

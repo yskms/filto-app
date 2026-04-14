@@ -58,10 +58,17 @@ const ArticleItem: React.FC<{
 }> = ({ article, onPress, onLongPress, highlightAnim }) => {
   const timeAgo = getTimeAgo(article.publishedAt);
 
-  // ハイライトアニメーション用の背景色
-  const backgroundColor = highlightAnim.interpolate({
+  const bgColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const subtextColor = useThemeColor({}, 'icon');
+  const placeholderBg = useThemeColor({ light: '#f0f0f0', dark: '#2a2b2c' }, 'background');
+  const highlightColor = useThemeColor({ light: '#fff3cd', dark: '#3a3520' }, 'background');
+
+  // ハイライトアニメーション用の背景色（テーマ対応）
+  const animatedBg = highlightAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#fff', '#fff3cd'], // 白 → 薄い黄色
+    outputRange: [bgColor, highlightColor],
   });
 
   return (
@@ -73,27 +80,27 @@ const ArticleItem: React.FC<{
       <Animated.View
         style={[
           styles.articleContainer,
+          { backgroundColor: animatedBg, borderBottomColor: borderColor },
           article.isRead && styles.readContainer,
-          { backgroundColor },
         ]}
       >
         <View style={styles.articleContent}>
           {article.thumbnailUrl ? (
             <Image
               source={{ uri: article.thumbnailUrl }}
-              style={styles.thumbnail}
+              style={[styles.thumbnail, { backgroundColor: placeholderBg }]}
               resizeMode="cover"
             />
           ) : (
-            <View style={styles.thumbnailPlaceholder}>
+            <View style={[styles.thumbnailPlaceholder, { backgroundColor: placeholderBg }]}>
               <Text style={styles.thumbnailIcon}>📰</Text>
             </View>
           )}
-          
+
           <View style={styles.textContainer}>
             <View style={styles.titleRow}>
               <Text
-                style={[styles.title, article.isRead && styles.readTitle]}
+                style={[styles.title, { color: textColor }, article.isRead && { color: subtextColor, fontWeight: '400' }]}
                 numberOfLines={2}
               >
                 {article.title}
@@ -103,11 +110,11 @@ const ArticleItem: React.FC<{
               )}
             </View>
             <View style={styles.metaContainer}>
-              <Text style={[styles.metaText, article.isRead && styles.readMetaText]}>
+              <Text style={[styles.metaText, { color: subtextColor }]}>
                 {article.feedName}
               </Text>
-              <Text style={styles.separator}>/</Text>
-              <Text style={[styles.metaText, article.isRead && styles.readMetaText]}>
+              <Text style={[styles.separator, { color: subtextColor }]}>/</Text>
+              <Text style={[styles.metaText, { color: subtextColor }]}>
                 {timeAgo}
               </Text>
             </View>
@@ -129,6 +136,8 @@ const HomeHeader: React.FC<{
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'icon');
+  const starBtnBg = useThemeColor({ light: '#f5f5f5', dark: '#2a2b2c' }, 'background');
+  const starBtnActiveBg = useThemeColor({ light: '#fff3cd', dark: '#3a3520' }, 'background');
 
   return (
     <View style={[styles.headerContainer, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -141,22 +150,22 @@ const HomeHeader: React.FC<{
           <ThemedText style={styles.feedName}>{feedName}</ThemedText>
           <ThemedText style={[styles.dropdownIcon, { color: iconColor }]}>⬇️</ThemedText>
         </TouchableOpacity>
-        
+
         <View style={styles.headerButtons}>
           <TouchableOpacity
-            style={[styles.starButton, showStarredOnly && styles.starButtonActive]}
+            style={[styles.starButton, { backgroundColor: showStarredOnly ? starBtnActiveBg : starBtnBg }]}
             onPress={onPressStarFilter}
             activeOpacity={0.7}
           >
             <ThemedText style={styles.starButtonIcon}>⭐</ThemedText>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.refreshButton}
             onPress={onPressRefresh}
             activeOpacity={0.7}
           >
-            <ThemedText style={styles.refreshIcon}>⟳</ThemedText>
+            <ThemedText style={[styles.refreshIcon, { color: iconColor }]}>⟳</ThemedText>
           </TouchableOpacity>
         </View>
       </View>
@@ -443,8 +452,10 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <HomeHeader
         feedName={selectedFeedName}
         showStarredOnly={showStarredOnly}
@@ -452,18 +463,18 @@ export default function HomeScreen() {
         onPressStarFilter={handleToggleStarFilter}
         onPressRefresh={handleRefresh}
       />
-      
+
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1976d2" />
-          <Text style={styles.loadingText}>{t('common.loading')}</Text>
+          <ActivityIndicator size="large" />
+          <ThemedText style={styles.loadingText}>{t('common.loading')}</ThemedText>
         </View>
       ) : (
         <FlatList
           data={filteredArticles}
           renderItem={({ item }) => (
-            <ArticleItem 
-              article={item} 
+            <ArticleItem
+              article={item}
               onPress={() => handlePressArticle(item)}
               onLongPress={() => handleLongPressArticle(item)}
               highlightAnim={getHighlightAnim(item.id)}
@@ -477,7 +488,7 @@ export default function HomeScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>📭</Text>
-              <Text style={styles.emptyMessage}>{t('home.noArticles')}</Text>
+              <ThemedText style={styles.emptyMessage}>{t('home.noArticles')}</ThemedText>
             </View>
           }
         />
@@ -533,10 +544,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  starButtonActive: {
-    backgroundColor: '#fff3cd',
   },
   starButtonIcon: {
     fontSize: 18,
@@ -550,7 +557,6 @@ const styles = StyleSheet.create({
   },
   refreshIcon: {
     fontSize: 20,
-    color: '#1976d2',
   },
   listContent: {
     paddingBottom: 20,
@@ -558,8 +564,6 @@ const styles = StyleSheet.create({
   articleContainer: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
   },
   readContainer: {
     opacity: 0.6,
@@ -573,7 +577,6 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 8,
     marginRight: 12,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -582,7 +585,6 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 8,
     marginRight: 12,
-    backgroundColor: '#f0f0f0',
   },
   thumbnailIcon: {
     fontSize: 24,
@@ -600,16 +602,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     lineHeight: 22,
   },
   starIcon: {
     fontSize: 14,
     marginTop: 2,
-  },
-  readTitle: {
-    color: '#666',
-    fontWeight: '400',
   },
   metaContainer: {
     flexDirection: 'row',
@@ -617,14 +614,9 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: '#666',
-  },
-  readMetaText: {
-    color: '#999',
   },
   separator: {
     fontSize: 12,
-    color: '#999',
     marginHorizontal: 4,
   },
   emptyContainer: {
@@ -639,7 +631,6 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     fontSize: 16,
-    color: '#666',
   },
   loadingContainer: {
     flex: 1,
@@ -649,6 +640,5 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
   },
 });

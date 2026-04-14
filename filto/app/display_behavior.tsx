@@ -224,9 +224,9 @@ export default function DisplayBehaviorScreen() {
         <SettingSection title={t('displayBehavior.startupBehavior')}>
           <TouchableOpacity style={styles.toggleRow} onPress={handleToggleAutoSync} activeOpacity={0.7}>
             <View style={styles.toggleLabel}>
-              <Text style={styles.toggleDescription}>
+              <ThemedText style={styles.toggleDescription}>
                 {t('displayBehavior.autoSyncOnStartup')}
-              </Text>
+              </ThemedText>
             </View>
             <View style={[styles.toggle, autoSyncOnStartup && styles.toggleActive]}>
               <View style={[styles.toggleThumb, autoSyncOnStartup && styles.toggleThumbActive]} />
