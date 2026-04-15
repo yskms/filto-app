@@ -272,6 +272,16 @@ export default function FeedsScreen() {
     loadFeeds();
   }, [currentSort, loadFeeds]);
 
+  // feeds 更新時に削除済みフィードの swipeableRef をクリーンアップ
+  React.useEffect(() => {
+    const currentIds = new Set(feeds.map((f) => f.id));
+    for (const id of swipeableRefs.current.keys()) {
+      if (!currentIds.has(id)) {
+        swipeableRefs.current.delete(id);
+      }
+    }
+  }, [feeds]);
+
 
   const handlePressSortButton = () => {
     closeOpenSwipe();
