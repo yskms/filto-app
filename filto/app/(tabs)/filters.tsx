@@ -122,6 +122,7 @@ const FiltersHeader: React.FC<{
   const iconColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const dangerColor = useThemeColor({}, 'danger');
+  const { t } = useTranslation();
 
   if (deleteMode) {
     // 削除モード時のヘッダー
@@ -132,10 +133,10 @@ const FiltersHeader: React.FC<{
           style={styles.headerButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <ThemedText style={[styles.cancelText, { color: tintColor }]}>キャンセル</ThemedText>
+          <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
         </TouchableOpacity>
 
-        <ThemedText style={styles.headerTitle}>{selectedCount}件選択</ThemedText>
+        <ThemedText style={styles.headerTitle}>{t('filters.deleteSelected', { count: selectedCount })}</ThemedText>
 
         <TouchableOpacity
           onPress={onConfirmDelete}
@@ -146,7 +147,7 @@ const FiltersHeader: React.FC<{
           <ThemedText
             style={[styles.deleteText, { color: dangerColor }, selectedCount === 0 && styles.disabledText]}
           >
-            削除
+            {t('common.delete')}
           </ThemedText>
         </TouchableOpacity>
       </View>
