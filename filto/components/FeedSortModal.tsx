@@ -9,8 +9,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
-export type FeedSortType = 
+export type FeedSortType =
   | 'created_at_desc'
   | 'created_at_asc'
   | 'title_asc'
@@ -25,15 +26,6 @@ interface FeedSortModalProps {
   onSelectSort: (sortType: FeedSortType) => void;
 }
 
-const SORT_OPTIONS: { type: FeedSortType; label: string }[] = [
-  { type: 'created_at_desc', label: '作成日時（新しい順）' },
-  { type: 'created_at_asc', label: '作成日時（古い順）' },
-  { type: 'title_asc', label: 'フィード名（昇順）' },
-  { type: 'title_desc', label: 'フィード名（降順）' },
-  { type: 'url_asc', label: 'URL（昇順）' },
-  { type: 'url_desc', label: 'URL（降順）' },
-];
-
 export const FeedSortModal: React.FC<FeedSortModalProps> = ({
   visible,
   currentSort,
@@ -43,6 +35,16 @@ export const FeedSortModal: React.FC<FeedSortModalProps> = ({
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const tintColor = useThemeColor({}, 'tint');
+  const { t } = useTranslation();
+
+  const sortOptions: { type: FeedSortType; label: string }[] = [
+    { type: 'created_at_desc', label: t('feeds.sortCreatedDesc') },
+    { type: 'created_at_asc', label: t('feeds.sortCreatedAsc') },
+    { type: 'title_asc', label: t('feeds.sortTitleAsc') },
+    { type: 'title_desc', label: t('feeds.sortTitleDesc') },
+    { type: 'url_asc', label: t('feeds.sortUrlAsc') },
+    { type: 'url_desc', label: t('feeds.sortUrlDesc') },
+  ];
 
   const handleSelectSort = (sortType: FeedSortType) => {
     onSelectSort(sortType);
@@ -61,11 +63,11 @@ export const FeedSortModal: React.FC<FeedSortModalProps> = ({
           <Pressable onPress={(e) => e.stopPropagation()}>
             <View style={[styles.modalContent, { backgroundColor }]}>
               <ThemedText style={[styles.title, { borderBottomColor: borderColor }]}>
-                並び替え
+                {t('common.sort')}
               </ThemedText>
-              
+
               <View style={styles.optionsList}>
-                {SORT_OPTIONS.map((option) => (
+                {sortOptions.map((option) => (
                   <TouchableOpacity
                     key={option.type}
                     style={styles.optionItem}

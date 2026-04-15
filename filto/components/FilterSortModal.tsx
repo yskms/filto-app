@@ -9,8 +9,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
-export type FilterSortType = 
+export type FilterSortType =
   | 'created_at_desc'
   | 'created_at_asc'
   | 'updated_at_desc'
@@ -25,15 +26,6 @@ interface FilterSortModalProps {
   onSelectSort: (sortType: FilterSortType) => void;
 }
 
-const SORT_OPTIONS: { type: FilterSortType; label: string }[] = [
-  { type: 'created_at_desc', label: '作成日時（新しい順）' },
-  { type: 'created_at_asc', label: '作成日時（古い順）' },
-  { type: 'updated_at_desc', label: '更新日時（新しい順）' },
-  { type: 'updated_at_asc', label: '更新日時（古い順）' },
-  { type: 'block_keyword_asc', label: 'ブロックキーワード（昇順）' },
-  { type: 'block_keyword_desc', label: 'ブロックキーワード（降順）' },
-];
-
 export const FilterSortModal: React.FC<FilterSortModalProps> = ({
   visible,
   currentSort,
@@ -43,6 +35,16 @@ export const FilterSortModal: React.FC<FilterSortModalProps> = ({
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const tintColor = useThemeColor({}, 'tint');
+  const { t } = useTranslation();
+
+  const sortOptions: { type: FilterSortType; label: string }[] = [
+    { type: 'created_at_desc', label: t('filters.sortCreatedDesc') },
+    { type: 'created_at_asc', label: t('filters.sortCreatedAsc') },
+    { type: 'updated_at_desc', label: t('filters.sortUpdatedDesc') },
+    { type: 'updated_at_asc', label: t('filters.sortUpdatedAsc') },
+    { type: 'block_keyword_asc', label: t('filters.sortBlockKeywordAsc') },
+    { type: 'block_keyword_desc', label: t('filters.sortBlockKeywordDesc') },
+  ];
 
   const handleSelectSort = (sortType: FilterSortType) => {
     onSelectSort(sortType);
@@ -61,11 +63,11 @@ export const FilterSortModal: React.FC<FilterSortModalProps> = ({
           <Pressable onPress={(e) => e.stopPropagation()}>
             <View style={[styles.modalContent, { backgroundColor }]}>
               <ThemedText style={[styles.title, { borderBottomColor: borderColor }]}>
-                並び替え
+                {t('common.sort')}
               </ThemedText>
-              
+
               <View style={styles.optionsList}>
-                {SORT_OPTIONS.map((option) => (
+                {sortOptions.map((option) => (
                   <TouchableOpacity
                     key={option.type}
                     style={styles.optionItem}

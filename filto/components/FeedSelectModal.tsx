@@ -5,6 +5,7 @@ import { Feed } from '@/types/Feed';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTranslation } from '@/providers/language';
 
 interface FeedSelectModalProps {
   visible: boolean;
@@ -26,6 +27,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   const iconBg = useThemeColor({}, 'tabIconDefault');
   const tintColor = useThemeColor({}, 'tint');
   const iconColor = useThemeColor({}, 'text');
+  const { t } = useTranslation();
 
   const handleSelectFeed = (feedId: string | null) => {
     onSelectFeed(feedId);
@@ -56,7 +58,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
         >
           {/* ヘッダー */}
           <View style={[styles.header, { borderBottomColor: borderColor }]}>
-            <ThemedText style={styles.title}>フィード選択</ThemedText>
+            <ThemedText style={styles.title}>{t('home.selectFeed')}</ThemedText>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={22} color={iconColor} />
             </TouchableOpacity>
@@ -77,7 +79,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
               <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
                 <Ionicons name="newspaper-outline" size={18} color={iconColor} />
               </View>
-              <ThemedText style={styles.feedName}>ALL</ThemedText>
+              <ThemedText style={styles.feedName}>{t('home.allFeeds')}</ThemedText>
               {selectedFeedId === null && <Ionicons name="checkmark" size={20} color={tintColor} />}
             </TouchableOpacity>
 
@@ -112,7 +114,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
             onPress={handleManageFeeds}
             activeOpacity={0.7}
           >
-            <ThemedText style={[styles.manageButtonText, { color: tintColor }]}>Manage Feeds</ThemedText>
+            <ThemedText style={[styles.manageButtonText, { color: tintColor }]}>{t('feeds.manageFeeds')}</ThemedText>
             <Ionicons name="chevron-forward" size={16} color={tintColor} style={styles.manageButtonIcon} />
           </TouchableOpacity>
         </View>

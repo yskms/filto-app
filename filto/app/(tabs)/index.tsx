@@ -251,7 +251,7 @@ export default function HomeScreen() {
         setReadDisplay(savedReadDisplay);
       }
     } catch (error) {
-      ErrorHandler.showLoadError();
+      ErrorHandler.showLoadError(t);
     } finally {
       setIsLoading(false);
     }
@@ -353,7 +353,7 @@ export default function HomeScreen() {
       // データを再読み込み
       await loadData();
     } catch (_) {
-      ErrorHandler.showSyncError();
+      ErrorHandler.showSyncError(t);
     } finally {
       setRefreshing(false);
     }
@@ -384,7 +384,7 @@ export default function HomeScreen() {
       // ブラウザで開く
       await Linking.openURL(article.link);
     } catch (_) {
-      ErrorHandler.showGenericError('記事を開けませんでした');
+      ErrorHandler.showGenericError(t, t('home.articleOpenError'));
     }
   }, []);
 
@@ -449,7 +449,7 @@ export default function HomeScreen() {
         prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
       );
     } catch (_) {
-      ErrorHandler.showDatabaseError('お気に入りの変更に失敗しました');
+      ErrorHandler.showDatabaseError(t, t('home.favoriteError'));
     }
   }, []);
 

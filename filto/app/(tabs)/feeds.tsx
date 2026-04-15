@@ -220,7 +220,7 @@ export default function FeedsScreen() {
       const feedList = await FeedService.listWithSort(currentSort);
       setFeeds(feedList);
     } catch (_) {
-      ErrorHandler.showLoadError();
+      ErrorHandler.showLoadError(t);
     }
   }, [currentSort]);
 
@@ -343,7 +343,7 @@ export default function FeedsScreen() {
             setSelectedIds(new Set());
             await loadFeeds();
           } catch (_) {
-            ErrorHandler.showDatabaseError('フィードの削除');
+            ErrorHandler.showDatabaseError(t, t('feeds.deleteError'));
           }
         },
       },
@@ -378,7 +378,7 @@ export default function FeedsScreen() {
             await FeedService.delete(feed.id);
             await loadFeeds();
           } catch (_) {
-            ErrorHandler.showDatabaseError('フィードの削除');
+            ErrorHandler.showDatabaseError(t, t('feeds.deleteError'));
           }
         },
       },

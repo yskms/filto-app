@@ -211,7 +211,7 @@ export default function FiltersScreen() {
       const filterList = await FilterService.listWithSort(currentSort);
       setFilters(filterList);
     } catch (error) {
-      ErrorHandler.showLoadError('フィルタ');
+      ErrorHandler.showLoadError(t);
     }
   }, [currentSort]);
 
@@ -355,7 +355,7 @@ export default function FiltersScreen() {
                 await FilterService.delete(filterId);
                 await loadFilters();
               } catch (error) {
-                ErrorHandler.showDatabaseError('フィルタの削除');
+                ErrorHandler.showDatabaseError(t, t('filters.deleteError'));
               }
             },
           },
@@ -388,7 +388,7 @@ export default function FiltersScreen() {
               setDeleteMode(false);
               await loadFilters();
             } catch (error) {
-              ErrorHandler.showDatabaseError('フィルタの削除');
+              ErrorHandler.showDatabaseError(t, t('filters.deleteError'));
             }
           },
         },

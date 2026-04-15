@@ -48,6 +48,8 @@ export const ja = {
       deletedArticles: '削除: {{count}}件',
       errorFetchingFeeds: 'フィードの取得に失敗しました',
       offlineError: 'オフラインです。ネットワーク接続を確認してください。',
+      articleOpenError: '記事を開けませんでした',
+      favoriteError: 'お気に入りの変更に失敗しました',
     },
   
     // Filters画面
@@ -107,6 +109,9 @@ export const ja = {
       sortCreatedAsc: '作成日時 (古い順)',
       sortTitleAsc: 'タイトル (A-Z)',
       sortTitleDesc: 'タイトル (Z-A)',
+      sortUrlAsc: 'URL (昇順)',
+      sortUrlDesc: 'URL (降順)',
+      manageFeeds: 'フィードを管理',
       urlRequired: 'URLを入力してください',
       invalidUrl: '有効なURLを入力してください',
       httpsRequired: 'HTTPSのURLを入力してください',
@@ -193,7 +198,7 @@ export const ja = {
       comingSoon: '今後対応予定',
       selectRetentionTitle: '保持期間を選択',
       manualDeleteNow: '記事を今すぐ削除',
-      opmlImportExport: 'OPML Import / Export',
+      opmlImportExport: 'OPMLのインポート / エクスポート',
       dataBackupRestore: 'データのバックアップ / 復元',
     },
   
@@ -232,6 +237,7 @@ export const ja = {
       invalidInput: '入力内容が正しくありません',
       operationFailed: '操作に失敗しました',
       tryAgain: 'もう一度お試しください',
+      loadFailed: 'データの読み込みに失敗しました',
     },
   } as const;
   

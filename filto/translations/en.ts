@@ -48,6 +48,8 @@ export const en = {
     deletedArticles: 'Deleted: {{count}}',
     errorFetchingFeeds: 'Failed to fetch feeds',
     offlineError: 'You are offline. Please check your network connection.',
+    articleOpenError: 'Failed to open article',
+    favoriteError: 'Failed to update favorite',
   },
 
   // Filters screen
@@ -107,6 +109,9 @@ export const en = {
     sortCreatedAsc: 'Created (Oldest first)',
     sortTitleAsc: 'Title (A-Z)',
     sortTitleDesc: 'Title (Z-A)',
+    sortUrlAsc: 'URL (A-Z)',
+    sortUrlDesc: 'URL (Z-A)',
+    manageFeeds: 'Manage Feeds',
     urlRequired: 'Please enter URL',
     invalidUrl: 'Please enter a valid URL',
     httpsRequired: 'Please enter HTTPS URL',
@@ -232,5 +237,6 @@ export const en = {
     invalidInput: 'Invalid input',
     operationFailed: 'Operation failed',
     tryAgain: 'Please try again',
+    loadFailed: 'Failed to load data',
   },
 } as const;
