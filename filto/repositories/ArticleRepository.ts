@@ -263,8 +263,6 @@ export const ArticleRepository = {
 
     // -1: 全て削除
     if (days === -1) {
-      console.log('[ArticleRepository] Deleting all articles...');
-      
       const beforeCount = db.getFirstSync<{ count: number }>(
         'SELECT COUNT(*) as count FROM articles'
       )?.count || 0;
@@ -279,47 +277,24 @@ export const ArticleRepository = {
         'SELECT COUNT(*) as count FROM articles'
       )?.count || 0;
 
-      const deletedCount = beforeCount - afterCount;
-      console.log(`[ArticleRepository] Deleted ${deletedCount} articles (all)`);
-      return deletedCount;
+      return beforeCount - afterCount;
     }
 
     // 0: 無制限（削除しない）
     if (days === 0) {
-      console.log('[ArticleRepository] Retention is unlimited, skipping deletion');
       return 0;
     }
 
     // 1以上: 指定日数より古い記事を削除
     const cutoffTime = Math.floor(Date.now() / 1000) - (days * 24 * 60 * 60);
-    console.log(`[ArticleRepository] Deleting articles older than ${days} days (cutoff: ${new Date(cutoffTime * 1000).toISOString()})`);
 
-    // 削除前に件数を確認
-    let countQuery = `
-      SELECT COUNT(*) as count 
-      FROM articles 
-      WHERE fetched_at < ?
-    `;
-    
-    if (!includeStarred) {
-      countQuery += ' AND is_starred = 0';
-    }
-
-    const beforeCount = db.getFirstSync<{ count: number }>(countQuery, [cutoffTime]);
-    console.log(`[ArticleRepository] Found ${beforeCount?.count || 0} old articles to delete`);
-
-    // 削除実行
     let deleteQuery = 'DELETE FROM articles WHERE fetched_at < ?';
-    
     if (!includeStarred) {
       deleteQuery += ' AND is_starred = 0';
     }
 
     const result = db.runSync(deleteQuery, [cutoffTime]);
-    const deletedCount = result.changes;
-
-    console.log(`[ArticleRepository] Deleted ${deletedCount} old articles`);
-    return deletedCount;
+    return result.changes;
   },
 
   /**
