@@ -148,9 +148,8 @@ export const ArticleRepository = {
                 published_at,
                 fetched_at,
                 is_read,
-                is_blocked,
                 is_starred
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
             [
               article.feedId,
@@ -162,7 +161,6 @@ export const ArticleRepository = {
               isoStringToUnixSecondsOrNull(article.publishedAt),
               fetchedAt,
               article.isRead ? 1 : 0,
-              0,
               article.isStarred ? 1 : 0,
             ]
           );

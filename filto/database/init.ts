@@ -11,8 +11,8 @@ export function openDatabase(forceNew: boolean = false): SQLite.SQLiteDatabase {
     // 既存の接続をクローズ（可能であれば）
     try {
       db.closeSync();
-    } catch (error) {
-      console.log('Failed to close existing database:', error);
+    } catch (_) {
+      // クローズ失敗は無視して新規接続を続行
     }
     db = null;
   }
@@ -83,7 +83,6 @@ export async function initDatabase(): Promise<void> {
       published_at  INTEGER,
       fetched_at    INTEGER NOT NULL,
       is_read       INTEGER NOT NULL DEFAULT 0,
-      is_blocked    INTEGER NOT NULL DEFAULT 0,
       is_starred    INTEGER NOT NULL DEFAULT 0,
 
       UNIQUE(feed_id, link),
