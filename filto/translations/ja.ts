@@ -40,6 +40,7 @@ export const ja = {
       selectFeed: 'フィード選択',
       noArticles: '記事がありません',
       noArticlesHint: 'フィードを追加して更新してください',
+      justNow: 'たった今',
       pullToRefresh: '引っ張って更新',
       fetchingFeeds: 'フィードを取得中...',
       syncComplete: '同期完了',
@@ -82,6 +83,7 @@ export const ja = {
       blockKeywordPlaceholder: '例: FX',
       allowKeywordPlaceholder: '例:\n仮想通貨\nweb3\ncrypto',
       confirmDeleteWithKeyword: '「{{keyword}}」を削除しますか？',
+      allowKeywordPrefix: '許可',
     },
   
     // Feeds画面

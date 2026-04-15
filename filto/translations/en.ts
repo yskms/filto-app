@@ -40,6 +40,7 @@ export const en = {
     selectFeed: 'Select Feed',
     noArticles: 'No articles',
     noArticlesHint: 'Add feeds and refresh',
+    justNow: 'Just now',
     pullToRefresh: 'Pull to refresh',
     fetchingFeeds: 'Fetching feeds...',
     syncComplete: 'Sync complete',
@@ -82,6 +83,7 @@ export const en = {
     blockKeywordPlaceholder: 'e.g. FX',
     allowKeywordPlaceholder: 'e.g.\ncrypto\nweb3\nRSS',
     confirmDeleteWithKeyword: 'Delete "{{keyword}}"?',
+    allowKeywordPrefix: 'Allow',
   },
 
   // Feeds screen

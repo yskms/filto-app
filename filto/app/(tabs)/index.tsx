@@ -35,11 +35,11 @@ import { useTranslation } from '@/providers/language';
 import { LoadingView } from '@/components/LoadingView';
 
 // 経過時間を計算
-const getTimeAgo = (publishedAt: string): string => {
+const getTimeAgo = (publishedAt: string, justNow: string): string => {
   const now = Date.now();
   const published = new Date(publishedAt).getTime();
   const diff = now - published;
-  
+
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
@@ -47,17 +47,18 @@ const getTimeAgo = (publishedAt: string): string => {
   if (days > 0) return `${days}d`;
   if (hours > 0) return `${hours}h`;
   if (minutes > 0) return `${minutes}m`;
-  return 'たった今';
+  return justNow;
 };
 
 // 記事アイテムコンポーネント
-const ArticleItem: React.FC<{ 
+const ArticleItem: React.FC<{
   article: Article;
   onPress: () => void;
   onLongPress: () => void;
   highlightAnim: Animated.Value;
 }> = ({ article, onPress, onLongPress, highlightAnim }) => {
-  const timeAgo = getTimeAgo(article.publishedAt);
+  const { t } = useTranslation();
+  const timeAgo = getTimeAgo(article.publishedAt, t('home.justNow'));
 
   const bgColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');

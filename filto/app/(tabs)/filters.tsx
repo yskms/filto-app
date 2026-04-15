@@ -40,6 +40,7 @@ const FilterItem: React.FC<{
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subtextColor = useThemeColor({}, 'icon');
+  const { t } = useTranslation();
 
   // 削除アクション（右側）- Reanimated版
   const renderRightActions = () => {
@@ -88,7 +89,7 @@ const FilterItem: React.FC<{
             <Text style={[styles.blockKeyword, { color: textColor }]}>{filter.block_keyword}</Text>
             {filter.allow_keyword && (
               <Text style={[styles.allowKeyword, { color: subtextColor }]}>
-                許可: {filter.allow_keyword}
+                {t('filters.allowKeywordPrefix')}: {filter.allow_keyword}
               </Text>
             )}
           </View>
