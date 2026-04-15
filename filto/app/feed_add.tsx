@@ -36,6 +36,9 @@ export default function FeedAddScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
+  const tintColor = useThemeColor({}, 'tint');
+  const dangerColor = useThemeColor({}, 'danger');
+  const disabledBg = useThemeColor({ light: '#b0b0b0', dark: '#555' }, 'background');
 
   // 起動時に入力欄にフォーカス
   useEffect(() => {
@@ -82,8 +85,7 @@ export default function FeedAddScreen() {
         setUrl(clipboardText.trim());
         setUrlError(null);
       }
-    } catch (error) {
-      console.error('Failed to paste from clipboard:', error);
+    } catch (_) {
     }
   };
 
@@ -109,8 +111,7 @@ export default function FeedAddScreen() {
         setIconUrl(meta.iconUrl);
       }
 
-    } catch (error) {
-      console.error('Failed to fetch feed meta:', error);
+    } catch (_) {
       setUrlError(t('feeds.metaFetchFailed'));
     } finally {
       setIsLoadingMeta(false);
@@ -139,8 +140,7 @@ export default function FeedAddScreen() {
       });
 
       router.back();
-    } catch (error) {
-      console.error('Failed to add feed:', error);
+    } catch (_) {
       Alert.alert(t('common.error'), t('feeds.addError'));
     } finally {
       setIsLoading(false);
@@ -180,7 +180,7 @@ export default function FeedAddScreen() {
                 style={[
                   styles.input,
                   { color: textColor, borderColor, backgroundColor },
-                  urlError && styles.inputError
+                  urlError && [styles.inputError, { borderColor: dangerColor }]
                 ]}
                 value={url}
                 onChangeText={handleUrlChange}
@@ -193,7 +193,7 @@ export default function FeedAddScreen() {
                 selectTextOnFocus={true}
               />
               {urlError && (
-                <ThemedText style={styles.errorText}>{urlError}</ThemedText>
+                <ThemedText style={[styles.errorText, { color: dangerColor }]}>{urlError}</ThemedText>
               )}
             </View>
 
@@ -204,14 +204,14 @@ export default function FeedAddScreen() {
               activeOpacity={0.7}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name="clipboard-outline" size={18} color="#1976d2" />
-                <ThemedText style={styles.pasteButtonText}>{t('feeds.pasteFromClipboard')}</ThemedText>
+                <Ionicons name="clipboard-outline" size={18} color={tintColor} />
+                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>{t('feeds.pasteFromClipboard')}</ThemedText>
               </View>
             </TouchableOpacity>
 
             {/* Fetch Meta Button */}
             <TouchableOpacity
-              style={[styles.fetchButton, isLoadingMeta && styles.fetchButtonDisabled]}
+              style={[styles.fetchButton, { backgroundColor: '#2e7d32' }, isLoadingMeta && { backgroundColor: disabledBg }]}
               onPress={handleFetchMeta}
               disabled={isLoadingMeta}
               activeOpacity={0.7}
@@ -249,7 +249,7 @@ export default function FeedAddScreen() {
 
             {/* Add Button */}
             <TouchableOpacity
-              style={[styles.addButton, isLoading && styles.addButtonDisabled]}
+              style={[styles.addButton, { backgroundColor: tintColor }, isLoading && { backgroundColor: disabledBg }]}
               onPress={handleAdd}
               disabled={isLoading}
               activeOpacity={0.7}
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   optional: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#666',
+    opacity: 0.6,
   },
   input: {
     height: 48,
@@ -320,17 +320,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   inputError: {
-    borderColor: '#f44336',
     borderWidth: 2,
   },
   errorText: {
     fontSize: 14,
-    color: '#f44336',
     marginTop: 4,
   },
   hint: {
     fontSize: 14,
-    color: '#666',
+    opacity: 0.6,
     marginTop: 4,
   },
   pasteButton: {
@@ -344,19 +342,15 @@ const styles = StyleSheet.create({
   pasteButtonText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#1976d2',
   },
   fetchButton: {
     height: 48,
-    backgroundColor: '#2e7d32',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
-  fetchButtonDisabled: {
-    backgroundColor: '#b0b0b0',
-  },
+  fetchButtonDisabled: {},
   fetchButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -368,15 +362,12 @@ const styles = StyleSheet.create({
   },
   addButton: {
     height: 48,
-    backgroundColor: '#1976d2',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
   },
-  addButtonDisabled: {
-    backgroundColor: '#b0b0b0',
-  },
+  addButtonDisabled: {},
   addButtonText: {
     fontSize: 16,
     fontWeight: '600',

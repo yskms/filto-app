@@ -62,6 +62,7 @@ const KeywordItem: React.FC<{
 }> = ({ keyword, onPressDelete }) => {
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
+  const dangerColor = useThemeColor({}, 'danger');
 
   return (
     <View style={[styles.keywordItem, { backgroundColor, borderBottomColor: borderColor }]}>
@@ -71,7 +72,7 @@ const KeywordItem: React.FC<{
         onPress={onPressDelete}
         activeOpacity={0.7}
       >
-        <Ionicons name="close" size={20} color="#d32f2f" />
+        <Ionicons name="close" size={20} color={dangerColor} />
       </TouchableOpacity>
     </View>
   );
@@ -95,8 +96,7 @@ export default function GlobalAllowKeywordsScreen() {
 
       const remaining = await GlobalAllowKeywordService.getRemainingCount();
       setRemainingCount(remaining);
-    } catch (error) {
-      console.error('Failed to load keywords:', error);
+    } catch (_) {
     }
   }, []);
 
@@ -153,8 +153,7 @@ export default function GlobalAllowKeywordsScreen() {
             try {
               await GlobalAllowKeywordService.delete(keyword.id);
               await loadKeywords();
-            } catch (error) {
-              console.error('Failed to delete keyword:', error);
+            } catch (_) {
               Alert.alert(t('common.error'), t('globalAllowKeywords.deleteError'));
             }
           },
@@ -167,6 +166,7 @@ export default function GlobalAllowKeywordsScreen() {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const textColor = useThemeColor({}, 'text');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
+  const tintColor = useThemeColor({}, 'tint');
 
   return (
     <>
@@ -198,7 +198,7 @@ export default function GlobalAllowKeywordsScreen() {
               maxLength={50}
             />
             <TouchableOpacity
-              style={[styles.addButton, isAdding && { opacity: 0.5 }]}
+              style={[styles.addButton, { backgroundColor: tintColor }, isAdding && { opacity: 0.5 }]}
               onPress={handleAdd}
               activeOpacity={0.7}
               disabled={isAdding}
@@ -293,7 +293,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 16,
@@ -302,7 +301,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingHorizontal: 16,
     height: 40,
-    backgroundColor: '#1976d2',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -344,7 +342,6 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     fontSize: 20,
-    color: '#d32f2f',
   },
   emptyContainer: {
     alignItems: 'center',

@@ -65,6 +65,8 @@ const FeedsHeaderDeleteMode: React.FC<{
 }> = ({ selectedCount, onPressCancel, onPressDelete }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
+  const tintColor = useThemeColor({}, 'tint');
+  const dangerColor = useThemeColor({}, 'danger');
   const { t } = useTranslation();
 
   return (
@@ -74,7 +76,7 @@ const FeedsHeaderDeleteMode: React.FC<{
         onPress={onPressCancel}
         activeOpacity={0.7}
       >
-        <ThemedText style={styles.cancelText}>{t('common.cancel')}</ThemedText>
+        <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
       </TouchableOpacity>
       <ThemedText style={styles.selectedCount}>{t('feeds.deleteSelected', { count: selectedCount })}</ThemedText>
       <TouchableOpacity
@@ -86,6 +88,7 @@ const FeedsHeaderDeleteMode: React.FC<{
         <ThemedText
           style={[
             styles.deleteText,
+            { color: dangerColor },
             selectedCount === 0 && styles.deleteTextDisabled,
           ]}
         >
@@ -122,12 +125,14 @@ const FeedItem: React.FC<{
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subtextColor = useThemeColor({}, 'icon');
+  const dangerColor = useThemeColor({}, 'danger');
+  const iconPlaceholderBg = useThemeColor({ light: '#f0f0f0', dark: '#2a2b2c' }, 'background');
 
   const renderRightActions = () => {
     return (
       <Reanimated.View style={styles.deleteAction}>
         <TouchableOpacity
-          style={styles.deleteButton}
+          style={[styles.deleteButton, { backgroundColor: dangerColor }]}
           onPress={onSwipeDelete}
           activeOpacity={0.8}
         >
@@ -155,7 +160,7 @@ const FeedItem: React.FC<{
         {feed.iconUrl ? (
           <Image
             source={{ uri: feed.iconUrl }}
-            style={styles.feedIconImage}
+            style={[styles.feedIconImage, { backgroundColor: iconPlaceholderBg }]}
             resizeMode="cover"
           />
         ) : (
@@ -214,8 +219,7 @@ export default function FeedsScreen() {
     try {
       const feedList = await FeedService.listWithSort(currentSort);
       setFeeds(feedList);
-    } catch (error) {
-      console.error('Failed to load feeds:', error);
+    } catch (_) {
       ErrorHandler.showLoadError();
     }
   }, [currentSort]);
@@ -328,8 +332,7 @@ export default function FeedsScreen() {
             setIsDeleteMode(false);
             setSelectedIds(new Set());
             await loadFeeds();
-          } catch (error) {
-            console.error('Failed to delete feeds:', error);
+          } catch (_) {
             ErrorHandler.showDatabaseError('フィードの削除');
           }
         },
@@ -364,8 +367,7 @@ export default function FeedsScreen() {
             setOpenSwipeId(null);
             await FeedService.delete(feed.id);
             await loadFeeds();
-          } catch (error) {
-            console.error('Failed to delete feed:', error);
+          } catch (_) {
             ErrorHandler.showDatabaseError('フィードの削除');
           }
         },
@@ -464,7 +466,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   headerTitle: {
     fontSize: 18,
@@ -486,19 +487,16 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    color: '#1976d2',
   },
   selectedCount: {
     fontSize: 14,
-    color: '#666',
   },
   deleteText: {
     fontSize: 16,
-    color: '#d32f2f',
     fontWeight: '600',
   },
   deleteTextDisabled: {
-    color: '#b0b0b0',
+    opacity: 0.4,
   },
   listContent: {
     flexGrow: 1,
@@ -530,7 +528,6 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 6,
     marginRight: 12,
-    backgroundColor: '#f0f0f0',
   },
   feedTextContainer: {
     flex: 1,
@@ -551,7 +548,6 @@ const styles = StyleSheet.create({
   deleteButton: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#d32f2f',
     justifyContent: 'center',
     alignItems: 'center',
   },

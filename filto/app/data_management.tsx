@@ -94,6 +94,7 @@ const DropdownModal: React.FC<{
   onClose: () => void;
 }> = ({ visible, title, options, selectedValue, onSelect, onClose }) => {
   const backgroundColor = useThemeColor({}, 'background');
+  const tintColor = useThemeColor({}, 'tint');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -113,7 +114,7 @@ const DropdownModal: React.FC<{
               >
                 <ThemedText style={styles.dropdownOptionText}>{opt.label}</ThemedText>
                 {selectedValue === opt.value && (
-                  <Ionicons name="checkmark" size={18} color="#1976d2" />
+                  <Ionicons name="checkmark" size={18} color={tintColor} />
                 )}
               </TouchableOpacity>
             ))}
@@ -145,6 +146,7 @@ const ManualDeleteModal: React.FC<{
 }) => {
   const hasTarget = stats && stats.total > 0;
   const backgroundColor = useThemeColor({}, 'background');
+  const tintColor = useThemeColor({}, 'tint');
   const { t } = useTranslation();
   const manualDeleteOptions = MANUAL_DELETE_OPTIONS.map((value) => ({
     value,
@@ -169,8 +171,8 @@ const ManualDeleteModal: React.FC<{
                   onPress={() => onChangeDays(opt.value)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.radio, selectedDays === opt.value && styles.radioSelected]}>
-                    {selectedDays === opt.value && <View style={styles.radioDot} />}
+                  <View style={[styles.radio, selectedDays === opt.value && { borderColor: tintColor }]}>
+                    {selectedDays === opt.value && <View style={[styles.radioDot, { backgroundColor: tintColor }]} />}
                   </View>
                   <ThemedText style={styles.radioLabel}>{opt.label}</ThemedText>
                 </TouchableOpacity>
@@ -246,6 +248,8 @@ export default function DataManagementScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const arrowColor = useThemeColor({}, 'icon');
+  const tintColor = useThemeColor({}, 'tint');
+  const toggleOffBg = useThemeColor({ light: '#ccc', dark: '#555' }, 'background');
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
@@ -268,8 +272,7 @@ export default function DataManagementScreen() {
       ]);
       if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
       if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
-    } catch (e) {
-      console.error('Failed to load data management settings:', e);
+    } catch (_) {
     }
   }, []);
 
@@ -279,8 +282,7 @@ export default function DataManagementScreen() {
     try {
       setArticleRetentionDays(days);
       await AsyncStorage.setItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS, days.toString());
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -290,8 +292,7 @@ export default function DataManagementScreen() {
       const next = !deleteStarredInAuto;
       setDeleteStarredInAuto(next);
       await AsyncStorage.setItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO, next.toString());
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -301,8 +302,7 @@ export default function DataManagementScreen() {
       const stats = await ArticleRepository.getOldArticlesStats(manualDeleteDays, manualDeleteIncludeStarred);
       setManualDeleteStats(stats);
       setManualDeleteModalVisible(true);
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       Alert.alert(t('common.error'), t('dataManagement.deleteError'));
     }
   };
@@ -336,8 +336,7 @@ export default function DataManagementScreen() {
       setManualDeleteDays(-1);
       setManualDeleteIncludeStarred(false);
       setManualDeleteStats(null);
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       Alert.alert(t('common.error'), t('dataManagement.deleteError'));
     } finally {
       setIsDeleting(false);
@@ -374,7 +373,7 @@ export default function DataManagementScreen() {
             </ThemedText>
             <TouchableOpacity style={styles.toggleRow} onPress={handleToggleDeleteStarredInAuto} activeOpacity={0.7}>
               <ThemedText style={styles.toggleLabelText}>{t('dataManagement.deleteStarredToo')}</ThemedText>
-              <View style={[styles.toggle, deleteStarredInAuto && styles.toggleActive]}>
+              <View style={[styles.toggle, { backgroundColor: deleteStarredInAuto ? tintColor : toggleOffBg }]}>
                 <View style={[styles.toggleThumb, deleteStarredInAuto && styles.toggleThumbActive]} />
               </View>
             </TouchableOpacity>
@@ -456,11 +455,10 @@ const styles = StyleSheet.create({
     width: 50,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#ccc',
     padding: 2,
     justifyContent: 'center',
   },
-  toggleActive: { backgroundColor: '#1976d2' },
+  toggleActive: {},
   toggleThumb: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff' },
   toggleThumbActive: { alignSelf: 'flex-end' },
   retentionDescription: { marginBottom: 16 },
@@ -497,7 +495,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   dropdownOptionText: { fontSize: 16 },
-  dropdownOptionCheck: { fontSize: 18, color: '#1976d2', fontWeight: '600' },
+  dropdownOptionCheck: { fontSize: 18, fontWeight: '600' },
   modalContent: {
     borderRadius: 16,
     padding: 24,
@@ -519,8 +517,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  radioSelected: { borderColor: '#1976d2' },
-  radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#1976d2' },
+  radioSelected: {},
+  radioDot: { width: 12, height: 12, borderRadius: 6 },
   radioLabel: { fontSize: 14 },
   divider: { height: 1, marginVertical: 12 },
   statsSection: {},

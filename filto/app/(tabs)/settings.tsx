@@ -3,6 +3,7 @@ import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -10,7 +11,7 @@ import { useTranslation } from '@/providers/language';
 interface MenuItem {
   id: string;
   title: string;
-  ionIcon?: string;
+  ionIcon?: ComponentProps<typeof Ionicons>['name'];
   disabled?: boolean;
 }
 
@@ -36,7 +37,7 @@ const MenuItemRow: React.FC<{
     >
       <View style={styles.menuItemLeft}>
         {item.ionIcon != null && (
-          <Ionicons name={item.ionIcon as any} size={20} color={iconColor} />
+          <Ionicons name={item.ionIcon} size={20} color={iconColor} />
         )}
         <ThemedText
           style={[styles.menuItemText, item.disabled && styles.menuItemTextDisabled]}

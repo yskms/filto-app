@@ -207,6 +207,16 @@ export default function HomeScreen() {
     return highlightAnims.current.get(articleId)!;
   };
 
+  // 表示対象外になった記事のアニメーションオブジェクトを解放（メモリリーク防止）
+  React.useEffect(() => {
+    const currentIds = new Set(filteredArticles.map(a => a.id));
+    for (const id of highlightAnims.current.keys()) {
+      if (!currentIds.has(id)) {
+        highlightAnims.current.delete(id);
+      }
+    }
+  }, [filteredArticles]);
+
   // 選択中のフィード名を取得
   const selectedFeedName = React.useMemo(() => {
     if (selectedFeedId === null) return t('home.allFeeds');
@@ -241,7 +251,6 @@ export default function HomeScreen() {
         setReadDisplay(savedReadDisplay);
       }
     } catch (error) {
-      console.error('Failed to load data:', error);
       ErrorHandler.showLoadError();
     } finally {
       setIsLoading(false);
@@ -284,8 +293,7 @@ export default function HomeScreen() {
         await loadData();
         
         setHasAutoSynced(true);
-      } catch (error) {
-        console.error('[AutoSync] Failed:', error);
+      } catch (_) {
         // エラーでもアプリは正常に動作
         setHasAutoSynced(true);
       }
@@ -344,8 +352,7 @@ export default function HomeScreen() {
 
       // データを再読み込み
       await loadData();
-    } catch (error) {
-      console.error('Failed to refresh:', error);
+    } catch (_) {
       ErrorHandler.showSyncError();
     } finally {
       setRefreshing(false);
@@ -376,8 +383,7 @@ export default function HomeScreen() {
       
       // ブラウザで開く
       await Linking.openURL(article.link);
-    } catch (error) {
-      console.error('Failed to open article:', error);
+    } catch (_) {
       ErrorHandler.showGenericError('記事を開けませんでした');
     }
   }, []);
@@ -442,8 +448,7 @@ export default function HomeScreen() {
       setArticles(prev => 
         prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
       );
-    } catch (error) {
-      console.error('Failed to toggle star:', error);
+    } catch (_) {
       ErrorHandler.showDatabaseError('お気に入りの変更に失敗しました');
     }
   }, []);

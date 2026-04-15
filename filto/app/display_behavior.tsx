@@ -76,6 +76,7 @@ const DropdownModal: React.FC<{
   onClose: () => void;
 }> = ({ visible, title, options, selectedValue, onSelect, onClose }) => {
   const backgroundColor = useThemeColor({}, 'background');
+  const tintColor = useThemeColor({}, 'tint');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -95,7 +96,7 @@ const DropdownModal: React.FC<{
               >
                 <ThemedText style={styles.dropdownOptionText}>{opt.label}</ThemedText>
                 {selectedValue === opt.value && (
-                  <Ionicons name="checkmark" size={18} color="#007AFF" />
+                  <Ionicons name="checkmark" size={18} color={tintColor} />
                 )}
               </TouchableOpacity>
             ))}
@@ -117,6 +118,7 @@ export default function DisplayBehaviorScreen() {
   const [readDisplayModalVisible, setReadDisplayModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const toggleOffBg = useThemeColor({ light: '#e0e0e0', dark: '#555' }, 'background');
 
   const loadSettings = useCallback(async () => {
     try {
@@ -127,8 +129,7 @@ export default function DisplayBehaviorScreen() {
       
       if (savedRead === 'dim' || savedRead === 'hide') setReadDisplay(savedRead);
       if (savedAuto !== null) setAutoSyncOnStartup(savedAuto === 'true');
-    } catch (e) {
-      console.error('Failed to load display/behavior settings:', e);
+    } catch (_) {
     }
   }, []);
 
@@ -138,8 +139,7 @@ export default function DisplayBehaviorScreen() {
     try {
       setReadDisplay(mode);
       await AsyncStorage.setItem(STORAGE_KEY_READ_DISPLAY, mode);
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -149,8 +149,7 @@ export default function DisplayBehaviorScreen() {
       const next = !autoSyncOnStartup;
       setAutoSyncOnStartup(next);
       await AsyncStorage.setItem(STORAGE_KEY_AUTO_SYNC_ON_STARTUP, next.toString());
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -158,8 +157,7 @@ export default function DisplayBehaviorScreen() {
   const handleTheme = async (value: string) => {
     try {
       setPreference(value as 'light' | 'dark' | 'system');
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -167,8 +165,7 @@ export default function DisplayBehaviorScreen() {
   const handleLanguage = async (value: string) => {
     try {
       await setLanguage(value as 'ja' | 'en');
-    } catch (e) {
-      console.error(e);
+    } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -231,7 +228,7 @@ export default function DisplayBehaviorScreen() {
                 {t('displayBehavior.autoSyncOnStartup')}
               </ThemedText>
             </View>
-            <View style={[styles.toggle, autoSyncOnStartup && styles.toggleActive]}>
+            <View style={[styles.toggle, { backgroundColor: autoSyncOnStartup ? '#34C759' : toggleOffBg }]}>
               <View style={[styles.toggleThumb, autoSyncOnStartup && styles.toggleThumbActive]} />
             </View>
           </TouchableOpacity>
@@ -355,13 +352,10 @@ const styles = StyleSheet.create({
     width: 51,
     height: 31,
     borderRadius: 15.5,
-    backgroundColor: '#e0e0e0',
     padding: 2,
     justifyContent: 'center',
   },
-  toggleActive: {
-    backgroundColor: '#34C759',
-  },
+  toggleActive: {},
   toggleThumb: {
     width: 27,
     height: 27,
@@ -413,6 +407,5 @@ const styles = StyleSheet.create({
   },
   dropdownOptionCheck: {
     fontSize: 18,
-    color: '#007AFF',
   },
 });

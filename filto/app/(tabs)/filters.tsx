@@ -40,6 +40,8 @@ const FilterItem: React.FC<{
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subtextColor = useThemeColor({}, 'icon');
+  const dangerColor = useThemeColor({}, 'danger');
+  const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
   const { t } = useTranslation();
 
   // 削除アクション（右側）- Reanimated版
@@ -47,7 +49,7 @@ const FilterItem: React.FC<{
     return (
       <Reanimated.View style={styles.deleteAction}>
         <TouchableOpacity
-          style={styles.deleteButton}
+          style={[styles.deleteButton, { backgroundColor: dangerColor }]}
           onPress={onPressDelete}
           activeOpacity={0.8}
         >
@@ -79,7 +81,7 @@ const FilterItem: React.FC<{
         style={[
           styles.filterContainer,
           { backgroundColor, borderBottomColor: borderColor },
-          deleteMode && isSelected && styles.selectedContainer,
+          deleteMode && isSelected && { backgroundColor: selectedBgColor },
         ]}
         onPress={handlePress}
         activeOpacity={0.7}
@@ -118,6 +120,8 @@ const FiltersHeader: React.FC<{
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const dangerColor = useThemeColor({}, 'danger');
 
   if (deleteMode) {
     // 削除モード時のヘッダー
@@ -128,7 +132,7 @@ const FiltersHeader: React.FC<{
           style={styles.headerButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <ThemedText style={styles.cancelText}>キャンセル</ThemedText>
+          <ThemedText style={[styles.cancelText, { color: tintColor }]}>キャンセル</ThemedText>
         </TouchableOpacity>
 
         <ThemedText style={styles.headerTitle}>{selectedCount}件選択</ThemedText>
@@ -140,7 +144,7 @@ const FiltersHeader: React.FC<{
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ThemedText
-            style={[styles.deleteText, selectedCount === 0 && styles.disabledText]}
+            style={[styles.deleteText, { color: dangerColor }, selectedCount === 0 && styles.disabledText]}
           >
             削除
           </ThemedText>
@@ -472,7 +476,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },  
   headerTitle: {
     fontSize: 18,
@@ -494,11 +497,9 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    color: '#1976d2',
   },
   deleteText: {
     fontSize: 16,
-    color: '#ff3b30',
     fontWeight: '600',
   },
   disabledText: {
@@ -530,9 +531,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
   },
-  selectedContainer: {
-    backgroundColor: '#e3f2fd',
-  },
+  selectedContainer: {},
   filterContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -557,7 +556,6 @@ const styles = StyleSheet.create({
   deleteButton: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#d32f2f',
     justifyContent: 'center',
     alignItems: 'center',
   },

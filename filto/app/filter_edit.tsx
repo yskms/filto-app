@@ -89,6 +89,8 @@ export default function FilterEditScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
+  const tintColor = useThemeColor({}, 'tint');
+  const dangerColor = useThemeColor({}, 'danger');
 
   // 編集モード時、フィルタを読み込む
   React.useEffect(() => {
@@ -107,8 +109,7 @@ export default function FilterEditScreen() {
         setTargetTitle(filter.target_title === 1);
         setTargetDescription(filter.target_description === 1);
       }
-    } catch (error) {
-      console.error('Failed to load filter:', error);
+    } catch (_) {
       Alert.alert(t('common.error'), t('filters.saveError'));
       router.back();
     } finally {
@@ -145,8 +146,7 @@ export default function FilterEditScreen() {
 
       showToast(t('common.saved'), 'success');
       router.back();
-    } catch (error) {
-      console.error('Failed to save filter:', error);
+    } catch (_) {
       Alert.alert(t('common.error'), t('filters.saveError'));
     } finally {
       setIsSaving(false);
@@ -254,7 +254,7 @@ export default function FilterEditScreen() {
           {/* ボタン */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.saveButton, isSaveDisabled && styles.buttonDisabled]}
+              style={[styles.saveButton, { backgroundColor: tintColor }, isSaveDisabled && styles.buttonDisabled]}
               onPress={handleSave}
               disabled={isSaveDisabled}
               activeOpacity={0.7}
@@ -268,15 +268,15 @@ export default function FilterEditScreen() {
 
             {isEditMode && (
               <TouchableOpacity
-                style={styles.deleteButton}
+                style={[styles.deleteButton, { borderColor: dangerColor }]}
                 onPress={handleDelete}
                 disabled={isDeleting || isSaving}
                 activeOpacity={0.7}
               >
                 {isDeleting ? (
-                  <ActivityIndicator size="small" color="#ff3b30" />
+                  <ActivityIndicator size="small" color={dangerColor} />
                 ) : (
-                  <ThemedText style={styles.deleteButtonText}>{t('common.delete')}</ThemedText>
+                  <ThemedText style={[styles.deleteButtonText, { color: dangerColor }]}>{t('common.delete')}</ThemedText>
                 )}
               </TouchableOpacity>
             )}
@@ -368,7 +368,6 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#1976d2',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -385,7 +384,6 @@ const styles = StyleSheet.create({
   deleteButton: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ff3b30',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -394,6 +392,5 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#ff3b30',
   },
 });
