@@ -71,12 +71,10 @@ export const GlobalAllowKeywordService = {
   },
 
   /**
-   * Pro版かどうか
-   * TODO: 実際のPro版判定ロジックを実装
+   * Pro版かどうか（現在は常に無料版）
    */
   async isPro(): Promise<boolean> {
-    // 将来的にsettingsテーブルから取得
-    return false; // 現在は無料版として扱う
+    return false;
   },
 
   /**

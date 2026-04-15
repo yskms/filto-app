@@ -62,8 +62,6 @@ export const FilterService = {
       await FilterRepository.update(updatedFilter);
     }
 
-    // TODO: 将来的に evaluateAll() を呼び出す
-    // await FilterEngine.evaluateAll();
   },
 
   /**
@@ -71,9 +69,6 @@ export const FilterService = {
    */
   async delete(id: number): Promise<void> {
     await FilterRepository.delete(id);
-
-    // TODO: 将来的に evaluateAll() を呼び出す
-    // await FilterEngine.evaluateAll();
   },
 
   /**

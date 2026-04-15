@@ -85,7 +85,7 @@ export const ErrorHandler = {
       `無料版では${featureName}は${limit}件までです。\n\nPro版にアップグレードすると無制限に利用できます。`,
       [
         { text: 'キャンセル', style: 'cancel' },
-        { text: 'Pro版について', onPress: () => {/* TODO: Pro版画面へ遷移 */} },
+        { text: 'Pro版について', onPress: () => {} },
       ]
     );
   },
