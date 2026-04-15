@@ -23,6 +23,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const iconBg = useThemeColor({}, 'tabIconDefault');
+  const tintColor = useThemeColor({}, 'tint');
 
   const handleSelectFeed = (feedId: string | null) => {
     onSelectFeed(feedId);
@@ -74,7 +75,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
                 <ThemedText style={styles.feedIconText}>📰</ThemedText>
               </View>
               <ThemedText style={styles.feedName}>ALL</ThemedText>
-              {selectedFeedId === null && <ThemedText style={styles.checkmark}>✓</ThemedText>}
+              {selectedFeedId === null && <ThemedText style={[styles.checkmark, { color: tintColor }]}>✓</ThemedText>}
             </TouchableOpacity>
 
             {/* 各フィード */}
@@ -96,18 +97,18 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
                   </View>
                 )}
                 <ThemedText style={styles.feedName}>{feed.title}</ThemedText>
-                {selectedFeedId === feed.id && <ThemedText style={styles.checkmark}>✓</ThemedText>}
+                {selectedFeedId === feed.id && <ThemedText style={[styles.checkmark, { color: tintColor }]}>✓</ThemedText>}
               </TouchableOpacity>
             ))}
           </ScrollView>
 
           {/* フッター */}
           <TouchableOpacity
-            style={styles.manageButton}
+            style={[styles.manageButton, { borderTopColor: borderColor }]}
             onPress={handleManageFeeds}
             activeOpacity={0.7}
           >
-            <ThemedText style={styles.manageButtonText}>Manage Feeds →</ThemedText>
+            <ThemedText style={[styles.manageButtonText, { color: tintColor }]}>Manage Feeds →</ThemedText>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -181,18 +182,15 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     fontSize: 18,
-    color: '#1976d2',
   },
   manageButton: {
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
     alignItems: 'center',
   },
   manageButtonText: {
     fontSize: 16,
-    color: '#1976d2',
     fontWeight: '500',
   },
 });
