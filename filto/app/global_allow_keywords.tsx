@@ -84,6 +84,7 @@ export default function GlobalAllowKeywordsScreen() {
   const [keywords, setKeywords] = useState<GlobalAllowKeyword[]>([]);
   const [inputText, setInputText] = useState('');
   const [remainingCount, setRemainingCount] = useState<number | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   // データ読み込み
@@ -116,19 +117,26 @@ export default function GlobalAllowKeywordsScreen() {
       return;
     }
 
-    const result = await GlobalAllowKeywordService.create(inputText);
+    if (isAdding) return;
+    setIsAdding(true);
 
-    if (result.success) {
-      setInputText('');
-      inputRef.current?.blur();
-      await loadKeywords();
-      showToast(t('common.added'), 'success');
-    } else {
-      if (result.requiresPro) {
-        Alert.alert(t('common.confirm'), result.message || t('globalAllowKeywords.freeLimitReached', { limit: 3 }));
+    try {
+      const result = await GlobalAllowKeywordService.create(inputText);
+
+      if (result.success) {
+        setInputText('');
+        inputRef.current?.blur();
+        await loadKeywords();
+        showToast(t('common.added'), 'success');
       } else {
-        Alert.alert(t('common.error'), result.message || t('globalAllowKeywords.addError'));
+        if (result.requiresPro) {
+          Alert.alert(t('common.confirm'), result.message || t('globalAllowKeywords.freeLimitReached', { limit: 3 }));
+        } else {
+          Alert.alert(t('common.error'), result.message || t('globalAllowKeywords.addError'));
+        }
       }
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -190,9 +198,10 @@ export default function GlobalAllowKeywordsScreen() {
               maxLength={50}
             />
             <TouchableOpacity
-              style={styles.addButton}
+              style={[styles.addButton, isAdding && { opacity: 0.5 }]}
               onPress={handleAdd}
               activeOpacity={0.7}
+              disabled={isAdding}
             >
               <ThemedText style={styles.addButtonText}>{t('common.add')}</ThemedText>
             </TouchableOpacity>

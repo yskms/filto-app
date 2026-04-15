@@ -259,7 +259,6 @@ export default function HomeScreen() {
   React.useEffect(() => {
     const autoSync = async () => {
       if (hasAutoSynced) {
-        console.log('[AutoSync] Already synced, skipping');
         return;
       }
 
@@ -267,7 +266,6 @@ export default function HomeScreen() {
         // 設定を確認
         const autoSyncEnabled = await AsyncStorage.getItem('@filto/display_behavior/autoSyncOnStartup');
         if (autoSyncEnabled === 'false') {
-          console.log('[AutoSync] Auto sync is disabled');
           setHasAutoSynced(true); // 無効の場合も実行済みフラグを立てる
           return;
         }
@@ -275,15 +273,12 @@ export default function HomeScreen() {
         // 同期が必要かチェック（30分以上経過時のみ）
         const shouldSync = await SyncService.shouldSync();
         if (!shouldSync) {
-          console.log('[AutoSync] Recently synced, skipping');
           setHasAutoSynced(true);
           return;
         }
 
         // バックグラウンドで同期実行
-        console.log('[AutoSync] Starting background sync...');
         await SyncService.refresh();
-        console.log('[AutoSync] Completed');
         
         // データを再読み込み
         await loadData();
@@ -346,7 +341,6 @@ export default function HomeScreen() {
         return;
       }
 
-      console.log(`Sync completed: ${result.fetched} feeds, ${result.newArticles} new articles`);
 
       // データを再読み込み
       await loadData();

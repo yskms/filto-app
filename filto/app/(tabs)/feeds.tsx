@@ -216,6 +216,7 @@ export default function FeedsScreen() {
       setFeeds(feedList);
     } catch (error) {
       console.error('Failed to load feeds:', error);
+      ErrorHandler.showLoadError();
     }
   }, [currentSort]);
 
