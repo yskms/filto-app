@@ -6,6 +6,7 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
@@ -41,6 +42,7 @@ export const FeedSortModal: React.FC<FeedSortModalProps> = ({
 }) => {
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
+  const tintColor = useThemeColor({}, 'tint');
 
   const handleSelectSort = (sortType: FeedSortType) => {
     onSelectSort(sortType);
@@ -70,10 +72,10 @@ export const FeedSortModal: React.FC<FeedSortModalProps> = ({
                     onPress={() => handleSelectSort(option.type)}
                     activeOpacity={0.7}
                   >
-                    <ThemedText style={styles.optionLabel}>
-                      {currentSort === option.type && '▶ '}
-                      {option.label}
-                    </ThemedText>
+                    <ThemedText style={styles.optionLabel}>{option.label}</ThemedText>
+                    {currentSort === option.type && (
+                      <Ionicons name="checkmark" size={18} color={tintColor} />
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -116,6 +118,9 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: 20,
   },

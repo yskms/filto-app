@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Feed } from '@/types/Feed';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
@@ -24,6 +25,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const iconBg = useThemeColor({}, 'tabIconDefault');
   const tintColor = useThemeColor({}, 'tint');
+  const iconColor = useThemeColor({}, 'text');
 
   const handleSelectFeed = (feedId: string | null) => {
     onSelectFeed(feedId);
@@ -56,7 +58,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
           <View style={[styles.header, { borderBottomColor: borderColor }]}>
             <ThemedText style={styles.title}>フィード選択</ThemedText>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <ThemedText style={styles.closeIcon}>✕</ThemedText>
+              <Ionicons name="close" size={22} color={iconColor} />
             </TouchableOpacity>
           </View>
 
@@ -72,10 +74,10 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
               activeOpacity={0.7}
             >
               <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
-                <ThemedText style={styles.feedIconText}>📰</ThemedText>
+                <Ionicons name="newspaper-outline" size={18} color={iconColor} />
               </View>
               <ThemedText style={styles.feedName}>ALL</ThemedText>
-              {selectedFeedId === null && <ThemedText style={[styles.checkmark, { color: tintColor }]}>✓</ThemedText>}
+              {selectedFeedId === null && <Ionicons name="checkmark" size={20} color={tintColor} />}
             </TouchableOpacity>
 
             {/* 各フィード */}
@@ -93,11 +95,11 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
                   <Image source={{ uri: feed.iconUrl }} style={styles.feedIconImage} />
                 ) : (
                   <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
-                    <ThemedText style={styles.feedIconText}>📰</ThemedText>
+                    <Ionicons name="newspaper-outline" size={18} color={iconColor} />
                   </View>
                 )}
                 <ThemedText style={styles.feedName}>{feed.title}</ThemedText>
-                {selectedFeedId === feed.id && <ThemedText style={[styles.checkmark, { color: tintColor }]}>✓</ThemedText>}
+                {selectedFeedId === feed.id && <Ionicons name="checkmark" size={20} color={tintColor} />}
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -108,7 +110,8 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
             onPress={handleManageFeeds}
             activeOpacity={0.7}
           >
-            <ThemedText style={[styles.manageButtonText, { color: tintColor }]}>Manage Feeds →</ThemedText>
+            <ThemedText style={[styles.manageButtonText, { color: tintColor }]}>Manage Feeds</ThemedText>
+            <Ionicons name="chevron-forward" size={16} color={tintColor} style={styles.manageButtonIcon} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -143,9 +146,6 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  closeIcon: {
-    fontSize: 20,
-  },
   listContainer: {
     flex: 1,
   },
@@ -173,24 +173,24 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginRight: 12,
   },
-  feedIconText: {
-    fontSize: 18,
-  },
   feedName: {
     flex: 1,
     fontSize: 16,
   },
-  checkmark: {
-    fontSize: 18,
-  },
   manageButton: {
+    flexDirection: 'row',
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderTopWidth: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
   manageButtonText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  manageButtonIcon: {
+    marginTop: 1,
   },
 });
