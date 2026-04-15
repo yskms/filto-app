@@ -149,7 +149,7 @@ export const en = {
     themeDark: 'Dark',
     themeSystem: 'System',
     language: 'Language',
-    languageJa: '日本語',
+    languageJa: 'Japanese',
     languageEn: 'English',
     startupBehavior: 'Startup Behavior',
     autoSyncOnStartup: 'Automatically refresh RSS feeds on app startup (only if 30+ minutes have passed)',

@@ -51,7 +51,6 @@ export const GlobalAllowKeywordService = {
       const id = await GlobalAllowKeywordRepository.create(trimmed);
       return { success: true, id };
     } catch (error) {
-      console.error('Failed to create keyword:', error);
       return { success: false, message: '登録に失敗しました' };
     }
   },

@@ -545,7 +545,6 @@ export const RssService = {
 
       throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');
     } catch (error) {
-      console.error(`[RssService] fetchMeta error for ${url}:`, error);
       if (error instanceof Error) {
         throw new Error(`Failed to fetch feed: ${error.message}`);
       }
@@ -841,7 +840,6 @@ export const RssService = {
 
       throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');
     } catch (error) {
-      console.error(`[RssService] fetchArticles error for ${url}:`, error);
       if (error instanceof Error) {
         throw new Error(`Failed to fetch articles: ${error.message}`);
       }

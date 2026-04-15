@@ -106,26 +106,18 @@ export const FeedService = {
       '/feeds/posts/default',
     ];
 
-    console.log(`[FeedService] Starting RSS auto-detection for: ${baseUrl}`);
-
     for (const path of commonPaths) {
       try {
         const testUrl = new URL(path, baseUrl).href;
-        console.log(`[FeedService] Trying: ${testUrl}`);
-        
         // RSSメタデータが取得できるか確認
         await RssService.fetchMeta(testUrl);
-        
-        console.log(`[FeedService] ✅ Found RSS at: ${testUrl}`);
         return testUrl;
-      } catch (error) {
+      } catch (_) {
         // 失敗したら次を試す
-        console.log(`[FeedService] ❌ Failed: ${path}`);
         continue;
       }
     }
 
-    console.log(`[FeedService] RSS auto-detection failed for: ${baseUrl}`);
     return null;
   },
 };

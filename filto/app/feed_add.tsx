@@ -211,7 +211,7 @@ export default function FeedAddScreen() {
 
             {/* Fetch Meta Button */}
             <TouchableOpacity
-              style={[styles.fetchButton, { backgroundColor: '#2e7d32' }, isLoadingMeta && { backgroundColor: disabledBg }]}
+              style={[styles.fetchButton, { backgroundColor: tintColor }, isLoadingMeta && { backgroundColor: disabledBg }]}
               onPress={handleFetchMeta}
               disabled={isLoadingMeta}
               activeOpacity={0.7}
