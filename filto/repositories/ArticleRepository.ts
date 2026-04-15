@@ -243,14 +243,6 @@ export const ArticleRepository = {
   },
 
   /**
-   * フィードIDに紐づく記事を削除
-   */
-  async deleteByFeedId(feedId: string): Promise<void> {
-    const db = openDatabase();
-    db.runSync('DELETE FROM articles WHERE feed_id = ?', [feedId]);
-  },
-
-  /**
    * 古い記事を削除
    * @param days 保持日数（-1: 全削除, 0: 削除しない, 1以上: 指定日数より古い記事を削除）
    * @param includeStarred お気に入り記事も削除するか（デフォルト: false）
