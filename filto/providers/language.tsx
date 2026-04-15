@@ -41,8 +41,8 @@ import React, {
           if (saved === 'ja' || saved === 'en') {
             setLanguageState(saved);
           }
-        } catch (error) {
-          console.error('Failed to load language:', error);
+        } catch (_) {
+          // 読み込み失敗時はデフォルト言語（ja）のまま継続
         }
       };
   
@@ -59,7 +59,6 @@ import React, {
         setLanguageState(lang);
         await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
       } catch (error) {
-        console.error('Failed to save language:', error);
         throw error;
       }
     }, []);
@@ -75,13 +74,11 @@ import React, {
             value = value[k];
           } else {
             // キーが見つからない場合はキー自体を返す
-            console.warn(`Translation key not found: ${key}`);
             return key;
           }
         }
   
         if (typeof value !== 'string') {
-          console.warn(`Translation value is not a string: ${key}`);
           return key;
         }
   

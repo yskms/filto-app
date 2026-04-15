@@ -18,7 +18,7 @@ function RootNavigation() {
   const { mode } = useAppTheme();
 
   useEffect(() => {
-    initDatabase().catch(console.error);
+    initDatabase().catch(() => {});
   }, []);
 
   const backgroundColor = mode === 'dark' ? '#151718' : '#fff';

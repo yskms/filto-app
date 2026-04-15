@@ -164,8 +164,8 @@ export const ArticleRepository = {
               article.isStarred ? 1 : 0,
             ]
           );
-        } catch (error) {
-          console.warn(`Failed to insert article ${article.id}:`, error);
+        } catch (_) {
+          // 1件の挿入失敗は無視して残りを継続
         }
       }
     });
