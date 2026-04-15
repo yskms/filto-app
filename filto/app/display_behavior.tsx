@@ -119,6 +119,7 @@ export default function DisplayBehaviorScreen() {
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const toggleOffBg = useThemeColor({ light: '#e0e0e0', dark: '#555' }, 'background');
+  const toggleOnBg = useThemeColor({ light: '#34C759', dark: '#30d158' }, 'background');
 
   const loadSettings = useCallback(async () => {
     try {
@@ -228,7 +229,7 @@ export default function DisplayBehaviorScreen() {
                 {t('displayBehavior.autoSyncOnStartup')}
               </ThemedText>
             </View>
-            <View style={[styles.toggle, { backgroundColor: autoSyncOnStartup ? '#34C759' : toggleOffBg }]}>
+            <View style={[styles.toggle, { backgroundColor: autoSyncOnStartup ? toggleOnBg : toggleOffBg }]}>
               <View style={[styles.toggleThumb, autoSyncOnStartup && styles.toggleThumbActive]} />
             </View>
           </TouchableOpacity>

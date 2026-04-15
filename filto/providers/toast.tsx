@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { Animated, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -18,6 +19,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insets = useSafeAreaInsets();
+  const scheme = useColorScheme() ?? 'light';
 
   const showToast = useCallback(
     (msg: string, toastType: ToastType = 'success') => {
@@ -63,8 +65,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [slideAnim, opacityAnim]
   );
 
-  const bgColor =
-    type === 'success' ? '#2e7d32' : type === 'error' ? '#c62828' : '#1565c0';
+  const toastColors = {
+    light: { success: '#2e7d32', error: '#c62828', info: '#1565c0' },
+    dark:  { success: '#388e3c', error: '#d32f2f', info: '#1976d2' },
+  };
+  const bgColor = toastColors[scheme][type];
 
   return (
     <ToastContext.Provider value={{ showToast }}>
