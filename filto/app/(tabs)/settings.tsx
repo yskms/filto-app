@@ -26,28 +26,22 @@ const MenuItemRow: React.FC<{
 
   return (
     <TouchableOpacity
-      style={[
-        styles.menuItem,
-        { borderBottomColor: borderColor, backgroundColor },
-        item.disabled && styles.menuItemDisabled,
-      ]}
+      style={[styles.menuItem, { borderBottomColor: borderColor, backgroundColor }]}
       onPress={onPress}
       disabled={item.disabled}
       activeOpacity={0.7}
     >
-      <View style={styles.menuItemLeft}>
-        {item.ionIcon != null && (
-          <Ionicons name={item.ionIcon} size={20} color={iconColor} />
+      <View style={[styles.menuItemContent, item.disabled && styles.menuItemDisabled]}>
+        <View style={styles.menuItemLeft}>
+          {item.ionIcon != null && (
+            <Ionicons name={item.ionIcon} size={20} color={iconColor} />
+          )}
+          <ThemedText style={styles.menuItemText}>{item.title}</ThemedText>
+        </View>
+        {!item.disabled && (
+          <Ionicons name="chevron-forward" size={20} color={iconColor} />
         )}
-        <ThemedText
-          style={[styles.menuItemText, item.disabled && styles.menuItemTextDisabled]}
-        >
-          {item.title}
-        </ThemedText>
       </View>
-      {!item.disabled && (
-        <Ionicons name="chevron-forward" size={20} color={iconColor} />
-      )}
     </TouchableOpacity>
   );
 };
@@ -136,12 +130,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   menuItemDisabled: {
     opacity: 0.5,
@@ -156,9 +152,6 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 16,
-  },
-  menuItemTextDisabled: {
-    opacity: 0.5,
   },
   arrow: {
     fontSize: 20,
