@@ -68,6 +68,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
             <TouchableOpacity
               style={[
                 styles.feedItem,
+                { borderBottomColor: borderColor },
                 selectedFeedId === null && [styles.feedItemSelected, { backgroundColor: iconBg }],
               ]}
               onPress={() => handleSelectFeed(null)}
@@ -86,6 +87,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
                 key={feed.id}
                 style={[
                   styles.feedItem,
+                  { borderBottomColor: borderColor },
                   selectedFeedId === feed.id && [styles.feedItemSelected, { backgroundColor: iconBg }],
                 ]}
                 onPress={() => handleSelectFeed(feed.id)}
@@ -155,7 +157,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   feedItemSelected: {
   },
