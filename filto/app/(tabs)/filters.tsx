@@ -128,28 +128,32 @@ const FiltersHeader: React.FC<{
     // 削除モード時のヘッダー
     return (
       <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-        <TouchableOpacity
-          onPress={onToggleDeleteMode}
-          style={styles.headerButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
-        </TouchableOpacity>
+        <View style={styles.headerSideLeft}>
+          <TouchableOpacity
+            onPress={onToggleDeleteMode}
+            style={styles.headerButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
+          </TouchableOpacity>
+        </View>
 
         <ThemedText style={styles.headerTitle}>{`Delete ${selectedCount}`}</ThemedText>
 
-        <TouchableOpacity
-          onPress={onConfirmDelete}
-          style={styles.headerButton}
-          disabled={selectedCount === 0}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <ThemedText
-            style={[styles.deleteText, { color: dangerColor }, selectedCount === 0 && styles.disabledText]}
+        <View style={styles.headerSideRight}>
+          <TouchableOpacity
+            onPress={onConfirmDelete}
+            style={styles.headerButton}
+            disabled={selectedCount === 0}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            {t('common.delete')}
-          </ThemedText>
-        </TouchableOpacity>
+            <ThemedText
+              style={[styles.deleteText, { color: dangerColor }, selectedCount === 0 && styles.disabledText]}
+            >
+              {t('common.delete')}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -486,6 +490,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  headerSideLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerSideRight: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
   headerButton: {
     padding: 8,

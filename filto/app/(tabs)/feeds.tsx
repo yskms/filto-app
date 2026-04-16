@@ -71,30 +71,34 @@ const FeedsHeaderDeleteMode: React.FC<{
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-      <TouchableOpacity
-        style={styles.headerButton}
-        onPress={onPressCancel}
-        activeOpacity={0.7}
-      >
-        <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
-      </TouchableOpacity>
-      <ThemedText style={styles.selectedCount}>{`Delete ${selectedCount}`}</ThemedText>
-      <TouchableOpacity
-        style={styles.headerButton}
-        onPress={onPressDelete}
-        disabled={selectedCount === 0}
-        activeOpacity={0.7}
-      >
-        <ThemedText
-          style={[
-            styles.deleteText,
-            { color: dangerColor },
-            selectedCount === 0 && styles.deleteTextDisabled,
-          ]}
+      <View style={styles.headerSideLeft}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={onPressCancel}
+          activeOpacity={0.7}
         >
-          {t('common.delete')}
-        </ThemedText>
-      </TouchableOpacity>
+          <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
+        </TouchableOpacity>
+      </View>
+      <ThemedText style={styles.selectedCount}>{`Delete ${selectedCount}`}</ThemedText>
+      <View style={styles.headerSideRight}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={onPressDelete}
+          disabled={selectedCount === 0}
+          activeOpacity={0.7}
+        >
+          <ThemedText
+            style={[
+              styles.deleteText,
+              { color: dangerColor },
+              selectedCount === 0 && styles.deleteTextDisabled,
+            ]}
+          >
+            {t('common.delete')}
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -486,6 +490,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  headerSideLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerSideRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
   headerButton: {
     padding: 8,
     justifyContent: 'center',
@@ -500,6 +512,7 @@ const styles = StyleSheet.create({
   },
   selectedCount: {
     fontSize: 14,
+    fontWeight: '600',
   },
   deleteText: {
     fontSize: 16,
