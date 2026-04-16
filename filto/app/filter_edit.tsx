@@ -39,7 +39,7 @@ const FilterEditHeader: React.FC<{
         <Ionicons name="chevron-back" size={26} color={iconColor} />
       </TouchableOpacity>
       <ThemedText style={styles.headerTitle}>
-        {isEditMode ? 'Edit Filter' : 'Add Filter'}
+        {isEditMode ? t('filters.editFilter') : t('filters.addFilter')}
       </ThemedText>
       <View style={styles.headerRight} />
     </View>

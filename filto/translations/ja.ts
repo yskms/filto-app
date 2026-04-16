@@ -25,12 +25,12 @@ export const ja = {
       refresh: '更新',
     },
   
-    // タブバー (英語のまま)
+    // タブバー
     tabs: {
-      home: 'Home',
-      filters: 'Filters',
-      feeds: 'Feeds',
-      settings: 'Settings',
+      home: 'ホーム',
+      filters: 'フィルタ',
+      feeds: 'フィード',
+      settings: '設定',
     },
   
     // Home画面
@@ -54,7 +54,7 @@ export const ja = {
   
     // Filters画面
     filters: {
-      title: 'Filters',
+      title: 'フィルタ',
       addFilter: 'フィルタを追加',
       editFilter: 'フィルタを編集',
       deleteMode: '削除モード',
@@ -90,7 +90,7 @@ export const ja = {
   
     // Feeds画面
     feeds: {
-      title: 'Feeds',
+      title: 'フィード',
       addFeed: 'フィードを追加',
       editFeed: 'フィードを編集',
       deleteMode: '削除モード',
@@ -135,7 +135,7 @@ export const ja = {
   
     // Settings画面
     settings: {
-      title: 'Settings',
+      title: '設定',
       displayBehavior: '表示と動作',
       dataManagement: 'データ管理',
       globalAllowKeywords: 'グローバル許可キーワード',
@@ -145,7 +145,7 @@ export const ja = {
   
     // Display & Behavior画面
     displayBehavior: {
-      title: 'Display & Behavior',
+      title: '表示と動作',
       readDisplayMode: '既読の表示方法',
       readDisplayDim: '薄く表示',
       readDisplayHide: '非表示',
@@ -163,7 +163,7 @@ export const ja = {
   
     // Data Management画面
     dataManagement: {
-      title: 'Data Management',
+      title: 'データ管理',
       articleRetention: '記事の保持期間',
       retentionPeriodLabel: '保持期間',
       days: '{{count}}日',
@@ -204,7 +204,7 @@ export const ja = {
   
     // Global Allow Keywords画面
     globalAllowKeywords: {
-      title: 'Global Allow Keywords',
+      title: 'グローバル許可キーワード',
       description: 'グローバル許可キーワードは、すべてのフィルタより優先して記事を表示します。',
       inputPlaceholder: 'キーワードを入力',
       remaining: '残り {{count}} 件',
@@ -220,7 +220,7 @@ export const ja = {
   
     // About画面
     about: {
-      title: 'About',
+      title: 'アプリについて',
       appName: 'Filto',
       description: 'キーワードフィルタ機能を持つRSSリーダー',
       developer: '開発者',

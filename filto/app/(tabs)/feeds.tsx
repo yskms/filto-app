@@ -80,7 +80,7 @@ const FeedsHeaderDeleteMode: React.FC<{
           <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
         </TouchableOpacity>
       </View>
-      <ThemedText style={styles.selectedCount}>{`Delete ${selectedCount}`}</ThemedText>
+      <ThemedText style={styles.selectedCount}>{t('feeds.deleteSelected', { count: selectedCount })}</ThemedText>
       <View style={styles.headerSideRight}>
         <TouchableOpacity
           style={styles.headerButton}

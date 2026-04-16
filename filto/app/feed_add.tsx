@@ -160,7 +160,7 @@ export default function FeedAddScreen() {
           >
             <Ionicons name="chevron-back" size={26} color={textColor} />
           </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>Add Feed</ThemedText>
+          <ThemedText style={styles.headerTitle}>{t('feeds.addFeed')}</ThemedText>
           <View style={styles.headerRight} />
         </View>
 

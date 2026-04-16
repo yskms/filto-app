@@ -138,7 +138,7 @@ const FiltersHeader: React.FC<{
           </TouchableOpacity>
         </View>
 
-        <ThemedText style={styles.headerTitle}>{`Delete ${selectedCount}`}</ThemedText>
+        <ThemedText style={styles.headerTitle}>{t('filters.deleteSelected', { count: selectedCount })}</ThemedText>
 
         <View style={styles.headerSideRight}>
           <TouchableOpacity
@@ -161,7 +161,7 @@ const FiltersHeader: React.FC<{
   // 通常モード時のヘッダー
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
-      <ThemedText style={styles.headerTitle}>Filters</ThemedText>
+      <ThemedText style={styles.headerTitle}>{t('filters.title')}</ThemedText>
       <View style={styles.headerButtons}>
         <TouchableOpacity
           style={styles.headerButton}
