@@ -39,6 +39,7 @@ export default function FeedAddScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const dangerColor = useThemeColor({}, 'danger');
   const disabledBg = useThemeColor({ light: '#b0b0b0', dark: '#555' }, 'background');
+  const buttonTextColor = useThemeColor({ light: '#fff', dark: '#151718' }, 'text');
 
   // 起動時に入力欄にフォーカス
   useEffect(() => {
@@ -218,13 +219,13 @@ export default function FeedAddScreen() {
             >
               {isLoadingMeta ? (
                 <View style={styles.fetchButtonContent}>
-                  <ActivityIndicator size="small" color="#fff" />
-                  <ThemedText style={styles.fetchButtonText}> {t('feeds.fetchingMeta')}</ThemedText>
+                  <ActivityIndicator size="small" color={buttonTextColor} />
+                  <ThemedText style={[styles.fetchButtonText, { color: buttonTextColor }]}> {t('feeds.fetchingMeta')}</ThemedText>
                 </View>
               ) : (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="search-outline" size={18} color="#fff" />
-                  <ThemedText style={styles.fetchButtonText}>{t('feeds.fetchFeedMeta')}</ThemedText>
+                  <Ionicons name="search-outline" size={18} color={buttonTextColor} />
+                  <ThemedText style={[styles.fetchButtonText, { color: buttonTextColor }]}>{t('feeds.fetchFeedMeta')}</ThemedText>
                 </View>
               )}
             </TouchableOpacity>
@@ -254,7 +255,7 @@ export default function FeedAddScreen() {
               disabled={isLoading}
               activeOpacity={0.7}
             >
-              <ThemedText style={styles.addButtonText}>
+              <ThemedText style={[styles.addButtonText, { color: buttonTextColor }]}>
                 {isLoading ? t('feeds.addFeedSubmitting') : t('feeds.addFeedSubmit')}
               </ThemedText>
             </TouchableOpacity>

@@ -91,6 +91,7 @@ export default function FilterEditScreen() {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const tintColor = useThemeColor({}, 'tint');
   const dangerColor = useThemeColor({}, 'danger');
+  const buttonTextColor = useThemeColor({ light: '#fff', dark: '#151718' }, 'text');
 
   // 編集モード時、フィルタを読み込む
   React.useEffect(() => {
@@ -260,9 +261,9 @@ export default function FilterEditScreen() {
               activeOpacity={0.7}
             >
               {isSaving ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={buttonTextColor} />
               ) : (
-                <ThemedText style={styles.saveButtonText}>{t('common.save')}</ThemedText>
+                <ThemedText style={[styles.saveButtonText, { color: buttonTextColor }]}>{t('common.save')}</ThemedText>
               )}
             </TouchableOpacity>
 
