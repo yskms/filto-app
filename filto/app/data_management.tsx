@@ -199,8 +199,8 @@ const ManualDeleteModal: React.FC<{
                   activeOpacity={hasTarget ? 0.7 : 1}
                   disabled={!hasTarget}
                 >
-                  <View style={[styles.checkbox, includeStarred && styles.checkboxChecked, !hasTarget && styles.checkboxDisabled]}>
-                    {includeStarred && hasTarget && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  <View style={[styles.checkbox, includeStarred && hasTarget && { backgroundColor: tintColor, borderColor: tintColor }, !hasTarget && styles.checkboxDisabled]}>
+                    {includeStarred && hasTarget && <Ionicons name="checkmark" size={14} color={backgroundColor} />}
                   </View>
                   <ThemedText
                     style={[styles.checkboxLabel, !hasTarget && styles.checkboxLabelDisabled]}
@@ -250,6 +250,7 @@ export default function DataManagementScreen() {
   const arrowColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
   const toggleOffBg = useThemeColor({ light: '#ccc', dark: '#555' }, 'background');
+  const toggleOnBg = useThemeColor({ light: '#34C759', dark: '#30d158' }, 'background');
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
@@ -373,7 +374,7 @@ export default function DataManagementScreen() {
             </ThemedText>
             <TouchableOpacity style={styles.toggleRow} onPress={handleToggleDeleteStarredInAuto} activeOpacity={0.7}>
               <ThemedText style={styles.toggleLabelText}>{t('dataManagement.deleteStarredToo')}</ThemedText>
-              <View style={[styles.toggle, { backgroundColor: deleteStarredInAuto ? tintColor : toggleOffBg }]}>
+              <View style={[styles.toggle, { backgroundColor: deleteStarredInAuto ? toggleOnBg : toggleOffBg }]}>
                 <View style={[styles.toggleThumb, deleteStarredInAuto && styles.toggleThumbActive]} />
               </View>
             </TouchableOpacity>

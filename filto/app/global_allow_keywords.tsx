@@ -167,6 +167,7 @@ export default function GlobalAllowKeywordsScreen() {
   const textColor = useThemeColor({}, 'text');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
   const tintColor = useThemeColor({}, 'tint');
+  const buttonTextColor = useThemeColor({ light: '#fff', dark: '#151718' }, 'text');
 
   return (
     <>
@@ -203,7 +204,7 @@ export default function GlobalAllowKeywordsScreen() {
               activeOpacity={0.7}
               disabled={isAdding}
             >
-              <ThemedText style={styles.addButtonText}>{t('common.add')}</ThemedText>
+              <ThemedText style={[styles.addButtonText, { color: buttonTextColor }]}>{t('common.add')}</ThemedText>
             </TouchableOpacity>
           </View>
 
