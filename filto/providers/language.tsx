@@ -8,9 +8,21 @@ import React, {
     type ReactNode,
   } from 'react';
   import AsyncStorage from '@react-native-async-storage/async-storage';
+  import * as Localization from 'expo-localization';
   import { translations, type SupportedLanguage } from '@/translations';
-  
+
   const LANGUAGE_STORAGE_KEY = '@filto/display_behavior/language';
+
+  function detectSystemLanguage(): SupportedLanguage {
+    const locales = Localization.getLocales();
+    for (const locale of locales) {
+      const lang = locale.languageCode;
+      if (lang && lang in translations) {
+        return lang as SupportedLanguage;
+      }
+    }
+    return 'en';
+  }
   
   interface LanguageContextValue {
     language: SupportedLanguage;
@@ -27,7 +39,7 @@ import React, {
    * アプリ全体の言語設定を管理
    */
   export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [language, setLanguageState] = useState<SupportedLanguage>('ja');
+    const [language, setLanguageState] = useState<SupportedLanguage>(() => detectSystemLanguage());
   
     // 起動時に保存済み言語を読み込む
     useEffect(() => {
@@ -38,8 +50,10 @@ import React, {
           const saved = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
           if (!isMounted) return;
   
-          if (saved === 'ja' || saved === 'en') {
-            setLanguageState(saved);
+          if (saved && saved in translations) {
+            setLanguageState(saved as SupportedLanguage);
+          } else {
+            setLanguageState(detectSystemLanguage());
           }
         } catch (_) {
           // 読み込み失敗時はデフォルト言語（ja）のまま継続
