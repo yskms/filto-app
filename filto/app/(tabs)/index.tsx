@@ -51,12 +51,12 @@ const getTimeAgo = (publishedAt: string, justNow: string): string => {
 };
 
 // 記事アイテムコンポーネント
-const ArticleItem: React.FC<{
+const ArticleItem = React.memo<{
   article: Article;
-  onPress: () => void;
-  onLongPress: () => void;
+  onPress: (article: Article) => void;
+  onLongPress: (article: Article) => void;
   highlightAnim: Animated.Value;
-}> = ({ article, onPress, onLongPress, highlightAnim }) => {
+}>(({ article, onPress, onLongPress, highlightAnim }) => {
   const { t } = useTranslation();
   const timeAgo = getTimeAgo(article.publishedAt, t('home.justNow'));
 
@@ -76,8 +76,8 @@ const ArticleItem: React.FC<{
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      onPress={onPress}
-      onLongPress={onLongPress}
+      onPress={() => onPress(article)}
+      onLongPress={() => onLongPress(article)}
     >
       <Animated.View
         style={[
@@ -125,7 +125,7 @@ const ArticleItem: React.FC<{
       </Animated.View>
     </TouchableOpacity>
   );
-};
+});
 
 // ヘッダーコンポーネント
 const HomeHeader: React.FC<{
@@ -200,12 +200,12 @@ export default function HomeScreen() {
   const highlightAnims = React.useRef<Map<string, Animated.Value>>(new Map());
 
   // 記事のハイライトアニメーションを取得または作成
-  const getHighlightAnim = (articleId: string): Animated.Value => {
+  const getHighlightAnim = React.useCallback((articleId: string): Animated.Value => {
     if (!highlightAnims.current.has(articleId)) {
       highlightAnims.current.set(articleId, new Animated.Value(0));
     }
     return highlightAnims.current.get(articleId)!;
-  };
+  }, []);
 
   // 表示対象外になった記事のアニメーションオブジェクトを解放（メモリリーク防止）
   React.useEffect(() => {
@@ -453,6 +453,15 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const renderItem = React.useCallback(({ item }: { item: Article }) => (
+    <ArticleItem
+      article={item}
+      onPress={handlePressArticle}
+      onLongPress={handleLongPressArticle}
+      highlightAnim={getHighlightAnim(item.id)}
+    />
+  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim]);
+
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
 
@@ -471,15 +480,9 @@ export default function HomeScreen() {
       ) : (
         <FlatList
           data={filteredArticles}
-          renderItem={({ item }) => (
-            <ArticleItem
-              article={item}
-              onPress={() => handlePressArticle(item)}
-              onLongPress={() => handleLongPressArticle(item)}
-              highlightAnim={getHighlightAnim(item.id)}
-            />
-          )}
+          renderItem={renderItem}
           keyExtractor={(item) => item.id}
+          removeClippedSubviews={true}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
