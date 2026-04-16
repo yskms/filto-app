@@ -136,7 +136,7 @@ const FiltersHeader: React.FC<{
           <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
         </TouchableOpacity>
 
-        <ThemedText style={styles.headerTitle}>{t('filters.deleteSelected', { count: selectedCount })}</ThemedText>
+        <ThemedText style={styles.headerTitle}>{`Delete ${selectedCount}`}</ThemedText>
 
         <TouchableOpacity
           onPress={onConfirmDelete}

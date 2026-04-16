@@ -159,7 +159,7 @@ export default function FeedAddScreen() {
           >
             <Ionicons name="chevron-back" size={26} color={textColor} />
           </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>{t('feeds.addFeed')}</ThemedText>
+          <ThemedText style={styles.headerTitle}>Add Feed</ThemedText>
           <View style={styles.headerRight} />
         </View>
 
@@ -185,7 +185,7 @@ export default function FeedAddScreen() {
                 value={url}
                 onChangeText={handleUrlChange}
                 placeholder="https://example.com/feed.xml"
-                placeholderTextColor="#999"
+                placeholderTextColor={borderColor}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
@@ -240,7 +240,7 @@ export default function FeedAddScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholder="My Favorite Blog"
-                placeholderTextColor="#999"
+                placeholderTextColor={borderColor}
                 returnKeyType="done"
                 onSubmitEditing={handleAdd}
               />
