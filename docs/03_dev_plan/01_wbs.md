@@ -181,8 +181,16 @@
 - [x] 起動時自動更新の動作確認
 - [x] グローバル許可リストの動作確認
 - [x] Pro版制限の動作確認
-- [ ] パフォーマンス調整（低優先度、スキップ可）
+- [x] パフォーマンス調整
+  - ArticleItem を React.memo でラップし、不要な再レンダリングを防止
+  - renderItem を useCallback でメモ化
+  - getHighlightAnim を useCallback でラップし参照を固定
+  - FlatList に removeClippedSubviews を追加
 - [x] 多言語対応（ja / en）
+- [x] システム言語に基づく自動言語検出（expo-localization）
+  - 初回起動時にデバイスのシステム言語を自動検出
+  - 対応外言語の場合は英語にフォールバック
+  - 手動設定がある場合はそちらを優先
 - [x] バグ修正・動作確認
   - FilterEdit のプロパティ名不一致バグ修正
   - Feed画面・Filter画面・GlobalAllowKeywords画面のテーマ対応バグ修正
@@ -192,7 +200,7 @@
 → 快適に使える状態
 
 **進捗**:
-- 完了: 18/19タスク（95%）
+- 完了: 20/20タスク（100%）
 
 **振り返り**:
 - **達成**:
