@@ -161,7 +161,7 @@ export default function FeedAddScreen() {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
           >
             <Ionicons name="chevron-back" size={26} color={textColor} />
           </TouchableOpacity>
@@ -284,7 +284,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backButton: {
-    padding: 4,
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 40,
   },
   backIcon: {
     fontSize: 24,

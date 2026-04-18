@@ -132,7 +132,7 @@ const FiltersHeader: React.FC<{
           <TouchableOpacity
             onPress={onToggleDeleteMode}
             style={styles.headerButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
           >
             <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
           </TouchableOpacity>
@@ -145,7 +145,7 @@ const FiltersHeader: React.FC<{
             onPress={onConfirmDelete}
             style={styles.headerButton}
             disabled={selectedCount === 0}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
           >
             <ThemedText
               style={[styles.deleteText, { color: dangerColor }, selectedCount === 0 && styles.disabledText]}

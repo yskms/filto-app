@@ -34,7 +34,7 @@ const FilterEditHeader: React.FC<{
       <TouchableOpacity
         style={styles.backButton}
         onPress={onPressBack}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
       >
         <Ionicons name="chevron-back" size={26} color={iconColor} />
       </TouchableOpacity>

@@ -35,9 +35,10 @@ const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBa
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
       <TouchableOpacity
+        style={styles.backButton}
         onPress={onPressBack}
         activeOpacity={0.7}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
       >
         <Ionicons name="chevron-back" size={26} color={iconColor} />
       </TouchableOpacity>
@@ -436,6 +437,12 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
+  },
+  backButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 40,
   },
   backIcon: { fontSize: 24 },
   headerTitle: { fontSize: 18, fontWeight: '600' },
