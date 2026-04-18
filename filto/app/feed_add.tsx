@@ -31,6 +31,7 @@ export default function FeedAddScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMeta, setIsLoadingMeta] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [fetchSuccess, setFetchSuccess] = useState(false);
   const urlInputRef = useRef<TextInput>(null);
 
   const backgroundColor = useThemeColor({}, 'background');
@@ -76,6 +77,7 @@ export default function FeedAddScreen() {
     if (urlError) {
       setUrlError(null);
     }
+    setFetchSuccess(false);
   };
 
   // クリップボードから貼り付け
@@ -85,6 +87,7 @@ export default function FeedAddScreen() {
       if (clipboardText) {
         setUrl(clipboardText.trim());
         setUrlError(null);
+        setFetchSuccess(false);
       }
     } catch (_) {
     }
@@ -107,12 +110,14 @@ export default function FeedAddScreen() {
       if (meta.title) {
         setName(meta.title);
       }
-      
+
       if (meta.iconUrl) {
         setIconUrl(meta.iconUrl);
       }
 
+      setFetchSuccess(true);
     } catch (_) {
+      setFetchSuccess(false);
       setUrlError(t('feeds.metaFetchFailed'));
     } finally {
       setIsLoadingMeta(false);
@@ -250,9 +255,9 @@ export default function FeedAddScreen() {
 
             {/* Add Button */}
             <TouchableOpacity
-              style={[styles.addButton, { backgroundColor: tintColor }, isLoading && { backgroundColor: disabledBg }]}
+              style={[styles.addButton, { backgroundColor: tintColor }, (isLoading || !fetchSuccess) && { backgroundColor: disabledBg }]}
               onPress={handleAdd}
-              disabled={isLoading}
+              disabled={isLoading || !fetchSuccess}
               activeOpacity={0.7}
             >
               <ThemedText style={[styles.addButtonText, { color: buttonTextColor }]}>
