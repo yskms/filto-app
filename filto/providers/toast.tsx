@@ -66,8 +66,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const toastColors = {
-    light: { success: '#2e7d32', error: '#c62828', info: '#1565c0' },
-    dark:  { success: '#388e3c', error: '#d32f2f', info: '#1976d2' },
+    light: { success: '#3a6b4f', error: '#b03030', info: '#2c5f8a' },
+    dark:  { success: '#4a8a68', error: '#c94040', info: '#3a75a8' },
   };
   const bgColor = toastColors[scheme][type];
 

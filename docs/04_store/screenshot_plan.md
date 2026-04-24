@@ -40,6 +40,8 @@
 | TechCrunch | `https://techcrunch.com/feed/` |
 | NASA | `https://www.nasa.gov/feed/` |
 | The Guardian | `https://www.theguardian.com/world/rss` |
+Wired	テック・カルチャー	https://www.wired.com/feed/rss
+Ars Technica	テック	https://feeds.arstechnica.com/arstechnica/index
 
 ※ Reuters は無料RSS非対応のため除外。実際に登録前にアプリで動作確認すること。
 
