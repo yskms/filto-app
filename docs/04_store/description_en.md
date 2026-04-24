@@ -58,3 +58,9 @@ WHO IT'S FOR
 
 Articles open in your preferred browser.
 Simple. Fast. Yours.
+
+---
+
+## Keywords (App Store / 100 chars)
+
+rss,reader,news,feed,filter,privacy,blog,local,offline,keyword,subscribe,curator,tech,aggregate,sync
