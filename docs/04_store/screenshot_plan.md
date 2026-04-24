@@ -19,6 +19,32 @@
 
 ---
 
+## 登録するRSSフィード
+
+### 日本語版
+
+| フィード名 | URL |
+|---|---|
+| NHKニュース | `https://www.nhk.or.jp/rss/news/cat0.xml` |
+| Gigazine | `https://gigazine.net/news/rss_2.0/` |
+| ITmedia NEWS | `https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml` |
+| 朝日新聞 | `https://www.asahi.com/rss/asahi/newsheadlines.rdf` |
+| CNET Japan | `https://japan.cnet.com/rss/index.rdf` |
+
+### 英語版
+
+| フィード名 | URL |
+|---|---|
+| BBC News | `http://feeds.bbci.co.uk/news/rss.xml` |
+| The Verge | `https://www.theverge.com/rss/index.xml` |
+| TechCrunch | `https://techcrunch.com/feed/` |
+| NASA | `https://www.nasa.gov/feed/` |
+| The Guardian | `https://www.theguardian.com/world/rss` |
+
+※ Reuters は無料RSS非対応のため除外。実際に登録前にアプリで動作確認すること。
+
+---
+
 ## 日本語版
 
 ### B: FilterEdit
