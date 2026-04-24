@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import { AppThemeProvider, useAppTheme } from '@/providers/theme';
@@ -16,11 +16,6 @@ export const unstable_settings = {
 
 function RootNavigation() {
   const { mode } = useAppTheme();
-
-  useEffect(() => {
-    initDatabase().catch(() => {});
-  }, []);
-
   const backgroundColor = mode === 'dark' ? '#151718' : '#fff';
 
   return (
@@ -45,6 +40,18 @@ function RootNavigation() {
 }
 
 export default function RootLayout() {
+  const [dbReady, setDbReady] = useState(false);
+
+  useEffect(() => {
+    initDatabase()
+      .catch(() => {})
+      .finally(() => setDbReady(true));
+  }, []);
+
+  if (!dbReady) {
+    return null;
+  }
+
   return (
     <AppThemeProvider>
       <LanguageProvider>
