@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "filto",
+    "name": "Filto",
     "slug": "filto",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yskms.filto"
+      "bundleIdentifier": "com.yskms.filto",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -45,6 +48,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "54a7764a-0fd9-40dd-9698-f7f970326732"
+      }
     }
   }
 }
