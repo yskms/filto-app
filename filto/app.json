@@ -16,6 +16,7 @@
       }
     },
     "android": {
+      "package": "com.yskms.filto",
       "adaptiveIcon": {
         "backgroundColor": "#055C71",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
