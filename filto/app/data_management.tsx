@@ -146,6 +146,7 @@ const ManualDeleteModal: React.FC<{
   onCancel,
 }) => {
   const hasTarget = stats && stats.total > 0;
+  const hasStarredAvailable = stats && stats.starred > 0;
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
   const { t } = useTranslation();
@@ -195,16 +196,16 @@ const ManualDeleteModal: React.FC<{
                   <ThemedText style={styles.modalInfo}>{t('dataManagement.manualDeleteNoTargets')}</ThemedText>
                 )}
                 <TouchableOpacity
-                  style={[styles.checkboxRow, !hasTarget && styles.checkboxRowDisabled]}
-                  onPress={() => hasTarget && onChangeIncludeStarred(!includeStarred)}
-                  activeOpacity={hasTarget ? 0.7 : 1}
-                  disabled={!hasTarget}
+                  style={[styles.checkboxRow, !hasStarredAvailable && styles.checkboxRowDisabled]}
+                  onPress={() => hasStarredAvailable && onChangeIncludeStarred(!includeStarred)}
+                  activeOpacity={hasStarredAvailable ? 0.7 : 1}
+                  disabled={!hasStarredAvailable}
                 >
-                  <View style={[styles.checkbox, includeStarred && hasTarget && { backgroundColor: tintColor, borderColor: tintColor }, !hasTarget && styles.checkboxDisabled]}>
-                    {includeStarred && hasTarget && <Ionicons name="checkmark" size={14} color={backgroundColor} />}
+                  <View style={[styles.checkbox, includeStarred && hasStarredAvailable && { backgroundColor: tintColor, borderColor: tintColor }, !hasStarredAvailable && styles.checkboxDisabled]}>
+                    {includeStarred && hasStarredAvailable && <Ionicons name="checkmark" size={14} color={backgroundColor} />}
                   </View>
                   <ThemedText
-                    style={[styles.checkboxLabel, !hasTarget && styles.checkboxLabelDisabled]}
+                    style={[styles.checkboxLabel, !hasStarredAvailable && styles.checkboxLabelDisabled]}
                   >
                     {t('dataManagement.deleteStarredToo')}
                   </ThemedText>

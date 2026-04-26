@@ -325,6 +325,14 @@ export const ArticleRepository = {
         `
       );
 
+      // includeStarred=false の場合でも、存在するお気に入り件数を返す（チェックボックスの活性判定用）
+      if (!includeStarred) {
+        const starredCount = db.getFirstSync<{ count: number }>(
+          'SELECT COUNT(*) as count FROM articles WHERE is_starred = 1'
+        )?.count || 0;
+        return { ...(stats || { total: 0, unread: 0, read: 0, starred: 0 }), starred: starredCount };
+      }
+
       return stats || { total: 0, unread: 0, read: 0, starred: 0 };
     }
 
@@ -358,6 +366,15 @@ export const ArticleRepository = {
       `,
       [cutoffTime]
     );
+
+    // includeStarred=false の場合でも、対象期間に存在するお気に入り件数を返す（チェックボックスの活性判定用）
+    if (!includeStarred) {
+      const starredCount = db.getFirstSync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM articles WHERE fetched_at < ? AND is_starred = 1',
+        [cutoffTime]
+      )?.count || 0;
+      return { ...(stats || { total: 0, unread: 0, read: 0, starred: 0 }), starred: starredCount };
+    }
 
     return stats || { total: 0, unread: 0, read: 0, starred: 0 };
   },
