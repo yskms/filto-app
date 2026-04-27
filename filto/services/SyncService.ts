@@ -24,8 +24,10 @@ export const SyncService = {
    */
   async refresh(): Promise<{ fetched: number; newArticles: number; deleted?: number; offline?: boolean }> {
     // ネットワーク接続チェック
+    // isConnected / isInternetReachable は boolean | null のため、
+    // null（判定不能）はオンラインとして扱い、明示的に false のときのみオフライン扱いにする
     const networkState = await Network.getNetworkStateAsync();
-    if (!networkState.isConnected || !networkState.isInternetReachable) {
+    if (networkState.isConnected === false || networkState.isInternetReachable === false) {
       return { fetched: 0, newArticles: 0, offline: true };
     }
 
