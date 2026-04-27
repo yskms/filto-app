@@ -1,4 +1,28 @@
 import * as SQLite from 'expo-sqlite';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const SEED_KEY = '@filto/defaultFeedsSeeded';
+
+const DEFAULT_FEEDS = [
+  {
+    id: 'default_feed_bbc',
+    title: 'BBC News',
+    url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
+    orderNo: 1,
+  },
+  {
+    id: 'default_feed_techcrunch',
+    title: 'TechCrunch',
+    url: 'https://techcrunch.com/feed/',
+    orderNo: 2,
+  },
+  {
+    id: 'default_feed_verge',
+    title: 'The Verge',
+    url: 'https://www.theverge.com/rss/index.xml',
+    orderNo: 3,
+  },
+];
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -118,4 +142,26 @@ export async function initDatabase(): Promise<void> {
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_global_allow_keyword ON global_allow_keywords(keyword);
   `);
+}
+
+/**
+ * デフォルトフィードを初回起動時のみ登録する
+ */
+export async function seedDefaultFeeds(): Promise<void> {
+  const seeded = await AsyncStorage.getItem(SEED_KEY);
+  if (seeded) return;
+
+  const database = openDatabase();
+  const createdAt = Math.floor(Date.now() / 1000);
+
+  database.withTransactionSync(() => {
+    for (const feed of DEFAULT_FEEDS) {
+      database.runSync(
+        'INSERT OR IGNORE INTO feeds (id, title, url, icon_url, order_no, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [feed.id, feed.title, feed.url, null, feed.orderNo, createdAt]
+      );
+    }
+  });
+
+  await AsyncStorage.setItem(SEED_KEY, 'true');
 }

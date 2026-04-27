@@ -2,13 +2,14 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } fro
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { AppThemeProvider, useAppTheme } from '@/providers/theme';
 import { LanguageProvider } from '@/providers/language';
 import { ToastProvider } from '@/providers/toast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { initDatabase } from '@/database/init';
+import { initDatabase, seedDefaultFeeds } from '@/database/init';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -44,12 +45,17 @@ export default function RootLayout() {
 
   useEffect(() => {
     initDatabase()
+      .then(() => seedDefaultFeeds())
       .catch(() => {})
       .finally(() => setDbReady(true));
   }, []);
 
   if (!dbReady) {
-    return null;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   return (
