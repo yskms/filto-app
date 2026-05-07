@@ -227,6 +227,7 @@ export const ja = {
       license: 'ライセンス',
       privacyPolicy: 'プライバシーポリシー',
       termsOfService: '利用規約',
+      contact: 'お問い合わせ',
     },
   
     // エラーメッセージ

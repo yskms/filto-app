@@ -227,6 +227,7 @@ export const en = {
     license: 'License',
     privacyPolicy: 'Privacy Policy',
     termsOfService: 'Terms of Service',
+    contact: 'Contact',
   },
 
   // Error messages

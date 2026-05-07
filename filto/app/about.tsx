@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+
+const CONTACT_EMAIL = 'yskms.studio@gmail.com';
 
 const AboutHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -46,6 +48,14 @@ export default function AboutScreen() {
           <ThemedText style={styles.description}>
             {t('about.description')}
           </ThemedText>
+          <TouchableOpacity
+            style={styles.contactRow}
+            onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}`)}
+            activeOpacity={0.7}
+          >
+            <ThemedText style={styles.contactLabel}>{t('about.contact')}</ThemedText>
+            <ThemedText style={styles.contactEmail}>{CONTACT_EMAIL}</ThemedText>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </>
@@ -83,5 +93,8 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
   appName: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
   version: { fontSize: 14, marginBottom: 16 },
-  description: { fontSize: 14, textAlign: 'center' },
+  description: { fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  contactRow: { alignItems: 'center', gap: 4 },
+  contactLabel: { fontSize: 12, opacity: 0.6 },
+  contactEmail: { fontSize: 14 },
 });
