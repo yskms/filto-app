@@ -50,6 +50,7 @@ export const ja = {
       offlineError: 'オフラインです。ネットワーク接続を確認してください。',
       articleOpenError: '記事を開けませんでした',
       favoriteError: 'お気に入りの変更に失敗しました',
+      articlesFiltered: '{{count}}件がルールにより非表示',
     },
   
     // Filters画面

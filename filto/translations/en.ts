@@ -50,6 +50,7 @@ export const en = {
     offlineError: 'You are offline. Please check your network connection.',
     articleOpenError: 'Failed to open article',
     favoriteError: 'Failed to update favorite',
+    articlesFiltered: '{{count}} articles filtered by your rules',
   },
 
   // Filters screen

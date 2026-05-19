@@ -189,6 +189,7 @@ export default function HomeScreen() {
   const [filters, setFilters] = React.useState<Filter[]>([]);
   const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
   const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
+  const [blockedByFilters, setBlockedByFilters] = React.useState(0);
   
   // Display & Behavior（既読表示など）
   const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
@@ -322,12 +323,15 @@ export default function HomeScreen() {
 
     // グローバル許可キーワードを文字列配列に変換
     const allowKeywords = globalAllowKeywords.map(k => k.keyword);
-    
+
     // フィルタエンジンで評価
     let displayed = filtered.filter(article => {
       const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
       return !shouldBlock; // ブロックされない記事のみ表示
     });
+
+    // キーワードフィルタでブロックされた件数を記録
+    setBlockedByFilters(filtered.length - displayed.length);
 
     // 既読表示設定に基づいてフィルタリング
     if (readDisplay === 'hide') {
@@ -465,6 +469,9 @@ export default function HomeScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
 
+  const filterBarBg = useThemeColor({ light: '#f0f4ff', dark: '#1a1f2e' }, 'background');
+  const filterBarText = useThemeColor({ light: '#4a6fa5', dark: '#7aa2d4' }, 'text');
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <HomeHeader
@@ -474,6 +481,15 @@ export default function HomeScreen() {
         onPressStarFilter={handleToggleStarFilter}
         onPressRefresh={handleRefresh}
       />
+
+      {blockedByFilters > 0 && (
+        <View style={[styles.filterBar, { backgroundColor: filterBarBg }]}>
+          <Ionicons name="funnel" size={12} color={filterBarText} style={styles.filterBarIcon} />
+          <Text style={[styles.filterBarText, { color: filterBarText }]}>
+            {t('home.articlesFiltered', { count: blockedByFilters })}
+          </Text>
+        </View>
+      )}
 
       {isLoading ? (
         <LoadingView />
@@ -560,6 +576,18 @@ const styles = StyleSheet.create({
   },
   refreshIcon: {
     fontSize: 20,
+  },
+  filterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  filterBarIcon: {
+    marginRight: 6,
+  },
+  filterBarText: {
+    fontSize: 12,
   },
   listContent: {
     flexGrow: 1,
