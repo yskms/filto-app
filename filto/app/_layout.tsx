@@ -9,7 +9,7 @@ import { AppThemeProvider, useAppTheme } from '@/providers/theme';
 import { LanguageProvider } from '@/providers/language';
 import { ToastProvider } from '@/providers/toast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { initDatabase, seedDefaultFeeds } from '@/database/init';
+import { initDatabase, seedDefaultFeeds, seedDefaultFilters } from '@/database/init';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -46,6 +46,7 @@ export default function RootLayout() {
   useEffect(() => {
     initDatabase()
       .then(() => seedDefaultFeeds())
+      .then(() => seedDefaultFilters())
       .catch(() => {})
       .finally(() => setDbReady(true));
   }, []);

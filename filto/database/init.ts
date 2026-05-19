@@ -2,6 +2,13 @@ import * as SQLite from 'expo-sqlite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SEED_KEY = '@filto/defaultFeedsSeeded';
+const FILTER_SEED_KEY = '@filto/defaultFiltersSeeded';
+
+const DEFAULT_FILTERS = [
+  { block_keyword: 'Trump', allow_keyword: null, target_title: 1, target_description: 1 },
+  { block_keyword: 'Google', allow_keyword: null, target_title: 1, target_description: 1 },
+  { block_keyword: 'AI', allow_keyword: null, target_title: 1, target_description: 1 },
+];
 
 const DEFAULT_FEEDS = [
   {
@@ -142,6 +149,28 @@ export async function initDatabase(): Promise<void> {
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_global_allow_keyword ON global_allow_keywords(keyword);
   `);
+}
+
+/**
+ * デフォルトフィルタを初回起動時のみ登録する
+ */
+export async function seedDefaultFilters(): Promise<void> {
+  const seeded = await AsyncStorage.getItem(FILTER_SEED_KEY);
+  if (seeded) return;
+
+  const database = openDatabase();
+  const now = Math.floor(Date.now() / 1000);
+
+  database.withTransactionSync(() => {
+    for (const filter of DEFAULT_FILTERS) {
+      database.runSync(
+        'INSERT OR IGNORE INTO filters (block_keyword, allow_keyword, target_title, target_description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [filter.block_keyword, filter.allow_keyword, filter.target_title, filter.target_description, now, now]
+      );
+    }
+  });
+
+  await AsyncStorage.setItem(FILTER_SEED_KEY, 'true');
 }
 
 /**
