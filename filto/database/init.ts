@@ -7,7 +7,7 @@ const FILTER_SEED_KEY = '@filto/defaultFiltersSeeded';
 const DEFAULT_FILTERS = [
   { block_keyword: 'Trump', allow_keyword: null, target_title: 1, target_description: 1 },
   { block_keyword: 'Google', allow_keyword: null, target_title: 1, target_description: 1 },
-  { block_keyword: 'AI', allow_keyword: null, target_title: 1, target_description: 1 },
+  { block_keyword: 'Apple', allow_keyword: null, target_title: 1, target_description: 1 },
 ];
 
 const DEFAULT_FEEDS = [
