@@ -9,7 +9,8 @@ import { AppThemeProvider, useAppTheme } from '@/providers/theme';
 import { LanguageProvider } from '@/providers/language';
 import { ToastProvider } from '@/providers/toast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { initDatabase, seedDefaultFeeds, seedDefaultFilters } from '@/database/init';
+import { initDatabase, isOnboardingComplete } from '@/database/init';
+import OnboardingScreen from '@/components/OnboardingScreen';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -42,12 +43,13 @@ function RootNavigation() {
 
 export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(false);
 
   useEffect(() => {
     initDatabase()
-      .then(() => seedDefaultFeeds())
-      .then(() => seedDefaultFilters())
-      .catch(() => {})
+      .then(isOnboardingComplete)
+      .then(setOnboardingDone)
+      .catch(() => setOnboardingDone(true))
       .finally(() => setDbReady(true));
   }, []);
 
@@ -63,7 +65,9 @@ export default function RootLayout() {
     <AppThemeProvider>
       <LanguageProvider>
         <ToastProvider>
-          <RootNavigation />
+          {onboardingDone
+            ? <RootNavigation />
+            : <OnboardingScreen onComplete={() => setOnboardingDone(true)} />}
         </ToastProvider>
       </LanguageProvider>
     </AppThemeProvider>

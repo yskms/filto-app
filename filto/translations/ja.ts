@@ -219,6 +219,21 @@ export const ja = {
       confirmDelete: 'このキーワードを削除しますか?',
     },
   
+    // オンボーディング画面
+    onboarding: {
+      step1Title: 'どんなニュースを読みますか？',
+      step1Subtitle: '気になるカテゴリを選んでください',
+      step1Hint: 'フィード画面からいつでも追加・削除できます',
+      step2Title: 'ブロックしたいキーワードはありますか？',
+      step2Subtitle: 'チェックした項目の記事は非表示になります（任意）',
+      next: '次へ',
+      back: '戻る',
+      start: 'はじめる',
+      skip: 'スキップ',
+      stepIndicator: '{{current}} / {{total}}',
+      selectAtLeastOne: '少なくとも1つのカテゴリを選択してください',
+    },
+
     // About画面
     about: {
       title: 'アプリについて',

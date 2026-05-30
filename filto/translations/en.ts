@@ -219,6 +219,21 @@ export const en = {
     confirmDelete: 'Delete this keyword?',
   },
 
+  // Onboarding screen
+  onboarding: {
+    step1Title: 'What news do you want to read?',
+    step1Subtitle: 'Select the categories you\'re interested in',
+    step1Hint: 'You can add or remove feeds anytime from the Feeds tab',
+    step2Title: 'Want to block any keywords?',
+    step2Subtitle: 'Checked topics will be hidden from your feed (optional)',
+    next: 'Next',
+    back: 'Back',
+    start: 'Get Started',
+    skip: 'Skip',
+    stepIndicator: '{{current}} / {{total}}',
+    selectAtLeastOne: 'Please select at least one category',
+  },
+
   // About screen
   about: {
     title: 'About',

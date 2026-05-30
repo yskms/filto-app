@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Localization from 'expo-localization';
 
 const SEED_KEY = '@filto/defaultFeedsSeeded';
 const FILTER_SEED_KEY = '@filto/defaultFiltersSeeded';
@@ -10,7 +11,28 @@ const DEFAULT_FILTERS = [
   { block_keyword: 'Apple', allow_keyword: null, target_title: 1, target_description: 1 },
 ];
 
-const DEFAULT_FEEDS = [
+const DEFAULT_FEEDS_JA = [
+  {
+    id: 'default_feed_nhk',
+    title: 'NHK ニュース',
+    url: 'https://www3.nhk.or.jp/rss/news/cat0.xml',
+    orderNo: 1,
+  },
+  {
+    id: 'default_feed_gigazine',
+    title: 'Gigazine',
+    url: 'https://gigazine.net/news/rss_2.0/',
+    orderNo: 2,
+  },
+  {
+    id: 'default_feed_itmedia',
+    title: 'ITmedia',
+    url: 'https://rss.itmedia.co.jp/rss/2.0/itmediamain.xml',
+    orderNo: 3,
+  },
+];
+
+const DEFAULT_FEEDS_EN = [
   {
     id: 'default_feed_bbc',
     title: 'BBC News',
@@ -30,6 +52,11 @@ const DEFAULT_FEEDS = [
     orderNo: 3,
   },
 ];
+
+function isJapaneseLocale(): boolean {
+  const locales = Localization.getLocales();
+  return locales.some((locale) => locale.languageCode === 'ja');
+}
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -173,18 +200,102 @@ export async function seedDefaultFilters(): Promise<void> {
   await AsyncStorage.setItem(FILTER_SEED_KEY, 'true');
 }
 
+export const ONBOARDING_KEY = '@filto/onboardingCompleted';
+
+const ALL_STORAGE_KEYS = [
+  SEED_KEY,
+  FILTER_SEED_KEY,
+  ONBOARDING_KEY,
+  '@filto/data_management/articleRetentionDays',
+  '@filto/data_management/deleteStarredInAutoDelete',
+  '@filto/display_behavior/autoSyncOnStartup',
+  '@filto/display_behavior/language',
+  '@filto/display_behavior/readDisplay',
+  '@filto/display_behavior/theme',
+  '@filto/lastSyncTime',
+];
+
 /**
- * デフォルトフィードを初回起動時のみ登録する
+ * すべてのデータをリセットする（DB全テーブル削除 + AsyncStorage全クリア）
+ */
+export async function resetAllData(): Promise<void> {
+  const database = openDatabase();
+  database.withTransactionSync(() => {
+    database.execSync('DELETE FROM articles');
+    database.execSync('DELETE FROM feeds');
+    database.execSync('DELETE FROM filters');
+    database.execSync('DELETE FROM global_allow_keywords');
+  });
+  await AsyncStorage.multiRemove(ALL_STORAGE_KEYS);
+}
+
+/**
+ * オンボーディング完了済みかどうかを判定する（既存ユーザーも含む）
+ */
+export async function isOnboardingComplete(): Promise<boolean> {
+  const [onboardingDone, feedsSeeded] = await Promise.all([
+    AsyncStorage.getItem(ONBOARDING_KEY),
+    AsyncStorage.getItem(SEED_KEY),
+  ]);
+  return !!(onboardingDone || feedsSeeded);
+}
+
+/**
+ * オンボーディングで選択されたフィードを登録する
+ */
+export async function seedFeedsFromSelection(
+  feeds: { id: string; title: string; url: string; iconUrl?: string }[]
+): Promise<void> {
+  const database = openDatabase();
+  const createdAt = Math.floor(Date.now() / 1000);
+
+  database.withTransactionSync(() => {
+    feeds.forEach((feed, index) => {
+      database.runSync(
+        'INSERT OR IGNORE INTO feeds (id, title, url, icon_url, order_no, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [feed.id, feed.title, feed.url, feed.iconUrl ?? null, index + 1, createdAt]
+      );
+    });
+  });
+
+  await AsyncStorage.setItem(SEED_KEY, 'true');
+  await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+}
+
+/**
+ * オンボーディングで選択されたトピックのブロックキーワードを登録する
+ */
+export async function seedFiltersFromTopics(keywords: string[]): Promise<void> {
+  if (keywords.length > 0) {
+    const database = openDatabase();
+    const now = Math.floor(Date.now() / 1000);
+
+    database.withTransactionSync(() => {
+      for (const keyword of keywords) {
+        database.runSync(
+          'INSERT OR IGNORE INTO filters (block_keyword, allow_keyword, target_title, target_description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+          [keyword, null, 1, 1, now, now]
+        );
+      }
+    });
+  }
+
+  await AsyncStorage.setItem(FILTER_SEED_KEY, 'true');
+}
+
+/**
+ * デフォルトフィードを初回起動時のみ登録する（スキップ時・既存ユーザー用）
  */
 export async function seedDefaultFeeds(): Promise<void> {
   const seeded = await AsyncStorage.getItem(SEED_KEY);
   if (seeded) return;
 
+  const feeds = isJapaneseLocale() ? DEFAULT_FEEDS_JA : DEFAULT_FEEDS_EN;
   const database = openDatabase();
   const createdAt = Math.floor(Date.now() / 1000);
 
   database.withTransactionSync(() => {
-    for (const feed of DEFAULT_FEEDS) {
+    for (const feed of feeds) {
       database.runSync(
         'INSERT OR IGNORE INTO feeds (id, title, url, icon_url, order_no, created_at) VALUES (?, ?, ?, ?, ?, ?)',
         [feed.id, feed.title, feed.url, null, feed.orderNo, createdAt]

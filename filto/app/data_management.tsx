@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
+import { resetAllData } from '@/database/init';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -266,6 +267,7 @@ export default function DataManagementScreen() {
     starred: number;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -346,6 +348,31 @@ export default function DataManagementScreen() {
     }
   };
 
+  const handleResetAllData = () => {
+    Alert.alert(
+      t('dataManagement.resetAllData'),
+      t('dataManagement.confirmResetAll'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            setIsResetting(true);
+            try {
+              await resetAllData();
+              Alert.alert(t('common.done'), t('dataManagement.resetComplete'));
+            } catch (_) {
+              Alert.alert(t('common.error'), t('dataManagement.resetError'));
+            } finally {
+              setIsResetting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleCancelManualDelete = () => {
     setManualDeleteModalVisible(false);
     setManualDeleteDays(-1);
@@ -366,6 +393,9 @@ export default function DataManagementScreen() {
 
       {isDeleting && (
         <LoadingOverlay message={t('dataManagement.deleteInProgress')} />
+      )}
+      {isResetting && (
+        <LoadingOverlay message={t('dataManagement.resetInProgress')} />
       )}
 
       <ScrollView style={styles.content}>
@@ -403,6 +433,12 @@ export default function DataManagementScreen() {
           <ComingSoonRow title={t('dataManagement.opmlImportExport')} />
           <View style={styles.comingSoonDivider} />
           <ComingSoonRow title={t('dataManagement.dataBackupRestore')} />
+        </SettingSection>
+
+        <SettingSection title="">
+          <TouchableOpacity style={styles.resetRow} onPress={handleResetAllData} activeOpacity={0.7} disabled={isResetting}>
+            <ThemedText style={styles.resetText}>{t('dataManagement.resetAllData')}</ThemedText>
+          </TouchableOpacity>
         </SettingSection>
       </ScrollView>
 
@@ -556,4 +592,6 @@ const styles = StyleSheet.create({
   modalButtonTextCancel: { fontSize: 16, fontWeight: '500' },
   modalButtonTextConfirm: { fontSize: 16, fontWeight: '600' },
   modalButtonTextDisabled: { opacity: 0.5 },
+  resetRow: { paddingVertical: 4, alignItems: 'center' },
+  resetText: { fontSize: 16, color: '#d32f2f' },
 });
