@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -140,6 +140,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
   );
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -167,6 +168,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
       return;
     }
     setStep(2);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
   };
 
   const handleComplete = async () => {
@@ -197,7 +199,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
         </ThemedText>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <ThemedText style={styles.title}>
           {step === 1 ? t('onboarding.step1Title') : t('onboarding.step2Title')}
         </ThemedText>
@@ -249,9 +251,9 @@ export default function OnboardingScreen({ onComplete }: Props) {
                   {checked && (
                     <Ionicons name="checkmark" size={13} color="#fff" style={styles.chipIcon} />
                   )}
-                  <Text style={[styles.chipLabel, checked && styles.chipLabelChecked]}>
+                  <ThemedText style={[styles.chipLabel, checked && styles.chipLabelChecked]}>
                     {kw}
-                  </Text>
+                  </ThemedText>
                 </TouchableOpacity>
               );
             })}
@@ -263,7 +265,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
         {step === 2 && (
           <TouchableOpacity
             style={[styles.btn, styles.backBtn, { borderColor }]}
-            onPress={() => setStep(1)}
+            onPress={() => { setStep(1); scrollRef.current?.scrollTo({ y: 0, animated: false }); }}
             disabled={loading}
           >
             <ThemedText style={styles.backBtnText}>{t('onboarding.back')}</ThemedText>
@@ -324,7 +326,7 @@ const styles = StyleSheet.create({
   },
   chipChecked: { backgroundColor: ACCENT, borderColor: ACCENT },
   chipIcon: { marginRight: 4 },
-  chipLabel: { fontSize: 15, fontWeight: '500' },
+  chipLabel: { fontSize: 15, fontWeight: '500', lineHeight: 20 },
   chipLabelChecked: { color: '#fff' },
   footer: {
     flexDirection: 'row',
