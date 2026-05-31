@@ -65,7 +65,7 @@ const FEED_CATEGORIES: Record<string, FeedCategory[]> = {
       id: 'tech',
       label: 'Technology',
       feeds: [
-        { id: 'feed_techcrunch', title: 'TechCrunch', url: 'https://techcrunch.com/feed/' },
+        { id: 'feed_arstechnica', title: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index' },
         { id: 'feed_verge', title: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
       ],
     },
@@ -113,7 +113,10 @@ const BLOCK_KEYWORDS: Record<string, string[]> = {
 
 function getFaviconUrl(feedUrl: string): string {
   try {
-    const domain = new URL(feedUrl).hostname;
+    let domain = new URL(feedUrl).hostname;
+    // feeds./feed. はRSS配信専用サブドメインでGoogleのファビコンDBに未登録のケースがあるため除去する
+    if (domain.startsWith('feeds.')) domain = domain.slice('feeds.'.length);
+    else if (domain.startsWith('feed.')) domain = domain.slice('feed.'.length);
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
   } catch {
     return '';
