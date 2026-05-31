@@ -184,18 +184,22 @@ export default function HomeScreen() {
   const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null);
   const [showStarredOnly, setShowStarredOnly] = React.useState(false);
   const [feedModalVisible, setFeedModalVisible] = React.useState(false);
-  
+
   // フィルタ関連
   const [filters, setFilters] = React.useState<Filter[]>([]);
   const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
   const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
   const [blockedByFilters, setBlockedByFilters] = React.useState(0);
-  
+
   // Display & Behavior（既読表示など）
   const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
-  
+
   // 起動時自動同期の実行済みフラグ
   const [hasAutoSynced, setHasAutoSynced] = React.useState(false);
+
+  // スクロール位置保持
+  const flatListRef = React.useRef<FlatList>(null);
+  const isInitialLoad = React.useRef(true);
 
   // ハイライトアニメーション用（記事IDごとに管理）
   const highlightAnims = React.useRef<Map<string, Animated.Value>>(new Map());
@@ -225,27 +229,27 @@ export default function HomeScreen() {
     return feed?.title || t('home.allFeeds');
   }, [selectedFeedId, feeds, t]);
 
-  // データを読み込む
-  const loadData = React.useCallback(async () => {
+  // データを読み込む（showLoading=falseの場合はスピナーを出さずバックグラウンド更新）
+  const loadData = React.useCallback(async (showLoading = true) => {
     try {
-      setIsLoading(true);
-      
+      if (showLoading) setIsLoading(true);
+
       // フィード一覧を取得
       const feedList = await FeedService.list();
       setFeeds(feedList);
-      
+
       // 記事一覧を取得
       const articleList = await ArticleService.getArticles(selectedFeedId ?? undefined);
       setArticles(articleList);
-      
+
       // フィルタ一覧を取得
       const filterList = await FilterService.list();
       setFilters(filterList);
-      
+
       // グローバル許可キーワード一覧を取得
       const globalAllowList = await GlobalAllowKeywordService.list();
       setGlobalAllowKeywords(globalAllowList);
-      
+
       // Display & Behavior の設定を取得
       const savedReadDisplay = await AsyncStorage.getItem('@filto/display_behavior/readDisplay');
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
@@ -254,14 +258,20 @@ export default function HomeScreen() {
     } catch (error) {
       ErrorHandler.showLoadError(t);
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   }, [selectedFeedId]);
 
   // 画面フォーカス時にデータを読み込む
+  // 初回のみスピナーを表示し、タブ切り替えで戻った時はスクロール位置を保持したまま更新
   useFocusEffect(
     React.useCallback(() => {
-      loadData();
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+        loadData(true);
+      } else {
+        loadData(false);
+      }
     }, [loadData])
   );
 
@@ -280,13 +290,6 @@ export default function HomeScreen() {
           return;
         }
 
-        // 同期が必要かチェック（30分以上経過時のみ）
-        const shouldSync = await SyncService.shouldSync();
-        if (!shouldSync) {
-          setHasAutoSynced(true);
-          return;
-        }
-
         // バックグラウンドで同期実行
         await SyncService.refresh();
         
@@ -300,12 +303,7 @@ export default function HomeScreen() {
       }
     };
 
-    // 少し遅延させて、画面表示を優先
-    const timer = setTimeout(() => {
-      autoSync();
-    }, 1500); // 1.5秒後に開始
-
-    return () => clearTimeout(timer);
+    autoSync();
   }, [hasAutoSynced, loadData]);
 
   // フィルタ適用
@@ -369,6 +367,8 @@ export default function HomeScreen() {
 
   const handleSelectFeed = React.useCallback((feedId: string | null) => {
     setSelectedFeedId(feedId);
+    // フィード切り替え時はトップへ戻す
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
   }, []);
 
   const handleToggleStarFilter = React.useCallback(() => {
@@ -495,6 +495,7 @@ export default function HomeScreen() {
         <LoadingView />
       ) : (
         <FlatList
+          ref={flatListRef}
           data={filteredArticles}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
