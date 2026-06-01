@@ -31,7 +31,6 @@
     },
     "plugins": [
       "expo-router",
-      "./plugins/withAndroidSplashIconBackground",
       [
         "expo-splash-screen",
         {
@@ -45,7 +44,8 @@
         }
       ],
       "expo-sqlite",
-      "expo-localization"
+      "expo-localization",
+      "./plugins/withAndroidSplashIconBackground"
     ],
     "experiments": {
       "typedRoutes": true,
