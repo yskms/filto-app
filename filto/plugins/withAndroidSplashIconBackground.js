@@ -1,7 +1,10 @@
-const { withAndroidColors, withAndroidColorsNight, withAndroidStyles } = require('expo/config-plugins');
+const { withAndroidColors, withAndroidColorsNight, withFinalizedMod } = require('expo/config-plugins');
+const path = require('path');
+const fs = require('fs');
 
+const LIGHT_COLOR = '#ffffff';
+const DARK_COLOR = '#055C71';
 const COLOR_NAME = 'splashscreen_icon_bg';
-const SPLASH_THEME = 'Theme.App.SplashScreen';
 
 function addOrUpdateColor(colorsXml, name, value) {
   if (!colorsXml.resources.color) colorsXml.resources.color = [];
@@ -15,36 +18,51 @@ function addOrUpdateColor(colorsXml, name, value) {
 }
 
 module.exports = function withAndroidSplashIconBackground(config) {
-  // ライトモード: 白背景と同色にして丸を見えなくする
+  // 色リソースの追加（withAndroidColors/Nightは通常通り動作する）
   config = withAndroidColors(config, (c) => {
-    c.modResults = addOrUpdateColor(c.modResults, COLOR_NAME, '#ffffff');
+    c.modResults = addOrUpdateColor(c.modResults, COLOR_NAME, LIGHT_COLOR);
     return c;
   });
 
-  // ダークモード: ティール背景と同色にして丸を見えなくする
   config = withAndroidColorsNight(config, (c) => {
-    c.modResults = addOrUpdateColor(c.modResults, COLOR_NAME, '#055C71');
+    c.modResults = addOrUpdateColor(c.modResults, COLOR_NAME, DARK_COLOR);
     return c;
   });
 
-  // スプラッシュテーマに windowSplashScreenIconBackgroundColor を追加
-  config = withAndroidStyles(config, (c) => {
-    const styles = c.modResults.resources;
-    if (!styles?.style) return c;
-
-    const splashTheme = styles.style.find((s) => s.$?.name === SPLASH_THEME);
-    if (splashTheme) {
-      if (!splashTheme.item) splashTheme.item = [];
-      splashTheme.item = splashTheme.item.filter(
-        (item) => item.$?.name !== 'android:windowSplashScreenIconBackgroundColor'
+  // withFinalizedModは全てのmodが完了した後に確実に実行される
+  // expo-splash-screenがstyles.xmlを書き込んだ後にパッチを当てる
+  config = withFinalizedMod(config, [
+    'android',
+    async (c) => {
+      const stylesPath = path.join(
+        c.modRequest.platformProjectRoot,
+        'app', 'src', 'main', 'res', 'values', 'styles.xml'
       );
-      splashTheme.item.push({
-        $: { name: 'android:windowSplashScreenIconBackgroundColor' },
-        _: `@color/${COLOR_NAME}`,
-      });
-    }
-    return c;
-  });
+
+      if (!fs.existsSync(stylesPath)) return c;
+
+      let content = fs.readFileSync(stylesPath, 'utf8');
+
+      // 既存エントリがあれば削除
+      content = content.replace(
+        /\s*<item name="android:windowSplashScreenIconBackgroundColor">.*?<\/item>/g,
+        ''
+      );
+
+      // Theme.App.SplashScreen の </style> 直前に挿入
+      const updated = content.replace(
+        /(<style name="Theme\.App\.SplashScreen"[^>]*>[\s\S]*?)(<\/style>)/,
+        (_, before, end) =>
+          `${before}    <item name="android:windowSplashScreenIconBackgroundColor">@color/${COLOR_NAME}</item>\n  ${end}`
+      );
+
+      if (updated !== content) {
+        fs.writeFileSync(stylesPath, updated, 'utf8');
+      }
+
+      return c;
+    },
+  ]);
 
   return config;
 };
