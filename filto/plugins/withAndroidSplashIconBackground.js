@@ -43,17 +43,17 @@ module.exports = function withAndroidSplashIconBackground(config) {
 
       let content = fs.readFileSync(stylesPath, 'utf8');
 
-      // 既存エントリがあれば削除
+      // 既存エントリがあれば削除（android:あり・なし両方）
       content = content.replace(
-        /\s*<item name="android:windowSplashScreenIconBackgroundColor">.*?<\/item>/g,
+        /\s*<item name="(?:android:)?windowSplashScreenIconBackgroundColor">.*?<\/item>/g,
         ''
       );
 
-      // Theme.App.SplashScreen の </style> 直前に挿入
+      // Theme.App.SplashScreen の </style> 直前に挿入（android:なし）
       const updated = content.replace(
         /(<style name="Theme\.App\.SplashScreen"[^>]*>[\s\S]*?)(<\/style>)/,
         (_, before, end) =>
-          `${before}    <item name="android:windowSplashScreenIconBackgroundColor">@color/${COLOR_NAME}</item>\n  ${end}`
+          `${before}    <item name="windowSplashScreenIconBackgroundColor">@color/${COLOR_NAME}</item>\n  ${end}`
       );
 
       if (updated !== content) {
