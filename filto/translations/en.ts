@@ -137,6 +137,12 @@ export const en = {
     addFeedSubmit: 'Add feed',
     addFeedSubmitting: 'Adding...',
     invalidUrlShort: 'Invalid URL',
+    copyUrl: 'Copy URL',
+    urlCopied: 'URL copied',
+    saveError: 'Failed to save feed',
+    feedNameRequired: 'Please enter feed name',
+    metaFetched: 'Feed info updated',
+    fetchRequired: 'Fetch feed info after changing the URL',
   },
 
   // Settings screen

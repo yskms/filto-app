@@ -137,6 +137,12 @@ export const ja = {
       addFeedSubmit: '追加する',
       addFeedSubmitting: '追加中...',
       invalidUrlShort: '無効なURLです',
+      copyUrl: 'URLをコピー',
+      urlCopied: 'URLをコピーしました',
+      saveError: 'フィードの保存に失敗しました',
+      feedNameRequired: 'フィード名を入力してください',
+      metaFetched: 'フィード情報を更新しました',
+      fetchRequired: 'URLを変更したらフィード情報を取得してください',
     },
   
     // Settings画面

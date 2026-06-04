@@ -111,6 +111,7 @@ const FeedItem: React.FC<{
   isSwipeOpen: boolean;
   onToggleSelect: () => void;
   onSwipeDelete: () => void;
+  onPressEdit: () => void;
   swipeableRef: React.RefObject<SwipeableMethods | null>;
   onSwipeableWillOpen: () => void;
   onSwipeableWillClose: (feedId: string) => void;
@@ -121,6 +122,7 @@ const FeedItem: React.FC<{
   isSwipeOpen,
   onToggleSelect,
   onSwipeDelete,
+  onPressEdit,
   swipeableRef,
   onSwipeableWillOpen,
   onSwipeableWillClose,
@@ -196,7 +198,18 @@ const FeedItem: React.FC<{
       onSwipeableWillClose={() => onSwipeableWillClose(feed.id)}
       overshootRight={false}
     >
-      {content}
+      <TouchableOpacity
+        onPress={() => {
+          if (isSwipeOpen && swipeableRef.current) {
+            swipeableRef.current.close();
+          } else {
+            onPressEdit();
+          }
+        }}
+        activeOpacity={0.7}
+      >
+        {content}
+      </TouchableOpacity>
     </Swipeable>
   );
 };
@@ -311,6 +324,13 @@ export default function FeedsScreen() {
     openSwipeIdRef.current = null;
     setOpenSwipeId(null);
     router.push('/feed_add');
+  };
+
+  const handlePressEdit = (feedId: string) => {
+    closeOpenSwipe();
+    openSwipeIdRef.current = null;
+    setOpenSwipeId(null);
+    router.push(`/feed_edit?feedId=${feedId}`);
   };
 
   const handleToggleSelect = (id: string) => {
@@ -441,6 +461,7 @@ export default function FeedsScreen() {
                 isSwipeOpen={isSwipeOpen}
                 onToggleSelect={() => handleToggleSelect(item.id)}
                 onSwipeDelete={() => handleSwipeDelete(item)}
+                onPressEdit={() => handlePressEdit(item.id)}
                 swipeableRef={swipeableRef}
                 onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
                 onSwipeableWillClose={handleSwipeableWillClose}
