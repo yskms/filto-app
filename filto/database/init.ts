@@ -2,6 +2,8 @@ import * as SQLite from 'expo-sqlite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 
+import { getDefaultFeedsFlat } from '@/constants/defaultFeeds';
+
 const SEED_KEY = '@filto/defaultFeedsSeeded';
 const FILTER_SEED_KEY = '@filto/defaultFiltersSeeded';
 
@@ -9,48 +11,6 @@ const DEFAULT_FILTERS = [
   { block_keyword: 'Trump', allow_keyword: null, target_title: 1, target_description: 1 },
   { block_keyword: 'Google', allow_keyword: null, target_title: 1, target_description: 1 },
   { block_keyword: 'Apple', allow_keyword: null, target_title: 1, target_description: 1 },
-];
-
-const DEFAULT_FEEDS_JA = [
-  {
-    id: 'default_feed_nhk',
-    title: 'NHK ニュース',
-    url: 'https://www3.nhk.or.jp/rss/news/cat0.xml',
-    orderNo: 1,
-  },
-  {
-    id: 'default_feed_gigazine',
-    title: 'Gigazine',
-    url: 'https://gigazine.net/news/rss_2.0/',
-    orderNo: 2,
-  },
-  {
-    id: 'default_feed_itmedia',
-    title: 'ITmedia',
-    url: 'https://rss.itmedia.co.jp/rss/2.0/itmediamain.xml',
-    orderNo: 3,
-  },
-];
-
-const DEFAULT_FEEDS_EN = [
-  {
-    id: 'default_feed_bbc',
-    title: 'BBC News',
-    url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
-    orderNo: 1,
-  },
-  {
-    id: 'default_feed_techcrunch',
-    title: 'TechCrunch',
-    url: 'https://techcrunch.com/feed/',
-    orderNo: 2,
-  },
-  {
-    id: 'default_feed_verge',
-    title: 'The Verge',
-    url: 'https://www.theverge.com/rss/index.xml',
-    orderNo: 3,
-  },
 ];
 
 function isJapaneseLocale(): boolean {
@@ -290,17 +250,17 @@ export async function seedDefaultFeeds(): Promise<void> {
   const seeded = await AsyncStorage.getItem(SEED_KEY);
   if (seeded) return;
 
-  const feeds = isJapaneseLocale() ? DEFAULT_FEEDS_JA : DEFAULT_FEEDS_EN;
+  const feeds = getDefaultFeedsFlat(isJapaneseLocale() ? 'ja' : 'en');
   const database = openDatabase();
   const createdAt = Math.floor(Date.now() / 1000);
 
   database.withTransactionSync(() => {
-    for (const feed of feeds) {
+    feeds.forEach((feed, index) => {
       database.runSync(
         'INSERT OR IGNORE INTO feeds (id, title, url, icon_url, order_no, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [feed.id, feed.title, feed.url, null, feed.orderNo, createdAt]
+        [feed.id, feed.title, feed.url, null, index + 1, createdAt]
       );
-    }
+    });
   });
 
   await AsyncStorage.setItem(SEED_KEY, 'true');

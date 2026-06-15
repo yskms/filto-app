@@ -1,0 +1,1700 @@
+[
+  {
+    "lang": "en",
+    "category": "auto",
+    "title": "Autoblog",
+    "url": "https://www.autoblog.com/rss.xml"
+  },
+  {
+    "lang": "en",
+    "category": "auto",
+    "title": "Car and Driver",
+    "url": "https://www.caranddriver.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "auto",
+    "title": "Electrek",
+    "url": "https://electrek.co/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "auto",
+    "title": "Jalopnik",
+    "url": "https://jalopnik.com/rss"
+  },
+  {
+    "lang": "en",
+    "category": "business",
+    "title": "Business Insider",
+    "url": "https://www.businessinsider.com/rss"
+  },
+  {
+    "lang": "en",
+    "category": "business",
+    "title": "CNBC Top News",
+    "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+  },
+  {
+    "lang": "en",
+    "category": "business",
+    "title": "Fast Company",
+    "url": "https://www.fastcompany.com/latest/rss"
+  },
+  {
+    "lang": "en",
+    "category": "business",
+    "title": "Forbes Business",
+    "url": "https://www.forbes.com/business/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "business",
+    "title": "Fortune",
+    "url": "https://fortune.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "business",
+    "title": "MarketWatch",
+    "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories"
+  },
+  {
+    "lang": "en",
+    "category": "culture",
+    "title": "BuzzFeed",
+    "url": "https://www.buzzfeed.com/index.xml"
+  },
+  {
+    "lang": "en",
+    "category": "culture",
+    "title": "Slate",
+    "url": "https://slate.com/feeds/all.rss"
+  },
+  {
+    "lang": "en",
+    "category": "culture",
+    "title": "The Atlantic",
+    "url": "https://www.theatlantic.com/feed/all/"
+  },
+  {
+    "lang": "en",
+    "category": "culture",
+    "title": "Vice",
+    "url": "https://www.vice.com/en/rss"
+  },
+  {
+    "lang": "en",
+    "category": "culture",
+    "title": "Vox",
+    "url": "https://www.vox.com/rss/index.xml"
+  },
+  {
+    "lang": "en",
+    "category": "design",
+    "title": "Colossal",
+    "url": "https://www.thisiscolossal.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "design",
+    "title": "Core77",
+    "url": "https://www.core77.com/rss"
+  },
+  {
+    "lang": "en",
+    "category": "design",
+    "title": "Designboom",
+    "url": "https://www.designboom.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "design",
+    "title": "Dezeen",
+    "url": "https://www.dezeen.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "design",
+    "title": "Smashing Magazine",
+    "url": "https://www.smashingmagazine.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "entertainment",
+    "title": "Billboard",
+    "url": "https://www.billboard.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "entertainment",
+    "title": "Deadline",
+    "url": "https://deadline.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "entertainment",
+    "title": "Entertainment Weekly",
+    "url": "https://ew.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "entertainment",
+    "title": "IndieWire",
+    "url": "https://www.indiewire.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "entertainment",
+    "title": "Pitchfork",
+    "url": "https://pitchfork.com/rss/news/"
+  },
+  {
+    "lang": "en",
+    "category": "entertainment",
+    "title": "Rolling Stone",
+    "url": "https://www.rollingstone.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "entertainment",
+    "title": "The Hollywood Reporter",
+    "url": "https://www.hollywoodreporter.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "entertainment",
+    "title": "Variety",
+    "url": "https://variety.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "fashion",
+    "title": "Elle",
+    "url": "https://www.elle.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "fashion",
+    "title": "GQ",
+    "url": "https://www.gq.com/feed/rss"
+  },
+  {
+    "lang": "en",
+    "category": "fashion",
+    "title": "Harper's Bazaar",
+    "url": "https://www.harpersbazaar.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "fashion",
+    "title": "Vogue",
+    "url": "https://www.vogue.com/feed/rss"
+  },
+  {
+    "lang": "en",
+    "category": "food",
+    "title": "Bon Appetit",
+    "url": "https://www.bonappetit.com/feed/rss"
+  },
+  {
+    "lang": "en",
+    "category": "food",
+    "title": "Eater",
+    "url": "https://www.eater.com/rss/index.xml"
+  },
+  {
+    "lang": "en",
+    "category": "food",
+    "title": "Epicurious",
+    "url": "https://www.epicurious.com/feed/rss"
+  },
+  {
+    "lang": "en",
+    "category": "food",
+    "title": "Food52",
+    "url": "https://food52.com/blog.rss"
+  },
+  {
+    "lang": "en",
+    "category": "food",
+    "title": "Serious Eats",
+    "url": "https://www.seriouseats.com/feeds/all"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "Eurogamer",
+    "url": "https://www.eurogamer.net/feed"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "GameSpot",
+    "url": "https://www.gamespot.com/feeds/mashup/"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "GamesRadar+",
+    "url": "https://www.gamesradar.com/rss/"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "IGN",
+    "url": "https://feeds.ign.com/ign/all"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "Kotaku",
+    "url": "https://kotaku.com/rss"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "Nintendo Life",
+    "url": "https://www.nintendolife.com/feeds/latest"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "PC Gamer",
+    "url": "https://www.pcgamer.com/rss/"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "Polygon",
+    "url": "https://www.polygon.com/rss/index.xml"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "Rock Paper Shotgun",
+    "url": "https://www.rockpapershotgun.com/feed"
+  },
+  {
+    "lang": "en",
+    "category": "game",
+    "title": "VG247",
+    "url": "https://www.vg247.com/feed"
+  },
+  {
+    "lang": "en",
+    "category": "health",
+    "title": "Healthline",
+    "url": "https://www.healthline.com/rss"
+  },
+  {
+    "lang": "en",
+    "category": "science",
+    "title": "Live Science",
+    "url": "https://www.livescience.com/feeds/all"
+  },
+  {
+    "lang": "en",
+    "category": "science",
+    "title": "Nature",
+    "url": "https://www.nature.com/nature.rss"
+  },
+  {
+    "lang": "en",
+    "category": "science",
+    "title": "New Scientist",
+    "url": "https://www.newscientist.com/feed/home/"
+  },
+  {
+    "lang": "en",
+    "category": "science",
+    "title": "Phys.org",
+    "url": "https://phys.org/rss-feed/"
+  },
+  {
+    "lang": "en",
+    "category": "science",
+    "title": "Quanta Magazine",
+    "url": "https://www.quantamagazine.org/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "science",
+    "title": "Science Daily",
+    "url": "https://www.sciencedaily.com/rss/all.xml"
+  },
+  {
+    "lang": "en",
+    "category": "science",
+    "title": "Space.com",
+    "url": "https://www.space.com/feeds/all"
+  },
+  {
+    "lang": "en",
+    "category": "sports",
+    "title": "BBC Sport",
+    "url": "https://feeds.bbci.co.uk/sport/rss.xml"
+  },
+  {
+    "lang": "en",
+    "category": "sports",
+    "title": "CBS Sports",
+    "url": "https://www.cbssports.com/rss/headlines/"
+  },
+  {
+    "lang": "en",
+    "category": "sports",
+    "title": "ESPN",
+    "url": "https://www.espn.com/espn/rss/news"
+  },
+  {
+    "lang": "en",
+    "category": "sports",
+    "title": "Goal",
+    "url": "https://www.goal.com/feeds/en/news"
+  },
+  {
+    "lang": "en",
+    "category": "sports",
+    "title": "Sky Sports",
+    "url": "https://www.skysports.com/rss/12040"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "9to5Google",
+    "url": "https://9to5google.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "9to5Mac",
+    "url": "https://9to5mac.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Android Authority",
+    "url": "https://www.androidauthority.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Android Police",
+    "url": "https://www.androidpolice.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Ars Technica",
+    "url": "https://feeds.arstechnica.com/arstechnica/index"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Digital Trends",
+    "url": "https://www.digitaltrends.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Engadget",
+    "url": "https://www.engadget.com/rss.xml"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Gizmodo",
+    "url": "https://gizmodo.com/rss"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "MacRumors",
+    "url": "https://feeds.macrumors.com/MacRumors-All"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Mashable",
+    "url": "https://mashable.com/feeds/rss/all"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "TechCrunch",
+    "url": "https://techcrunch.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "TechRadar",
+    "url": "https://www.techradar.com/rss"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "The Next Web",
+    "url": "https://thenextweb.com/feed"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "The Register",
+    "url": "https://www.theregister.com/headlines.atom"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "The Verge",
+    "url": "https://www.theverge.com/rss/index.xml"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Tom's Hardware",
+    "url": "https://www.tomshardware.com/feeds/all"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "VentureBeat",
+    "url": "https://venturebeat.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "Wired",
+    "url": "https://www.wired.com/feed/rss"
+  },
+  {
+    "lang": "en",
+    "category": "tech",
+    "title": "ZDNet",
+    "url": "https://www.zdnet.com/news/rss.xml"
+  },
+  {
+    "lang": "en",
+    "category": "travel",
+    "title": "Conde Nast Traveler",
+    "url": "https://www.cntraveler.com/feed/rss"
+  },
+  {
+    "lang": "en",
+    "category": "travel",
+    "title": "Lonely Planet",
+    "url": "https://www.lonelyplanet.com/news/feed/atom/"
+  },
+  {
+    "lang": "en",
+    "category": "travel",
+    "title": "Travel + Leisure",
+    "url": "https://www.travelandleisure.com/feeds/all"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "ABC News",
+    "url": "https://abcnews.go.com/abcnews/topstories"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "Al Jazeera",
+    "url": "https://www.aljazeera.com/xml/rss/all.xml"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "BBC News",
+    "url": "https://feeds.bbci.co.uk/news/rss.xml"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "BBC World",
+    "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "CBS News",
+    "url": "https://www.cbsnews.com/latest/rss/main"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "DW News",
+    "url": "https://rss.dw.com/rdf/rss-en-all"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "New York Times Home",
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "New York Times World",
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "NPR News",
+    "url": "https://feeds.npr.org/1001/rss.xml"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "Sky News World",
+    "url": "https://feeds.skynews.com/feeds/rss/world.xml"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "The Guardian World",
+    "url": "https://www.theguardian.com/world/rss"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "Time",
+    "url": "https://time.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "world",
+    "title": "Washington Post World",
+    "url": "https://feeds.washingtonpost.com/rss/world"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "numan",
+    "url": "https://numan.tokyo/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "アキバ総研",
+    "url": "https://akiba-souken.com/rss/anime/anime.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "アニメ!アニメ!",
+    "url": "https://animeanime.jp/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "アニメイトタイムズ",
+    "url": "https://www.animatetimes.com/rss/"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "マグミクス",
+    "url": "https://magmix.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "auto",
+    "title": "Auto Messe Web",
+    "url": "https://www.automesseweb.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "auto",
+    "title": "Car Watch",
+    "url": "https://car.watch.impress.co.jp/data/rss/1.0/car/feed.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "auto",
+    "title": "clicccar",
+    "url": "https://clicccar.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "auto",
+    "title": "WEB CARTOP",
+    "url": "https://www.webcartop.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "auto",
+    "title": "ベストカーWeb",
+    "url": "https://bestcarweb.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "auto",
+    "title": "レスポンス (Response.jp)",
+    "url": "https://response.jp/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "Forbes JAPAN",
+    "url": "https://forbesjapan.com/list/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "ITmedia ビジネス",
+    "url": "https://rss.itmedia.co.jp/rss/2.0/business.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "LIMO",
+    "url": "https://limo.media/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "MONEY PLUS",
+    "url": "https://media.moneyforward.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "PRESIDENT Online",
+    "url": "https://president.jp/list/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "ZUU online",
+    "url": "https://zuuonline.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "ダイヤモンド・オンライン",
+    "url": "https://diamond.jp/list/feed/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "ビジネスインサイダー日本版",
+    "url": "https://www.businessinsider.jp/feed/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "ファイナンシャルフィールド",
+    "url": "https://financial-field.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "マネーポストWEB",
+    "url": "https://www.moneypost.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "ロイター 日本",
+    "url": "https://assets.wor.jp/rss/rdf/reuters/top.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "東洋経済オンライン",
+    "url": "https://toyokeizai.net/list/feed/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "business",
+    "title": "弁護士ドットコムニュース",
+    "url": "https://www.bengo4.com/topics/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "dev",
+    "title": "Publickey",
+    "url": "https://www.publickey1.jp/atom.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "dev",
+    "title": "Zenn",
+    "url": "https://zenn.dev/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "dev",
+    "title": "はてブ テクノロジー",
+    "url": "https://b.hatena.ne.jp/hotentry/it.rss"
+  },
+  {
+    "lang": "ja",
+    "category": "education",
+    "title": "リセマム",
+    "url": "https://resemom.jp/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "BARKS",
+    "url": "https://www.barks.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "CINRA",
+    "url": "https://www.cinra.net/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "CINRA NEWS",
+    "url": "https://www.cinra.net/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "KAI-YOU",
+    "url": "https://kai-you.net/rss/all"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "okmusic",
+    "url": "https://okmusic.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "ORICON NEWS",
+    "url": "https://www.oricon.co.jp/rss/news/"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "Real Sound",
+    "url": "https://realsound.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "Real Sound 映画部",
+    "url": "https://realsound.jp/movie/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "SPICE",
+    "url": "https://spice.eplus.jp/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "THE FIRST TIMES",
+    "url": "https://thefirsttimes.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "お笑いナタリー",
+    "url": "https://natalie.mu/owarai/feed/news"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "コミックナタリー",
+    "url": "https://natalie.mu/comic/feed/news"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "シネマカフェ",
+    "url": "https://www.cinemacafe.net/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "シネマトゥデイ",
+    "url": "https://www.cinematoday.jp/rss/news.rss"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "モデルプレス",
+    "url": "https://feed.mdpr.jp/rss/export/mdpr-entertainment.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "映画.com",
+    "url": "https://eiga.com/rss/news/"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "映画ナタリー",
+    "url": "https://natalie.mu/eiga/feed/news"
+  },
+  {
+    "lang": "ja",
+    "category": "entertainment",
+    "title": "音楽ナタリー",
+    "url": "https://natalie.mu/music/feed/news"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "ar web",
+    "url": "https://ar-mag.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "BAILA",
+    "url": "https://baila.hpplus.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "CanCam.jp",
+    "url": "https://cancam.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "Domani",
+    "url": "https://domani.shogakukan.co.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "ELLE JAPAN",
+    "url": "https://www.elle.com/jp/feed_articles/all/rss.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "FASHIONSNAP",
+    "url": "https://www.fashionsnap.com/rss/all.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "GINGER",
+    "url": "https://gingerweb.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "Hanako",
+    "url": "https://hanako.tokyo/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "LEE",
+    "url": "https://lee.hpplus.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "MAQUIA ONLINE",
+    "url": "https://maquia.hpplus.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "MORE",
+    "url": "https://more.hpplus.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "non-no Web",
+    "url": "https://nonno.hpplus.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "Numero TOKYO",
+    "url": "https://numero.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "Oggi.jp",
+    "url": "https://oggi.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "Precious.jp",
+    "url": "https://precious.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "VERY",
+    "url": "https://veryweb.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "VOCE",
+    "url": "https://i-voce.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "VOGUE JAPAN",
+    "url": "https://www.vogue.co.jp/feed/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "with online",
+    "url": "https://withonline.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "WWD JAPAN",
+    "url": "https://www.wwdjapan.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "ファッションプレス",
+    "url": "https://www.fashion-press.net/rss/news.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "美人百花",
+    "url": "https://bijinhyakka.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fashion",
+    "title": "美的.com",
+    "url": "https://www.biteki.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "ESSE online",
+    "url": "https://esse-online.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "favy",
+    "url": "https://favy.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "kufura",
+    "url": "https://kufura.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "macaroni",
+    "url": "https://macaro-ni.jp/rss/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "えん食べ",
+    "url": "https://entabe.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "サンキュ!",
+    "url": "https://39mag.benesse.ne.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "ヨムーノ",
+    "url": "https://yomuno.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "レタスクラブ",
+    "url": "https://www.lettuceclub.net/news/rss.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "食楽web",
+    "url": "https://www.syokuraku-web.com/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "4Gamer.net",
+    "url": "https://www.4gamer.net/rss/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "AUTOMATON",
+    "url": "https://automaton-media.com/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "Game*Spark",
+    "url": "https://www.gamespark.jp/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "Gamer",
+    "url": "https://www.gamer.ne.jp/rss/news.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "IGN Japan",
+    "url": "https://jp.ign.com/feed.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "インサイド",
+    "url": "https://www.inside-games.jp/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "ゲームウィズ",
+    "url": "https://gamewith.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "コタク・ジャパン",
+    "url": "https://www.kotaku.jp/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "ファミ通.com",
+    "url": "https://www.famitsu.com/feeds/rss.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "電撃オンライン",
+    "url": "https://dengekionline.com/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "4MEEE",
+    "url": "https://4meee.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "Casa BRUTUS",
+    "url": "https://casabrutus.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "CHANTO WEB",
+    "url": "https://chanto.jp.net/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "folk",
+    "url": "https://folk-media.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "GetNavi web",
+    "url": "https://getnavi.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "grape",
+    "url": "https://grapee.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "Lmaga.jp",
+    "url": "https://www.lmaga.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "macaroni",
+    "url": "https://macaro-ni.jp/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "michill",
+    "url": "https://michill.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "Pacoma",
+    "url": "https://www.pacoma.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "Pen Online",
+    "url": "https://www.pen-online.com/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "Pouch (youpouch)",
+    "url": "https://youpouch.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "RoomClip mag",
+    "url": "https://roomclip.jp/mag/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "roomie",
+    "url": "https://www.roomie.jp/feed/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "ROOMIE",
+    "url": "https://www.roomie.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "TABI LABO",
+    "url": "https://tabi-labo.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "TRILL",
+    "url": "https://trilltrill.jp/articles.rss"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "ウレぴあ総研",
+    "url": "https://ure.pia.co.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "ロケットニュース24",
+    "url": "https://rocketnews24.com/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "AERA dot.",
+    "url": "https://dot.asahi.com/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "BuzzFeed Japan",
+    "url": "https://www.buzzfeed.com/jp.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "excite ニュース",
+    "url": "https://www.excite.co.jp/feed/News/"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "HuffPost Japan",
+    "url": "https://www.huffingtonpost.jp/feeds/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "J-CASTニュース",
+    "url": "https://www.j-cast.com/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Newsweek日本版",
+    "url": "https://www.newsweekjapan.jp/rss.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "NEWSポストセブン",
+    "url": "https://www.news-postseven.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "NHKニュース 社会",
+    "url": "https://www.nhk.or.jp/rss/news/cat1.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "NHKニュース 主要",
+    "url": "https://www.nhk.or.jp/rss/news/cat0.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Smart FLASH",
+    "url": "https://smart-flash.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Yahoo!ニュース 国際",
+    "url": "https://news.yahoo.co.jp/rss/topics/world.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Yahoo!ニュース 主要",
+    "url": "https://news.yahoo.co.jp/rss/topics/top-picks.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "クーリエ・ジャポン",
+    "url": "https://courrier.jp/news/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "スポーツ報知",
+    "url": "https://hochi.news/rss/index.rss"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "デイリー新潮",
+    "url": "https://www.dailyshincho.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "ハフポスト 速報",
+    "url": "https://www.huffingtonpost.jp/news/feeds/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "まいどなニュース",
+    "url": "https://maidonanews.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "ライブドアニュース",
+    "url": "https://news.livedoor.com/topics/rss/top.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "リアルライブ",
+    "url": "https://npn.co.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "現代ビジネス",
+    "url": "https://gendai.media/list/feed/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "産経ニュース",
+    "url": "https://www.sankei.com/rss/news/flash.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "時事通信",
+    "url": "https://www.jiji.com/rss/ranking.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "週刊女性PRIME",
+    "url": "https://www.jprime.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "女性自身",
+    "url": "https://jisin.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "朝日新聞デジタル",
+    "url": "https://www.asahi.com/rss/asahi/newsheadlines.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "日刊SPA!",
+    "url": "https://nikkan-spa.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "文春オンライン",
+    "url": "https://bunshun.jp/list/feed/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "毎日新聞",
+    "url": "https://mainichi.jp/rss/etc/mainichi-flash.rss"
+  },
+  {
+    "lang": "ja",
+    "category": "science",
+    "title": "MELOS",
+    "url": "https://melos.media/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "science",
+    "title": "Tarzan Web",
+    "url": "https://tarzanweb.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "science",
+    "title": "WIRED.jp",
+    "url": "https://wired.jp/feed/rss"
+  },
+  {
+    "lang": "ja",
+    "category": "science",
+    "title": "ナショナルジオグラフィック日本版",
+    "url": "https://natgeo.nikkeibp.co.jp/atcl/news/feed/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "science",
+    "title": "ナゾロジー",
+    "url": "https://nazology.kusuguru.co.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "science",
+    "title": "ニュートン Newton",
+    "url": "https://www.newtonpress.co.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "Full-Count",
+    "url": "https://full-count.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "Number Web",
+    "url": "https://number.bunshun.jp/list/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "THE ANSWER",
+    "url": "https://the-ans.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "THE DIGEST",
+    "url": "https://thedigestweb.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "ゲキサカ",
+    "url": "https://web.gekisaka.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "サッカーキング",
+    "url": "https://www.soccer-king.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "サッカーダイジェストWeb",
+    "url": "https://www.soccerdigestweb.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "サンスポ",
+    "url": "https://www.sanspo.com/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "スポニチ 速報",
+    "url": "https://www.sponichi.co.jp/rss/news_flash.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "バスケットボールキング",
+    "url": "https://basketballking.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "フットボールチャンネル",
+    "url": "https://www.footballchannel.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "ベースボールキング",
+    "url": "https://baseballking.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "日刊スポーツ",
+    "url": "https://www.nikkansports.com/rss/news/news-flash.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "@DIME アットダイム",
+    "url": "https://dime.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "AppBank",
+    "url": "https://www.appbank.net/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ASCII.jp",
+    "url": "https://ascii.jp/rss.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "AV Watch",
+    "url": "https://av.watch.impress.co.jp/data/rss/1.0/avw/feed.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "bouncy",
+    "url": "https://bouncy.news/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "Buzzap!",
+    "url": "https://buzzap.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "CNET Japan",
+    "url": "https://japan.cnet.com/rss/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "Engadget 互換: PC fan",
+    "url": "https://www.gdm.or.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "GIGAZINE",
+    "url": "https://gigazine.net/news/rss_2.0/"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "Impress Watch",
+    "url": "https://www.watch.impress.co.jp/data/rss/1.0/ipw/feed.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "iPhone Mania",
+    "url": "https://iphone-mania.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ITmedia NEWS",
+    "url": "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ITmedia 総合",
+    "url": "https://rss.itmedia.co.jp/rss/2.0/itmediamain.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "juggly.cn",
+    "url": "https://juggly.cn/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "PC Watch",
+    "url": "https://pc.watch.impress.co.jp/data/rss/1.0/pcw/feed.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "PHILE WEB",
+    "url": "https://www.phileweb.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "Qetic",
+    "url": "https://qetic.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "Real Sound テック",
+    "url": "https://realsound.jp/tech/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "TECH+ (マイナビ)",
+    "url": "https://news.mynavi.jp/rss/techplus"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "Techable",
+    "url": "https://techable.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ガジェット通信",
+    "url": "https://getnews.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ギズモード・ジャパン",
+    "url": "https://www.gizmodo.jp/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ケータイ Watch",
+    "url": "https://k-tai.watch.impress.co.jp/data/rss/1.0/ktw/feed.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "すまほん!!",
+    "url": "https://smhn.info/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ねとらぼ",
+    "url": "https://rss.itmedia.co.jp/rss/2.0/nl_latest.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "マイナビニュース",
+    "url": "https://news.mynavi.jp/rss/index"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ライフハッカー・ジャパン",
+    "url": "https://www.lifehacker.jp/feed/index.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "ロボスタ",
+    "url": "https://robotstart.info/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "窓の杜",
+    "url": "https://forest.watch.impress.co.jp/data/rss/1.0/wf/feed.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "travel",
+    "title": "RETRIP",
+    "url": "https://retrip.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "travel",
+    "title": "TABIPPO.NET",
+    "url": "https://tabippo.net/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "travel",
+    "title": "TABIZINE",
+    "url": "https://tabizine.jp/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "travel",
+    "title": "TRAICY (トライシー)",
+    "url": "https://www.traicy.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "travel",
+    "title": "ことりっぷ",
+    "url": "https://co-trip.jp/feed"
+  }
+]

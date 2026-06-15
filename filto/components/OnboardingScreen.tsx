@@ -17,75 +17,10 @@ import {
   seedFeedsFromSelection,
   seedFiltersFromTopics,
 } from '@/database/init';
+import { DEFAULT_FEED_CATEGORIES } from '@/constants/defaultFeeds';
 import { SyncService } from '@/services/SyncService';
 
-type FeedItem = { id: string; title: string; url: string };
-type FeedCategory = { id: string; label: string; feeds: FeedItem[] };
-
-const FEED_CATEGORIES: Record<string, FeedCategory[]> = {
-  ja: [
-    {
-      id: 'news',
-      label: 'ニュース',
-      feeds: [{ id: 'feed_livedoor', title: 'ライブドアニュース', url: 'https://news.livedoor.com/topics/rss/top.xml' }],
-    },
-    {
-      id: 'tech',
-      label: 'テクノロジー',
-      feeds: [
-        { id: 'feed_gigazine', title: 'Gigazine', url: 'https://gigazine.net/news/rss_2.0/' },
-        { id: 'feed_itmedia', title: 'ITmedia', url: 'https://rss.itmedia.co.jp/rss/2.0/itmediamain.xml' },
-      ],
-    },
-    {
-      id: 'business',
-      label: 'ビジネス',
-      feeds: [
-        { id: 'feed_toyokeizai', title: '東洋経済オンライン', url: 'https://toyokeizai.net/list/feed/rss' },
-      ],
-    },
-    {
-      id: 'sports',
-      label: 'スポーツ',
-      feeds: [{ id: 'feed_nikkansports', title: '日刊スポーツ', url: 'https://www.nikkansports.com/rss/rss_nstopnews.xml' }],
-    },
-    {
-      id: 'entertainment',
-      label: '芸能・エンタメ',
-      feeds: [{ id: 'feed_mdpr', title: 'モデルプレス', url: 'https://feed.mdpr.jp/rss/export/mdpr-entertainment.xml' }],
-    },
-  ],
-  en: [
-    {
-      id: 'world',
-      label: 'World News',
-      feeds: [{ id: 'feed_bbc', title: 'BBC News', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' }],
-    },
-    {
-      id: 'tech',
-      label: 'Technology',
-      feeds: [
-        { id: 'feed_arstechnica', title: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index' },
-        { id: 'feed_verge', title: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
-      ],
-    },
-    {
-      id: 'science',
-      label: 'Science & Tech',
-      feeds: [{ id: 'feed_wired', title: 'Wired', url: 'https://www.wired.com/feed/rss' }],
-    },
-    {
-      id: 'entertainment',
-      label: 'Entertainment',
-      feeds: [{ id: 'feed_variety', title: 'Variety', url: 'https://variety.com/feed/' }],
-    },
-    {
-      id: 'business',
-      label: 'Business',
-      feeds: [{ id: 'feed_businessinsider', title: 'Business Insider', url: 'https://feeds.businessinsider.com/custom/all' }],
-    },
-  ],
-};
+const FEED_CATEGORIES = DEFAULT_FEED_CATEGORIES;
 
 // 各キーワードがそのままブロックキーワードとして登録される
 const BLOCK_KEYWORDS: Record<string, string[]> = {
