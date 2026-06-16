@@ -56,6 +56,7 @@ export const en = {
     filteredLabel: 'Filtered',
     show: 'Show',
     hide: 'Hide',
+    feedsSelected: '{{count}} feeds',
   },
 
   // Filters screen
