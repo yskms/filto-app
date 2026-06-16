@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 53件 / EN 71件
+// 収録数: JA 51件 / EN 71件
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -98,12 +98,10 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "ファッション・美容",
     feeds: [
       { id: "default_ja_gingerweb", title: "GINGER", url: "https://gingerweb.jp/feed" },
-      { id: "default_ja_nonno", title: "non-no Web", url: "https://nonno.hpplus.jp/feed" },
       { id: "default_ja_oggi", title: "Oggi.jp", url: "https://oggi.jp/feed" },
       { id: "default_ja_cancam", title: "CanCam.jp", url: "https://cancam.jp/feed" },
       { id: "default_ja_hanako", title: "Hanako", url: "https://hanako.tokyo/feed/" },
       { id: "default_ja_vogue", title: "VOGUE JAPAN", url: "https://www.vogue.co.jp/feed/rss" },
-      { id: "default_ja_lee", title: "LEE", url: "https://lee.hpplus.jp/feed" },
       { id: "default_ja_wwdjapan", title: "WWD JAPAN", url: "https://www.wwdjapan.com/feed" },
       { id: "default_ja_biteki", title: "美的.com", url: "https://www.biteki.com/feed" },
     ],

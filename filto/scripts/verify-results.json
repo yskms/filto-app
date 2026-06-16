@@ -1735,13 +1735,8 @@
     "category": "fashion",
     "title": "non-no Web",
     "url": "https://nonno.hpplus.jp/feed",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 4,
-    "withThumb": 3,
-    "checked": 4,
-    "ratio": "0.75",
-    "feedTitle": "non-no web"
+    "status": "FAIL",
+    "reason": "not a feed"
   },
   {
     "lang": "ja",
@@ -1832,13 +1827,8 @@
     "category": "fashion",
     "title": "LEE",
     "url": "https://lee.hpplus.jp/feed",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 42,
-    "withThumb": 19,
-    "checked": 20,
-    "ratio": "0.95",
-    "feedTitle": "LEE"
+    "status": "FAIL",
+    "reason": "not a feed"
   },
   {
     "lang": "ja",
