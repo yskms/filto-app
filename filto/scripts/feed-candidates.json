@@ -1381,7 +1381,7 @@
   },
   {
     "lang": "ja",
-    "category": "science",
+    "category": "fitness",
     "title": "MELOS",
     "url": "https://melos.media/feed"
   },
@@ -1708,5 +1708,29 @@
     "category": "tech",
     "title": "テクノエッジ",
     "url": "https://www.techno-edge.net/rss20/index.rdf"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "Tarzan",
+    "url": "https://magazineworld.jp/tarzan/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "FYTTE",
+    "url": "https://fytte.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "Women's Health",
+    "url": "https://www.womenshealthmag.com/jp/rss/all.xml/"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "ヨガジェネレーション",
+    "url": "https://www.yoga-gene.com/feed"
   }
 ]

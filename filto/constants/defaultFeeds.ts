@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 53件 / EN 71件
+// 収録数: JA 57件 / EN 71件
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -47,11 +47,10 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
   },
   {
     id: "science",
-    label: "サイエンス・健康",
+    label: "サイエンス",
     feeds: [
       { id: "default_ja_wired", title: "WIRED.jp", url: "https://wired.jp/feed/rss" },
       { id: "default_ja_nazology", title: "ナゾロジー", url: "https://nazology.kusuguru.co.jp/feed" },
-      { id: "default_ja_melos", title: "MELOS", url: "https://melos.media/feed" },
     ],
   },
   {
@@ -92,6 +91,17 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_gekisaka", title: "ゲキサカ", url: "https://web.gekisaka.jp/feed" },
       { id: "default_ja_fullcount", title: "Full-Count", url: "https://full-count.jp/feed" },
       { id: "default_ja_footballchannel", title: "フットボールチャンネル", url: "https://www.footballchannel.jp/feed" },
+    ],
+  },
+  {
+    id: "fitness",
+    label: "フィットネス・健康",
+    feeds: [
+      { id: "default_ja_melos", title: "MELOS", url: "https://melos.media/feed" },
+      { id: "default_ja_magazineworld", title: "Tarzan", url: "https://magazineworld.jp/tarzan/feed/" },
+      { id: "default_ja_fytte", title: "FYTTE", url: "https://fytte.jp/feed" },
+      { id: "default_ja_womenshealthmag", title: "Women's Health", url: "https://www.womenshealthmag.com/jp/rss/all.xml/" },
+      { id: "default_ja_yogagene", title: "ヨガジェネレーション", url: "https://www.yoga-gene.com/feed" },
     ],
   },
   {

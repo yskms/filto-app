@@ -2623,7 +2623,7 @@
   },
   {
     "lang": "ja",
-    "category": "science",
+    "category": "fitness",
     "title": "MELOS",
     "url": "https://melos.media/feed",
     "status": "OK",
@@ -3193,5 +3193,57 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "テクノエッジ TechnoEdge"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "Tarzan",
+    "url": "https://magazineworld.jp/tarzan/feed/",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 33,
+    "withThumb": 10,
+    "checked": 20,
+    "ratio": "0.50",
+    "feedTitle": "マガジンワールド"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "FYTTE",
+    "url": "https://fytte.jp/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "FYTTE"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "Women's Health",
+    "url": "https://www.womenshealthmag.com/jp/rss/all.xml/",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 43,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "Women's Health"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "ヨガジェネレーション",
+    "url": "https://www.yoga-gene.com/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 4,
+    "checked": 10,
+    "ratio": "0.40",
+    "feedTitle": "ヨガジェネレーション"
   }
 ]
