@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -66,7 +66,7 @@ interface Props {
 
 export default function OnboardingScreen({ onComplete }: Props) {
   const { t } = useTranslation();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
 
   const lang = language === 'ja' ? 'ja' : 'en';
   const categories = FEED_CATEGORIES[lang];
@@ -83,6 +83,12 @@ export default function OnboardingScreen({ onComplete }: Props) {
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const hintColor = useThemeColor({ light: '#687076', dark: '#9BA1A6' }, 'background');
+
+  // 言語切替時は、カテゴリIDが言語ごとに異なるため選択状態をリセットする
+  useEffect(() => {
+    setSelectedCategories(new Set(FEED_CATEGORIES[lang].map(c => c.id)));
+    setSelectedKeywords(new Set());
+  }, [lang]);
 
   const toggleCategory = (id: string) => {
     setSelectedCategories(prev => {
@@ -135,6 +141,25 @@ export default function OnboardingScreen({ onComplete }: Props) {
         <ThemedText style={styles.stepIndicator}>
           {t('onboarding.stepIndicator', { current: step, total: 2 })}
         </ThemedText>
+        {step === 1 && (
+          <View style={[styles.langToggle, { borderColor }]}>
+            {(['ja', 'en'] as const).map(code => {
+              const active = language === code;
+              return (
+                <TouchableOpacity
+                  key={code}
+                  style={[styles.langOption, active && styles.langOptionActive]}
+                  onPress={() => { if (!active) setLanguage(code); }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.langText, { color: active ? '#fff' : hintColor }]}>
+                    {code === 'ja' ? '日本語' : 'English'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </View>
 
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -230,11 +255,24 @@ export default function OnboardingScreen({ onComplete }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 14,
+    minHeight: 56,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   stepIndicator: { fontSize: 14, opacity: 0.6 },
+  langToggle: {
+    flexDirection: 'row',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  langOption: { paddingHorizontal: 12, paddingVertical: 6 },
+  langOptionActive: { backgroundColor: ACCENT },
+  langText: { fontSize: 13, fontWeight: '600' },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24 },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
