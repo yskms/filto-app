@@ -3167,5 +3167,31 @@
     "checked": 20,
     "ratio": "0.00",
     "feedTitle": "TRAICY（トライシー）"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "Lmaga.jp",
+    "url": "https://news.yahoo.co.jp/rss/media/lmaga/all.xml",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 50,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "Lmaga.jp - Yahoo!ニュース"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "テクノエッジ",
+    "url": "https://www.techno-edge.net/rss20/index.rdf",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 50,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "テクノエッジ TechnoEdge"
   }
 ]

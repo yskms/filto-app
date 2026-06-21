@@ -1696,5 +1696,17 @@
     "category": "travel",
     "title": "ことりっぷ",
     "url": "https://co-trip.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "lifestyle",
+    "title": "Lmaga.jp",
+    "url": "https://news.yahoo.co.jp/rss/media/lmaga/all.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "tech",
+    "title": "テクノエッジ",
+    "url": "https://www.techno-edge.net/rss20/index.rdf"
   }
 ]

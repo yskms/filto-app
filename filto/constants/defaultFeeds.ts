@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 51件 / EN 71件
+// 収録数: JA 53件 / EN 71件
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -32,6 +32,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_gizmodo", title: "ギズモード・ジャパン", url: "https://www.gizmodo.jp/index.xml" },
       { id: "default_ja_lifehacker", title: "ライフハッカー・ジャパン", url: "https://www.lifehacker.jp/feed/index.xml" },
       { id: "default_ja_qetic", title: "Qetic", url: "https://qetic.jp/feed" },
+      { id: "default_ja_technoedge", title: "テクノエッジ", url: "https://www.techno-edge.net/rss20/index.rdf" },
     ],
   },
   {
@@ -118,6 +119,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_rocketnews24", title: "ロケットニュース24", url: "https://rocketnews24.com/feed/" },
       { id: "default_ja_grapee", title: "grape", url: "https://grapee.jp/feed" },
       { id: "default_ja_getnavi", title: "GetNavi web", url: "https://getnavi.jp/feed/" },
+      { id: "default_ja_yahoo", title: "Lmaga.jp", url: "https://news.yahoo.co.jp/rss/media/lmaga/all.xml" },
     ],
   },
   {
