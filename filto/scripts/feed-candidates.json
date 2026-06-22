@@ -1840,5 +1840,65 @@
     "category": "fitness",
     "title": "月陸Online",
     "url": "https://www.rikujyokyogi.co.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "kids",
+    "title": "chiik",
+    "url": "https://chiik.jp/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "kids",
+    "title": "HugMug",
+    "url": "https://hugmug.jp/feed"
+  },
+  {
+    "lang": "en",
+    "category": "kids",
+    "title": "Romper",
+    "url": "https://www.romper.com/rss"
+  },
+  {
+    "lang": "en",
+    "category": "kids",
+    "title": "Fatherly",
+    "url": "https://www.fatherly.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "travel",
+    "title": "TRiP EDiTOR",
+    "url": "https://tripeditor.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "travel",
+    "title": "GOTRIP!",
+    "url": "https://gotrip.jp/feed"
+  },
+  {
+    "lang": "en",
+    "category": "travel",
+    "title": "The Points Guy",
+    "url": "https://thepointsguy.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "travel",
+    "title": "Atlas Obscura",
+    "url": "https://www.atlasobscura.com/feeds/latest"
+  },
+  {
+    "lang": "en",
+    "category": "travel",
+    "title": "Nomadic Matt",
+    "url": "https://www.nomadicmatt.com/travel-blog/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "travel",
+    "title": "Matador Network",
+    "url": "https://matadornetwork.com/feed/"
   }
 ]

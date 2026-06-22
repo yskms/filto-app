@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 60件 / EN 86件
+// 収録数: JA 64件 / EN 92件
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -136,6 +136,14 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     ],
   },
   {
+    id: "kids",
+    label: "子育て・育児",
+    feeds: [
+      { id: "default_ja_chiik", title: "chiik", url: "https://chiik.jp/feed" },
+      { id: "default_ja_hugmug", title: "HugMug", url: "https://hugmug.jp/feed" },
+    ],
+  },
+  {
     id: "food",
     label: "グルメ・料理",
     feeds: [
@@ -156,6 +164,8 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "旅行",
     feeds: [
       { id: "default_ja_tabippo", title: "TABIPPO.NET", url: "https://tabippo.net/feed" },
+      { id: "default_ja_tripeditor", title: "TRiP EDiTOR", url: "https://tripeditor.com/feed" },
+      { id: "default_ja_gotrip", title: "GOTRIP!", url: "https://gotrip.jp/feed" },
     ],
   },
   ],
@@ -304,6 +314,14 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     ],
   },
   {
+    id: "kids",
+    label: "Parenting",
+    feeds: [
+      { id: "default_en_romper", title: "Romper", url: "https://www.romper.com/rss" },
+      { id: "default_en_fatherly", title: "Fatherly", url: "https://www.fatherly.com/feed" },
+    ],
+  },
+  {
     id: "auto",
     label: "Auto",
     feeds: [
@@ -318,6 +336,10 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "Travel",
     feeds: [
       { id: "default_en_cntraveler", title: "Conde Nast Traveler", url: "https://www.cntraveler.com/feed/rss" },
+      { id: "default_en_thepointsguy", title: "The Points Guy", url: "https://thepointsguy.com/feed/" },
+      { id: "default_en_atlasobscura", title: "Atlas Obscura", url: "https://www.atlasobscura.com/feeds/latest" },
+      { id: "default_en_nomadicmatt", title: "Nomadic Matt", url: "https://www.nomadicmatt.com/travel-blog/feed/" },
+      { id: "default_en_matadornetwork", title: "Matador Network", url: "https://matadornetwork.com/feed/" },
     ],
   },
   {

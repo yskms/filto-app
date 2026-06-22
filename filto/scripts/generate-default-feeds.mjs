@@ -8,12 +8,12 @@
 import { readFileSync, writeFileSync } from 'fs';
 
 const CAT_ORDER = {
-  ja: ['news', 'tech', 'business', 'science', 'dev', 'game', 'anime', 'entertainment', 'sports', 'fitness', 'fashion', 'lifestyle', 'food', 'auto', 'travel'],
-  en: ['world', 'tech', 'business', 'science', 'game', 'entertainment', 'sports', 'fitness', 'design', 'fashion', 'food', 'auto', 'travel', 'culture'],
+  ja: ['news', 'tech', 'business', 'science', 'dev', 'game', 'anime', 'entertainment', 'sports', 'fitness', 'fashion', 'lifestyle', 'kids', 'food', 'auto', 'travel'],
+  en: ['world', 'tech', 'business', 'science', 'game', 'entertainment', 'sports', 'fitness', 'design', 'fashion', 'food', 'kids', 'auto', 'travel', 'culture'],
 };
 const LABELS = {
-  ja: { news: 'ニュース', tech: 'テクノロジー', business: 'ビジネス・マネー', science: 'サイエンス', dev: '開発・プログラミング', game: 'ゲーム', anime: 'アニメ・マンガ', entertainment: 'エンタメ・音楽', sports: 'スポーツ', fitness: 'フィットネス・健康', fashion: 'ファッション・美容', lifestyle: 'ライフスタイル', food: 'グルメ・料理', auto: '自動車', travel: '旅行' },
-  en: { world: 'World News', tech: 'Technology', business: 'Business', science: 'Science', game: 'Gaming', entertainment: 'Entertainment', sports: 'Sports', fitness: 'Fitness & Health', design: 'Design', fashion: 'Fashion & Beauty', food: 'Food', auto: 'Auto', travel: 'Travel', culture: 'Culture' },
+  ja: { news: 'ニュース', tech: 'テクノロジー', business: 'ビジネス・マネー', science: 'サイエンス', dev: '開発・プログラミング', game: 'ゲーム', anime: 'アニメ・マンガ', entertainment: 'エンタメ・音楽', sports: 'スポーツ', fitness: 'フィットネス・健康', fashion: 'ファッション・美容', lifestyle: 'ライフスタイル', kids: '子育て・育児', food: 'グルメ・料理', auto: '自動車', travel: '旅行' },
+  en: { world: 'World News', tech: 'Technology', business: 'Business', science: 'Science', game: 'Gaming', entertainment: 'Entertainment', sports: 'Sports', fitness: 'Fitness & Health', design: 'Design', fashion: 'Fashion & Beauty', food: 'Food', kids: 'Parenting', auto: 'Auto', travel: 'Travel', culture: 'Culture' },
 };
 const GENERIC = new Set(['www', 'feeds', 'feed', 'rss', 'news', 'assets', 'wor', 'co', 'com', 'net', 'org', 'jp', 'uk', 'io', 'go', 'tokyo', 'media', 'or', 'ne', 'nikkeibp', 'content', 'public', 'hpplus', 'shogakukan', 'benesse', 'kusuguru']);
 
