@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 59件 / EN 86件
+// 収録数: JA 60件 / EN 86件
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -104,6 +104,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_yogagene", title: "ヨガジェネレーション", url: "https://www.yoga-gene.com/feed" },
       { id: "default_ja_triathlonlumina", title: "TRIATHLON LUMINA", url: "https://triathlon-lumina.com/feed" },
       { id: "default_ja_vokka", title: "VOKKA", url: "https://vokka.jp/feed" },
+      { id: "default_ja_rikujyokyogi", title: "月陸Online", url: "https://www.rikujyokyogi.co.jp/feed" },
     ],
   },
   {

@@ -1834,5 +1834,11 @@
     "category": "fitness",
     "title": "Men's Journal",
     "url": "https://www.mensjournal.com/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "月陸Online",
+    "url": "https://www.rikujyokyogi.co.jp/feed"
   }
 ]
