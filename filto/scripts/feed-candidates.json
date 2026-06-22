@@ -1732,5 +1732,65 @@
     "category": "fitness",
     "title": "ヨガジェネレーション",
     "url": "https://www.yoga-gene.com/feed"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Self",
+    "url": "https://www.self.com/feed/rss"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Men's Health",
+    "url": "https://www.menshealth.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Women's Health",
+    "url": "https://www.womenshealthmag.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Runner's World",
+    "url": "https://www.runnersworld.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Prevention",
+    "url": "https://www.prevention.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Bicycling",
+    "url": "https://www.bicycling.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Healthline",
+    "url": "https://www.healthline.com/rss/health-news"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Eat This Not That",
+    "url": "https://www.eatthis.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Breaking Muscle",
+    "url": "https://breakingmuscle.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Yoga Journal",
+    "url": "https://www.yogajournal.com/feed/"
   }
 ]
