@@ -1792,5 +1792,47 @@
     "category": "fitness",
     "title": "Yoga Journal",
     "url": "https://www.yogajournal.com/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "TRIATHLON LUMINA",
+    "url": "https://triathlon-lumina.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "VOKKA",
+    "url": "https://vokka.jp/feed"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Triathlete",
+    "url": "https://www.triathlete.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Trail Runner",
+    "url": "https://www.trailrunnermag.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "iRunFar",
+    "url": "https://www.irunfar.com/feed"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Muscle & Fitness",
+    "url": "https://www.muscleandfitness.com/feed/"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Men's Journal",
+    "url": "https://www.mensjournal.com/feed/"
   }
 ]

@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 57件 / EN 81件
+// 収録数: JA 59件 / EN 86件
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -102,6 +102,8 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_fytte", title: "FYTTE", url: "https://fytte.jp/feed" },
       { id: "default_ja_womenshealthmag", title: "Women's Health", url: "https://www.womenshealthmag.com/jp/rss/all.xml/" },
       { id: "default_ja_yogagene", title: "ヨガジェネレーション", url: "https://www.yoga-gene.com/feed" },
+      { id: "default_ja_triathlonlumina", title: "TRIATHLON LUMINA", url: "https://triathlon-lumina.com/feed" },
+      { id: "default_ja_vokka", title: "VOKKA", url: "https://vokka.jp/feed" },
     ],
   },
   {
@@ -264,6 +266,11 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_en_eatthis", title: "Eat This Not That", url: "https://www.eatthis.com/feed/" },
       { id: "default_en_breakingmuscle", title: "Breaking Muscle", url: "https://breakingmuscle.com/feed/" },
       { id: "default_en_yogajournal", title: "Yoga Journal", url: "https://www.yogajournal.com/feed/" },
+      { id: "default_en_triathlete", title: "Triathlete", url: "https://www.triathlete.com/feed/" },
+      { id: "default_en_trailrunnermag", title: "Trail Runner", url: "https://www.trailrunnermag.com/feed/" },
+      { id: "default_en_irunfar", title: "iRunFar", url: "https://www.irunfar.com/feed" },
+      { id: "default_en_muscleandfitness", title: "Muscle & Fitness", url: "https://www.muscleandfitness.com/feed/" },
+      { id: "default_en_mensjournal", title: "Men's Journal", url: "https://www.mensjournal.com/feed/" },
     ],
   },
   {
