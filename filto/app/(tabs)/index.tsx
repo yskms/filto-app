@@ -331,10 +331,11 @@ export default function HomeScreen() {
 
         // バックグラウンドで同期実行
         await SyncService.refresh();
-        
-        // データを再読み込み
-        await loadData();
-        
+
+        // データを再読み込み（スピナーを出さず＝FlatListを再マウントせず、
+        // 閲覧中のスクロール位置を保ったまま更新する）
+        await loadData(false);
+
         setHasAutoSynced(true);
       } catch (_) {
         // エラーでもアプリは正常に動作
@@ -391,8 +392,11 @@ export default function HomeScreen() {
       }
 
 
-      // データを再読み込み
-      await loadData();
+      // データを再読み込み（RefreshControlが既にスピナーを出すので再マウントしない）
+      await loadData(false);
+
+      // 手動更新は明示操作なので、最新記事を見せるため先頭へ
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     } catch (_) {
       ErrorHandler.showSyncError(t);
     } finally {
@@ -585,6 +589,7 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
             removeClippedSubviews={true}
             showsVerticalScrollIndicator={false}
+            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             onContentSizeChange={(_, h) => setListContentH(h)}
