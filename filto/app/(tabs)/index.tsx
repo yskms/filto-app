@@ -34,6 +34,10 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { LoadingView } from '@/components/LoadingView';
 
+const ACCENT = '#0a7ea4';
+const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
+const SCROLL_TOP_THRESHOLD = 500; // この位置を超えたら「トップへ戻る」ボタンを表示
+
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string, justNow: string): string => {
   const now = Date.now();
@@ -201,6 +205,13 @@ export default function HomeScreen() {
   const flatListRef = React.useRef<FlatList>(null);
   const isInitialLoad = React.useRef(true);
 
+  // スクロール連動（カスタムスクロールバー / トップへ戻るボタン）
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const scrollTopAnim = React.useRef(new Animated.Value(0)).current;
+  const [showScrollTop, setShowScrollTop] = React.useState(false);
+  const [listViewportH, setListViewportH] = React.useState(0);
+  const [listContentH, setListContentH] = React.useState(0);
+
   // ハイライトアニメーション用（記事IDごとに管理）
   const highlightAnims = React.useRef<Map<string, Animated.Value>>(new Map());
 
@@ -361,6 +372,31 @@ export default function HomeScreen() {
     }
   }, [loadData, t]);
 
+  // スクロール監視（バー連動 + ボタン表示切替）
+  const handleScroll = React.useMemo(
+    () =>
+      Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+        useNativeDriver: false,
+        listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+          setShowScrollTop(e.nativeEvent.contentOffset.y > SCROLL_TOP_THRESHOLD);
+        },
+      }),
+    [scrollY]
+  );
+
+  const handleScrollToTop = React.useCallback(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
+
+  // 「トップへ戻る」ボタンのフェード
+  React.useEffect(() => {
+    Animated.timing(scrollTopAnim, {
+      toValue: showScrollTop ? 1 : 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  }, [showScrollTop, scrollTopAnim]);
+
   const handleFeedSelect = React.useCallback(() => {
     setFeedModalVisible(true);
   }, []);
@@ -471,6 +507,18 @@ export default function HomeScreen() {
 
   const filterBarBg = useThemeColor({ light: '#f0f4ff', dark: '#1a1f2e' }, 'background');
   const filterBarText = useThemeColor({ light: '#4a6fa5', dark: '#7aa2d4' }, 'text');
+  const scrollbarColor = useThemeColor({ light: 'rgba(0,0,0,0.25)', dark: 'rgba(255,255,255,0.3)' }, 'text');
+
+  // カスタムスクロールバーのつまみ位置・サイズを算出
+  const maxScroll = Math.max(0, listContentH - listViewportH);
+  const showScrollbar = maxScroll > 0 && listViewportH > 0;
+  const trackH = Math.max(0, listViewportH - SCROLLBAR_INSET * 2);
+  const thumbH = showScrollbar ? Math.max(36, trackH * (listViewportH / listContentH)) : 0;
+  const thumbTranslateY = scrollY.interpolate({
+    inputRange: [0, maxScroll || 1],
+    outputRange: [0, Math.max(0, trackH - thumbH)],
+    extrapolate: 'clamp',
+  });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
@@ -494,24 +542,69 @@ export default function HomeScreen() {
       {isLoading ? (
         <LoadingView />
       ) : (
-        <FlatList
-          ref={flatListRef}
-          data={filteredArticles}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          removeClippedSubviews={true}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="newspaper-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
-              <ThemedText style={styles.emptyMessage}>{t('home.noArticles')}</ThemedText>
-              <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>
+        <View
+          style={styles.listWrapper}
+          onLayout={(e) => setListViewportH(e.nativeEvent.layout.height)}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={filteredArticles}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            removeClippedSubviews={true}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            onContentSizeChange={(_, h) => setListContentH(h)}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            }
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="newspaper-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
+                <ThemedText style={styles.emptyMessage}>{t('home.noArticles')}</ThemedText>
+                <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>
+              </View>
+            }
+          />
+
+          {/* 常時表示のカスタムスクロールバー */}
+          {showScrollbar && (
+            <View
+              style={[styles.scrollbarTrack, { top: SCROLLBAR_INSET, height: trackH }]}
+              pointerEvents="none"
+            >
+              <Animated.View
+                style={[
+                  styles.scrollbarThumb,
+                  { height: thumbH, backgroundColor: scrollbarColor, transform: [{ translateY: thumbTranslateY }] },
+                ]}
+              />
             </View>
-          }
-        />
+          )}
+
+          {/* 一番上に戻るボタン */}
+          <Animated.View
+            style={[
+              styles.scrollTopWrap,
+              {
+                opacity: scrollTopAnim,
+                transform: [{ scale: scrollTopAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+              },
+            ]}
+            pointerEvents={showScrollTop ? 'auto' : 'none'}
+          >
+            <TouchableOpacity
+              style={styles.scrollTopBtn}
+              onPress={handleScrollToTop}
+              activeOpacity={0.8}
+              accessibilityLabel={t('home.scrollToTop')}
+            >
+              <Ionicons name="chevron-up" size={26} color="#fff" />
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       )}
 
       {/* フィード選択モーダル */}
@@ -590,9 +683,39 @@ const styles = StyleSheet.create({
   filterBarText: {
     fontSize: 12,
   },
+  listWrapper: {
+    flex: 1,
+  },
   listContent: {
     flexGrow: 1,
     paddingBottom: 20,
+  },
+  scrollbarTrack: {
+    position: 'absolute',
+    right: 2,
+    width: 4,
+  },
+  scrollbarThumb: {
+    width: 4,
+    borderRadius: 2,
+  },
+  scrollTopWrap: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+  },
+  scrollTopBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: ACCENT,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   articleContainer: {
     padding: 16,

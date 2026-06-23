@@ -41,6 +41,7 @@ export const en = {
     noArticles: 'No articles',
     noArticlesHint: 'Add feeds and refresh',
     justNow: 'Just now',
+    scrollToTop: 'Scroll to top',
     pullToRefresh: 'Pull to refresh',
     fetchingFeeds: 'Fetching feeds...',
     syncComplete: 'Sync complete',
