@@ -355,7 +355,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     feeds: [
       { id: "default_en_vox", title: "Vox", url: "https://www.vox.com/rss/index.xml" },
       { id: "default_en_slate", title: "Slate", url: "https://slate.com/feeds/all.rss" },
-      { id: "default_en_buzzfeed", title: "BuzzFeed", url: "https://www.buzzfeed.com/index.xml" },
+      { id: "default_en_buzzfeed", title: "BuzzFeed", url: "https://www.buzzfeed.com/us.xml" },
       { id: "default_en_vice", title: "Vice", url: "https://www.vice.com/en/rss" },
     ],
   },
