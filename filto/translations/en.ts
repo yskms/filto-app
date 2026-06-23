@@ -52,6 +52,10 @@ export const en = {
     articleOpenError: 'Failed to open article',
     favoriteError: 'Failed to update favorite',
     articlesFiltered: '{{count}} articles filtered by your keywords',
+    articlesFilteredShown: 'Showing {{count}} filtered articles',
+    filteredLabel: 'Filtered',
+    show: 'Show',
+    hide: 'Hide',
   },
 
   // Filters screen

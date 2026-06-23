@@ -52,6 +52,10 @@ export const ja = {
       articleOpenError: '記事を開けませんでした',
       favoriteError: 'お気に入りの変更に失敗しました',
       articlesFiltered: '{{count}}件がルールにより非表示',
+      articlesFilteredShown: '非表示の{{count}}件を表示中',
+      filteredLabel: '非表示',
+      show: '表示',
+      hide: '隠す',
     },
   
     // Filters画面

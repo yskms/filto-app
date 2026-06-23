@@ -61,7 +61,8 @@ const ArticleItem = React.memo<{
   onPress: (article: Article) => void;
   onLongPress: (article: Article) => void;
   highlightAnim: Animated.Value;
-}>(({ article, onPress, onLongPress, highlightAnim }) => {
+  isBlocked?: boolean;
+}>(({ article, onPress, onLongPress, highlightAnim, isBlocked = false }) => {
   const { t } = useTranslation();
   const timeAgo = getTimeAgo(article.publishedAt, t('home.justNow'));
 
@@ -88,7 +89,7 @@ const ArticleItem = React.memo<{
         style={[
           styles.articleContainer,
           { backgroundColor: animatedBg, borderBottomColor: borderColor },
-          article.isRead && styles.readContainer,
+          (article.isRead || isBlocked) && styles.readContainer,
         ]}
       >
         <View style={styles.articleContent}>
@@ -107,7 +108,7 @@ const ArticleItem = React.memo<{
           <View style={styles.textContainer}>
             <View style={styles.titleRow}>
               <Text
-                style={[styles.title, { color: textColor }, article.isRead && { color: subtextColor, fontWeight: '400' }]}
+                style={[styles.title, { color: textColor }, (article.isRead || isBlocked) && { color: subtextColor, fontWeight: '400' }]}
                 numberOfLines={2}
               >
                 {article.title}
@@ -117,6 +118,13 @@ const ArticleItem = React.memo<{
               )}
             </View>
             <View style={styles.metaContainer}>
+              {isBlocked && (
+                <>
+                  <Ionicons name="funnel" size={11} color={subtextColor} style={{ marginRight: 3 }} />
+                  <Text style={[styles.metaText, { color: subtextColor }]}>{t('home.filteredLabel')}</Text>
+                  <Text style={[styles.separator, { color: subtextColor }]}>/</Text>
+                </>
+              )}
               <Text style={[styles.metaText, { color: subtextColor }]}>
                 {article.feedName}
               </Text>
@@ -195,6 +203,9 @@ export default function HomeScreen() {
   const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
   const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
   const [blockedByFilters, setBlockedByFilters] = React.useState(0);
+  // ブロックされた記事を（淡色で）表示するかどうか
+  const [showBlockedKeywords, setShowBlockedKeywords] = React.useState(false);
+  const [blockedKeywordIds, setBlockedKeywordIds] = React.useState<Set<string>>(new Set());
 
   // Display & Behavior（既読表示など）
   const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
@@ -362,14 +373,20 @@ export default function HomeScreen() {
     // グローバル許可キーワードを文字列配列に変換
     const allowKeywords = globalAllowKeywords.map(k => k.keyword);
 
-    // フィルタエンジンで評価
-    let displayed = filtered.filter(article => {
-      const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
-      return !shouldBlock; // ブロックされない記事のみ表示
-    });
+    // フィルタエンジンで評価（ブロック対象を除外せず印を付ける）
+    const blockedIds = new Set<string>();
+    for (const article of filtered) {
+      if (FilterEngine.evaluate(article, filters, allowKeywords)) {
+        blockedIds.add(article.id);
+      }
+    }
+    setBlockedKeywordIds(blockedIds);
+    setBlockedByFilters(blockedIds.size);
 
-    // キーワードフィルタでブロックされた件数を記録
-    setBlockedByFilters(filtered.length - displayed.length);
+    // 通常はブロック記事を非表示。「表示する」がONのときは順序を保ったまま含める
+    let displayed = showBlockedKeywords
+      ? filtered
+      : filtered.filter(a => !blockedIds.has(a.id));
 
     // 既読表示設定に基づいてフィルタリング
     if (readDisplay === 'hide') {
@@ -377,7 +394,7 @@ export default function HomeScreen() {
     }
 
     setFilteredArticles(displayed);
-  }, [articles, selectedFeedId, showStarredOnly, filters, globalAllowKeywords, readDisplay]);
+  }, [articles, selectedFeedId, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
 
   const handleRefresh = React.useCallback(async () => {
     try {
@@ -533,8 +550,9 @@ export default function HomeScreen() {
       onPress={handlePressArticle}
       onLongPress={handleLongPressArticle}
       highlightAnim={getHighlightAnim(item.id)}
+      isBlocked={blockedKeywordIds.has(item.id)}
     />
-  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim]);
+  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
@@ -567,12 +585,27 @@ export default function HomeScreen() {
       />
 
       {blockedByFilters > 0 && (
-        <View style={[styles.filterBar, { backgroundColor: filterBarBg }]}>
+        <TouchableOpacity
+          style={[styles.filterBar, { backgroundColor: filterBarBg }]}
+          onPress={() => setShowBlockedKeywords(prev => !prev)}
+          activeOpacity={0.7}
+        >
           <Ionicons name="funnel" size={12} color={filterBarText} style={styles.filterBarIcon} />
-          <Text style={[styles.filterBarText, { color: filterBarText }]}>
-            {t('home.articlesFiltered', { count: blockedByFilters })}
+          <Text style={[styles.filterBarText, { color: filterBarText, flex: 1 }]}>
+            {showBlockedKeywords
+              ? t('home.articlesFilteredShown', { count: blockedByFilters })
+              : t('home.articlesFiltered', { count: blockedByFilters })}
           </Text>
-        </View>
+          <Text style={[styles.filterBarAction, { color: filterBarText }]}>
+            {showBlockedKeywords ? t('home.hide') : t('home.show')}
+          </Text>
+          <Ionicons
+            name={showBlockedKeywords ? 'chevron-up' : 'chevron-down'}
+            size={12}
+            color={filterBarText}
+            style={styles.filterBarChevron}
+          />
+        </TouchableOpacity>
       )}
 
       {isLoading ? (
@@ -722,6 +755,14 @@ const styles = StyleSheet.create({
   },
   filterBarText: {
     fontSize: 12,
+  },
+  filterBarAction: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  filterBarChevron: {
+    marginLeft: 2,
   },
   listWrapper: {
     flex: 1,
