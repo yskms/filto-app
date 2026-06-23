@@ -2653,19 +2653,6 @@
   {
     "lang": "ja",
     "category": "sports",
-    "title": "ゲキサカ",
-    "url": "https://web.gekisaka.jp/feed",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 100,
-    "withThumb": 16,
-    "checked": 20,
-    "ratio": "0.80",
-    "feedTitle": "ゲキサカ[講談社] »最新ニュース"
-  },
-  {
-    "lang": "ja",
-    "category": "sports",
     "title": "サッカーキング",
     "url": "https://www.soccer-king.jp/feed",
     "status": "NOTHUMB",
@@ -3676,5 +3663,44 @@
     "feedTitle": "Qiita - 人気の記事",
     "force": true,
     "note": "RSSにサムネ無し。利用者要望により例外収録(faviconフォールバック)"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "Sportiva",
+    "url": "https://news.yahoo.co.jp/rss/media/sportiva/all.xml",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 50,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "webスポルティーバ - Yahoo!ニュース"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "バスケットカウント",
+    "url": "https://basket-count.com/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "バスケットカウント BASKET COUNT"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "THE ANSWER",
+    "url": "https://the-ans.jp/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "THE ANSWER スポーツ文化・育成＆総合ニュース・コラムTHE ANSWE"
   }
 ]

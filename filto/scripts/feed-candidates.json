@@ -1442,12 +1442,6 @@
   {
     "lang": "ja",
     "category": "sports",
-    "title": "ゲキサカ",
-    "url": "https://web.gekisaka.jp/feed"
-  },
-  {
-    "lang": "ja",
-    "category": "sports",
     "title": "サッカーキング",
     "url": "https://www.soccer-king.jp/feed"
   },
@@ -1930,5 +1924,23 @@
     "category": "food",
     "title": "食べログマガジン",
     "url": "https://magazine.tabelog.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "Sportiva",
+    "url": "https://news.yahoo.co.jp/rss/media/sportiva/all.xml"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "バスケットカウント",
+    "url": "https://basket-count.com/feed"
+  },
+  {
+    "lang": "ja",
+    "category": "sports",
+    "title": "THE ANSWER",
+    "url": "https://the-ans.jp/feed"
   }
 ]

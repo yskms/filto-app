@@ -19,7 +19,11 @@ const GENERIC = new Set(['www', 'feeds', 'feed', 'rss', 'news', 'assets', 'wor',
 
 function slug(url) {
   try {
-    const host = new URL(url).hostname;
+    const u = new URL(url);
+    const host = u.hostname;
+    // Yahoo!ニュースの媒体フィードはホストが全て news.yahoo.co.jp で被るため、パスの媒体IDを使う
+    const ym = u.pathname.match(/\/rss\/media\/([^/]+)\//);
+    if (host === 'news.yahoo.co.jp' && ym) return ym[1].replace(/[^a-z0-9]/gi, '').toLowerCase();
     const parts = host.split('.').filter((p) => !GENERIC.has(p) && p.length > 2);
     const best = (parts.length ? parts : host.split('.')).reduce((a, b) => (b.length > a.length ? b : a), '');
     return best.replace(/[^a-z0-9]/gi, '').toLowerCase();
