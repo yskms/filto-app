@@ -200,7 +200,6 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_en_engadget", title: "Engadget", url: "https://www.engadget.com/rss.xml" },
       { id: "default_en_androidauthority", title: "Android Authority", url: "https://www.androidauthority.com/feed/" },
       { id: "default_en_mashable", title: "Mashable", url: "https://mashable.com/feeds/rss/all" },
-      { id: "default_en_digitaltrends", title: "Digital Trends", url: "https://www.digitaltrends.com/feed/" },
       { id: "default_en_androidpolice", title: "Android Police", url: "https://www.androidpolice.com/feed/" },
       { id: "default_en_techradar", title: "TechRadar", url: "https://www.techradar.com/rss" },
       { id: "default_en_theverge", title: "The Verge", url: "https://www.theverge.com/rss/index.xml" },
@@ -333,9 +332,10 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "Auto",
     feeds: [
       { id: "default_en_caranddriver", title: "Car and Driver", url: "https://www.caranddriver.com/rss/all.xml/" },
-      { id: "default_en_autoblog", title: "Autoblog", url: "https://www.autoblog.com/rss.xml" },
       { id: "default_en_jalopnik", title: "Jalopnik", url: "https://jalopnik.com/rss" },
       { id: "default_en_electrek", title: "Electrek", url: "https://electrek.co/feed/" },
+      { id: "default_en_roadandtrack", title: "Road & Track", url: "https://www.roadandtrack.com/rss/all.xml/" },
+      { id: "default_en_motor1", title: "Motor1", url: "https://www.motor1.com/rss/articles/all/" },
     ],
   },
   {

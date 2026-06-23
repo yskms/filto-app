@@ -2,12 +2,6 @@
   {
     "lang": "en",
     "category": "auto",
-    "title": "Autoblog",
-    "url": "https://www.autoblog.com/rss.xml"
-  },
-  {
-    "lang": "en",
-    "category": "auto",
     "title": "Car and Driver",
     "url": "https://www.caranddriver.com/rss/all.xml/"
   },
@@ -388,12 +382,6 @@
     "category": "tech",
     "title": "Ars Technica",
     "url": "https://feeds.arstechnica.com/arstechnica/index"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "Digital Trends",
-    "url": "https://www.digitaltrends.com/feed/"
   },
   {
     "lang": "en",
@@ -1942,5 +1930,17 @@
     "category": "sports",
     "title": "THE ANSWER",
     "url": "https://the-ans.jp/feed"
+  },
+  {
+    "lang": "en",
+    "category": "auto",
+    "title": "Road & Track",
+    "url": "https://www.roadandtrack.com/rss/all.xml/"
+  },
+  {
+    "lang": "en",
+    "category": "auto",
+    "title": "Motor1",
+    "url": "https://www.motor1.com/rss/articles/all/"
   }
 ]

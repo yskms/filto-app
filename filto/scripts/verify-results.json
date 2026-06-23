@@ -15,19 +15,6 @@
   {
     "lang": "en",
     "category": "auto",
-    "title": "Autoblog",
-    "url": "https://www.autoblog.com/rss.xml",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 50,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Autoblog News"
-  },
-  {
-    "lang": "en",
-    "category": "auto",
     "title": "Jalopnik",
     "url": "https://jalopnik.com/rss",
     "status": "OK",
@@ -803,19 +790,6 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "Mashable"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "Digital Trends",
-    "url": "https://www.digitaltrends.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 30,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Digital Trends"
   },
   {
     "lang": "en",
@@ -3702,5 +3676,31 @@
     "checked": 10,
     "ratio": "1.00",
     "feedTitle": "THE ANSWER スポーツ文化・育成＆総合ニュース・コラムTHE ANSWE"
+  },
+  {
+    "lang": "en",
+    "category": "auto",
+    "title": "Road & Track",
+    "url": "https://www.roadandtrack.com/rss/all.xml/",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 50,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "Latest Content - Road & Track"
+  },
+  {
+    "lang": "en",
+    "category": "auto",
+    "title": "Motor1",
+    "url": "https://www.motor1.com/rss/articles/all/",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 20,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "Motor1.com - Articles"
   }
 ]
