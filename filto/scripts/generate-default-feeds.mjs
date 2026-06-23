@@ -15,7 +15,7 @@ const LABELS = {
   ja: { news: 'ニュース', tech: 'テクノロジー', business: 'ビジネス・マネー', science: 'サイエンス', dev: '開発・プログラミング', game: 'ゲーム', anime: 'アニメ・マンガ', entertainment: 'エンタメ・音楽', sports: 'スポーツ', fitness: 'フィットネス・健康', fashion: 'ファッション・美容', lifestyle: 'ライフスタイル', kids: '子育て・育児', food: 'グルメ・料理', auto: '自動車', travel: '旅行' },
   en: { world: 'World News', tech: 'Technology', business: 'Business', science: 'Science', game: 'Gaming', entertainment: 'Entertainment', sports: 'Sports', fitness: 'Fitness & Health', design: 'Design', fashion: 'Fashion & Beauty', food: 'Food', kids: 'Parenting', auto: 'Auto', travel: 'Travel', culture: 'Culture' },
 };
-const GENERIC = new Set(['www', 'feeds', 'feed', 'rss', 'news', 'assets', 'wor', 'co', 'com', 'net', 'org', 'jp', 'uk', 'io', 'go', 'tokyo', 'media', 'or', 'ne', 'nikkeibp', 'content', 'public', 'hpplus', 'shogakukan', 'benesse', 'kusuguru']);
+const GENERIC = new Set(['www', 'feeds', 'feed', 'rss', 'news', 'assets', 'wor', 'co', 'com', 'net', 'org', 'jp', 'uk', 'io', 'go', 'tokyo', 'media', 'or', 'ne', 'nikkeibp', 'content', 'public', 'hpplus', 'shogakukan', 'benesse', 'kusuguru', 'magazine']);
 
 function slug(url) {
   try {
@@ -29,7 +29,9 @@ function slug(url) {
 }
 
 const results = JSON.parse(readFileSync(new URL('./verify-results.json', import.meta.url)));
-const ok = results.filter((r) => r.status === 'OK');
+// status==='OK'(取得+サムネあり) を基本採用。force:true は方針の例外として明示的に採用する
+// （例: Qiita はRSSにサムネを埋めないが、利用者要望によりfaviconフォールバックで収録）。
+const ok = results.filter((r) => r.status === 'OK' || r.force);
 const seen = new Set();
 const feeds = ok.filter((r) => (seen.has(r.url) ? false : seen.add(r.url)));
 

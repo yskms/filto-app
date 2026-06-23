@@ -3609,5 +3609,72 @@
     "checked": 10,
     "ratio": "1.00",
     "feedTitle": "Matador Network"
+  },
+  {
+    "lang": "ja",
+    "category": "dev",
+    "title": "InfoQ Japan",
+    "url": "https://feed.infoq.com/jp/",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 6,
+    "withThumb": 6,
+    "checked": 6,
+    "ratio": "1.00",
+    "feedTitle": "InfoQ"
+  },
+  {
+    "lang": "ja",
+    "category": "game",
+    "title": "電ファミニコゲーマー",
+    "url": "https://news.denfaminicogamer.jp/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 50,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "電ファミニコゲーマー – ゲームの面白い記事読んでみない？"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "食べログマガジン",
+    "url": "https://magazine.tabelog.com/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "食べログマガジン"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "おたくま経済新聞",
+    "url": "https://otakei.otakuma.net/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "おたくま経済新聞"
+  },
+  {
+    "lang": "ja",
+    "category": "dev",
+    "title": "Qiita",
+    "url": "https://qiita.com/popular-items/feed",
+    "status": "NOTHUMB",
+    "kind": "atom",
+    "items": 30,
+    "withThumb": 0,
+    "checked": 20,
+    "ratio": "0.00",
+    "feedTitle": "Qiita - 人気の記事",
+    "force": true,
+    "note": "RSSにサムネ無し。利用者要望により例外収録(faviconフォールバック)"
   }
 ]

@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 64件 / EN 92件
+// 収録数: JA 69件 / EN 92件
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -58,6 +58,8 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "開発・プログラミング",
     feeds: [
       { id: "default_ja_zenn", title: "Zenn", url: "https://zenn.dev/feed" },
+      { id: "default_ja_infoq", title: "InfoQ Japan", url: "https://feed.infoq.com/jp/" },
+      { id: "default_ja_qiita", title: "Qiita", url: "https://qiita.com/popular-items/feed" },
     ],
   },
   {
@@ -65,6 +67,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "ゲーム",
     feeds: [
       { id: "default_ja_automatonmedia", title: "AUTOMATON", url: "https://automaton-media.com/feed/" },
+      { id: "default_ja_denfaminicogamer", title: "電ファミニコゲーマー", url: "https://news.denfaminicogamer.jp/feed" },
     ],
   },
   {
@@ -72,6 +75,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "アニメ・マンガ",
     feeds: [
       { id: "default_ja_magmix", title: "マグミクス", url: "https://magmix.jp/feed" },
+      { id: "default_ja_otakuma", title: "おたくま経済新聞", url: "https://otakei.otakuma.net/feed" },
     ],
   },
   {
@@ -148,6 +152,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "グルメ・料理",
     feeds: [
       { id: "default_ja_kufura", title: "kufura", url: "https://kufura.jp/feed" },
+      { id: "default_ja_tabelog", title: "食べログマガジン", url: "https://magazine.tabelog.com/feed" },
     ],
   },
   {
