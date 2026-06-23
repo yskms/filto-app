@@ -10,6 +10,7 @@ import {
   Image,
   Animated,
   Alert,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -211,6 +212,33 @@ export default function HomeScreen() {
   const [showScrollTop, setShowScrollTop] = React.useState(false);
   const [listViewportH, setListViewportH] = React.useState(0);
   const [listContentH, setListContentH] = React.useState(0);
+  const [isDraggingScrollbar, setIsDraggingScrollbar] = React.useState(false);
+
+  // スクロールバーのドラッグ操作用（PanResponderは最新値をrefから読む）
+  const scrollOffsetRef = React.useRef(0);
+  const dragStartOffsetRef = React.useRef(0);
+  const scrollbarGeomRef = React.useRef({ trackH: 0, thumbH: 0, maxScroll: 0 });
+
+  const scrollbarPan = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        dragStartOffsetRef.current = scrollOffsetRef.current;
+        setIsDraggingScrollbar(true);
+      },
+      onPanResponderMove: (_evt, gesture) => {
+        const { trackH, thumbH, maxScroll } = scrollbarGeomRef.current;
+        const denom = trackH - thumbH;
+        if (denom <= 0 || maxScroll <= 0) return;
+        let offset = dragStartOffsetRef.current + (gesture.dy / denom) * maxScroll;
+        offset = Math.max(0, Math.min(maxScroll, offset));
+        flatListRef.current?.scrollToOffset({ offset, animated: false });
+      },
+      onPanResponderRelease: () => setIsDraggingScrollbar(false),
+      onPanResponderTerminate: () => setIsDraggingScrollbar(false),
+    })
+  ).current;
 
   // ハイライトアニメーション用（記事IDごとに管理）
   const highlightAnims = React.useRef<Map<string, Animated.Value>>(new Map());
@@ -378,7 +406,9 @@ export default function HomeScreen() {
       Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
         useNativeDriver: false,
         listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
-          setShowScrollTop(e.nativeEvent.contentOffset.y > SCROLL_TOP_THRESHOLD);
+          const y = e.nativeEvent.contentOffset.y;
+          scrollOffsetRef.current = y;
+          setShowScrollTop(y > SCROLL_TOP_THRESHOLD);
         },
       }),
     [scrollY]
@@ -519,6 +549,8 @@ export default function HomeScreen() {
     outputRange: [0, Math.max(0, trackH - thumbH)],
     extrapolate: 'clamp',
   });
+  // PanResponderが参照する最新ジオメトリを保持
+  scrollbarGeomRef.current = { trackH, thumbH, maxScroll };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
@@ -569,17 +601,20 @@ export default function HomeScreen() {
             }
           />
 
-          {/* 常時表示のカスタムスクロールバー */}
+          {/* 常時表示・ドラッグ可能なカスタムスクロールバー */}
           {showScrollbar && (
             <View
               style={[styles.scrollbarTrack, { top: SCROLLBAR_INSET, height: trackH }]}
-              pointerEvents="none"
+              pointerEvents="box-none"
             >
               <Animated.View
                 style={[
                   styles.scrollbarThumb,
+                  isDraggingScrollbar && styles.scrollbarThumbActive,
                   { height: thumbH, backgroundColor: scrollbarColor, transform: [{ translateY: thumbTranslateY }] },
                 ]}
+                hitSlop={{ left: 18, right: 8, top: 6, bottom: 6 }}
+                {...scrollbarPan.panHandlers}
               />
             </View>
           )}
@@ -693,11 +728,16 @@ const styles = StyleSheet.create({
   scrollbarTrack: {
     position: 'absolute',
     right: 2,
-    width: 4,
+    width: 16,
+    alignItems: 'flex-end',
   },
   scrollbarThumb: {
-    width: 4,
-    borderRadius: 2,
+    width: 6,
+    borderRadius: 3,
+  },
+  scrollbarThumbActive: {
+    width: 10,
+    borderRadius: 5,
   },
   scrollTopWrap: {
     position: 'absolute',
