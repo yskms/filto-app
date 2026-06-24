@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -95,18 +96,8 @@ export default function OnboardingScreen({ onComplete }: Props) {
     () => new Set(FEED_CATEGORIES[language === 'ja' ? 'ja' : 'en'].map(c => c.id))
   );
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
-  // Step3(使い方)表示中に裏で実行する初回セットアップの完了フラグ
-  const [setupReady, setSetupReady] = useState(false);
+  const [loading, setLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-
-  // 使い方ガイドの項目（アイコン＋テキストのみ。画像は使わない）
-  const howToPoints: { icon: React.ComponentProps<typeof Ionicons>['name']; title: string; desc: string }[] = [
-    { icon: 'home', title: t('onboarding.howtoFeedsTitle'), desc: t('onboarding.howtoFeedsDesc') },
-    { icon: 'funnel', title: t('onboarding.howtoFilterTitle'), desc: t('onboarding.howtoFilterDesc') },
-    { icon: 'star', title: t('onboarding.howtoStarTitle'), desc: t('onboarding.howtoStarDesc') },
-    { icon: 'refresh-outline', title: t('onboarding.howtoRefreshTitle'), desc: t('onboarding.howtoRefreshDesc') },
-    { icon: 'logo-rss', title: t('onboarding.howtoManageTitle'), desc: t('onboarding.howtoManageDesc') },
-  ];
 
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -143,14 +134,8 @@ export default function OnboardingScreen({ onComplete }: Props) {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   };
 
-  // Step2 → Step3: 使い方を表示しつつ、裏でseed＋初回syncを開始する
-  const handleStartSetup = () => {
-    setStep(3);
-    scrollRef.current?.scrollTo({ y: 0, animated: false });
-    runSetup();
-  };
-
-  const runSetup = async () => {
+  const handleComplete = async () => {
+    setLoading(true);
     try {
       const feeds = categories
         .filter(cat => selectedCategories.has(cat.id))
@@ -160,11 +145,16 @@ export default function OnboardingScreen({ onComplete }: Props) {
       await seedFeedsFromSelection(feeds);
       await seedFiltersFromTopics(Array.from(selectedKeywords));
 
-      try { await SyncService.refresh(); } catch {}
+      // ホームで初回チュートリアル（コーチマーク）を表示するためのフラグ
+      await AsyncStorage.setItem('@filto/home/startTutorial', '1');
+
+      // 同期はブロックせず裏で実行（ホームでツアーを見ている間に記事が届く）
+      SyncService.refresh().catch(() => {});
+
+      onComplete();
     } catch {
-      // 失敗してもホームへは進めるようにする（記事は後から取得可能）
-    } finally {
-      setSetupReady(true);
+      Alert.alert(t('errors.operationFailed'));
+      setLoading(false);
     }
   };
 
@@ -172,7 +162,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
         <ThemedText style={styles.stepIndicator}>
-          {t('onboarding.stepIndicator', { current: step, total: 3 })}
+          {t('onboarding.stepIndicator', { current: step, total: 2 })}
         </ThemedText>
         {step === 1 && (
           <View style={[styles.langToggle, { borderColor }]}>
@@ -197,10 +187,10 @@ export default function OnboardingScreen({ onComplete }: Props) {
 
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <ThemedText style={styles.title}>
-          {step === 1 ? t('onboarding.step1Title') : step === 2 ? t('onboarding.step2Title') : t('onboarding.step3Title')}
+          {step === 1 ? t('onboarding.step1Title') : t('onboarding.step2Title')}
         </ThemedText>
         <ThemedText style={[styles.subtitle, { color: hintColor }]}>
-          {step === 1 ? t('onboarding.step1Subtitle') : step === 2 ? t('onboarding.step2Subtitle') : t('onboarding.step3Subtitle')}
+          {step === 1 ? t('onboarding.step1Subtitle') : t('onboarding.step2Subtitle')}
         </ThemedText>
 
         {step === 1 ? (
@@ -229,7 +219,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
               {t('onboarding.step1Hint')}
             </ThemedText>
           </>
-        ) : step === 2 ? (
+        ) : (
           <View style={styles.keywordsGrid}>
             {keywords.map(kw => {
               const checked = selectedKeywords.has(kw);
@@ -254,18 +244,6 @@ export default function OnboardingScreen({ onComplete }: Props) {
               );
             })}
           </View>
-        ) : (
-          <View>
-            {howToPoints.map((p, i) => (
-              <View key={i} style={styles.howtoRow}>
-                <Ionicons name={p.icon} size={26} color={ACCENT} style={styles.howtoIcon} />
-                <View style={styles.howtoText}>
-                  <ThemedText style={styles.howtoTitle}>{p.title}</ThemedText>
-                  <ThemedText style={[styles.howtoDesc, { color: hintColor }]}>{p.desc}</ThemedText>
-                </View>
-              </View>
-            ))}
-          </View>
         )}
       </ScrollView>
 
@@ -278,29 +256,19 @@ export default function OnboardingScreen({ onComplete }: Props) {
             <ThemedText style={styles.backBtnText}>{t('onboarding.back')}</ThemedText>
           </TouchableOpacity>
         )}
-        {step === 3 ? (
-          <TouchableOpacity
-            style={[styles.btn, styles.primaryBtn, !setupReady && styles.btnDisabled]}
-            onPress={onComplete}
-            disabled={!setupReady}
-          >
-            {setupReady ? (
-              <Text style={styles.primaryBtnText}>{t('onboarding.start')}</Text>
-            ) : (
-              <View style={styles.preparingRow}>
-                <ActivityIndicator color="#fff" size="small" />
-                <Text style={[styles.primaryBtnText, styles.preparingText]}>{t('onboarding.preparing')}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.btn, styles.primaryBtn]}
-            onPress={step === 1 ? handleNext : handleStartSetup}
-          >
-            <Text style={styles.primaryBtnText}>{t('onboarding.next')}</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.btn, styles.primaryBtn, loading && styles.btnDisabled]}
+          onPress={step === 1 ? handleNext : handleComplete}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.primaryBtnText}>
+              {step === 1 ? t('onboarding.next') : t('onboarding.start')}
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -345,16 +313,6 @@ const styles = StyleSheet.create({
   optionLabel: { fontSize: 17, fontWeight: '500' },
   optionSub: { fontSize: 13, marginTop: 2 },
   hint: { fontSize: 13, marginTop: 8, textAlign: 'center' },
-  howtoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    paddingVertical: 14,
-  },
-  howtoIcon: { marginTop: 2 },
-  howtoText: { flex: 1 },
-  howtoTitle: { fontSize: 16, fontWeight: '600' },
-  howtoDesc: { fontSize: 13, marginTop: 3, lineHeight: 19 },
   keywordsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: {
     flexDirection: 'row',
@@ -387,6 +345,4 @@ const styles = StyleSheet.create({
   primaryBtn: { backgroundColor: ACCENT },
   btnDisabled: { opacity: 0.6 },
   primaryBtnText: { fontSize: 17, fontWeight: '600', color: '#fff' },
-  preparingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  preparingText: { fontSize: 15 },
 });

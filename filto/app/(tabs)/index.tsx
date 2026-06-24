@@ -11,13 +11,15 @@ import {
   Animated,
   Alert,
   PanResponder,
+  Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { Article } from '@/types/Article';
 import { FeedSelectModal } from '@/components/FeedSelectModal';
 import { FeedSortType } from '@/components/FeedSortModal';
+import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 import { Feed } from '@/types/Feed';
 import { FilterEngine } from '@/services/FilterEngine';
 import { FilterService, Filter } from '@/services/FilterService';
@@ -148,7 +150,9 @@ const HomeHeader: React.FC<{
   onPressFeedSelect: () => void;
   onPressStarFilter: () => void;
   onPressRefresh: () => void;
-}> = ({ feedName, showStarredOnly, onPressFeedSelect, onPressStarFilter, onPressRefresh }) => {
+  feedSelectorRef: React.RefObject<View | null>;
+  refreshRef: React.RefObject<View | null>;
+}> = ({ feedName, showStarredOnly, onPressFeedSelect, onPressStarFilter, onPressRefresh, feedSelectorRef, refreshRef }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'icon');
@@ -159,6 +163,7 @@ const HomeHeader: React.FC<{
     <View style={[styles.headerContainer, { borderBottomColor: borderColor, backgroundColor }]}>
       <View style={styles.header}>
         <TouchableOpacity
+          ref={feedSelectorRef}
           style={styles.feedSelector}
           onPress={onPressFeedSelect}
           activeOpacity={0.7}
@@ -177,6 +182,7 @@ const HomeHeader: React.FC<{
           </TouchableOpacity>
 
           <TouchableOpacity
+            ref={refreshRef}
             style={styles.refreshButton}
             onPress={onPressRefresh}
             activeOpacity={0.7}
@@ -218,6 +224,14 @@ export default function HomeScreen() {
   // スクロール位置保持
   const flatListRef = React.useRef<FlatList>(null);
   const isInitialLoad = React.useRef(true);
+
+  // 初回チュートリアル（コーチマーク）
+  const insets = useSafeAreaInsets();
+  const [tutorialVisible, setTutorialVisible] = React.useState(false);
+  const feedSelectorRef = React.useRef<View>(null);
+  const refreshRef = React.useRef<View>(null);
+  const filterBarRef = React.useRef<View>(null);
+  const listWrapperRef = React.useRef<View>(null);
 
   // スクロール連動（カスタムスクロールバー / トップへ戻るボタン）
   const scrollY = React.useRef(new Animated.Value(0)).current;
@@ -328,6 +342,63 @@ export default function HomeScreen() {
   const handleSelectFeedSort = React.useCallback((sortType: FeedSortType) => {
     setFeedSort(sortType);
     AsyncStorage.setItem('@filto/home/feedSort', sortType).catch(() => {});
+  }, []);
+
+  // チュートリアル: 対象要素を実測してハイライト位置を返す
+  const measureNode = React.useCallback(
+    (ref: React.RefObject<View | null>): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = ref.current;
+        if (!node) { resolve(null); return; }
+        requestAnimationFrame(() => {
+          node.measureInWindow((x, y, width, height) => {
+            if (!width || !height) resolve(null);
+            else resolve({ x, y, width, height });
+          });
+        });
+      }),
+    []
+  );
+
+  const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    { measure: () => measureNode(feedSelectorRef), title: t('home.tutFeedTitle'), desc: t('home.tutFeedDesc') },
+    { measure: () => measureNode(refreshRef), title: t('home.tutRefreshTitle'), desc: t('home.tutRefreshDesc') },
+    {
+      // 記事リストの先頭付近をハイライト（長押しでお気に入り）
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const node = listWrapperRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, width, height) => {
+          if (!width || !height) resolve(null);
+          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(96, Math.max(0, height - 12)) });
+        });
+      }),
+      title: t('home.tutStarTitle'), desc: t('home.tutStarDesc'),
+    },
+    { measure: () => measureNode(filterBarRef), title: t('home.tutFilterTitle'), desc: t('home.tutFilterDesc') },
+    {
+      // 下タブ（領域でハイライト）
+      measure: () => {
+        const { width, height } = Dimensions.get('window');
+        const tabH = 49 + insets.bottom;
+        return Promise.resolve<CoachRect>({ x: 0, y: height - tabH, width, height: tabH });
+      },
+      title: t('home.tutTabsTitle'), desc: t('home.tutTabsDesc'),
+    },
+  ], [t, measureNode, insets.bottom]);
+
+  // 初回（オンボーディング直後）にチュートリアルを開始
+  React.useEffect(() => {
+    if (isLoading) return;
+    AsyncStorage.getItem('@filto/home/startTutorial').then((flag) => {
+      if (flag === '1') setTimeout(() => setTutorialVisible(true), 400);
+    }).catch(() => {});
+  }, [isLoading]);
+
+  const handleTutorialDone = React.useCallback(() => {
+    setTutorialVisible(false);
+    AsyncStorage.removeItem('@filto/home/startTutorial').catch(() => {});
+    AsyncStorage.setItem('@filto/home/tutorialSeen', 'true').catch(() => {});
   }, []);
 
   // 画面フォーカス時にデータを読み込む
@@ -599,10 +670,13 @@ export default function HomeScreen() {
         onPressFeedSelect={handleFeedSelect}
         onPressStarFilter={handleToggleStarFilter}
         onPressRefresh={handleRefresh}
+        feedSelectorRef={feedSelectorRef}
+        refreshRef={refreshRef}
       />
 
       {blockedByFilters > 0 && (
         <TouchableOpacity
+          ref={filterBarRef}
           style={[styles.filterBar, { backgroundColor: filterBarBg }]}
           onPress={() => setShowBlockedKeywords(prev => !prev)}
           activeOpacity={0.7}
@@ -629,6 +703,7 @@ export default function HomeScreen() {
         <LoadingView />
       ) : (
         <View
+          ref={listWrapperRef}
           style={styles.listWrapper}
           onLayout={(e) => setListViewportH(e.nativeEvent.layout.height)}
         >
@@ -705,6 +780,13 @@ export default function HomeScreen() {
         onClose={() => setFeedModalVisible(false)}
         onSelectFeeds={handleSelectFeeds}
         onSelectSort={handleSelectFeedSort}
+      />
+
+      {/* 初回の使い方ツアー（実画面の要素を指すコーチマーク） */}
+      <CoachMarks
+        visible={tutorialVisible}
+        steps={tutorialSteps}
+        onDone={handleTutorialDone}
       />
     </SafeAreaView>
   );
