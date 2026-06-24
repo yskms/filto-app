@@ -622,7 +622,6 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
             removeClippedSubviews={true}
             showsVerticalScrollIndicator={false}
-            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             onContentSizeChange={(_, h) => setListContentH(h)}
