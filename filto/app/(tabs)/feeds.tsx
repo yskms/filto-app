@@ -133,6 +133,7 @@ const FeedItem: React.FC<{
   const subtextColor = useThemeColor({}, 'icon');
   const dangerColor = useThemeColor({}, 'danger');
   const tintColor = useThemeColor({}, 'tint');
+  const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
   const iconPlaceholderBg = useThemeColor({ light: '#f0f0f0', dark: '#2a2b2c' }, 'background');
 
   const renderRightActions = () => {
@@ -157,7 +158,11 @@ const FeedItem: React.FC<{
   };
 
   const content = (
-    <View style={[styles.feedItem, { backgroundColor, borderBottomColor: borderColor }]}>
+    <View style={[
+      styles.feedItem,
+      { backgroundColor, borderBottomColor: borderColor },
+      isDeleteMode && isSelected && { backgroundColor: selectedBgColor },
+    ]}>
       <View style={styles.feedContent}>
         {feed.iconUrl ? (
           <Image

@@ -42,6 +42,7 @@ const FilterItem: React.FC<{
   const subtextColor = useThemeColor({}, 'icon');
   const dangerColor = useThemeColor({}, 'danger');
   const tintColor = useThemeColor({}, 'tint');
+  const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
   const { t } = useTranslation();
 
   // 削除アクション（右側）- Reanimated版
@@ -81,6 +82,7 @@ const FilterItem: React.FC<{
         style={[
           styles.filterContainer,
           { backgroundColor, borderBottomColor: borderColor },
+          deleteMode && isSelected && { backgroundColor: selectedBgColor },
         ]}
         onPress={handlePress}
         activeOpacity={0.7}
