@@ -37,7 +37,7 @@ export const ja = {
     home: {
       title: 'Home',
       allFeeds: 'すべてのフィード',
-      selectFeed: 'フィード選択',
+      selectFeed: '表示フィード選択',
       noArticles: '記事がありません',
       noArticlesHint: 'フィードを追加して更新してください',
       justNow: 'たった今',

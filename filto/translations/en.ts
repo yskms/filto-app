@@ -37,7 +37,7 @@ export const en = {
   home: {
     title: 'Home',
     allFeeds: 'All Feeds',
-    selectFeed: 'Select Feed',
+    selectFeed: 'Select Feeds to Show',
     noArticles: 'No articles',
     noArticlesHint: 'Add feeds and refresh',
     justNow: 'Just now',

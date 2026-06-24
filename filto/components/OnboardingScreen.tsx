@@ -101,11 +101,11 @@ export default function OnboardingScreen({ onComplete }: Props) {
 
   // 使い方ガイドの項目（アイコン＋テキストのみ。画像は使わない）
   const howToPoints: { icon: React.ComponentProps<typeof Ionicons>['name']; title: string; desc: string }[] = [
-    { icon: 'logo-rss', title: t('onboarding.howtoFeedsTitle'), desc: t('onboarding.howtoFeedsDesc') },
+    { icon: 'home', title: t('onboarding.howtoFeedsTitle'), desc: t('onboarding.howtoFeedsDesc') },
     { icon: 'funnel', title: t('onboarding.howtoFilterTitle'), desc: t('onboarding.howtoFilterDesc') },
     { icon: 'star', title: t('onboarding.howtoStarTitle'), desc: t('onboarding.howtoStarDesc') },
     { icon: 'refresh-outline', title: t('onboarding.howtoRefreshTitle'), desc: t('onboarding.howtoRefreshDesc') },
-    { icon: 'add', title: t('onboarding.howtoManageTitle'), desc: t('onboarding.howtoManageDesc') },
+    { icon: 'logo-rss', title: t('onboarding.howtoManageTitle'), desc: t('onboarding.howtoManageDesc') },
   ];
 
   const backgroundColor = useThemeColor({}, 'background');
