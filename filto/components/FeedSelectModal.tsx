@@ -90,8 +90,8 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
               <TouchableOpacity onPress={() => setSortModalVisible(true)} style={styles.headerButton}>
                 <Ionicons name="swap-vertical-outline" size={22} color={iconColor} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={onClose} style={styles.headerButton}>
-                <Ionicons name="close" size={22} color={iconColor} />
+              <TouchableOpacity onPress={onClose} style={styles.headerButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <ThemedText style={[styles.doneText, { color: tintColor }]}>{t('common.done')}</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -205,6 +205,11 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 4,
+  },
+  doneText: {
+    fontSize: 16,
+    fontWeight: '600',
+    paddingHorizontal: 4,
   },
   listContainer: {
     flex: 1,
