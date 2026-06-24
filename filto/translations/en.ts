@@ -41,6 +41,7 @@ export const en = {
     noArticles: 'No articles',
     noArticlesHint: 'Add feeds and refresh',
     justNow: 'Just now',
+    scrollToTop: 'Scroll to top',
     pullToRefresh: 'Pull to refresh',
     fetchingFeeds: 'Fetching feeds...',
     syncComplete: 'Sync complete',
@@ -51,6 +52,10 @@ export const en = {
     articleOpenError: 'Failed to open article',
     favoriteError: 'Failed to update favorite',
     articlesFiltered: '{{count}} articles filtered by your keywords',
+    articlesFilteredShown: 'Showing filtered articles too',
+    filteredLabel: 'Filtered',
+    show: 'Show',
+    hide: 'Hide',
   },
 
   // Filters screen

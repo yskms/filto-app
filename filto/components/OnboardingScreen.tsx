@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,97 +17,50 @@ import {
   seedFeedsFromSelection,
   seedFiltersFromTopics,
 } from '@/database/init';
+import { DEFAULT_FEED_CATEGORIES } from '@/constants/defaultFeeds';
 import { SyncService } from '@/services/SyncService';
 
-type FeedItem = { id: string; title: string; url: string };
-type FeedCategory = { id: string; label: string; feeds: FeedItem[] };
-
-const FEED_CATEGORIES: Record<string, FeedCategory[]> = {
-  ja: [
-    {
-      id: 'news',
-      label: 'ニュース',
-      feeds: [{ id: 'feed_livedoor', title: 'ライブドアニュース', url: 'https://news.livedoor.com/topics/rss/top.xml' }],
-    },
-    {
-      id: 'tech',
-      label: 'テクノロジー',
-      feeds: [
-        { id: 'feed_gigazine', title: 'Gigazine', url: 'https://gigazine.net/news/rss_2.0/' },
-        { id: 'feed_itmedia', title: 'ITmedia', url: 'https://rss.itmedia.co.jp/rss/2.0/itmediamain.xml' },
-      ],
-    },
-    {
-      id: 'business',
-      label: 'ビジネス',
-      feeds: [
-        { id: 'feed_toyokeizai', title: '東洋経済オンライン', url: 'https://toyokeizai.net/list/feed/rss' },
-      ],
-    },
-    {
-      id: 'sports',
-      label: 'スポーツ',
-      feeds: [{ id: 'feed_nikkansports', title: '日刊スポーツ', url: 'https://www.nikkansports.com/rss/rss_nstopnews.xml' }],
-    },
-    {
-      id: 'entertainment',
-      label: '芸能・エンタメ',
-      feeds: [{ id: 'feed_mdpr', title: 'モデルプレス', url: 'https://feed.mdpr.jp/rss/export/mdpr-entertainment.xml' }],
-    },
-  ],
-  en: [
-    {
-      id: 'world',
-      label: 'World News',
-      feeds: [{ id: 'feed_bbc', title: 'BBC News', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' }],
-    },
-    {
-      id: 'tech',
-      label: 'Technology',
-      feeds: [
-        { id: 'feed_arstechnica', title: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index' },
-        { id: 'feed_verge', title: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
-      ],
-    },
-    {
-      id: 'science',
-      label: 'Science & Tech',
-      feeds: [{ id: 'feed_wired', title: 'Wired', url: 'https://www.wired.com/feed/rss' }],
-    },
-    {
-      id: 'entertainment',
-      label: 'Entertainment',
-      feeds: [{ id: 'feed_variety', title: 'Variety', url: 'https://variety.com/feed/' }],
-    },
-    {
-      id: 'business',
-      label: 'Business',
-      feeds: [{ id: 'feed_businessinsider', title: 'Business Insider', url: 'https://feeds.businessinsider.com/custom/all' }],
-    },
-  ],
-};
+const FEED_CATEGORIES = DEFAULT_FEED_CATEGORIES;
 
 // 各キーワードがそのままブロックキーワードとして登録される
 const BLOCK_KEYWORDS: Record<string, string[]> = {
   ja: [
     '野球', 'サッカー', 'ゴルフ', '相撲', 'テニス',
-    'バスケ', '競馬', '格闘技', 'ラグビー', 'バレー',
-    '卓球', '水泳', '陸上', 'スキー', '柔道',
+    'バスケ', '競馬', '格闘技', 'ラグビー', 'オリンピック',
     '芸能', 'アイドル', 'お笑い', 'ドラマ', '映画',
-    '音楽', 'アニメ', 'ゲーム', 'ファッション', '占い',
+    '音楽', 'アニメ', 'ゲーム', 'ファッション', 'K-POP',
+    '韓流', 'ネタバレ',
+    '不倫', '熱愛', '破局', '離婚', 'スキャンダル',
+    '炎上', '暴露', '誹謗中傷', '謝罪', '文春',
+    '事件', '事故', '災害', '地震', '台風',
+    '火事', '戦争', '訃報', '感染症', 'コロナ',
+    '殺人', '逮捕', '詐欺', 'いじめ',
     '政治', '選挙', '国会', '議員', '外交',
+    '皇室', '税制', '増税',
     '仮想通貨', 'ビットコイン', 'NFT', '株価', 'FX',
-    '競艇', 'パチンコ', '宝くじ',
+    'NISA', '投資', '節税', '円安', '物価',
+    'PR', '広告', 'セール', 'クーポン', 'ふるさと納税', '値上げ',
+    '競艇', 'パチンコ', '宝くじ', '競輪',
+    '占い', '星座', '運勢', 'スピリチュアル', 'タロット', '風水',
   ],
   en: [
     'Baseball', 'Football', 'Basketball', 'Soccer', 'Golf',
-    'Tennis', 'Racing', 'Wrestling', 'Hockey', 'Boxing',
-    'MMA', 'Rugby', 'Cricket', 'Swimming', 'Athletics',
+    'Tennis', 'Boxing', 'MMA', 'Rugby', 'Olympics',
     'Celebrity', 'Gossip', 'Reality TV', 'Movies', 'Music',
-    'Anime', 'Gaming', 'Fashion', 'Horoscope', 'Astrology',
+    'Anime', 'Gaming', 'Fashion', 'K-Pop', 'Hollywood',
+    'Spoilers', 'Streaming',
+    'Scandal', 'Affair', 'Breakup', 'Divorce', 'Rumor',
+    'Backlash', 'Cancel Culture', 'Tabloid', 'Exposed', 'Apology',
+    'Crime', 'Accident', 'Disaster', 'Earthquake', 'Hurricane',
+    'Fire', 'War', 'Obituary', 'Pandemic', 'COVID',
+    'Murder', 'Shooting', 'Fraud', 'Bullying',
     'Politics', 'Election', 'Congress', 'Senate', 'Diplomacy',
+    'Immigration', 'Tax', 'Tariffs',
     'Crypto', 'Bitcoin', 'NFT', 'Stocks', 'Forex',
-    'Gambling', 'Lottery', 'Poker',
+    'Inflation', 'Investing', 'Recession', 'IPO', 'Mortgage',
+    'Ads', 'Sponsored', 'Sale', 'Coupon', 'Deals', 'Discount',
+    'Gambling', 'Lottery', 'Poker', 'Betting',
+    'Horoscope', 'Astrology', 'Zodiac', 'Tarot', 'Spiritual', 'Psychic',
   ],
 };
 
@@ -131,7 +84,7 @@ interface Props {
 
 export default function OnboardingScreen({ onComplete }: Props) {
   const { t } = useTranslation();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
 
   const lang = language === 'ja' ? 'ja' : 'en';
   const categories = FEED_CATEGORIES[lang];
@@ -148,6 +101,12 @@ export default function OnboardingScreen({ onComplete }: Props) {
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const hintColor = useThemeColor({ light: '#687076', dark: '#9BA1A6' }, 'background');
+
+  // 言語切替時は、カテゴリIDが言語ごとに異なるため選択状態をリセットする
+  useEffect(() => {
+    setSelectedCategories(new Set(FEED_CATEGORIES[lang].map(c => c.id)));
+    setSelectedKeywords(new Set());
+  }, [lang]);
 
   const toggleCategory = (id: string) => {
     setSelectedCategories(prev => {
@@ -200,6 +159,25 @@ export default function OnboardingScreen({ onComplete }: Props) {
         <ThemedText style={styles.stepIndicator}>
           {t('onboarding.stepIndicator', { current: step, total: 2 })}
         </ThemedText>
+        {step === 1 && (
+          <View style={[styles.langToggle, { borderColor }]}>
+            {(['ja', 'en'] as const).map(code => {
+              const active = language === code;
+              return (
+                <TouchableOpacity
+                  key={code}
+                  style={[styles.langOption, active && styles.langOptionActive]}
+                  onPress={() => { if (!active) setLanguage(code); }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.langText, { color: active ? '#fff' : hintColor }]}>
+                    {code === 'ja' ? '日本語' : 'English'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </View>
 
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -295,11 +273,24 @@ export default function OnboardingScreen({ onComplete }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 14,
+    minHeight: 56,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   stepIndicator: { fontSize: 14, opacity: 0.6 },
+  langToggle: {
+    flexDirection: 'row',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  langOption: { paddingHorizontal: 12, paddingVertical: 6 },
+  langOptionActive: { backgroundColor: ACCENT },
+  langText: { fontSize: 13, fontWeight: '600' },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24 },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 8 },

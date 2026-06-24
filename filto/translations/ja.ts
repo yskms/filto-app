@@ -41,6 +41,7 @@ export const ja = {
       noArticles: '記事がありません',
       noArticlesHint: 'フィードを追加して更新してください',
       justNow: 'たった今',
+      scrollToTop: '一番上に戻る',
       pullToRefresh: '引っ張って更新',
       fetchingFeeds: 'フィードを取得中...',
       syncComplete: '同期完了',
@@ -51,6 +52,10 @@ export const ja = {
       articleOpenError: '記事を開けませんでした',
       favoriteError: 'お気に入りの変更に失敗しました',
       articlesFiltered: '{{count}}件がルールにより非表示',
+      articlesFilteredShown: 'フィルタ対象の記事も表示中',
+      filteredLabel: '非表示',
+      show: '表示',
+      hide: '隠す',
     },
   
     // Filters画面

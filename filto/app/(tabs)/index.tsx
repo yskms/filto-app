@@ -10,6 +10,7 @@ import {
   Image,
   Animated,
   Alert,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -34,6 +35,10 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { LoadingView } from '@/components/LoadingView';
 
+const ACCENT = '#0a7ea4';
+const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
+const SCROLL_TOP_THRESHOLD = 500; // この位置を超えたら「トップへ戻る」ボタンを表示
+
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string, justNow: string): string => {
   const now = Date.now();
@@ -56,7 +61,8 @@ const ArticleItem = React.memo<{
   onPress: (article: Article) => void;
   onLongPress: (article: Article) => void;
   highlightAnim: Animated.Value;
-}>(({ article, onPress, onLongPress, highlightAnim }) => {
+  isBlocked?: boolean;
+}>(({ article, onPress, onLongPress, highlightAnim, isBlocked = false }) => {
   const { t } = useTranslation();
   const timeAgo = getTimeAgo(article.publishedAt, t('home.justNow'));
 
@@ -83,7 +89,7 @@ const ArticleItem = React.memo<{
         style={[
           styles.articleContainer,
           { backgroundColor: animatedBg, borderBottomColor: borderColor },
-          article.isRead && styles.readContainer,
+          (article.isRead || isBlocked) && styles.readContainer,
         ]}
       >
         <View style={styles.articleContent}>
@@ -102,7 +108,7 @@ const ArticleItem = React.memo<{
           <View style={styles.textContainer}>
             <View style={styles.titleRow}>
               <Text
-                style={[styles.title, { color: textColor }, article.isRead && { color: subtextColor, fontWeight: '400' }]}
+                style={[styles.title, { color: textColor }, (article.isRead || isBlocked) && { color: subtextColor, fontWeight: '400' }]}
                 numberOfLines={2}
               >
                 {article.title}
@@ -112,6 +118,13 @@ const ArticleItem = React.memo<{
               )}
             </View>
             <View style={styles.metaContainer}>
+              {isBlocked && (
+                <>
+                  <Ionicons name="funnel" size={11} color={subtextColor} style={{ marginRight: 3 }} />
+                  <Text style={[styles.metaText, { color: subtextColor }]}>{t('home.filteredLabel')}</Text>
+                  <Text style={[styles.separator, { color: subtextColor }]}>/</Text>
+                </>
+              )}
               <Text style={[styles.metaText, { color: subtextColor }]}>
                 {article.feedName}
               </Text>
@@ -190,6 +203,9 @@ export default function HomeScreen() {
   const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
   const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
   const [blockedByFilters, setBlockedByFilters] = React.useState(0);
+  // ブロックされた記事を（淡色で）表示するかどうか
+  const [showBlockedKeywords, setShowBlockedKeywords] = React.useState(false);
+  const [blockedKeywordIds, setBlockedKeywordIds] = React.useState<Set<string>>(new Set());
 
   // Display & Behavior（既読表示など）
   const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
@@ -200,6 +216,40 @@ export default function HomeScreen() {
   // スクロール位置保持
   const flatListRef = React.useRef<FlatList>(null);
   const isInitialLoad = React.useRef(true);
+
+  // スクロール連動（カスタムスクロールバー / トップへ戻るボタン）
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const scrollTopAnim = React.useRef(new Animated.Value(0)).current;
+  const [showScrollTop, setShowScrollTop] = React.useState(false);
+  const [listViewportH, setListViewportH] = React.useState(0);
+  const [listContentH, setListContentH] = React.useState(0);
+  const [isDraggingScrollbar, setIsDraggingScrollbar] = React.useState(false);
+
+  // スクロールバーのドラッグ操作用（PanResponderは最新値をrefから読む）
+  const scrollOffsetRef = React.useRef(0);
+  const dragStartOffsetRef = React.useRef(0);
+  const scrollbarGeomRef = React.useRef({ trackH: 0, thumbH: 0, maxScroll: 0 });
+
+  const scrollbarPan = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        dragStartOffsetRef.current = scrollOffsetRef.current;
+        setIsDraggingScrollbar(true);
+      },
+      onPanResponderMove: (_evt, gesture) => {
+        const { trackH, thumbH, maxScroll } = scrollbarGeomRef.current;
+        const denom = trackH - thumbH;
+        if (denom <= 0 || maxScroll <= 0) return;
+        let offset = dragStartOffsetRef.current + (gesture.dy / denom) * maxScroll;
+        offset = Math.max(0, Math.min(maxScroll, offset));
+        flatListRef.current?.scrollToOffset({ offset, animated: false });
+      },
+      onPanResponderRelease: () => setIsDraggingScrollbar(false),
+      onPanResponderTerminate: () => setIsDraggingScrollbar(false),
+    })
+  ).current;
 
   // ハイライトアニメーション用（記事IDごとに管理）
   const highlightAnims = React.useRef<Map<string, Animated.Value>>(new Map());
@@ -292,10 +342,11 @@ export default function HomeScreen() {
 
         // バックグラウンドで同期実行
         await SyncService.refresh();
-        
-        // データを再読み込み
-        await loadData();
-        
+
+        // データを再読み込み（スピナーを出さず＝FlatListを再マウントせず、
+        // 閲覧中のスクロール位置を保ったまま更新する）
+        await loadData(false);
+
         setHasAutoSynced(true);
       } catch (_) {
         // エラーでもアプリは正常に動作
@@ -322,14 +373,20 @@ export default function HomeScreen() {
     // グローバル許可キーワードを文字列配列に変換
     const allowKeywords = globalAllowKeywords.map(k => k.keyword);
 
-    // フィルタエンジンで評価
-    let displayed = filtered.filter(article => {
-      const shouldBlock = FilterEngine.evaluate(article, filters, allowKeywords);
-      return !shouldBlock; // ブロックされない記事のみ表示
-    });
+    // フィルタエンジンで評価（ブロック対象を除外せず印を付ける）
+    const blockedIds = new Set<string>();
+    for (const article of filtered) {
+      if (FilterEngine.evaluate(article, filters, allowKeywords)) {
+        blockedIds.add(article.id);
+      }
+    }
+    setBlockedKeywordIds(blockedIds);
+    setBlockedByFilters(blockedIds.size);
 
-    // キーワードフィルタでブロックされた件数を記録
-    setBlockedByFilters(filtered.length - displayed.length);
+    // 通常はブロック記事を非表示。「表示する」がONのときは順序を保ったまま含める
+    let displayed = showBlockedKeywords
+      ? filtered
+      : filtered.filter(a => !blockedIds.has(a.id));
 
     // 既読表示設定に基づいてフィルタリング
     if (readDisplay === 'hide') {
@@ -337,7 +394,7 @@ export default function HomeScreen() {
     }
 
     setFilteredArticles(displayed);
-  }, [articles, selectedFeedId, showStarredOnly, filters, globalAllowKeywords, readDisplay]);
+  }, [articles, selectedFeedId, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
 
   const handleRefresh = React.useCallback(async () => {
     try {
@@ -352,14 +409,44 @@ export default function HomeScreen() {
       }
 
 
-      // データを再読み込み
-      await loadData();
+      // データを再読み込み（RefreshControlが既にスピナーを出すので再マウントしない）
+      await loadData(false);
+
+      // 手動更新は明示操作なので、最新記事を見せるため先頭へ
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     } catch (_) {
       ErrorHandler.showSyncError(t);
     } finally {
       setRefreshing(false);
     }
   }, [loadData, t]);
+
+  // スクロール監視（バー連動 + ボタン表示切替）
+  const handleScroll = React.useMemo(
+    () =>
+      Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+        useNativeDriver: false,
+        listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+          const y = e.nativeEvent.contentOffset.y;
+          scrollOffsetRef.current = y;
+          setShowScrollTop(y > SCROLL_TOP_THRESHOLD);
+        },
+      }),
+    [scrollY]
+  );
+
+  const handleScrollToTop = React.useCallback(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
+
+  // 「トップへ戻る」ボタンのフェード
+  React.useEffect(() => {
+    Animated.timing(scrollTopAnim, {
+      toValue: showScrollTop ? 1 : 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  }, [showScrollTop, scrollTopAnim]);
 
   const handleFeedSelect = React.useCallback(() => {
     setFeedModalVisible(true);
@@ -463,14 +550,29 @@ export default function HomeScreen() {
       onPress={handlePressArticle}
       onLongPress={handleLongPressArticle}
       highlightAnim={getHighlightAnim(item.id)}
+      isBlocked={blockedKeywordIds.has(item.id)}
     />
-  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim]);
+  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
 
   const filterBarBg = useThemeColor({ light: '#f0f4ff', dark: '#1a1f2e' }, 'background');
   const filterBarText = useThemeColor({ light: '#4a6fa5', dark: '#7aa2d4' }, 'text');
+  const scrollbarColor = useThemeColor({ light: 'rgba(0,0,0,0.25)', dark: 'rgba(255,255,255,0.3)' }, 'text');
+
+  // カスタムスクロールバーのつまみ位置・サイズを算出
+  const maxScroll = Math.max(0, listContentH - listViewportH);
+  const showScrollbar = maxScroll > 0 && listViewportH > 0;
+  const trackH = Math.max(0, listViewportH - SCROLLBAR_INSET * 2);
+  const thumbH = showScrollbar ? Math.max(36, trackH * (listViewportH / listContentH)) : 0;
+  const thumbTranslateY = scrollY.interpolate({
+    inputRange: [0, maxScroll || 1],
+    outputRange: [0, Math.max(0, trackH - thumbH)],
+    extrapolate: 'clamp',
+  });
+  // PanResponderが参照する最新ジオメトリを保持
+  scrollbarGeomRef.current = { trackH, thumbH, maxScroll };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
@@ -483,35 +585,98 @@ export default function HomeScreen() {
       />
 
       {blockedByFilters > 0 && (
-        <View style={[styles.filterBar, { backgroundColor: filterBarBg }]}>
+        <TouchableOpacity
+          style={[styles.filterBar, { backgroundColor: filterBarBg }]}
+          onPress={() => setShowBlockedKeywords(prev => !prev)}
+          activeOpacity={0.7}
+        >
           <Ionicons name="funnel" size={12} color={filterBarText} style={styles.filterBarIcon} />
-          <Text style={[styles.filterBarText, { color: filterBarText }]}>
-            {t('home.articlesFiltered', { count: blockedByFilters })}
+          <Text style={[styles.filterBarText, { color: filterBarText, flex: 1 }]}>
+            {showBlockedKeywords
+              ? t('home.articlesFilteredShown')
+              : t('home.articlesFiltered', { count: blockedByFilters })}
           </Text>
-        </View>
+          <Text style={[styles.filterBarAction, { color: filterBarText }]}>
+            {showBlockedKeywords ? t('home.hide') : t('home.show')}
+          </Text>
+          <Ionicons
+            name={showBlockedKeywords ? 'chevron-up' : 'chevron-down'}
+            size={12}
+            color={filterBarText}
+            style={styles.filterBarChevron}
+          />
+        </TouchableOpacity>
       )}
 
       {isLoading ? (
         <LoadingView />
       ) : (
-        <FlatList
-          ref={flatListRef}
-          data={filteredArticles}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          removeClippedSubviews={true}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="newspaper-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
-              <ThemedText style={styles.emptyMessage}>{t('home.noArticles')}</ThemedText>
-              <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>
+        <View
+          style={styles.listWrapper}
+          onLayout={(e) => setListViewportH(e.nativeEvent.layout.height)}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={filteredArticles}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            removeClippedSubviews={true}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            onContentSizeChange={(_, h) => setListContentH(h)}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            }
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="newspaper-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
+                <ThemedText style={styles.emptyMessage}>{t('home.noArticles')}</ThemedText>
+                <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>
+              </View>
+            }
+          />
+
+          {/* 常時表示・ドラッグ可能なカスタムスクロールバー */}
+          {showScrollbar && (
+            <View
+              style={[styles.scrollbarTrack, { top: SCROLLBAR_INSET, height: trackH }]}
+              pointerEvents="box-none"
+            >
+              <Animated.View
+                style={[
+                  styles.scrollbarThumb,
+                  isDraggingScrollbar && styles.scrollbarThumbActive,
+                  { height: thumbH, backgroundColor: scrollbarColor, transform: [{ translateY: thumbTranslateY }] },
+                ]}
+                hitSlop={{ left: 18, right: 8, top: 6, bottom: 6 }}
+                {...scrollbarPan.panHandlers}
+              />
             </View>
-          }
-        />
+          )}
+
+          {/* 一番上に戻るボタン */}
+          <Animated.View
+            style={[
+              styles.scrollTopWrap,
+              {
+                opacity: scrollTopAnim,
+                transform: [{ scale: scrollTopAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+              },
+            ]}
+            pointerEvents={showScrollTop ? 'auto' : 'none'}
+          >
+            <TouchableOpacity
+              style={styles.scrollTopBtn}
+              onPress={handleScrollToTop}
+              activeOpacity={0.8}
+              accessibilityLabel={t('home.scrollToTop')}
+            >
+              <Ionicons name="chevron-up" size={26} color="#fff" />
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       )}
 
       {/* フィード選択モーダル */}
@@ -590,9 +755,52 @@ const styles = StyleSheet.create({
   filterBarText: {
     fontSize: 12,
   },
+  filterBarAction: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  filterBarChevron: {
+    marginLeft: 2,
+  },
+  listWrapper: {
+    flex: 1,
+  },
   listContent: {
     flexGrow: 1,
     paddingBottom: 20,
+  },
+  scrollbarTrack: {
+    position: 'absolute',
+    right: 2,
+    width: 16,
+    alignItems: 'flex-end',
+  },
+  scrollbarThumb: {
+    width: 6,
+    borderRadius: 3,
+  },
+  scrollbarThumbActive: {
+    width: 10,
+    borderRadius: 5,
+  },
+  scrollTopWrap: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+  },
+  scrollTopBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: ACCENT,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   articleContainer: {
     padding: 16,
