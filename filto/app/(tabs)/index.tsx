@@ -593,7 +593,7 @@ export default function HomeScreen() {
           <Ionicons name="funnel" size={12} color={filterBarText} style={styles.filterBarIcon} />
           <Text style={[styles.filterBarText, { color: filterBarText, flex: 1 }]}>
             {showBlockedKeywords
-              ? t('home.articlesFilteredShown', { count: blockedByFilters })
+              ? t('home.articlesFilteredShown')
               : t('home.articlesFiltered', { count: blockedByFilters })}
           </Text>
           <Text style={[styles.filterBarAction, { color: filterBarText }]}>

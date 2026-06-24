@@ -52,7 +52,7 @@ export const en = {
     articleOpenError: 'Failed to open article',
     favoriteError: 'Failed to update favorite',
     articlesFiltered: '{{count}} articles filtered by your keywords',
-    articlesFilteredShown: 'Showing {{count}} filtered articles',
+    articlesFilteredShown: 'Showing filtered articles too',
     filteredLabel: 'Filtered',
     show: 'Show',
     hide: 'Hide',
