@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { Article } from '@/types/Article';
 import { FeedSelectModal } from '@/components/FeedSelectModal';
+import { FeedSortType } from '@/components/FeedSortModal';
 import { Feed } from '@/types/Feed';
 import { FilterEngine } from '@/services/FilterEngine';
 import { FilterService, Filter } from '@/services/FilterService';
@@ -197,6 +198,7 @@ export default function HomeScreen() {
   const [selectedFeedIds, setSelectedFeedIds] = React.useState<string[] | null>(null);
   const [showStarredOnly, setShowStarredOnly] = React.useState(false);
   const [feedModalVisible, setFeedModalVisible] = React.useState(false);
+  const [feedSort, setFeedSort] = React.useState<FeedSortType>('created_at_desc');
 
   // フィルタ関連
   const [filters, setFilters] = React.useState<Filter[]>([]);
@@ -287,8 +289,8 @@ export default function HomeScreen() {
     try {
       if (showLoading) setIsLoading(true);
 
-      // フィード一覧を取得
-      const feedList = await FeedService.list();
+      // フィード一覧を取得（選択中のソート順で）
+      const feedList = await FeedService.listWithSort(feedSort);
       setFeeds(feedList);
 
       // 記事一覧を取得
@@ -313,6 +315,19 @@ export default function HomeScreen() {
     } finally {
       if (showLoading) setIsLoading(false);
     }
+  }, [feedSort]);
+
+  // 保存済みのフィード並び順を読み込む
+  React.useEffect(() => {
+    AsyncStorage.getItem('@filto/home/feedSort')
+      .then(saved => { if (saved) setFeedSort(saved as FeedSortType); })
+      .catch(() => {});
+  }, []);
+
+  // フィード並び順を変更・永続化する
+  const handleSelectFeedSort = React.useCallback((sortType: FeedSortType) => {
+    setFeedSort(sortType);
+    AsyncStorage.setItem('@filto/home/feedSort', sortType).catch(() => {});
   }, []);
 
   // 画面フォーカス時にデータを読み込む
@@ -686,8 +701,10 @@ export default function HomeScreen() {
         visible={feedModalVisible}
         feeds={feeds}
         selectedFeedIds={selectedFeedIds}
+        currentSort={feedSort}
         onClose={() => setFeedModalVisible(false)}
         onSelectFeeds={handleSelectFeeds}
+        onSelectSort={handleSelectFeedSort}
       />
     </SafeAreaView>
   );
