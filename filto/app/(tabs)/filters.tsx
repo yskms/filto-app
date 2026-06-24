@@ -41,7 +41,7 @@ const FilterItem: React.FC<{
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subtextColor = useThemeColor({}, 'icon');
   const dangerColor = useThemeColor({}, 'danger');
-  const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
+  const tintColor = useThemeColor({}, 'tint');
   const { t } = useTranslation();
 
   // 削除アクション（右側）- Reanimated版
@@ -81,7 +81,6 @@ const FilterItem: React.FC<{
         style={[
           styles.filterContainer,
           { backgroundColor, borderBottomColor: borderColor },
-          deleteMode && isSelected && { backgroundColor: selectedBgColor },
         ]}
         onPress={handlePress}
         activeOpacity={0.7}
@@ -95,6 +94,14 @@ const FilterItem: React.FC<{
               </Text>
             )}
           </View>
+          {deleteMode && (
+            <Ionicons
+              name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+              size={22}
+              color={isSelected ? tintColor : borderColor}
+              style={styles.selectIndicator}
+            />
+          )}
         </View>
       </TouchableOpacity>
     </Swipeable>
@@ -552,6 +559,9 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+  },
+  selectIndicator: {
+    marginLeft: 12,
   },
   blockKeyword: {
     fontSize: 16,
