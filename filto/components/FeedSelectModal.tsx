@@ -6,22 +6,28 @@ import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
 
 interface FeedSelectModalProps {
   visible: boolean;
   feeds: Feed[];
   selectedFeedIds: string[] | null;
+  currentSort: FeedSortType;
   onClose: () => void;
   onSelectFeeds: (feedIds: string[] | null) => void;
+  onSelectSort: (sortType: FeedSortType) => void;
 }
 
 export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   visible,
   feeds,
   selectedFeedIds,
+  currentSort,
   onClose,
   onSelectFeeds,
+  onSelectSort,
 }) => {
+  const [sortModalVisible, setSortModalVisible] = React.useState(false);
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const iconBg = useThemeColor({}, 'tabIconDefault');
@@ -61,6 +67,7 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   };
 
   return (
+    <>
     <Modal
       visible={visible}
       animationType="slide"
@@ -79,9 +86,14 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
           {/* ヘッダー */}
           <View style={[styles.header, { borderBottomColor: borderColor }]}>
             <ThemedText style={styles.title}>{t('home.selectFeed')}</ThemedText>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={22} color={iconColor} />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity onPress={() => setSortModalVisible(true)} style={styles.headerButton}>
+                <Ionicons name="swap-vertical-outline" size={22} color={iconColor} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onClose} style={styles.headerButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <ThemedText style={[styles.doneText, { color: tintColor }]}>{t('common.done')}</ThemedText>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* フィード一覧 */}
@@ -145,6 +157,17 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
         </View>
       </TouchableOpacity>
     </Modal>
+
+    <FeedSortModal
+      visible={sortModalVisible}
+      currentSort={currentSort}
+      onClose={() => setSortModalVisible(false)}
+      onSelectSort={(sortType) => {
+        onSelectSort(sortType);
+        setSortModalVisible(false);
+      }}
+    />
+    </>
   );
 };
 
@@ -174,6 +197,19 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 4,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerButton: {
+    padding: 4,
+  },
+  doneText: {
+    fontSize: 16,
+    fontWeight: '600',
+    paddingHorizontal: 4,
   },
   listContainer: {
     flex: 1,
