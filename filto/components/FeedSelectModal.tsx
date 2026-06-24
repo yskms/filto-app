@@ -10,17 +10,17 @@ import { useTranslation } from '@/providers/language';
 interface FeedSelectModalProps {
   visible: boolean;
   feeds: Feed[];
-  selectedFeedId: string | null;
+  selectedFeedIds: string[] | null;
   onClose: () => void;
-  onSelectFeed: (feedId: string | null) => void;
+  onSelectFeeds: (feedIds: string[] | null) => void;
 }
 
 export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   visible,
   feeds,
-  selectedFeedId,
+  selectedFeedIds,
   onClose,
-  onSelectFeed,
+  onSelectFeeds,
 }) => {
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -29,14 +29,34 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
   const iconColor = useThemeColor({}, 'text');
   const { t } = useTranslation();
 
-  const handleSelectFeed = (feedId: string | null) => {
-    onSelectFeed(feedId);
-    onClose();
+  const isAllSelected = selectedFeedIds === null;
+  const isFeedSelected = (feedId: string) =>
+    selectedFeedIds === null || selectedFeedIds.includes(feedId);
+
+  const handleToggleAll = () => {
+    onSelectFeeds(null);
+  };
+
+  const handleToggleFeed = (feedId: string) => {
+    if (selectedFeedIds === null) {
+      // 全選択状態 → このフィードだけ外す（他は全て選択）
+      const newIds = feeds.filter(f => f.id !== feedId).map(f => f.id);
+      if (newIds.length === 0) return; // 最後の1つは外せない
+      onSelectFeeds(newIds);
+    } else if (selectedFeedIds.includes(feedId)) {
+      // 選択中 → 外す
+      const newIds = selectedFeedIds.filter(id => id !== feedId);
+      if (newIds.length === 0) return; // 最後の1つは外せない
+      onSelectFeeds(newIds.length === feeds.length ? null : newIds);
+    } else {
+      // 未選択 → 追加
+      const newIds = [...selectedFeedIds, feedId];
+      onSelectFeeds(newIds.length === feeds.length ? null : newIds);
+    }
   };
 
   const handleManageFeeds = () => {
     onClose();
-    // Feeds画面への遷移
     router.push('/feeds');
   };
 
@@ -68,44 +88,49 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
           <ScrollView style={styles.listContainer}>
             {/* ALL */}
             <TouchableOpacity
-              style={[
-                styles.feedItem,
-                { borderBottomColor: borderColor },
-                selectedFeedId === null && [styles.feedItemSelected, { backgroundColor: iconBg }],
-              ]}
-              onPress={() => handleSelectFeed(null)}
+              style={[styles.feedItem, { borderBottomColor: borderColor }]}
+              onPress={handleToggleAll}
               activeOpacity={0.7}
             >
               <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
                 <Ionicons name="newspaper-outline" size={18} color={iconColor} />
               </View>
               <ThemedText style={styles.feedName}>{t('home.allFeeds')}</ThemedText>
-              {selectedFeedId === null && <Ionicons name="checkmark" size={20} color={tintColor} />}
+              <Ionicons
+                name={isAllSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                size={22}
+                color={isAllSelected ? tintColor : borderColor}
+              />
             </TouchableOpacity>
 
             {/* 各フィード */}
-            {feeds.map((feed) => (
-              <TouchableOpacity
-                key={feed.id}
-                style={[
-                  styles.feedItem,
-                  { borderBottomColor: borderColor },
-                  selectedFeedId === feed.id && [styles.feedItemSelected, { backgroundColor: iconBg }],
-                ]}
-                onPress={() => handleSelectFeed(feed.id)}
-                activeOpacity={0.7}
-              >
-                {feed.iconUrl ? (
-                  <Image source={{ uri: feed.iconUrl }} style={styles.feedIconImage} />
-                ) : (
-                  <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
-                    <Ionicons name="newspaper-outline" size={18} color={iconColor} />
-                  </View>
-                )}
-                <ThemedText style={styles.feedName}>{feed.title}</ThemedText>
-                {selectedFeedId === feed.id && <Ionicons name="checkmark" size={20} color={tintColor} />}
-              </TouchableOpacity>
-            ))}
+            {feeds.map((feed) => {
+              const selected = isFeedSelected(feed.id);
+              return (
+                <TouchableOpacity
+                  key={feed.id}
+                  style={[styles.feedItem, { borderBottomColor: borderColor }]}
+                  onPress={() => handleToggleFeed(feed.id)}
+                  activeOpacity={0.7}
+                >
+                  {feed.iconUrl ? (
+                    <Image source={{ uri: feed.iconUrl }} style={styles.feedIconImage} />
+                  ) : (
+                    <View style={[styles.feedIcon, { backgroundColor: iconBg }]}>
+                      <Ionicons name="newspaper-outline" size={18} color={iconColor} />
+                    </View>
+                  )}
+                  <ThemedText style={[styles.feedName, !selected && styles.feedNameDimmed]}>
+                    {feed.title}
+                  </ThemedText>
+                  <Ionicons
+                    name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={22}
+                    color={selected ? tintColor : borderColor}
+                  />
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
 
           {/* フッター */}
@@ -160,8 +185,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: 1,
   },
-  feedItemSelected: {
-  },
   feedIcon: {
     width: 32,
     height: 32,
@@ -179,6 +202,9 @@ const styles = StyleSheet.create({
   feedName: {
     flex: 1,
     fontSize: 16,
+  },
+  feedNameDimmed: {
+    opacity: 0.4,
   },
   manageButton: {
     flexDirection: 'row',

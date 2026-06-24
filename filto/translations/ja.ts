@@ -56,6 +56,7 @@ export const ja = {
       filteredLabel: '非表示',
       show: '表示',
       hide: '隠す',
+      feedsSelected: '{{count}}件のフィード',
     },
   
     // Filters画面

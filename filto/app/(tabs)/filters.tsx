@@ -41,6 +41,7 @@ const FilterItem: React.FC<{
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subtextColor = useThemeColor({}, 'icon');
   const dangerColor = useThemeColor({}, 'danger');
+  const tintColor = useThemeColor({}, 'tint');
   const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
   const { t } = useTranslation();
 
@@ -95,6 +96,14 @@ const FilterItem: React.FC<{
               </Text>
             )}
           </View>
+          {deleteMode && (
+            <Ionicons
+              name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+              size={22}
+              color={isSelected ? tintColor : borderColor}
+              style={styles.selectIndicator}
+            />
+          )}
         </View>
       </TouchableOpacity>
     </Swipeable>
@@ -552,6 +561,9 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+  },
+  selectIndicator: {
+    marginLeft: 12,
   },
   blockKeyword: {
     fontSize: 16,

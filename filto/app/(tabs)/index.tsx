@@ -194,7 +194,7 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [feeds, setFeeds] = React.useState<Feed[]>([]);
-  const [selectedFeedId, setSelectedFeedId] = React.useState<string | null>(null);
+  const [selectedFeedIds, setSelectedFeedIds] = React.useState<string[] | null>(null);
   const [showStarredOnly, setShowStarredOnly] = React.useState(false);
   const [feedModalVisible, setFeedModalVisible] = React.useState(false);
 
@@ -274,10 +274,13 @@ export default function HomeScreen() {
 
   // 選択中のフィード名を取得
   const selectedFeedName = React.useMemo(() => {
-    if (selectedFeedId === null) return t('home.allFeeds');
-    const feed = feeds.find(f => f.id === selectedFeedId);
-    return feed?.title || t('home.allFeeds');
-  }, [selectedFeedId, feeds, t]);
+    if (selectedFeedIds === null) return t('home.allFeeds');
+    if (selectedFeedIds.length === 1) {
+      const feed = feeds.find(f => f.id === selectedFeedIds[0]);
+      return feed?.title || t('home.allFeeds');
+    }
+    return t('home.feedsSelected', { count: selectedFeedIds.length });
+  }, [selectedFeedIds, feeds, t]);
 
   // データを読み込む（showLoading=falseの場合はスピナーを出さずバックグラウンド更新）
   const loadData = React.useCallback(async (showLoading = true) => {
@@ -289,7 +292,7 @@ export default function HomeScreen() {
       setFeeds(feedList);
 
       // 記事一覧を取得
-      const articleList = await ArticleService.getArticles(selectedFeedId ?? undefined);
+      const articleList = await ArticleService.getArticles();
       setArticles(articleList);
 
       // フィルタ一覧を取得
@@ -310,7 +313,7 @@ export default function HomeScreen() {
     } finally {
       if (showLoading) setIsLoading(false);
     }
-  }, [selectedFeedId]);
+  }, []);
 
   // 画面フォーカス時にデータを読み込む
   // 初回のみスピナーを表示し、タブ切り替えで戻った時はスクロール位置を保持したまま更新
@@ -361,8 +364,8 @@ export default function HomeScreen() {
   React.useEffect(() => {
     // フィードでフィルタリング
     let filtered = articles;
-    if (selectedFeedId !== null) {
-      filtered = articles.filter(a => a.feedId === selectedFeedId);
+    if (selectedFeedIds !== null) {
+      filtered = articles.filter(a => selectedFeedIds.includes(a.feedId));
     }
 
     // お気に入りフィルタを適用
@@ -394,7 +397,7 @@ export default function HomeScreen() {
     }
 
     setFilteredArticles(displayed);
-  }, [articles, selectedFeedId, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
+  }, [articles, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
 
   const handleRefresh = React.useCallback(async () => {
     try {
@@ -452,9 +455,8 @@ export default function HomeScreen() {
     setFeedModalVisible(true);
   }, []);
 
-  const handleSelectFeed = React.useCallback((feedId: string | null) => {
-    setSelectedFeedId(feedId);
-    // フィード切り替え時はトップへ戻す
+  const handleSelectFeeds = React.useCallback((feedIds: string[] | null) => {
+    setSelectedFeedIds(feedIds);
     flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
   }, []);
 
@@ -683,9 +685,9 @@ export default function HomeScreen() {
       <FeedSelectModal
         visible={feedModalVisible}
         feeds={feeds}
-        selectedFeedId={selectedFeedId}
+        selectedFeedIds={selectedFeedIds}
         onClose={() => setFeedModalVisible(false)}
-        onSelectFeed={handleSelectFeed}
+        onSelectFeeds={handleSelectFeeds}
       />
     </SafeAreaView>
   );

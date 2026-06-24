@@ -132,6 +132,8 @@ const FeedItem: React.FC<{
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subtextColor = useThemeColor({}, 'icon');
   const dangerColor = useThemeColor({}, 'danger');
+  const tintColor = useThemeColor({}, 'tint');
+  const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
   const iconPlaceholderBg = useThemeColor({ light: '#f0f0f0', dark: '#2a2b2c' }, 'background');
 
   const renderRightActions = () => {
@@ -156,12 +158,11 @@ const FeedItem: React.FC<{
   };
 
   const content = (
-    <View style={[styles.feedItem, { backgroundColor, borderBottomColor: borderColor }]}>
-      {isDeleteMode && (
-        <View style={styles.checkbox}>
-          <Ionicons name={isSelected ? 'checkbox' : 'square-outline'} size={24} color={textColor} />
-        </View>
-      )}
+    <View style={[
+      styles.feedItem,
+      { backgroundColor, borderBottomColor: borderColor },
+      isDeleteMode && isSelected && { backgroundColor: selectedBgColor },
+    ]}>
       <View style={styles.feedContent}>
         {feed.iconUrl ? (
           <Image
@@ -177,6 +178,14 @@ const FeedItem: React.FC<{
           <Text style={[styles.feedUrl, { color: subtextColor }]}>{feed.url}</Text>
         </View>
       </View>
+      {isDeleteMode && (
+        <Ionicons
+          name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+          size={22}
+          color={isSelected ? tintColor : borderColor}
+          style={styles.selectIndicator}
+        />
+      )}
     </View>
   );
 
@@ -552,8 +561,8 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
   },
-  checkbox: {
-    marginRight: 12,
+  selectIndicator: {
+    marginLeft: 12,
   },
   checkboxText: {
     fontSize: 24,
