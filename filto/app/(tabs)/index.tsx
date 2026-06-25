@@ -228,6 +228,7 @@ export default function HomeScreen() {
   // 初回チュートリアル（コーチマーク）
   const insets = useSafeAreaInsets();
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
+  const [tutorialPending, setTutorialPending] = React.useState(false);
   const feedSelectorRef = React.useRef<View>(null);
   const refreshRef = React.useRef<View>(null);
   const filterBarRef = React.useRef<View>(null);
@@ -392,16 +393,37 @@ export default function HomeScreen() {
     },
   ], [t, measureNode, insets.bottom]);
 
+  // ツアー中に背景へ出すダミー記事（実記事が届くまでの間、③長押し・④フィルタの
+  // 説明対象を成立させるため）
+  const dummyArticles = React.useMemo<Article[]>(() => {
+    const now = Date.now();
+    return [1, 2, 3].map((n, i) => ({
+      id: `__demo_${n}`,
+      feedId: '__demo',
+      feedName: t('home.demoFeed'),
+      title: t(`home.demoTitle${n}`),
+      link: '',
+      thumbnailUrl: undefined,
+      publishedAt: new Date(now - (i + 1) * 3600 * 1000).toISOString(),
+      isRead: false,
+      isStarred: false,
+    }));
+  }, [t]);
+
   // 初回（オンボーディング直後）にチュートリアルを開始
   React.useEffect(() => {
     if (isLoading) return;
     AsyncStorage.getItem('@filto/home/startTutorial').then((flag) => {
-      if (flag === '1') setTimeout(() => setTutorialVisible(true), 400);
+      if (flag === '1') {
+        setTutorialPending(true); // 先にダミー記事を出して空表示のチラつきを防ぐ
+        setTimeout(() => setTutorialVisible(true), 350);
+      }
     }).catch(() => {});
   }, [isLoading]);
 
   const handleTutorialDone = React.useCallback(() => {
     setTutorialVisible(false);
+    setTutorialPending(false);
     AsyncStorage.removeItem('@filto/home/startTutorial').catch(() => {});
     AsyncStorage.setItem('@filto/home/tutorialSeen', 'true').catch(() => {});
   }, []);
@@ -667,6 +689,11 @@ export default function HomeScreen() {
   // PanResponderが参照する最新ジオメトリを保持
   scrollbarGeomRef.current = { trackH, thumbH, maxScroll };
 
+  // 初回ツアー中で実記事がまだ無いときは、ダミー記事とサンプルのフィルタ件数を表示する
+  const showTutorialDemo = (tutorialVisible || tutorialPending) && filteredArticles.length === 0;
+  const displayArticles = showTutorialDemo ? dummyArticles : filteredArticles;
+  const displayBlockedCount = showTutorialDemo ? 8 : blockedByFilters;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <HomeHeader
@@ -679,7 +706,7 @@ export default function HomeScreen() {
         refreshRef={refreshRef}
       />
 
-      {blockedByFilters > 0 && (
+      {displayBlockedCount > 0 && (
         <TouchableOpacity
           ref={filterBarRef}
           style={[styles.filterBar, { backgroundColor: filterBarBg }]}
@@ -690,7 +717,7 @@ export default function HomeScreen() {
           <Text style={[styles.filterBarText, { color: filterBarText, flex: 1 }]}>
             {showBlockedKeywords
               ? t('home.articlesFilteredShown')
-              : t('home.articlesFiltered', { count: blockedByFilters })}
+              : t('home.articlesFiltered', { count: displayBlockedCount })}
           </Text>
           <Text style={[styles.filterBarAction, { color: filterBarText }]}>
             {showBlockedKeywords ? t('home.hide') : t('home.show')}
@@ -714,7 +741,7 @@ export default function HomeScreen() {
         >
           <FlatList
             ref={flatListRef}
-            data={filteredArticles}
+            data={displayArticles}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}
             removeClippedSubviews={true}

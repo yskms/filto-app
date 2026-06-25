@@ -112,16 +112,11 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone }) => {
           <Text style={[styles.progress, { color: hintColor }]}>
             {index + 1} / {steps.length}
           </Text>
-          <View style={styles.buttons}>
-            <TouchableOpacity onPress={onDone} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={[styles.skip, { color: hintColor }]}>{t('home.tutorialSkip')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={next} style={styles.nextBtn} activeOpacity={0.8}>
-              <Text style={styles.nextText}>
-                {isLast ? t('home.tutorialDone') : t('home.tutorialNext')}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={next} style={styles.nextBtn} activeOpacity={0.8}>
+            <Text style={styles.nextText}>
+              {isLast ? t('home.tutorialDone') : t('home.tutorialNext')}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -157,8 +152,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   progress: { fontSize: 13 },
-  buttons: { flexDirection: 'row', alignItems: 'center', gap: 18 },
-  skip: { fontSize: 15 },
   nextBtn: {
     backgroundColor: ACCENT,
     paddingHorizontal: 20,

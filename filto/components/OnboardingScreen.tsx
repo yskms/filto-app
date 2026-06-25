@@ -148,9 +148,9 @@ export default function OnboardingScreen({ onComplete }: Props) {
       // ホームで初回チュートリアル（コーチマーク）を表示するためのフラグ
       await AsyncStorage.setItem('@filto/home/startTutorial', '1');
 
-      // 初回取得が終わるまで設定中スピナーで待つ（ホームでは実記事が揃った状態で
-      // ツアーを開始できる＝記事の長押しやフィルタバーの説明が成立する）
-      try { await SyncService.refresh(); } catch {}
+      // 同期はブロックせず裏で実行。ホームへ即遷移し、取得を待つ間に
+      // （ダミー記事を背景に）ツアーを進めてもらう＝待ち時間を有効活用する
+      SyncService.refresh().catch(() => {});
 
       onComplete();
     } catch {
@@ -271,28 +271,12 @@ export default function OnboardingScreen({ onComplete }: Props) {
           )}
         </TouchableOpacity>
       </View>
-
-      {loading && (
-        <View style={[styles.loadingOverlay, { backgroundColor }]}>
-          <ActivityIndicator size="large" color={ACCENT} />
-          <ThemedText style={[styles.loadingText, { color: hintColor }]}>
-            {t('onboarding.settingUp')}
-          </ThemedText>
-        </View>
-      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: { fontSize: 15 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
