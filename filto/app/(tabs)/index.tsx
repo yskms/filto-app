@@ -377,12 +377,17 @@ export default function HomeScreen() {
     },
     { measure: () => measureNode(filterBarRef), title: t('home.tutFilterTitle'), desc: t('home.tutFilterDesc') },
     {
-      // 下タブ（領域でハイライト）
-      measure: () => {
+      // 下タブ: リスト領域の下端＝タブバー上端を実測して、その下を囲う
+      measure: () => new Promise<CoachRect | null>((resolve) => {
         const { width, height } = Dimensions.get('window');
-        const tabH = 49 + insets.bottom;
-        return Promise.resolve<CoachRect>({ x: 0, y: height - tabH, width, height: tabH });
-      },
+        const fallbackTop = height - (49 + insets.bottom);
+        const node = listWrapperRef.current;
+        if (!node) { resolve({ x: 0, y: fallbackTop, width, height: height - fallbackTop }); return; }
+        node.measureInWindow((x, y, w, h) => {
+          const top = (y && h) ? y + h : fallbackTop;
+          resolve({ x: 0, y: top, width, height: Math.max(0, height - top) });
+        });
+      }),
       title: t('home.tutTabsTitle'), desc: t('home.tutTabsDesc'),
     },
   ], [t, measureNode, insets.bottom]);
