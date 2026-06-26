@@ -65,38 +65,53 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   }, [pulse]);
   const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] });
 
-  // 表示開始時はインデックスをリセット（前画面から戻ってきたときは最後から）
+  // 表示開始時はインデックスをリセット（前画面から戻ってきたときは最後から）。
+  // 直前のハイライトは消して暗幕だけの状態にする
   React.useEffect(() => {
-    if (visible) setIndex(startAtLast ? Math.max(0, steps.length - 1) : 0);
+    if (visible) {
+      setIndex(startAtLast ? Math.max(0, steps.length - 1) : 0);
+      setRect(null);
+    }
   }, [visible, startAtLast, steps.length]);
 
-  // 現在ステップ（measureがnullのものは飛ばす）を計測
+  // 現在ステップを計測。遷移直後でレイアウト未確定のときは少し待ってリトライし、
+  // それでも計測できないステップ（非表示要素など）はスキップする
   React.useEffect(() => {
     if (!visible) return;
     let cancelled = false;
-    (async () => {
-      let i = index;
-      while (i < steps.length) {
-        // レイアウト確定を待ってから計測
-        const r = await steps[i].measure();
+    let attempt = 0;
+    const run = () => {
+      if (cancelled) return;
+      const cur = steps[index];
+      if (!cur) { onDone(); return; }
+      cur.measure().then((r) => {
+        if (cancelled) return;
         if (r && r.width > 0 && r.height > 0) {
-          if (!cancelled) {
-            setRect(r);
-            if (i !== index) setIndex(i);
-          }
-          return;
+          setRect(r);
+        } else if (attempt < 8) {
+          attempt++;
+          setTimeout(run, 90); // レイアウト確定待ち（遷移直後など）
+        } else if (index + 1 < steps.length) {
+          setIndex(index + 1); // 計測できないステップはスキップ
+        } else {
+          onDone();
         }
-        i++;
-      }
-      if (!cancelled) onDone();
-    })();
-    return () => {
-      cancelled = true;
+      }).catch(() => {});
     };
-    // index/visible が変わるたびに再計測
+    run();
+    return () => { cancelled = true; };
   }, [visible, index, steps, onDone]);
 
-  if (!visible || !rect) return null;
+  if (!visible) return null;
+
+  // rect 未確定（計測中/遷移直後）でも、暗幕だけは即時に出してタップを塞ぐ
+  if (!rect) {
+    return (
+      <Modal visible transparent animationType="fade" onRequestClose={onDone}>
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
+      </Modal>
+    );
+  }
 
   const step = steps[index];
   if (!step) return null;

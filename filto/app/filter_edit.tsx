@@ -123,17 +123,16 @@ export default function FilterEditScreen() {
     { measure: () => measureNode(targetRef), title: t('filters.searchTarget'), desc: t('filters.tutTargetDesc') },
   ], [t, measureNode]);
 
-  // フィルタ画面の「次へ」('1')で push されてきたら、フラグを見てツアー継続
+  // フィルタ画面の「次へ」('1')で push されてきたら、フラグを見てツアー継続。
+  // 即 visible にして暗幕を出す（計測は CoachMarks 側でリトライ）
   React.useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
     AsyncStorage.getItem('@filto/tour/filterEdit').then((flag) => {
       if (flag === '1' || flag === 'last') {
         AsyncStorage.removeItem('@filto/tour/filterEdit').catch(() => {});
         setTutorialStartAtLast(flag === 'last');
-        timer = setTimeout(() => setTutorialVisible(true), 350);
+        setTutorialVisible(true);
       }
     }).catch(() => {});
-    return () => { if (timer) clearTimeout(timer); };
   }, []);
 
   // 最初のステップで「戻る」→ フィルタ画面のツアー最後へ戻る

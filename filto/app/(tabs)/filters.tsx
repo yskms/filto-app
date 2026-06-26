@@ -259,18 +259,17 @@ export default function FiltersScreen() {
     { measure: () => measureNode(addRef), title: t('filters.tutAddTitle'), desc: t('filters.tutAddDesc') },
   ], [t, measureNode]);
 
-  // ホーム('1')or フィルタ追加画面からの戻り('last')でツアーを開始/再開する
+  // ホーム('1')or フィルタ追加画面からの戻り('last')でツアーを開始/再開する。
+  // 即 visible にして暗幕を出す（計測は CoachMarks 側でレイアウト確定までリトライ）
   useFocusEffect(
     React.useCallback(() => {
-      let timer: ReturnType<typeof setTimeout> | undefined;
       AsyncStorage.getItem('@filto/tour/filters').then((flag) => {
         if (flag === '1' || flag === 'last') {
           AsyncStorage.removeItem('@filto/tour/filters').catch(() => {});
           setTutorialStartAtLast(flag === 'last');
-          timer = setTimeout(() => setTutorialVisible(true), 350); // タブ遷移後のレイアウト確定を待つ
+          setTutorialVisible(true);
         }
       }).catch(() => {});
-      return () => { if (timer) clearTimeout(timer); };
     }, [])
   );
 
