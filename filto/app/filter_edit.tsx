@@ -97,6 +97,7 @@ export default function FilterEditScreen() {
 
   // 初回チュートリアル（フィルタ画面から引き継ぎ）
   const [tutorialVisible, setTutorialVisible] = useState(false);
+  const [tutorialStartAtLast, setTutorialStartAtLast] = useState(false);
   const blockRef = useRef<View>(null);
   const allowRef = useRef<View>(null);
   const targetRef = useRef<View>(null);
@@ -122,17 +123,25 @@ export default function FilterEditScreen() {
     { measure: () => measureNode(targetRef), title: t('filters.searchTarget'), desc: t('filters.tutTargetDesc') },
   ], [t, measureNode]);
 
-  // フィルタ画面の「次へ」で push されてきたら、フラグを見てツアー継続
+  // フィルタ画面の「次へ」('1')で push されてきたら、フラグを見てツアー継続
   React.useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     AsyncStorage.getItem('@filto/tour/filterEdit').then((flag) => {
-      if (flag === '1') {
+      if (flag === '1' || flag === 'last') {
         AsyncStorage.removeItem('@filto/tour/filterEdit').catch(() => {});
+        setTutorialStartAtLast(flag === 'last');
         timer = setTimeout(() => setTutorialVisible(true), 350);
       }
     }).catch(() => {});
     return () => { if (timer) clearTimeout(timer); };
   }, []);
+
+  // 最初のステップで「戻る」→ フィルタ画面のツアー最後へ戻る
+  const handleTutorialBack = React.useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/filters', 'last'); } catch {}
+    router.back();
+  }, [router]);
 
   // 最後の「次へ」で、ホームへ戻り取得完了を待って終了する
   const handleTutorialDone = React.useCallback(async () => {
@@ -338,6 +347,8 @@ export default function FilterEditScreen() {
           steps={tutorialSteps}
           onDone={handleTutorialDone}
           continues
+          startAtLast={tutorialStartAtLast}
+          onBackBeforeFirst={handleTutorialBack}
         />
       </SafeAreaView>
     </>

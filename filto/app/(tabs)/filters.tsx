@@ -225,6 +225,7 @@ export default function FiltersScreen() {
 
   // 初回チュートリアル（ホームから引き継ぎ）
   const [tutorialVisible, setTutorialVisible] = useState(false);
+  const [tutorialStartAtLast, setTutorialStartAtLast] = useState(false);
   const addRef = useRef<View>(null);
   const listRef = useRef<View>(null);
 
@@ -258,19 +259,27 @@ export default function FiltersScreen() {
     { measure: () => measureNode(addRef), title: t('filters.tutAddTitle'), desc: t('filters.tutAddDesc') },
   ], [t, measureNode]);
 
-  // ホームのツアー最後の「次へ」で遷移してくると、フラグを見てここで続きを開始する
+  // ホーム('1')or フィルタ追加画面からの戻り('last')でツアーを開始/再開する
   useFocusEffect(
     React.useCallback(() => {
       let timer: ReturnType<typeof setTimeout> | undefined;
       AsyncStorage.getItem('@filto/tour/filters').then((flag) => {
-        if (flag === '1') {
+        if (flag === '1' || flag === 'last') {
           AsyncStorage.removeItem('@filto/tour/filters').catch(() => {});
+          setTutorialStartAtLast(flag === 'last');
           timer = setTimeout(() => setTutorialVisible(true), 350); // タブ遷移後のレイアウト確定を待つ
         }
       }).catch(() => {});
       return () => { if (timer) clearTimeout(timer); };
     }, [])
   );
+
+  // 最初のステップで「戻る」→ ホーム画面のツアー最後へ戻る
+  const handleTutorialBack = React.useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/home', 'last'); } catch {}
+    router.navigate('/');
+  }, [router]);
 
   // 最後の「次へ」で、フィルタ追加画面へ遷移してツアーを継続する
   const handleTutorialDone = React.useCallback(async () => {
@@ -545,6 +554,8 @@ export default function FiltersScreen() {
         steps={tutorialSteps}
         onDone={handleTutorialDone}
         continues
+        startAtLast={tutorialStartAtLast}
+        onBackBeforeFirst={handleTutorialBack}
       />
     </SafeAreaView>
   );

@@ -32,11 +32,15 @@ interface Props {
   onDone: () => void;
   /** ツアーが次の画面へ続く場合 true。最後のステップのボタンが「完了」ではなく「次へ」になる */
   continues?: boolean;
+  /** 表示開始時に最後のステップから始める（前画面から「戻る」で来たとき用） */
+  startAtLast?: boolean;
+  /** 最初のステップで「戻る」を押したときの処理（前の画面へ戻る）。未指定なら先頭で戻るは出さない */
+  onBackBeforeFirst?: () => void;
 }
 
 const MIN_TOP = 4; // ハイライト上端の最小位置（オーバーレイ上端での見切れ防止）
 
-export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false }) => {
+export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false, startAtLast = false, onBackBeforeFirst }) => {
   const { t } = useTranslation();
   const cardBg = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -61,10 +65,10 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   }, [pulse]);
   const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] });
 
-  // 表示開始時はインデックスをリセット
+  // 表示開始時はインデックスをリセット（前画面から戻ってきたときは最後から）
   React.useEffect(() => {
-    if (visible) setIndex(0);
-  }, [visible]);
+    if (visible) setIndex(startAtLast ? Math.max(0, steps.length - 1) : 0);
+  }, [visible, startAtLast, steps.length]);
 
   // 現在ステップ（measureがnullのものは飛ばす）を計測
   React.useEffect(() => {
@@ -112,7 +116,9 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   };
   const back = () => {
     if (index > 0) setIndex(index - 1);
+    else onBackBeforeFirst?.();
   };
+  const showBack = index > 0 || !!onBackBeforeFirst;
 
   // ハイライトが画面上寄りなら下に、下寄りなら上にカードを出す
   const below = hy + hh / 2 < screenH * 0.5;
@@ -140,7 +146,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
             {index + 1} / {steps.length}
           </Text>
           <View style={styles.footerRight}>
-            {index > 0 && (
+            {showBack && (
               <TouchableOpacity onPress={back} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Text style={[styles.back, { color: hintColor }]}>{t('common.back')}</Text>
               </TouchableOpacity>

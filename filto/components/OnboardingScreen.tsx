@@ -145,7 +145,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
       await seedFiltersFromTopics(Array.from(selectedKeywords));
 
       // ホームで初回チュートリアル（コーチマーク）を表示するためのフラグ
-      await AsyncStorage.setItem('@filto/home/startTutorial', '1');
+      await AsyncStorage.setItem('@filto/tour/home', '1');
 
       // 初回同期はホーム側の autoSync に任せる（二重 refresh のレースを避ける）。
       // ホームへ即遷移し、取得を待つ間にダミー記事を背景にツアーを進めてもらう。

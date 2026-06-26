@@ -233,6 +233,7 @@ export default function HomeScreen() {
   // 初回チュートリアル（コーチマーク）
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
   const [tutorialPending, setTutorialPending] = React.useState(false);
+  const [homeStartAtLast, setHomeStartAtLast] = React.useState(false);
   // ツアーが一周してホームへ戻ってきたとき、初回取得が終わるまで待つスピナー
   const [waitingArticles, setWaitingArticles] = React.useState(false);
   const hasAutoSyncedRef = React.useRef(false);
@@ -423,23 +424,26 @@ export default function HomeScreen() {
     }));
   }, [t]);
 
-  // 初回（オンボーディング直後）にチュートリアルを開始。マウント時にフラグを読み、
-  // ダミー記事＋ツアーを即出しする（loadData完了を待たないので体感が速い）
-  React.useEffect(() => {
-    AsyncStorage.getItem('@filto/home/startTutorial').then((flag) => {
-      if (flag === '1') {
-        setTutorialPending(true);
-        setTutorialVisible(true);
-      }
-    }).catch(() => {});
-  }, []);
+  // チュートリアル開始/再開。オンボ直後('1')はマウント時、フィルタ画面から「戻る」で
+  // 来たとき('last')はフォーカス時に、フラグを見て開始する
+  useFocusEffect(
+    React.useCallback(() => {
+      AsyncStorage.getItem('@filto/tour/home').then((flag) => {
+        if (flag === '1' || flag === 'last') {
+          AsyncStorage.removeItem('@filto/tour/home').catch(() => {});
+          setHomeStartAtLast(flag === 'last');
+          setTutorialPending(true);
+          setTutorialVisible(true);
+        }
+      }).catch(() => {});
+    }, [])
+  );
 
+  // 「次へ」でフィルタ画面へ進みツアー継続
   const handleTutorialDone = React.useCallback(async () => {
     setTutorialVisible(false);
     setTutorialPending(false);
-    AsyncStorage.removeItem('@filto/home/startTutorial').catch(() => {});
-    AsyncStorage.setItem('@filto/home/tutorialSeen', 'true').catch(() => {});
-    // フィルタ画面のツアー開始フラグは、遷移先で読まれる前に確実に書き込む
+    // 遷移先が読む前に確実に書き込む（先頭から開始）
     try { await AsyncStorage.setItem('@filto/tour/filters', '1'); } catch {}
     router.navigate('/filters');
   }, []);
@@ -726,8 +730,9 @@ export default function HomeScreen() {
   // PanResponderが参照する最新ジオメトリを保持
   scrollbarGeomRef.current = { trackH, thumbH, maxScroll };
 
-  // 初回ツアー中で実記事がまだ無いときは、ダミー記事とサンプルのフィルタ件数を表示する
-  const showTutorialDemo = (tutorialVisible || tutorialPending) && filteredArticles.length === 0;
+  // 初回ツアー表示中はダミー記事＋サンプルのフィルタ件数を表示する
+  // （実記事が届いても差し替えず、ツアー終了後に通常表示へ）
+  const showTutorialDemo = tutorialVisible || tutorialPending;
   const displayArticles = showTutorialDemo ? dummyArticles : filteredArticles;
   const displayBlockedCount = showTutorialDemo ? 8 : blockedByFilters;
 
@@ -858,6 +863,7 @@ export default function HomeScreen() {
         steps={tutorialSteps}
         onDone={handleTutorialDone}
         continues
+        startAtLast={homeStartAtLast}
       />
 
       {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}
