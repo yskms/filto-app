@@ -11,6 +11,8 @@ import Reanimated from 'react-native-reanimated';
 import { Feed } from '@/types/Feed';
 import { FeedService } from '@/services/FeedService';
 import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -21,7 +23,8 @@ const FeedsHeader: React.FC<{
   onPressSort: () => void;
   onPressDelete: () => void;
   onPressAdd: () => void;
-}> = ({ onPressSort, onPressDelete, onPressAdd }) => {
+  addRef: React.RefObject<View | null>;
+}> = ({ onPressSort, onPressDelete, onPressAdd, addRef }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'text');
@@ -46,6 +49,7 @@ const FeedsHeader: React.FC<{
           <Ionicons name="trash-outline" size={22} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity
+          ref={addRef}
           style={styles.headerButton}
           onPress={onPressAdd}
           activeOpacity={0.7}
@@ -239,6 +243,69 @@ export default function FeedsScreen() {
   
   // 開いているスワイプのIDを保持（refで直接管理）
   const openSwipeIdRef = useRef<string | null>(null);
+
+  // 初回チュートリアル（フィルタ追加画面から引き継ぎ）
+  const [tutorialVisible, setTutorialVisible] = useState(false);
+  const [tutorialStartAtLast, setTutorialStartAtLast] = useState(false);
+  const addRef = useRef<View>(null);
+  const listRef = useRef<View>(null);
+
+  const measureNode = React.useCallback(
+    (ref: React.RefObject<View | null>): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = ref.current;
+        if (!node) { resolve(null); return; }
+        requestAnimationFrame(() => {
+          node.measureInWindow((x, y, width, height) => {
+            if (!width || !height) resolve(null);
+            else resolve({ x, y, width, height });
+          });
+        });
+      }),
+    []
+  );
+
+  const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    {
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const node = listRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, width, height) => {
+          if (!width || !height) resolve(null);
+          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(110, Math.max(0, height - 12)) });
+        });
+      }),
+      title: t('feeds.tutListTitle'), desc: t('feeds.tutListDesc'),
+    },
+    { measure: () => measureNode(addRef), title: t('feeds.tutAddTitle'), desc: t('feeds.tutAddDesc') },
+  ], [t, measureNode]);
+
+  // フィルタ追加画面('1')or フィード追加画面からの戻り('last')でツアーを開始/再開
+  useFocusEffect(
+    React.useCallback(() => {
+      AsyncStorage.getItem('@filto/tour/feeds').then((flag) => {
+        if (flag === '1' || flag === 'last') {
+          AsyncStorage.removeItem('@filto/tour/feeds').catch(() => {});
+          setTutorialStartAtLast(flag === 'last');
+          setTutorialVisible(true);
+        }
+      }).catch(() => {});
+    }, [])
+  );
+
+  // 最初のステップで「戻る」→ フィルタ追加画面のツアー最後へ戻る（再push）
+  const handleTutorialBack = React.useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/filterEdit', 'last'); } catch {}
+    router.push('/filter_edit');
+  }, [router]);
+
+  // 最後の「次へ」で、フィード追加画面へ進みツアー継続
+  const handleTutorialDone = React.useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/feedAdd', '1'); } catch {}
+    router.push('/feed_add');
+  }, [router]);
 
   // フィードを読み込む
   const loadFeeds = React.useCallback(async () => {
@@ -454,9 +521,11 @@ export default function FeedsScreen() {
             onPressSort={handlePressSortButton}
             onPressDelete={handlePressDelete}
             onPressAdd={handlePressAdd}
+            addRef={addRef}
           />
         )}
 
+        <View ref={listRef} style={styles.listWrapper}>
         <FlatList
           data={feeds}
           renderItem={({ item }) => {
@@ -487,12 +556,22 @@ export default function FeedsScreen() {
             </View>
           }
         />
+        </View>
 
         <FeedSortModal
           visible={sortModalVisible}
           currentSort={currentSort}
           onClose={() => setSortModalVisible(false)}
           onSelectSort={handleSelectSort}
+        />
+
+        <CoachMarks
+          visible={tutorialVisible}
+          steps={tutorialSteps}
+          onDone={handleTutorialDone}
+          continues
+          startAtLast={tutorialStartAtLast}
+          onBackBeforeFirst={handleTutorialBack}
         />
       </SafeAreaView>
     </>
@@ -501,6 +580,9 @@ export default function FeedsScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  listWrapper: {
     flex: 1,
   },
   header: {

@@ -124,6 +124,12 @@ export const en = {
   // Feeds screen
   feeds: {
     title: 'Feeds',
+    tutListTitle: 'Your feeds',
+    tutListDesc: 'Feeds you subscribe to appear here. Swipe or use delete mode to manage them.',
+    tutAddTitle: 'Add a feed',
+    tutAddDesc: 'Tap here to add an RSS feed by URL.',
+    tutUrlDesc: 'Enter the URL of the feed you want to add. You can paste from the clipboard.',
+    tutNameDesc: 'A display name for the feed (optional). If blank, the site name is used.',
     addFeed: 'Add Feed',
     editFeed: 'Edit Feed',
     deleteMode: 'Delete Mode',

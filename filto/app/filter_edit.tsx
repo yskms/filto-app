@@ -139,15 +139,16 @@ export default function FilterEditScreen() {
   const handleTutorialBack = React.useCallback(async () => {
     setTutorialVisible(false);
     try { await AsyncStorage.setItem('@filto/tour/filters', 'last'); } catch {}
-    router.back();
+    router.dismissAll();
+    router.navigate('/filters');
   }, [router]);
 
-  // 最後の「次へ」で、ホームへ戻り取得完了を待って終了する
+  // 最後の「次へ」で、フィード画面へ進みツアー継続
   const handleTutorialDone = React.useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/finish', '1'); } catch {}
+    try { await AsyncStorage.setItem('@filto/tour/feeds', '1'); } catch {}
     router.dismissAll();
-    router.navigate('/');
+    router.navigate('/feeds');
   }, [router]);
 
   // 編集モード時、フィルタを読み込む

@@ -124,6 +124,12 @@ export const ja = {
     // Feeds画面
     feeds: {
       title: 'フィード',
+      tutListTitle: '登録済みのフィード',
+      tutListDesc: '購読中のフィードがここに並びます。スワイプや削除モードで整理できます。',
+      tutAddTitle: 'フィードを追加',
+      tutAddDesc: 'ここからRSSフィードのURLを登録できます。',
+      tutUrlDesc: '追加したいフィードのURLを入力します。クリップボードから貼り付けも可能です。',
+      tutNameDesc: 'フィードの表示名（任意）。空欄ならサイト名が使われます。',
       addFeed: 'フィードを追加',
       editFeed: 'フィードを編集',
       deleteMode: '削除モード',

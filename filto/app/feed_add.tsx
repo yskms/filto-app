@@ -21,6 +21,8 @@ import { RssService } from '@/services/RssService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 
 export default function FeedAddScreen() {
   const router = useRouter();
@@ -42,13 +44,64 @@ export default function FeedAddScreen() {
   const disabledBg = useThemeColor({ light: '#b0b0b0', dark: '#555' }, 'background');
   const buttonTextColor = useThemeColor({ light: '#fff', dark: '#151718' }, 'text');
 
-  // 起動時に入力欄にフォーカス
+  // 初回チュートリアル（フィード画面から引き継ぎ）
+  const [tutorialVisible, setTutorialVisible] = useState(false);
+  const [tutorialStartAtLast, setTutorialStartAtLast] = useState(false);
+  const urlSecRef = useRef<View>(null);
+  const nameSecRef = useRef<View>(null);
+
+  // 起動時: ツアー中はキーボードを出さずツアー開始、通常は入力欄へフォーカス
   useEffect(() => {
-    const timer = setTimeout(() => {
-      urlInputRef.current?.focus();
-    }, 100);
-    return () => clearTimeout(timer);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    AsyncStorage.getItem('@filto/tour/feedAdd').then((flag) => {
+      if (flag === '1' || flag === 'last') {
+        AsyncStorage.removeItem('@filto/tour/feedAdd').catch(() => {});
+        setTutorialStartAtLast(flag === 'last');
+        setTutorialVisible(true);
+      } else {
+        timer = setTimeout(() => urlInputRef.current?.focus(), 100);
+      }
+    }).catch(() => {
+      timer = setTimeout(() => urlInputRef.current?.focus(), 100);
+    });
+    return () => { if (timer) clearTimeout(timer); };
   }, []);
+
+  const measureNode = useCallback(
+    (ref: React.RefObject<View | null>): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = ref.current;
+        if (!node) { resolve(null); return; }
+        requestAnimationFrame(() => {
+          node.measureInWindow((x, y, width, height) => {
+            if (!width || !height) resolve(null);
+            else resolve({ x, y, width, height });
+          });
+        });
+      }),
+    []
+  );
+
+  const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    { measure: () => measureNode(urlSecRef), title: t('feeds.feedUrl'), desc: t('feeds.tutUrlDesc') },
+    { measure: () => measureNode(nameSecRef), title: t('feeds.feedName'), desc: t('feeds.tutNameDesc') },
+  ], [t, measureNode]);
+
+  // 最初のステップで「戻る」→ フィード画面のツアー最後へ戻る
+  const handleTutorialBack = useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/feeds', 'last'); } catch {}
+    router.dismissAll();
+    router.navigate('/feeds');
+  }, [router]);
+
+  // 最後の「次へ」で、ホームへ戻り取得完了を待ってツアー終了
+  const handleTutorialDone = useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/finish', '1'); } catch {}
+    router.dismissAll();
+    router.navigate('/');
+  }, [router]);
 
   const validateUrl = useCallback(
     (urlString: string): { valid: boolean; message?: string } => {
@@ -179,7 +232,7 @@ export default function FeedAddScreen() {
             keyboardShouldPersistTaps="handled"
           >
             {/* Feed URL */}
-            <View style={styles.section}>
+            <View ref={urlSecRef} style={styles.section}>
               <ThemedText style={styles.label}>{t('feeds.feedUrl')}</ThemedText>
               <TextInput
                 ref={urlInputRef}
@@ -236,7 +289,7 @@ export default function FeedAddScreen() {
             </TouchableOpacity>
 
             {/* Feed Name (optional) */}
-            <View style={styles.section}>
+            <View ref={nameSecRef} style={styles.section}>
               <ThemedText style={styles.label}>
                 {t('feeds.feedName')}{' '}
                 <ThemedText style={styles.optional}>{t('feeds.feedNameOptional')}</ThemedText>
@@ -266,6 +319,15 @@ export default function FeedAddScreen() {
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
+
+        <CoachMarks
+          visible={tutorialVisible}
+          steps={tutorialSteps}
+          onDone={handleTutorialDone}
+          continues
+          startAtLast={tutorialStartAtLast}
+          onBackBeforeFirst={handleTutorialBack}
+        />
       </SafeAreaView>
     </>
   );
