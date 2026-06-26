@@ -232,9 +232,6 @@ export default function OnboardingScreen({ onComplete }: Props) {
                   onPress={() => toggleKeyword(kw)}
                   activeOpacity={0.7}
                 >
-                  {checked && (
-                    <Ionicons name="checkmark" size={13} color="#fff" style={styles.chipIcon} />
-                  )}
                   <ThemedText style={[styles.chipLabel, checked && styles.chipLabelChecked]}>
                     {kw}
                   </ThemedText>

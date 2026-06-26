@@ -23,7 +23,7 @@ export type CoachStep = {
 
 const ACCENT = '#0a7ea4';
 const DIM = 'rgba(0,0,0,0.72)';
-const PAD = 8; // ハイライトの余白
+const PAD = 6; // ハイライトの余白
 const CARD_GAP = 14; // ハイライトとカードの間隔
 
 interface Props {
@@ -32,9 +32,11 @@ interface Props {
   onDone: () => void;
   /** ツアーが次の画面へ続く場合 true。最後のステップのボタンが「完了」ではなく「次へ」になる */
   continues?: boolean;
+  /** ハイライトの上端をこの値より上に出さない（ノッチ/ステータスバーへのはみ出し防止） */
+  topInset?: number;
 }
 
-export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false }) => {
+export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false, topInset = 0 }) => {
   const { t } = useTranslation();
   const cardBg = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -96,9 +98,11 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   if (!step) return null;
 
   const hx = rect.x - PAD;
-  const hy = rect.y - PAD;
   const hw = rect.width + PAD * 2;
-  const hh = rect.height + PAD * 2;
+  // 上端は topInset より上に出さない（はみ出す分は下げて、下端は維持する）
+  const rawTop = rect.y - PAD;
+  const hy = Math.max(rawTop, topInset);
+  const hh = rect.height + PAD * 2 - (hy - rawTop);
 
   const isLast = index + 1 >= steps.length;
   const next = () => {
