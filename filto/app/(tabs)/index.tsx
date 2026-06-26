@@ -12,6 +12,8 @@ import {
   Alert,
   PanResponder,
   Dimensions,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -232,6 +234,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
   const [tutorialPending, setTutorialPending] = React.useState(false);
+  // ツアーが一周してホームへ戻ってきたとき、初回取得が終わるまで待つスピナー
+  const [waitingArticles, setWaitingArticles] = React.useState(false);
   const feedSelectorRef = React.useRef<View>(null);
   const refreshRef = React.useRef<View>(null);
   const starFilterRef = React.useRef<View>(null);
@@ -433,9 +437,32 @@ export default function HomeScreen() {
     AsyncStorage.removeItem('@filto/home/startTutorial').catch(() => {});
     AsyncStorage.setItem('@filto/home/tutorialSeen', 'true').catch(() => {});
     // フィルタ画面のツアー開始フラグは、遷移先で読まれる前に確実に書き込む
-    try { await AsyncStorage.setItem('@filto/filters/startTutorial', '1'); } catch {}
+    try { await AsyncStorage.setItem('@filto/tour/filters', '1'); } catch {}
     router.navigate('/filters');
   }, []);
+
+  // ツアーが一周してホームへ戻ってきたら、初回取得が終わるまでスピナーで待って終了する
+  useFocusEffect(
+    React.useCallback(() => {
+      AsyncStorage.getItem('@filto/tour/finish').then((flag) => {
+        if (flag !== '1') return;
+        AsyncStorage.removeItem('@filto/tour/finish').catch(() => {});
+        if (filteredArticles.length === 0) {
+          setWaitingArticles(true);
+          setTimeout(() => setWaitingArticles(false), 30000);
+        }
+      }).catch(() => {});
+    }, [filteredArticles.length])
+  );
+
+  // 実記事が届く or 初回同期が完了したら準備スピナーを解除
+  React.useEffect(() => {
+    if (filteredArticles.length > 0) setWaitingArticles(false);
+  }, [filteredArticles.length]);
+
+  React.useEffect(() => {
+    if (hasAutoSynced) setWaitingArticles(false);
+  }, [hasAutoSynced]);
 
   // 画面フォーカス時にデータを読み込む
   // 初回のみスピナーを表示し、タブ切り替えで戻った時はスクロール位置を保持したまま更新
@@ -824,13 +851,23 @@ export default function HomeScreen() {
         onSelectSort={handleSelectFeedSort}
       />
 
-      {/* 初回の使い方ツアー（実画面の要素を指すコーチマーク） */}
+      {/* 初回の使い方ツアー（実画面の要素を指すコーチマーク）。次画面へ続く */}
       <CoachMarks
         visible={tutorialVisible}
         steps={tutorialSteps}
         onDone={handleTutorialDone}
+        continues
       />
 
+      {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}
+      <Modal visible={waitingArticles} animationType="fade" onRequestClose={() => {}}>
+        <View style={[styles.waitingOverlay, { backgroundColor }]}>
+          <ActivityIndicator size="large" color={ACCENT} />
+          <Text style={[styles.waitingText, { color: emptyIconColor }]}>
+            {t('home.preparingArticles')}
+          </Text>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -909,6 +946,15 @@ const styles = StyleSheet.create({
   },
   listWrapper: {
     flex: 1,
+  },
+  waitingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  waitingText: {
+    fontSize: 15,
   },
   listContent: {
     flexGrow: 1,

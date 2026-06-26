@@ -244,7 +244,6 @@ export default function FiltersScreen() {
   );
 
   const tutorialSteps = React.useMemo<CoachStep[]>(() => [
-    { measure: () => measureNode(addRef), title: t('filters.tutAddTitle'), desc: t('filters.tutAddDesc') },
     {
       measure: () => new Promise<CoachRect | null>((resolve) => {
         const node = listRef.current;
@@ -256,25 +255,29 @@ export default function FiltersScreen() {
       }),
       title: t('filters.tutListTitle'), desc: t('filters.tutListDesc'),
     },
+    { measure: () => measureNode(addRef), title: t('filters.tutAddTitle'), desc: t('filters.tutAddDesc') },
   ], [t, measureNode]);
 
   // ホームのツアー最後の「次へ」で遷移してくると、フラグを見てここで続きを開始する
   useFocusEffect(
     React.useCallback(() => {
       let timer: ReturnType<typeof setTimeout> | undefined;
-      AsyncStorage.getItem('@filto/filters/startTutorial').then((flag) => {
+      AsyncStorage.getItem('@filto/tour/filters').then((flag) => {
         if (flag === '1') {
-          AsyncStorage.removeItem('@filto/filters/startTutorial').catch(() => {});
-          timer = setTimeout(() => setTutorialVisible(true), 300); // タブ遷移後のレイアウト確定を待つ
+          AsyncStorage.removeItem('@filto/tour/filters').catch(() => {});
+          timer = setTimeout(() => setTutorialVisible(true), 350); // タブ遷移後のレイアウト確定を待つ
         }
       }).catch(() => {});
       return () => { if (timer) clearTimeout(timer); };
     }, [])
   );
 
-  const handleTutorialDone = React.useCallback(() => {
+  // 最後の「次へ」で、フィルタ追加画面へ遷移してツアーを継続する
+  const handleTutorialDone = React.useCallback(async () => {
     setTutorialVisible(false);
-  }, []);
+    try { await AsyncStorage.setItem('@filto/tour/filterEdit', '1'); } catch {}
+    router.push('/filter_edit');
+  }, [router]);
 
   // フィルタ一覧を読み込む
   const loadFilters = React.useCallback(async () => {
@@ -541,6 +544,7 @@ export default function FiltersScreen() {
         visible={tutorialVisible}
         steps={tutorialSteps}
         onDone={handleTutorialDone}
+        continues
       />
     </SafeAreaView>
   );

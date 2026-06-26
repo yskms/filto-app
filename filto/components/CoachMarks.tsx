@@ -30,9 +30,11 @@ interface Props {
   visible: boolean;
   steps: CoachStep[];
   onDone: () => void;
+  /** ツアーが次の画面へ続く場合 true。最後のステップのボタンが「完了」ではなく「次へ」になる */
+  continues?: boolean;
 }
 
-export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone }) => {
+export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false }) => {
   const { t } = useTranslation();
   const cardBg = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -141,7 +143,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone }) => {
             <Animated.View style={{ transform: [{ scale: pulseScale }] }}>
               <TouchableOpacity onPress={next} style={styles.nextBtn} activeOpacity={0.8}>
                 <Text style={styles.nextText}>
-                  {isLast ? t('home.tutorialDone') : t('home.tutorialNext')}
+                  {isLast && !continues ? t('home.tutorialDone') : t('home.tutorialNext')}
                 </Text>
               </TouchableOpacity>
             </Animated.View>
