@@ -18,6 +18,18 @@ export const SyncService = {
   /** 同期実行中フラグ（多重実行防止） */
   isRefreshing: false,
 
+  /** 同期の世代カウンタ。データリセット等で増やすと実行中の refresh が中断される */
+  generation: 0,
+
+  /**
+   * 実行中の同期をキャンセルする（データリセット時などに呼ぶ）。
+   * 世代を進めることで、ループ中の refresh が次の保存前に中断する。
+   */
+  cancelOngoing(): void {
+    this.generation++;
+    this.isRefreshing = false;
+  },
+
   /**
    * 全フィードを同期
    * @returns 取得成功フィード数と新規記事数、オフライン時は offline: true
@@ -37,6 +49,7 @@ export const SyncService = {
     }
 
     this.isRefreshing = true;
+    const gen = this.generation; // この同期の世代を記録（リセットで変わったら中断）
     let fetched = 0;
     let newArticles = 0;
 
@@ -46,12 +59,17 @@ export const SyncService = {
 
       // 各フィードを順次処理
       for (const feed of feeds) {
+        // リセット等でキャンセルされたら、それ以上の保存はしない（孤立記事を防ぐ）
+        if (this.generation !== gen) break;
         try {
           // 保存前の記事数を取得
           const beforeCount = (await ArticleService.getArticles(feed.id)).length;
 
           // RSS取得（フィードアイコンをサムネイルのフォールバックとして渡す）
           const articles = await RssService.fetchArticles(feed.url, feed.iconUrl);
+
+          // 取得中にキャンセルされていたら保存しない
+          if (this.generation !== gen) break;
 
           // 保存（重複チェックは ArticleService 内で実施）
           await ArticleService.saveArticles(feed.id, feed.title, articles);
@@ -66,15 +84,17 @@ export const SyncService = {
         }
       }
 
-      // 最終同期時刻を保存
-      await AsyncStorage.setItem(STORAGE_KEY_LAST_SYNC_TIME, Date.now().toString());
-
-      // 古い記事を自動削除
-      const deletedCount = await this.deleteOldArticlesAuto();
-
-      return { fetched, newArticles, deleted: deletedCount };
+      if (this.generation === gen) {
+        // 最終同期時刻を保存
+        await AsyncStorage.setItem(STORAGE_KEY_LAST_SYNC_TIME, Date.now().toString());
+        // 古い記事を自動削除
+        const deletedCount = await this.deleteOldArticlesAuto();
+        return { fetched, newArticles, deleted: deletedCount };
+      }
+      return { fetched, newArticles };
     } finally {
-      this.isRefreshing = false;
+      // 自分が現在の世代のときだけフラグを下ろす（キャンセル後に始まった新しい同期を壊さない）
+      if (this.generation === gen) this.isRefreshing = false;
     }
   },
 

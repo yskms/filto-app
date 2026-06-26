@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { resetAllData } from '@/database/init';
+import { SyncService } from '@/services/SyncService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -360,6 +361,8 @@ export default function DataManagementScreen() {
           onPress: async () => {
             setIsResetting(true);
             try {
+              // 実行中の同期を止めてから消す（古いフィードへの記事書き込みを防ぐ）
+              SyncService.cancelOngoing();
               await resetAllData();
               Alert.alert(t('common.done'), t('dataManagement.resetComplete'));
             } catch (_) {

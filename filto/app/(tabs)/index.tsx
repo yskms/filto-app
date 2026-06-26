@@ -387,9 +387,9 @@ export default function HomeScreen() {
     { measure: () => measureNode(starFilterRef), title: t('home.tutStarViewTitle'), desc: t('home.tutStarViewDesc') },
     { measure: () => measureNode(filterBarRef), title: t('home.tutFilterTitle'), desc: t('home.tutFilterDesc') },
     {
-      // 下タブの「フィルタ」タブ(4つ中2番目)のアイコン付近だけを囲う。
-      // リスト領域の下端(=タブバー上端)を実測し、高さはアイコン+ラベル相当(46)に
-      // 絞ることで画面外へのはみ出しを防ぐ
+      // 下タブの「フィルタ」タブ(4つ中2番目)のアイコンだけを囲う。タブセルの幅一杯
+      // ではなく、アイコン+ラベル相当の小さめのボックスをセル中央に置くことで、
+      // 青枠がセルの内側に余白を持って収まる
       measure: () => new Promise<CoachRect | null>((resolve) => {
         const { width } = Dimensions.get('window');
         const tabW = width / 4;
@@ -397,7 +397,9 @@ export default function HomeScreen() {
         if (!node) { resolve(null); return; }
         node.measureInWindow((x, y, w, h) => {
           if (!h) { resolve(null); return; }
-          resolve({ x: tabW, y: y + h, width: tabW, height: 46 });
+          const boxW = Math.min(tabW - 20, 58);
+          const cx = tabW + (tabW - boxW) / 2; // 2番目のタブセルの中央
+          resolve({ x: cx, y: y + h, width: boxW, height: 38 });
         });
       }),
       title: t('home.tutFiltersTabTitle'), desc: t('home.tutFiltersTabDesc'),
