@@ -86,7 +86,7 @@ export const ja = {
       tutListTitle: '登録済みのフィルタ',
       tutListDesc: 'オンボーディングで選んだキーワードがここに並びます。タップで編集できます。',
       tutBlockDesc: 'このキーワードを含む記事を非表示にします。',
-      tutAllowDesc: 'ブロック中でも、ここのキーワードを含む記事は表示します（除外の例外）。',
+      tutAllowDesc: 'ブロックキーワードが含まれていても、ここのキーワードがあれば表示します（除外の例外）。',
       tutTargetDesc: 'キーワードをタイトル・本文のどちらで探すか選べます。',
       addFilter: 'フィルタを追加',
       editFilter: 'フィルタを編集',

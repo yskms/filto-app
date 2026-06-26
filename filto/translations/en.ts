@@ -86,7 +86,7 @@ export const en = {
     tutListTitle: 'Your filters',
     tutListDesc: 'Keywords you picked during onboarding appear here. Tap to edit.',
     tutBlockDesc: 'Articles containing this keyword will be hidden.',
-    tutAllowDesc: 'Even when blocked, articles with these keywords stay visible (exceptions).',
+    tutAllowDesc: 'Even if a block keyword matches, articles with these keywords stay visible (exceptions).',
     tutTargetDesc: 'Choose whether to match the keyword in the title or the description.',
     addFilter: 'Add Filter',
     editFilter: 'Edit Filter',

@@ -43,7 +43,7 @@ import { LoadingView } from '@/components/LoadingView';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
-const SCROLL_TOP_THRESHOLD = 500; // この位置を超えたら「トップへ戻る」ボタンを表示
+const SCROLL_TOP_THRESHOLD = 250; // この位置を超えたら「トップへ戻る」ボタンを表示
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string, justNow: string): string => {
@@ -387,16 +387,19 @@ export default function HomeScreen() {
     { measure: () => measureNode(starFilterRef), title: t('home.tutStarViewTitle'), desc: t('home.tutStarViewDesc') },
     { measure: () => measureNode(filterBarRef), title: t('home.tutFilterTitle'), desc: t('home.tutFilterDesc') },
     {
-      // 下タブの「フィルタ」タブ(4つ中2番目)だけを囲う。リスト領域の下端＝タブ上端を実測
+      // 下タブの「フィルタ」タブ(4つ中2番目)のアイコン付近だけを囲う。
+      // リスト領域の下端＝タブバー上端を実測し、アイコン+ラベル分の高さ(画面外に
+      // はみ出さない)だけを対象にする
       measure: () => new Promise<CoachRect | null>((resolve) => {
         const { width, height } = Dimensions.get('window');
         const tabW = width / 4;
+        const TAB_CONTENT_H = 50; // アイコン+ラベルのおおよその高さ
         const fallbackTop = height - (49 + insets.bottom);
         const node = listWrapperRef.current;
-        if (!node) { resolve({ x: tabW, y: fallbackTop, width: tabW, height: height - fallbackTop }); return; }
+        if (!node) { resolve({ x: tabW, y: fallbackTop, width: tabW, height: TAB_CONTENT_H }); return; }
         node.measureInWindow((x, y, w, h) => {
           const top = (y && h) ? y + h : fallbackTop;
-          resolve({ x: tabW, y: top, width: tabW, height: Math.max(0, height - top) });
+          resolve({ x: tabW, y: top, width: tabW, height: TAB_CONTENT_H });
         });
       }),
       title: t('home.tutFiltersTabTitle'), desc: t('home.tutFiltersTabDesc'),
@@ -441,25 +444,22 @@ export default function HomeScreen() {
     router.navigate('/filters');
   }, []);
 
-  // ツアーが一周してホームへ戻ってきたら、初回取得が終わるまでスピナーで待って終了する
+  // ツアーが一周してホームへ戻ってきたら、初回同期が完了するまでスピナーで待つ
+  // （一部だけ読み込まれた中途半端な状態を見せない）
   useFocusEffect(
     React.useCallback(() => {
       AsyncStorage.getItem('@filto/tour/finish').then((flag) => {
         if (flag !== '1') return;
         AsyncStorage.removeItem('@filto/tour/finish').catch(() => {});
-        if (filteredArticles.length === 0) {
+        if (!hasAutoSynced) {
           setWaitingArticles(true);
-          setTimeout(() => setWaitingArticles(false), 30000);
+          setTimeout(() => setWaitingArticles(false), 30000); // 取得不能時のフォールバック
         }
       }).catch(() => {});
-    }, [filteredArticles.length])
+    }, [hasAutoSynced])
   );
 
-  // 実記事が届く or 初回同期が完了したら準備スピナーを解除
-  React.useEffect(() => {
-    if (filteredArticles.length > 0) setWaitingArticles(false);
-  }, [filteredArticles.length]);
-
+  // 初回同期(autoSync の refresh→loadData)が完了したら準備スピナーを解除
   React.useEffect(() => {
     if (hasAutoSynced) setWaitingArticles(false);
   }, [hasAutoSynced]);
