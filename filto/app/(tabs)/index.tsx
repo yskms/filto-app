@@ -12,6 +12,7 @@ import {
   Alert,
   PanResponder,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -229,6 +230,9 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
   const [tutorialPending, setTutorialPending] = React.useState(false);
+  // ツアー終了後、まだ実記事が無ければ準備スピナーで待つ
+  const [waitingArticles, setWaitingArticles] = React.useState(false);
+  const filteredCountRef = React.useRef(0);
   const feedSelectorRef = React.useRef<View>(null);
   const refreshRef = React.useRef<View>(null);
   const filterBarRef = React.useRef<View>(null);
@@ -410,22 +414,34 @@ export default function HomeScreen() {
     }));
   }, [t]);
 
-  // 初回（オンボーディング直後）にチュートリアルを開始
+  // 初回（オンボーディング直後）にチュートリアルを開始。ダミー記事とツアーを
+  // ほぼ同時に出す（待たせない）
   React.useEffect(() => {
     if (isLoading) return;
     AsyncStorage.getItem('@filto/home/startTutorial').then((flag) => {
       if (flag === '1') {
-        setTutorialPending(true); // 先にダミー記事を出して空表示のチラつきを防ぐ
-        setTimeout(() => setTutorialVisible(true), 350);
+        setTutorialPending(true);
+        setTutorialVisible(true);
       }
     }).catch(() => {});
   }, [isLoading]);
+
+  // 実記事が届いたら準備スピナーを解除
+  React.useEffect(() => {
+    filteredCountRef.current = filteredArticles.length;
+    if (filteredArticles.length > 0) setWaitingArticles(false);
+  }, [filteredArticles.length]);
 
   const handleTutorialDone = React.useCallback(() => {
     setTutorialVisible(false);
     setTutorialPending(false);
     AsyncStorage.removeItem('@filto/home/startTutorial').catch(() => {});
     AsyncStorage.setItem('@filto/home/tutorialSeen', 'true').catch(() => {});
+    // まだ実記事が届いていなければ、空のホームを見せずに準備スピナーで待つ
+    if (filteredCountRef.current === 0) {
+      setWaitingArticles(true);
+      setTimeout(() => setWaitingArticles(false), 30000); // 取得不能時のフォールバック
+    }
   }, []);
 
   // 画面フォーカス時にデータを読み込む
@@ -820,6 +836,16 @@ export default function HomeScreen() {
         steps={tutorialSteps}
         onDone={handleTutorialDone}
       />
+
+      {/* ツアー終了後、まだ記事が無いときの準備スピナー */}
+      {waitingArticles && (
+        <View style={[styles.waitingOverlay, { backgroundColor }]}>
+          <ActivityIndicator size="large" color={ACCENT} />
+          <Text style={[styles.waitingText, { color: emptyIconColor }]}>
+            {t('home.preparingArticles')}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -898,6 +924,15 @@ const styles = StyleSheet.create({
   },
   listWrapper: {
     flex: 1,
+  },
+  waitingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  waitingText: {
+    fontSize: 15,
   },
   listContent: {
     flexGrow: 1,

@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Animated,
+  Pressable,
 } from 'react-native';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -39,6 +41,21 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone }) => {
   const [index, setIndex] = React.useState(0);
   const [rect, setRect] = React.useState<CoachRect | null>(null);
   const { height: screenH } = Dimensions.get('window');
+
+  // 「次へ」以外をタップしたときに、押す場所を点滅で誘導する
+  const pulse = React.useRef(new Animated.Value(0)).current;
+  const triggerPulse = React.useCallback(() => {
+    pulse.stopAnimation(() => {
+      pulse.setValue(0);
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 130, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 130, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 130, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 150, useNativeDriver: true }),
+      ]).start();
+    });
+  }, [pulse]);
+  const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] });
 
   // 表示開始時はインデックスをリセット
   React.useEffect(() => {
@@ -95,28 +112,30 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone }) => {
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDone}>
-      {/* ハイライト以外を暗くする（4枚の矩形でくり抜き） */}
-      <View style={[styles.dim, { top: 0, left: 0, right: 0, height: Math.max(0, hy) }]} />
-      <View style={[styles.dim, { top: hy, left: 0, width: Math.max(0, hx), height: hh }]} />
-      <View style={[styles.dim, { top: hy, left: hx + hw, right: 0, height: hh }]} />
-      <View style={[styles.dim, { top: hy + hh, left: 0, right: 0, bottom: 0 }]} />
-
-      {/* ハイライトの枠 */}
-      <View pointerEvents="none" style={[styles.ring, { top: hy, left: hx, width: hw, height: hh }]} />
+      {/* 「次へ」以外をタップしたら点滅で誘導（暗幕・ハイライト穴を含め全面で受ける） */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={triggerPulse}>
+        <View pointerEvents="none" style={[styles.dim, { top: 0, left: 0, right: 0, height: Math.max(0, hy) }]} />
+        <View pointerEvents="none" style={[styles.dim, { top: hy, left: 0, width: Math.max(0, hx), height: hh }]} />
+        <View pointerEvents="none" style={[styles.dim, { top: hy, left: hx + hw, right: 0, height: hh }]} />
+        <View pointerEvents="none" style={[styles.dim, { top: hy + hh, left: 0, right: 0, bottom: 0 }]} />
+        <View pointerEvents="none" style={[styles.ring, { top: hy, left: hx, width: hw, height: hh }]} />
+      </Pressable>
 
       {/* 説明カード */}
-      <View style={[styles.card, { backgroundColor: cardBg }, cardPos]}>
+      <View style={[styles.card, { backgroundColor: cardBg, borderColor: ACCENT }, cardPos]}>
         <Text style={[styles.cardTitle, { color: textColor }]}>{step.title}</Text>
         <Text style={[styles.cardDesc, { color: hintColor }]}>{step.desc}</Text>
         <View style={styles.footer}>
           <Text style={[styles.progress, { color: hintColor }]}>
             {index + 1} / {steps.length}
           </Text>
-          <TouchableOpacity onPress={next} style={styles.nextBtn} activeOpacity={0.8}>
-            <Text style={styles.nextText}>
-              {isLast ? t('home.tutorialDone') : t('home.tutorialNext')}
-            </Text>
-          </TouchableOpacity>
+          <Animated.View style={{ transform: [{ scale: pulseScale }] }}>
+            <TouchableOpacity onPress={next} style={styles.nextBtn} activeOpacity={0.8}>
+              <Text style={styles.nextText}>
+                {isLast ? t('home.tutorialDone') : t('home.tutorialNext')}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </View>
     </Modal>
@@ -136,12 +155,13 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     borderRadius: 14,
+    borderWidth: 1.5,
     padding: 18,
     shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
   },
   cardTitle: { fontSize: 17, fontWeight: '700', marginBottom: 6 },
   cardDesc: { fontSize: 14, lineHeight: 20 },
