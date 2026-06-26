@@ -415,23 +415,27 @@ export default function HomeScreen() {
     }));
   }, [t]);
 
-  // 初回（オンボーディング直後）にチュートリアルを開始。ダミー記事とツアーを
-  // ほぼ同時に出す（待たせない）
+  // 初回（オンボーディング直後）にチュートリアルを開始。マウント時にフラグを読み、
+  // ダミー記事＋ツアーを即出しする（loadData完了を待たないので体感が速い）
   React.useEffect(() => {
-    if (isLoading) return;
     AsyncStorage.getItem('@filto/home/startTutorial').then((flag) => {
       if (flag === '1') {
         setTutorialPending(true);
         setTutorialVisible(true);
       }
     }).catch(() => {});
-  }, [isLoading]);
+  }, []);
 
-  // 実記事が届いたら準備スピナーを解除
+  // 実記事が届く or 初回同期が完了したら準備スピナーを解除
   React.useEffect(() => {
     filteredCountRef.current = filteredArticles.length;
     if (filteredArticles.length > 0) setWaitingArticles(false);
   }, [filteredArticles.length]);
+
+  React.useEffect(() => {
+    // autoSync が refresh→loadData まで終えたら（記事が揃っているはず）スピナー解除
+    if (hasAutoSynced) setWaitingArticles(false);
+  }, [hasAutoSynced]);
 
   const handleTutorialDone = React.useCallback(() => {
     setTutorialVisible(false);
@@ -748,7 +752,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
-      {isLoading ? (
+      {isLoading && !showTutorialDemo ? (
         <LoadingView />
       ) : (
         <View

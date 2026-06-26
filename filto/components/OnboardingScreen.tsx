@@ -19,7 +19,6 @@ import {
   seedFiltersFromTopics,
 } from '@/database/init';
 import { DEFAULT_FEED_CATEGORIES } from '@/constants/defaultFeeds';
-import { SyncService } from '@/services/SyncService';
 
 const FEED_CATEGORIES = DEFAULT_FEED_CATEGORIES;
 
@@ -148,10 +147,8 @@ export default function OnboardingScreen({ onComplete }: Props) {
       // ホームで初回チュートリアル（コーチマーク）を表示するためのフラグ
       await AsyncStorage.setItem('@filto/home/startTutorial', '1');
 
-      // 同期はブロックせず裏で実行。ホームへ即遷移し、取得を待つ間に
-      // （ダミー記事を背景に）ツアーを進めてもらう＝待ち時間を有効活用する
-      SyncService.refresh().catch(() => {});
-
+      // 初回同期はホーム側の autoSync に任せる（二重 refresh のレースを避ける）。
+      // ホームへ即遷移し、取得を待つ間にダミー記事を背景にツアーを進めてもらう。
       onComplete();
     } catch {
       Alert.alert(t('errors.operationFailed'));
