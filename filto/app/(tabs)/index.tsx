@@ -236,6 +236,7 @@ export default function HomeScreen() {
   const [tutorialPending, setTutorialPending] = React.useState(false);
   // ツアーが一周してホームへ戻ってきたとき、初回取得が終わるまで待つスピナー
   const [waitingArticles, setWaitingArticles] = React.useState(false);
+  const hasAutoSyncedRef = React.useRef(false);
   const feedSelectorRef = React.useRef<View>(null);
   const refreshRef = React.useRef<View>(null);
   const starFilterRef = React.useRef<View>(null);
@@ -388,20 +389,14 @@ export default function HomeScreen() {
     { measure: () => measureNode(filterBarRef), title: t('home.tutFilterTitle'), desc: t('home.tutFilterDesc') },
     {
       // 下タブの「フィルタ」タブ(4つ中2番目)のアイコン付近だけを囲う。
-      // リスト領域の下端＝タブバー上端を実測し、アイコン+ラベル分の高さ(画面外に
-      // はみ出さない)だけを対象にする
-      measure: () => new Promise<CoachRect | null>((resolve) => {
+      // タブバー位置は safe-area から直接計算する（アイコン+ラベル相当=49px、
+      // home indicator 分の insets.bottom は含めないので画面外にはみ出さない）
+      measure: () => {
         const { width, height } = Dimensions.get('window');
         const tabW = width / 4;
-        const TAB_CONTENT_H = 50; // アイコン+ラベルのおおよその高さ
-        const fallbackTop = height - (49 + insets.bottom);
-        const node = listWrapperRef.current;
-        if (!node) { resolve({ x: tabW, y: fallbackTop, width: tabW, height: TAB_CONTENT_H }); return; }
-        node.measureInWindow((x, y, w, h) => {
-          const top = (y && h) ? y + h : fallbackTop;
-          resolve({ x: tabW, y: top, width: tabW, height: TAB_CONTENT_H });
-        });
-      }),
+        const tabBarTop = height - (49 + insets.bottom);
+        return Promise.resolve<CoachRect>({ x: tabW, y: tabBarTop, width: tabW, height: 46 });
+      },
       title: t('home.tutFiltersTabTitle'), desc: t('home.tutFiltersTabDesc'),
     },
   ], [t, measureNode, insets.bottom]);
@@ -444,23 +439,24 @@ export default function HomeScreen() {
     router.navigate('/filters');
   }, []);
 
-  // ツアーが一周してホームへ戻ってきたら、初回同期が完了するまでスピナーで待つ
-  // （一部だけ読み込まれた中途半端な状態を見せない）
+  // ツアーが一周してホームへ戻ってきたら、まず必ず準備スピナーを出し、初回同期が
+  // 完了してから解除する（中途半端な状態を一切見せない）
   useFocusEffect(
     React.useCallback(() => {
       AsyncStorage.getItem('@filto/tour/finish').then((flag) => {
         if (flag !== '1') return;
         AsyncStorage.removeItem('@filto/tour/finish').catch(() => {});
-        if (!hasAutoSynced) {
-          setWaitingArticles(true);
-          setTimeout(() => setWaitingArticles(false), 30000); // 取得不能時のフォールバック
-        }
+        setWaitingArticles(true);
+        // 既に同期完了済みなら一瞬だけ見せて閉じる。未完了なら完了まで（or 30sで）待つ
+        const delay = hasAutoSyncedRef.current ? 700 : 30000;
+        setTimeout(() => setWaitingArticles(false), delay);
       }).catch(() => {});
-    }, [hasAutoSynced])
+    }, [])
   );
 
   // 初回同期(autoSync の refresh→loadData)が完了したら準備スピナーを解除
   React.useEffect(() => {
+    hasAutoSyncedRef.current = hasAutoSynced;
     if (hasAutoSynced) setWaitingArticles(false);
   }, [hasAutoSynced]);
 
