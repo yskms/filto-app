@@ -6,6 +6,8 @@ import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSw
 import Reanimated from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 import { Ionicons } from '@expo/vector-icons';
 import { FilterService, Filter } from '@/services/FilterService';
 import { FilterSortModal, FilterSortType } from '@/components/FilterSortModal';
@@ -118,6 +120,7 @@ const FiltersHeader: React.FC<{
   onPressSortButton: () => void;
   onPressAdd: () => void;
   onConfirmDelete: () => void;
+  addRef: React.RefObject<View | null>;
 }> = ({
   deleteMode,
   selectedCount,
@@ -125,6 +128,7 @@ const FiltersHeader: React.FC<{
   onPressSortButton,
   onPressAdd,
   onConfirmDelete,
+  addRef,
 }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
@@ -187,6 +191,7 @@ const FiltersHeader: React.FC<{
           <Ionicons name="trash-outline" size={22} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity
+          ref={addRef}
           style={styles.headerButton}
           onPress={onPressAdd}
           activeOpacity={0.7}
@@ -217,6 +222,59 @@ export default function FiltersScreen() {
   
   // 開いているスワイプのIDを保持（refで直接管理）
   const openSwipeIdRef = useRef<number | null>(null);
+
+  // 初回チュートリアル（ホームから引き継ぎ）
+  const [tutorialVisible, setTutorialVisible] = useState(false);
+  const addRef = useRef<View>(null);
+  const listRef = useRef<View>(null);
+
+  const measureNode = React.useCallback(
+    (ref: React.RefObject<View | null>): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = ref.current;
+        if (!node) { resolve(null); return; }
+        requestAnimationFrame(() => {
+          node.measureInWindow((x, y, width, height) => {
+            if (!width || !height) resolve(null);
+            else resolve({ x, y, width, height });
+          });
+        });
+      }),
+    []
+  );
+
+  const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    { measure: () => measureNode(addRef), title: t('filters.tutAddTitle'), desc: t('filters.tutAddDesc') },
+    {
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const node = listRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, width, height) => {
+          if (!width || !height) resolve(null);
+          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(110, Math.max(0, height - 12)) });
+        });
+      }),
+      title: t('filters.tutListTitle'), desc: t('filters.tutListDesc'),
+    },
+  ], [t, measureNode]);
+
+  // ホームのツアー最後の「次へ」で遷移してくると、フラグを見てここで続きを開始する
+  useFocusEffect(
+    React.useCallback(() => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      AsyncStorage.getItem('@filto/filters/startTutorial').then((flag) => {
+        if (flag === '1') {
+          AsyncStorage.removeItem('@filto/filters/startTutorial').catch(() => {});
+          timer = setTimeout(() => setTutorialVisible(true), 300); // タブ遷移後のレイアウト確定を待つ
+        }
+      }).catch(() => {});
+      return () => { if (timer) clearTimeout(timer); };
+    }, [])
+  );
+
+  const handleTutorialDone = React.useCallback(() => {
+    setTutorialVisible(false);
+  }, []);
 
   // フィルタ一覧を読み込む
   const loadFilters = React.useCallback(async () => {
@@ -435,8 +493,10 @@ export default function FiltersScreen() {
         onPressSortButton={handlePressSortButton}
         onPressAdd={handlePressAdd}
         onConfirmDelete={handleConfirmDelete}
+        addRef={addRef}
       />
 
+      <View ref={listRef} style={styles.listWrapper}>
       <FlatList
         data={filters}
         renderItem={({ item }) => {
@@ -468,6 +528,7 @@ export default function FiltersScreen() {
           </View>
         }
       />
+      </View>
 
       <FilterSortModal
         visible={sortModalVisible}
@@ -475,12 +536,21 @@ export default function FiltersScreen() {
         onClose={() => setSortModalVisible(false)}
         onSelectSort={handleSelectSort}
       />
+
+      <CoachMarks
+        visible={tutorialVisible}
+        steps={tutorialSteps}
+        onDone={handleTutorialDone}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  listWrapper: {
     flex: 1,
   },
   header: {

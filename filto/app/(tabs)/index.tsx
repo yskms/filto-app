@@ -12,11 +12,10 @@ import {
   Alert,
   PanResponder,
   Dimensions,
-  ActivityIndicator,
-  Modal,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Article } from '@/types/Article';
 import { FeedSelectModal } from '@/components/FeedSelectModal';
@@ -154,7 +153,8 @@ const HomeHeader: React.FC<{
   onPressRefresh: () => void;
   feedSelectorRef: React.RefObject<View | null>;
   refreshRef: React.RefObject<View | null>;
-}> = ({ feedName, showStarredOnly, onPressFeedSelect, onPressStarFilter, onPressRefresh, feedSelectorRef, refreshRef }) => {
+  starFilterRef: React.RefObject<View | null>;
+}> = ({ feedName, showStarredOnly, onPressFeedSelect, onPressStarFilter, onPressRefresh, feedSelectorRef, refreshRef, starFilterRef }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'icon');
@@ -176,6 +176,7 @@ const HomeHeader: React.FC<{
 
         <View style={styles.headerButtons}>
           <TouchableOpacity
+            ref={starFilterRef}
             style={[styles.starButton, { backgroundColor: showStarredOnly ? starBtnActiveBg : starBtnBg }]}
             onPress={onPressStarFilter}
             activeOpacity={0.7}
@@ -231,11 +232,9 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
   const [tutorialPending, setTutorialPending] = React.useState(false);
-  // ツアー終了後、まだ実記事が無ければ準備スピナーで待つ
-  const [waitingArticles, setWaitingArticles] = React.useState(false);
-  const filteredCountRef = React.useRef(0);
   const feedSelectorRef = React.useRef<View>(null);
   const refreshRef = React.useRef<View>(null);
+  const starFilterRef = React.useRef<View>(null);
   const filterBarRef = React.useRef<View>(null);
   const listWrapperRef = React.useRef<View>(null);
 
@@ -381,20 +380,22 @@ export default function HomeScreen() {
       }),
       title: t('home.tutStarTitle'), desc: t('home.tutStarDesc'),
     },
+    { measure: () => measureNode(starFilterRef), title: t('home.tutStarViewTitle'), desc: t('home.tutStarViewDesc') },
     { measure: () => measureNode(filterBarRef), title: t('home.tutFilterTitle'), desc: t('home.tutFilterDesc') },
     {
-      // 下タブ: リスト領域の下端＝タブバー上端を実測して、その下を囲う
+      // 下タブの「フィルタ」タブ(4つ中2番目)だけを囲う。リスト領域の下端＝タブ上端を実測
       measure: () => new Promise<CoachRect | null>((resolve) => {
         const { width, height } = Dimensions.get('window');
+        const tabW = width / 4;
         const fallbackTop = height - (49 + insets.bottom);
         const node = listWrapperRef.current;
-        if (!node) { resolve({ x: 0, y: fallbackTop, width, height: height - fallbackTop }); return; }
+        if (!node) { resolve({ x: tabW, y: fallbackTop, width: tabW, height: height - fallbackTop }); return; }
         node.measureInWindow((x, y, w, h) => {
           const top = (y && h) ? y + h : fallbackTop;
-          resolve({ x: 0, y: top, width, height: Math.max(0, height - top) });
+          resolve({ x: tabW, y: top, width: tabW, height: Math.max(0, height - top) });
         });
       }),
-      title: t('home.tutTabsTitle'), desc: t('home.tutTabsDesc'),
+      title: t('home.tutFiltersTabTitle'), desc: t('home.tutFiltersTabDesc'),
     },
   ], [t, measureNode, insets.bottom]);
 
@@ -426,27 +427,14 @@ export default function HomeScreen() {
     }).catch(() => {});
   }, []);
 
-  // 実記事が届く or 初回同期が完了したら準備スピナーを解除
-  React.useEffect(() => {
-    filteredCountRef.current = filteredArticles.length;
-    if (filteredArticles.length > 0) setWaitingArticles(false);
-  }, [filteredArticles.length]);
-
-  React.useEffect(() => {
-    // autoSync が refresh→loadData まで終えたら（記事が揃っているはず）スピナー解除
-    if (hasAutoSynced) setWaitingArticles(false);
-  }, [hasAutoSynced]);
-
-  const handleTutorialDone = React.useCallback(() => {
+  const handleTutorialDone = React.useCallback(async () => {
     setTutorialVisible(false);
     setTutorialPending(false);
     AsyncStorage.removeItem('@filto/home/startTutorial').catch(() => {});
     AsyncStorage.setItem('@filto/home/tutorialSeen', 'true').catch(() => {});
-    // まだ実記事が届いていなければ、空のホームを見せずに準備スピナーで待つ
-    if (filteredCountRef.current === 0) {
-      setWaitingArticles(true);
-      setTimeout(() => setWaitingArticles(false), 30000); // 取得不能時のフォールバック
-    }
+    // フィルタ画面のツアー開始フラグは、遷移先で読まれる前に確実に書き込む
+    try { await AsyncStorage.setItem('@filto/filters/startTutorial', '1'); } catch {}
+    router.navigate('/filters');
   }, []);
 
   // 画面フォーカス時にデータを読み込む
@@ -725,6 +713,7 @@ export default function HomeScreen() {
         onPressRefresh={handleRefresh}
         feedSelectorRef={feedSelectorRef}
         refreshRef={refreshRef}
+        starFilterRef={starFilterRef}
       />
 
       {displayBlockedCount > 0 && (
@@ -842,16 +831,6 @@ export default function HomeScreen() {
         onDone={handleTutorialDone}
       />
 
-      {/* ツアー終了後、まだ記事が無いときの準備スピナー（Modalで全面を覆い、
-          下タブの遷移もブロックする） */}
-      <Modal visible={waitingArticles} animationType="fade" onRequestClose={() => {}}>
-        <View style={[styles.waitingOverlay, { backgroundColor }]}>
-          <ActivityIndicator size="large" color={ACCENT} />
-          <Text style={[styles.waitingText, { color: emptyIconColor }]}>
-            {t('home.preparingArticles')}
-          </Text>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -930,15 +909,6 @@ const styles = StyleSheet.create({
   },
   listWrapper: {
     flex: 1,
-  },
-  waitingOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  waitingText: {
-    fontSize: 15,
   },
   listContent: {
     flexGrow: 1,
