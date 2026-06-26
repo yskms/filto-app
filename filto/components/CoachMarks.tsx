@@ -32,11 +32,11 @@ interface Props {
   onDone: () => void;
   /** ツアーが次の画面へ続く場合 true。最後のステップのボタンが「完了」ではなく「次へ」になる */
   continues?: boolean;
-  /** ハイライトの上端をこの値より上に出さない（ノッチ/ステータスバーへのはみ出し防止） */
-  topInset?: number;
 }
 
-export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false, topInset = 0 }) => {
+const MIN_TOP = 4; // ハイライト上端の最小位置（オーバーレイ上端での見切れ防止）
+
+export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false }) => {
   const { t } = useTranslation();
   const cardBg = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -99,9 +99,10 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
 
   const hx = rect.x - PAD;
   const hw = rect.width + PAD * 2;
-  // 上端は topInset より上に出さない（はみ出す分は下げて、下端は維持する）
+  // 上端がオーバーレイ上端より上に出る分だけ下げる（下端は維持）。
+  // 上部のアイコン(更新/スター)の枠が見切れるのを防ぐ
   const rawTop = rect.y - PAD;
-  const hy = Math.max(rawTop, topInset);
+  const hy = Math.max(rawTop, MIN_TOP);
   const hh = rect.height + PAD * 2 - (hy - rawTop);
 
   const isLast = index + 1 >= steps.length;

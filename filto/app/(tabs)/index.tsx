@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -231,7 +231,6 @@ export default function HomeScreen() {
   const isInitialLoad = React.useRef(true);
 
   // 初回チュートリアル（コーチマーク）
-  const insets = useSafeAreaInsets();
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
   const [tutorialPending, setTutorialPending] = React.useState(false);
   // ツアーが一周してホームへ戻ってきたとき、初回取得が終わるまで待つスピナー
@@ -859,7 +858,6 @@ export default function HomeScreen() {
         steps={tutorialSteps}
         onDone={handleTutorialDone}
         continues
-        topInset={insets.top}
       />
 
       {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}
