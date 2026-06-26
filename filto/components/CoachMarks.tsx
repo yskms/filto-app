@@ -103,6 +103,9 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone }) => {
     if (isLast) onDone();
     else setIndex(index + 1);
   };
+  const back = () => {
+    if (index > 0) setIndex(index - 1);
+  };
 
   // ハイライトが画面上寄りなら下に、下寄りなら上にカードを出す
   const below = hy + hh / 2 < screenH * 0.5;
@@ -126,9 +129,16 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone }) => {
         <Text style={[styles.cardTitle, { color: textColor }]}>{step.title}</Text>
         <Text style={[styles.cardDesc, { color: hintColor }]}>{step.desc}</Text>
         <View style={styles.footer}>
-          <Text style={[styles.progress, { color: hintColor }]}>
-            {index + 1} / {steps.length}
-          </Text>
+          <View style={styles.footerLeft}>
+            {index > 0 && (
+              <TouchableOpacity onPress={back} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={[styles.back, { color: hintColor }]}>{t('common.back')}</Text>
+              </TouchableOpacity>
+            )}
+            <Text style={[styles.progress, { color: hintColor }]}>
+              {index + 1} / {steps.length}
+            </Text>
+          </View>
           <Animated.View style={{ transform: [{ scale: pulseScale }] }}>
             <TouchableOpacity onPress={next} style={styles.nextBtn} activeOpacity={0.8}>
               <Text style={styles.nextText}>
@@ -171,6 +181,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 16,
   },
+  footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  back: { fontSize: 15 },
   progress: { fontSize: 13 },
   nextBtn: {
     backgroundColor: ACCENT,

@@ -13,6 +13,7 @@ import {
   PanResponder,
   Dimensions,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -837,15 +838,16 @@ export default function HomeScreen() {
         onDone={handleTutorialDone}
       />
 
-      {/* ツアー終了後、まだ記事が無いときの準備スピナー */}
-      {waitingArticles && (
+      {/* ツアー終了後、まだ記事が無いときの準備スピナー（Modalで全面を覆い、
+          下タブの遷移もブロックする） */}
+      <Modal visible={waitingArticles} animationType="fade" onRequestClose={() => {}}>
         <View style={[styles.waitingOverlay, { backgroundColor }]}>
           <ActivityIndicator size="large" color={ACCENT} />
           <Text style={[styles.waitingText, { color: emptyIconColor }]}>
             {t('home.preparingArticles')}
           </Text>
         </View>
-      )}
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -926,7 +928,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   waitingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
