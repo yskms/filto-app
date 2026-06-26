@@ -8,6 +8,7 @@ import {
   Dimensions,
   Animated,
   Pressable,
+  InteractionManager,
 } from 'react-native';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -98,8 +99,11 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
         }
       }).catch(() => {});
     };
-    run();
-    return () => { cancelled = true; };
+    // 画面遷移アニメーション(push のスライド等)の完了後に計測する。
+    // タブ遷移などアニメが無ければ即実行される。スライド中に計測して位置が
+    // ズレるのを防ぐ
+    const handle = InteractionManager.runAfterInteractions(run);
+    return () => { cancelled = true; handle.cancel(); };
   }, [visible, index, steps, onDone]);
 
   if (!visible) return null;
