@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -231,7 +231,6 @@ export default function HomeScreen() {
   const isInitialLoad = React.useRef(true);
 
   // 初回チュートリアル（コーチマーク）
-  const insets = useSafeAreaInsets();
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
   const [tutorialPending, setTutorialPending] = React.useState(false);
   // ツアーが一周してホームへ戻ってきたとき、初回取得が終わるまで待つスピナー
@@ -389,17 +388,21 @@ export default function HomeScreen() {
     { measure: () => measureNode(filterBarRef), title: t('home.tutFilterTitle'), desc: t('home.tutFilterDesc') },
     {
       // 下タブの「フィルタ」タブ(4つ中2番目)のアイコン付近だけを囲う。
-      // タブバー位置は safe-area から直接計算する（アイコン+ラベル相当=49px、
-      // home indicator 分の insets.bottom は含めないので画面外にはみ出さない）
-      measure: () => {
-        const { width, height } = Dimensions.get('window');
+      // リスト領域の下端(=タブバー上端)を実測し、高さはアイコン+ラベル相当(46)に
+      // 絞ることで画面外へのはみ出しを防ぐ
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const { width } = Dimensions.get('window');
         const tabW = width / 4;
-        const tabBarTop = height - (49 + insets.bottom);
-        return Promise.resolve<CoachRect>({ x: tabW, y: tabBarTop, width: tabW, height: 46 });
-      },
+        const node = listWrapperRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, w, h) => {
+          if (!h) { resolve(null); return; }
+          resolve({ x: tabW, y: y + h, width: tabW, height: 46 });
+        });
+      }),
       title: t('home.tutFiltersTabTitle'), desc: t('home.tutFiltersTabDesc'),
     },
-  ], [t, measureNode, insets.bottom]);
+  ], [t, measureNode]);
 
   // ツアー中に背景へ出すダミー記事（実記事が届くまでの間、③長押し・④フィルタの
   // 説明対象を成立させるため）
@@ -447,8 +450,9 @@ export default function HomeScreen() {
         if (flag !== '1') return;
         AsyncStorage.removeItem('@filto/tour/finish').catch(() => {});
         setWaitingArticles(true);
-        // 既に同期完了済みなら一瞬だけ見せて閉じる。未完了なら完了まで（or 30sで）待つ
-        const delay = hasAutoSyncedRef.current ? 700 : 30000;
+        // 既に同期完了済みなら一瞬だけ見せて閉じる。未完了なら完了まで待つ
+        // （通常は hasAutoSynced で解除。これは保険のフォールバック）
+        const delay = hasAutoSyncedRef.current ? 700 : 120000;
         setTimeout(() => setWaitingArticles(false), delay);
       }).catch(() => {});
     }, [])
@@ -473,37 +477,36 @@ export default function HomeScreen() {
     }, [loadData])
   );
 
-  // 起動時自動同期（一度だけ実行）
-  React.useEffect(() => {
-    const autoSync = async () => {
-      if (hasAutoSynced) {
-        return;
-      }
+  // loadData の最新版を ref で保持（autoSync を1回だけ実行するため deps に入れない）
+  const loadDataRef = React.useRef(loadData);
+  React.useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
 
+  // 起動時自動同期（マウント時に確実に一度だけ実行する）
+  // ※ effect が再実行されると refresh が isRefreshing ガードで即returnし、
+  //   hasAutoSynced が早期に true になってしまうため、ref で多重実行を防ぐ
+  const autoSyncStartedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (autoSyncStartedRef.current) return;
+    autoSyncStartedRef.current = true;
+
+    const autoSync = async () => {
       try {
-        // 設定を確認
         const autoSyncEnabled = await AsyncStorage.getItem('@filto/display_behavior/autoSyncOnStartup');
         if (autoSyncEnabled === 'false') {
-          setHasAutoSynced(true); // 無効の場合も実行済みフラグを立てる
+          setHasAutoSynced(true);
           return;
         }
-
-        // バックグラウンドで同期実行
+        // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）
         await SyncService.refresh();
-
-        // データを再読み込み（スピナーを出さず＝FlatListを再マウントせず、
-        // 閲覧中のスクロール位置を保ったまま更新する）
-        await loadData(false);
-
+        await loadDataRef.current(false);
         setHasAutoSynced(true);
       } catch (_) {
-        // エラーでもアプリは正常に動作
         setHasAutoSynced(true);
       }
     };
 
     autoSync();
-  }, [hasAutoSynced, loadData]);
+  }, []);
 
   // フィルタ適用
   React.useEffect(() => {
