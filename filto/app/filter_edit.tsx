@@ -266,12 +266,11 @@ export default function FilterEditScreen() {
           {/* ブロックキーワード */}
           <View ref={blockRef} style={styles.fieldContainer}>
             <ThemedText style={styles.label}>{t('filters.blockKeyword')}</ThemedText>
+            <ThemedText style={styles.hint}>{t('filters.blockKeywordHint')}</ThemedText>
             <TextInput
               style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
               value={blockKeyword}
               onChangeText={setBlockKeyword}
-              placeholder={t('filters.blockKeywordPlaceholder')}
-              placeholderTextColor={borderColor}
               maxLength={50}
               editable={!isSaving && !isDeleting}
             />
@@ -282,13 +281,10 @@ export default function FilterEditScreen() {
             <ThemedText style={styles.label}>{t('filters.allowKeyword')}</ThemedText>
             <ThemedText style={styles.hint}>{t('filters.allowKeywordHint')}</ThemedText>
             <TextInput
-              style={[styles.textInput, styles.multilineInput, { color: textColor, borderColor, backgroundColor }]}
+              style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
               value={allowKeywords}
               onChangeText={setAllowKeywords}
-              placeholder={t('filters.allowKeywordPlaceholder')}
-              placeholderTextColor={borderColor}
-              multiline
-              maxLength={500}
+              maxLength={50}
               editable={!isSaving && !isDeleting}
             />
           </View>
@@ -409,10 +405,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-  },
-  multilineInput: {
-    minHeight: 100,
-    textAlignVertical: 'top',
   },
   checkboxRow: {
     flexDirection: 'row',
