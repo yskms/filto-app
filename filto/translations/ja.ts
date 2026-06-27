@@ -129,6 +129,7 @@ export const ja = {
       tutAddTitle: 'フィードを追加',
       tutAddDesc: 'ここからRSSフィードのURLを登録できます。',
       tutUrlDesc: '追加したいフィードのURLを入力します。クリップボードから貼り付けも可能です。',
+      tutFetchDesc: 'URLを入力したらここを押してフィード情報を取得します。成功すると下の「追加」ボタンが押せるようになります。',
       tutNameDesc: 'フィードの表示名（任意）。空欄ならサイト名が使われます。',
       addFeed: 'フィードを追加',
       editFeed: 'フィードを編集',

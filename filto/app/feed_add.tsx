@@ -48,6 +48,7 @@ export default function FeedAddScreen() {
   const [tutorialVisible, setTutorialVisible] = useState(false);
   const [tutorialStartAtLast, setTutorialStartAtLast] = useState(false);
   const urlSecRef = useRef<View>(null);
+  const fetchRef = useRef<View>(null);
   const nameSecRef = useRef<View>(null);
 
   // 起動時: ツアー中はキーボードを出さずツアー開始、通常は入力欄へフォーカス
@@ -84,6 +85,7 @@ export default function FeedAddScreen() {
 
   const tutorialSteps = React.useMemo<CoachStep[]>(() => [
     { measure: () => measureNode(urlSecRef), title: t('feeds.feedUrl'), desc: t('feeds.tutUrlDesc') },
+    { measure: () => measureNode(fetchRef), title: t('feeds.fetchFeedMeta'), desc: t('feeds.tutFetchDesc') },
     { measure: () => measureNode(nameSecRef), title: t('feeds.feedName'), desc: t('feeds.tutNameDesc') },
   ], [t, measureNode]);
 
@@ -270,6 +272,7 @@ export default function FeedAddScreen() {
 
             {/* Fetch Meta Button */}
             <TouchableOpacity
+              ref={fetchRef}
               style={[styles.fetchButton, { backgroundColor: tintColor }, isLoadingMeta && { backgroundColor: disabledBg }]}
               onPress={handleFetchMeta}
               disabled={isLoadingMeta}

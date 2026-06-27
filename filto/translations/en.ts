@@ -129,6 +129,7 @@ export const en = {
     tutAddTitle: 'Add a feed',
     tutAddDesc: 'Tap here to add an RSS feed by URL.',
     tutUrlDesc: 'Enter the URL of the feed you want to add. You can paste from the clipboard.',
+    tutFetchDesc: 'After entering a URL, tap here to fetch the feed info. Once it succeeds, the Add button below becomes available.',
     tutNameDesc: 'A display name for the feed (optional). If blank, the site name is used.',
     addFeed: 'Add Feed',
     editFeed: 'Edit Feed',

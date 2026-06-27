@@ -79,30 +79,39 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // それでも計測できないステップ（非表示要素など）はスキップする
   React.useEffect(() => {
     if (!visible) return;
+    const cur = steps[index];
     let cancelled = false;
     let attempt = 0;
-    const run = () => {
-      if (cancelled) return;
-      const cur = steps[index];
-      if (!cur) { onDone(); return; }
+
+    const same = (a: CoachRect, b: CoachRect) =>
+      Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 &&
+      Math.abs(a.width - b.width) < 1.5 && Math.abs(a.height - b.height) < 1.5;
+
+    // 2回続けて同じ位置を計測できたら「確定」とみなす（遷移アニメ中は位置が
+    // 動くので、止まるまで待つ＝暗幕は出たままハイライトだけ遅れて出す）
+    const settle = (prev: CoachRect | null) => {
+      if (cancelled || !cur) { if (!cur && !cancelled) onDone(); return; }
       cur.measure().then((r) => {
         if (cancelled) return;
-        if (r && r.width > 0 && r.height > 0) {
-          setRect(r);
-        } else if (attempt < 8) {
-          attempt++;
-          setTimeout(run, 90); // レイアウト確定待ち（遷移直後など）
-        } else if (index + 1 < steps.length) {
-          setIndex(index + 1); // 計測できないステップはスキップ
-        } else {
-          onDone();
+        const valid = !!(r && r.width > 0 && r.height > 0);
+        if (valid && prev && same(r!, prev)) {
+          setRect(r); // 安定 → 確定
+          return;
         }
+        attempt++;
+        if (attempt >= 20) {
+          if (valid) setRect(r!); // 安定しなくても打ち切って表示
+          else if (index + 1 < steps.length) setIndex(index + 1); // 計測不可ならスキップ
+          else onDone();
+          return;
+        }
+        setTimeout(() => settle(valid ? r! : null), 70);
       }).catch(() => {});
     };
-    // 画面遷移アニメーション(push のスライド等)の完了後に計測する。
-    // タブ遷移などアニメが無ければ即実行される。スライド中に計測して位置が
-    // ズレるのを防ぐ
-    const handle = InteractionManager.runAfterInteractions(run);
+
+    // 画面遷移アニメ(push のスライド等)の完了後から計測開始（タブ遷移など
+    // アニメが無ければ即実行）
+    const handle = InteractionManager.runAfterInteractions(() => settle(null));
     return () => { cancelled = true; handle.cancel(); };
   }, [visible, index, steps, onDone]);
 
