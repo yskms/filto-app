@@ -345,7 +345,6 @@ export default function FeedAddScreen() {
           visible={tutorialVisible}
           steps={tutorialSteps}
           onDone={handleTutorialDone}
-          continues
           startAtLast={tutorialStartAtLast}
           onBackBeforeFirst={handleTutorialBack}
         />

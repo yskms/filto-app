@@ -44,7 +44,6 @@ const MIN_TOP = 4; // ハイライト上端の最小位置（オーバーレイ�
 export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false, startAtLast = false, onBackBeforeFirst }) => {
   const { t } = useTranslation();
   const cardBg = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
   const hintColor = useThemeColor({ light: '#687076', dark: '#9BA1A6' }, 'background');
 
   const [index, setIndex] = React.useState(0); // 計測対象（遷移先）
@@ -155,7 +154,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // 説明カード（ハイライト有無の両方で使い回す。pos で位置だけ差し替え）
   const cardNode = (pos: object) => (
     <View style={[styles.card, { backgroundColor: cardBg, borderColor: ACCENT }, pos]}>
-      <Text style={[styles.cardText, { color: textColor }]}>{step.text}</Text>
+      <Text style={[styles.cardText, { color: ACCENT }]}>{step.text}</Text>
       <View style={styles.footer}>
         <Text style={[styles.progress, { color: hintColor }]}>
           {shownIndex + 1} / {steps.length}

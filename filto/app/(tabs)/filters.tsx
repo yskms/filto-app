@@ -287,6 +287,23 @@ export default function FiltersScreen() {
     router.push('/filter_edit');
   }, [router]);
 
+  // ツアー中、フィルタが1つも無い人（オンボで未選択）でも一覧の説明が成立する
+  // ように、サンプルのフィルタを表示する（暗幕で操作は塞がれるので表示専用）
+  const sampleFilters = React.useMemo<Filter[]>(() => {
+    const now = Date.now();
+    return [t('filters.sampleKeyword1'), t('filters.sampleKeyword2'), t('filters.sampleKeyword3')]
+      .map((kw, i) => ({
+        id: -(i + 1),
+        block_keyword: kw,
+        allow_keyword: null,
+        target_title: 1,
+        target_description: 1,
+        created_at: now,
+        updated_at: now,
+      }));
+  }, [t]);
+  const displayFilters = tutorialVisible && filters.length === 0 ? sampleFilters : filters;
+
   // フィルタ一覧を読み込む
   const loadFilters = React.useCallback(async () => {
     try {
@@ -509,7 +526,7 @@ export default function FiltersScreen() {
 
       <View ref={listRef} style={styles.listWrapper}>
       <FlatList
-        data={filters}
+        data={displayFilters}
         renderItem={({ item }) => {
           if (!item.id) return null;
           const filterId = item.id;
