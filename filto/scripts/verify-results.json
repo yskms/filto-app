@@ -3702,5 +3702,18 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "Motor1.com - Articles"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "朝時間.jp",
+    "url": "https://asajikan.jp/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 20,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "朝時間.jp"
   }
 ]

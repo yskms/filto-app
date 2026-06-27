@@ -47,7 +47,8 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   const textColor = useThemeColor({}, 'text');
   const hintColor = useThemeColor({ light: '#687076', dark: '#9BA1A6' }, 'background');
 
-  const [index, setIndex] = React.useState(0);
+  const [index, setIndex] = React.useState(0); // 計測対象（遷移先）
+  const [shownIndex, setShownIndex] = React.useState(0); // 実際に表示中のステップ
   const [rect, setRect] = React.useState<CoachRect | null>(null);
   const { height: screenH } = Dimensions.get('window');
 
@@ -70,7 +71,9 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // 直前のハイライトは消して暗幕だけの状態にする
   React.useEffect(() => {
     if (visible) {
-      setIndex(startAtLast ? Math.max(0, steps.length - 1) : 0);
+      const start = startAtLast ? Math.max(0, steps.length - 1) : 0;
+      setIndex(start);
+      setShownIndex(start);
       setRect(null);
     }
   }, [visible, startAtLast, steps.length]);
@@ -95,12 +98,14 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
         if (cancelled) return;
         const valid = !!(r && r.width > 0 && r.height > 0);
         if (valid && prev && same(r!, prev)) {
-          setRect(r); // 安定 → 確定
+          // 安定 → ハイライトと吹き出しを同時に切り替える
+          setRect(r);
+          setShownIndex(index);
           return;
         }
         attempt++;
         if (attempt >= 20) {
-          if (valid) setRect(r!); // 安定しなくても打ち切って表示
+          if (valid) { setRect(r!); setShownIndex(index); } // 安定しなくても打ち切って表示
           else if (index + 1 < steps.length) setIndex(index + 1); // 計測不可ならスキップ
           else onDone();
           return;
@@ -126,7 +131,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
     );
   }
 
-  const step = steps[index];
+  const step = steps[shownIndex];
   if (!step) return null;
 
   const hx = rect.x - PAD;
@@ -137,16 +142,17 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   const hy = Math.max(rawTop, MIN_TOP);
   const hh = rect.height + PAD * 2 - (hy - rawTop);
 
-  const isLast = index + 1 >= steps.length;
+  // ボタン操作・進捗・最終判定は「表示中のステップ(shownIndex)」基準にする
+  const isLast = shownIndex + 1 >= steps.length;
   const next = () => {
     if (isLast) onDone();
-    else setIndex(index + 1);
+    else setIndex(shownIndex + 1);
   };
   const back = () => {
-    if (index > 0) setIndex(index - 1);
+    if (shownIndex > 0) setIndex(shownIndex - 1);
     else onBackBeforeFirst?.();
   };
-  const showBack = index > 0 || !!onBackBeforeFirst;
+  const showBack = shownIndex > 0 || !!onBackBeforeFirst;
 
   // ハイライトが画面上寄りなら下に、下寄りなら上にカードを出す
   const below = hy + hh / 2 < screenH * 0.5;
@@ -171,7 +177,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
         <Text style={[styles.cardDesc, { color: hintColor }]}>{step.desc}</Text>
         <View style={styles.footer}>
           <Text style={[styles.progress, { color: hintColor }]}>
-            {index + 1} / {steps.length}
+            {shownIndex + 1} / {steps.length}
           </Text>
           <View style={styles.footerRight}>
             {showBack && (
