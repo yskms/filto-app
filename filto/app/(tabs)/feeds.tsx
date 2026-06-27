@@ -280,7 +280,7 @@ export default function FeedsScreen() {
           resolve({ x: cx, y: y + h, width: boxW, height: 38 });
         });
       }),
-      title: t('feeds.tutTabTitle'), desc: t('feeds.tutTabDesc'),
+      text: t('feeds.tutTabDesc'),
     },
     {
       measure: () => new Promise<CoachRect | null>((resolve) => {
@@ -291,9 +291,9 @@ export default function FeedsScreen() {
           else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(110, Math.max(0, height - 12)) });
         });
       }),
-      title: t('feeds.tutListTitle'), desc: t('feeds.tutListDesc'),
+      text: t('feeds.tutListDesc'),
     },
-    { measure: () => measureNode(addRef), title: t('feeds.tutAddTitle'), desc: t('feeds.tutAddDesc') },
+    { measure: () => measureNode(addRef), text: t('feeds.tutAddDesc') },
   ], [t, measureNode]);
 
   // フィルタ追加画面('1')or フィード追加画面からの戻り('last')でツアーを開始/再開

@@ -100,10 +100,10 @@ export default function FeedAddScreen() {
           });
         });
       }),
-      title: t('feeds.feedUrl'), desc: t('feeds.tutUrlDesc'),
+      text: t('feeds.tutUrlDesc'),
     },
-    { measure: () => measureNode(fetchRef), title: t('feeds.fetchFeedMeta'), desc: t('feeds.tutFetchDesc') },
-    { measure: () => measureNode(nameSecRef), title: t('feeds.feedName'), desc: t('feeds.tutNameDesc') },
+    { measure: () => measureNode(fetchRef), text: t('feeds.tutFetchDesc') },
+    { measure: () => measureNode(nameSecRef), text: t('feeds.tutNameDesc') },
   ], [t, measureNode]);
 
   // 最初のステップで「戻る」→ フィード画面のツアー最後へ戻る

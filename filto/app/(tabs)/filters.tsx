@@ -254,9 +254,9 @@ export default function FiltersScreen() {
           else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(110, Math.max(0, height - 12)) });
         });
       }),
-      title: t('filters.tutListTitle'), desc: t('filters.tutListDesc'),
+      text: t('filters.tutListDesc'),
     },
-    { measure: () => measureNode(addRef), title: t('filters.tutAddTitle'), desc: t('filters.tutAddDesc') },
+    { measure: () => measureNode(addRef), text: t('filters.tutAddDesc') },
   ], [t, measureNode]);
 
   // ホーム('1')or フィルタ追加画面からの戻り('last')でツアーを開始/再開する。

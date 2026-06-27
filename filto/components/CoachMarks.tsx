@@ -18,8 +18,8 @@ export type CoachRect = { x: number; y: number; width: number; height: number };
 export type CoachStep = {
   /** 対象要素の画面内座標を返す。表示できない場合は null を返すとそのステップはスキップされる */
   measure: () => Promise<CoachRect | null>;
-  title: string;
-  desc: string;
+  /** 吹き出しに表示する説明文（太字1本） */
+  text: string;
 };
 
 const ACCENT = '#0a7ea4';
@@ -155,8 +155,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // 説明カード（ハイライト有無の両方で使い回す。pos で位置だけ差し替え）
   const cardNode = (pos: object) => (
     <View style={[styles.card, { backgroundColor: cardBg, borderColor: ACCENT }, pos]}>
-      <Text style={[styles.cardTitle, { color: textColor }]}>{step.title}</Text>
-      <Text style={[styles.cardDesc, { color: hintColor }]}>{step.desc}</Text>
+      <Text style={[styles.cardText, { color: textColor }]}>{step.text}</Text>
       <View style={styles.footer}>
         <Text style={[styles.progress, { color: hintColor }]}>
           {shownIndex + 1} / {steps.length}
@@ -243,8 +242,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 12,
   },
-  cardTitle: { fontSize: 17, fontWeight: '700', marginBottom: 6 },
-  cardDesc: { fontSize: 14, lineHeight: 20 },
+  cardText: { fontSize: 16, fontWeight: '700', lineHeight: 23 },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',

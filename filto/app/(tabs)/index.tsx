@@ -371,8 +371,8 @@ export default function HomeScreen() {
   );
 
   const tutorialSteps = React.useMemo<CoachStep[]>(() => [
-    { measure: () => measureNode(feedSelectorRef), title: t('home.tutFeedTitle'), desc: t('home.tutFeedDesc') },
-    { measure: () => measureNode(refreshRef), title: t('home.tutRefreshTitle'), desc: t('home.tutRefreshDesc') },
+    { measure: () => measureNode(feedSelectorRef), text: t('home.tutFeedDesc') },
+    { measure: () => measureNode(refreshRef), text: t('home.tutRefreshDesc') },
     {
       // 記事リストの先頭付近をハイライト（長押しでお気に入り）
       measure: () => new Promise<CoachRect | null>((resolve) => {
@@ -383,10 +383,10 @@ export default function HomeScreen() {
           else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(96, Math.max(0, height - 12)) });
         });
       }),
-      title: t('home.tutStarTitle'), desc: t('home.tutStarDesc'),
+      text: t('home.tutStarDesc'),
     },
-    { measure: () => measureNode(starFilterRef), title: t('home.tutStarViewTitle'), desc: t('home.tutStarViewDesc') },
-    { measure: () => measureNode(filterBarRef), title: t('home.tutFilterTitle'), desc: t('home.tutFilterDesc') },
+    { measure: () => measureNode(starFilterRef), text: t('home.tutStarViewDesc') },
+    { measure: () => measureNode(filterBarRef), text: t('home.tutFilterDesc') },
     {
       // 下タブの「フィルタ」タブ(4つ中2番目)のアイコンだけを囲う。タブセルの幅一杯
       // ではなく、アイコン+ラベル相当の小さめのボックスをセル中央に置くことで、
@@ -403,7 +403,7 @@ export default function HomeScreen() {
           resolve({ x: cx, y: y + h, width: boxW, height: 38 });
         });
       }),
-      title: t('home.tutFiltersTabTitle'), desc: t('home.tutFiltersTabDesc'),
+      text: t('home.tutFiltersTabDesc'),
     },
   ], [t, measureNode]);
 

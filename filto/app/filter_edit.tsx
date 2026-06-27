@@ -118,9 +118,9 @@ export default function FilterEditScreen() {
   );
 
   const tutorialSteps = React.useMemo<CoachStep[]>(() => [
-    { measure: () => measureNode(blockRef), title: t('filters.blockKeyword'), desc: t('filters.tutBlockDesc') },
-    { measure: () => measureNode(allowRef), title: t('filters.allowKeyword'), desc: t('filters.tutAllowDesc') },
-    { measure: () => measureNode(targetRef), title: t('filters.searchTarget'), desc: t('filters.tutTargetDesc') },
+    { measure: () => measureNode(blockRef), text: t('filters.tutBlockDesc') },
+    { measure: () => measureNode(allowRef), text: t('filters.tutAllowDesc') },
+    { measure: () => measureNode(targetRef), text: t('filters.tutTargetDesc') },
   ], [t, measureNode]);
 
   // フィルタ画面の「次へ」('1')で push されてきたら、フラグを見てツアー継続。
