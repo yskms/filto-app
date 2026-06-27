@@ -40,19 +40,18 @@ export const FeedSelectModal: React.FC<FeedSelectModalProps> = ({
     selectedFeedIds === null || selectedFeedIds.includes(feedId);
 
   const handleToggleAll = () => {
-    onSelectFeeds(null);
+    // 全選択中なら全解除、それ以外なら全選択（トグル）
+    onSelectFeeds(isAllSelected ? [] : null);
   };
 
   const handleToggleFeed = (feedId: string) => {
     if (selectedFeedIds === null) {
       // 全選択状態 → このフィードだけ外す（他は全て選択）
       const newIds = feeds.filter(f => f.id !== feedId).map(f => f.id);
-      if (newIds.length === 0) return; // 最後の1つは外せない
       onSelectFeeds(newIds);
     } else if (selectedFeedIds.includes(feedId)) {
-      // 選択中 → 外す
+      // 選択中 → 外す（全部外して空にするのも許可）
       const newIds = selectedFeedIds.filter(id => id !== feedId);
-      if (newIds.length === 0) return; // 最後の1つは外せない
       onSelectFeeds(newIds.length === feeds.length ? null : newIds);
     } else {
       // 未選択 → 追加

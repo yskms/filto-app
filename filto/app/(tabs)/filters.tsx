@@ -6,6 +6,8 @@ import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSw
 import Reanimated from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 import { Ionicons } from '@expo/vector-icons';
 import { FilterService, Filter } from '@/services/FilterService';
 import { FilterSortModal, FilterSortType } from '@/components/FilterSortModal';
@@ -118,6 +120,7 @@ const FiltersHeader: React.FC<{
   onPressSortButton: () => void;
   onPressAdd: () => void;
   onConfirmDelete: () => void;
+  addRef: React.RefObject<View | null>;
 }> = ({
   deleteMode,
   selectedCount,
@@ -125,6 +128,7 @@ const FiltersHeader: React.FC<{
   onPressSortButton,
   onPressAdd,
   onConfirmDelete,
+  addRef,
 }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
@@ -187,6 +191,7 @@ const FiltersHeader: React.FC<{
           <Ionicons name="trash-outline" size={22} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity
+          ref={addRef}
           style={styles.headerButton}
           onPress={onPressAdd}
           activeOpacity={0.7}
@@ -217,6 +222,87 @@ export default function FiltersScreen() {
   
   // 開いているスワイプのIDを保持（refで直接管理）
   const openSwipeIdRef = useRef<number | null>(null);
+
+  // 初回チュートリアル（ホームから引き継ぎ）
+  const [tutorialVisible, setTutorialVisible] = useState(false);
+  const [tutorialStartAtLast, setTutorialStartAtLast] = useState(false);
+  const addRef = useRef<View>(null);
+  const listRef = useRef<View>(null);
+
+  const measureNode = React.useCallback(
+    (ref: React.RefObject<View | null>): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = ref.current;
+        if (!node) { resolve(null); return; }
+        requestAnimationFrame(() => {
+          node.measureInWindow((x, y, width, height) => {
+            if (!width || !height) resolve(null);
+            else resolve({ x, y, width, height });
+          });
+        });
+      }),
+    []
+  );
+
+  const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    {
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const node = listRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, width, height) => {
+          if (!width || !height) resolve(null);
+          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(110, Math.max(0, height - 12)) });
+        });
+      }),
+      text: t('filters.tutListDesc'),
+    },
+    { measure: () => measureNode(addRef), text: t('filters.tutAddDesc') },
+  ], [t, measureNode]);
+
+  // ホーム('1')or フィルタ追加画面からの戻り('last')でツアーを開始/再開する。
+  // 即 visible にして暗幕を出す（計測は CoachMarks 側でレイアウト確定までリトライ）
+  useFocusEffect(
+    React.useCallback(() => {
+      AsyncStorage.getItem('@filto/tour/filters').then((flag) => {
+        if (flag === '1' || flag === 'last') {
+          AsyncStorage.removeItem('@filto/tour/filters').catch(() => {});
+          setTutorialStartAtLast(flag === 'last');
+          setTutorialVisible(true);
+        }
+      }).catch(() => {});
+    }, [])
+  );
+
+  // 最初のステップで「戻る」→ ホーム画面のツアー最後へ戻る
+  const handleTutorialBack = React.useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/home', 'last'); } catch {}
+    router.navigate('/');
+  }, [router]);
+
+  // 最後の「次へ」で、フィルタ追加画面へ遷移してツアーを継続する
+  const handleTutorialDone = React.useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/filterEdit', '1'); } catch {}
+    router.push('/filter_edit');
+  }, [router]);
+
+  // ツアー中、フィルタが1つも無い人（オンボで未選択）でも一覧の説明が成立する
+  // ように、サンプルのフィルタを表示する（暗幕で操作は塞がれるので表示専用）
+  const sampleFilters = React.useMemo<Filter[]>(() => {
+    const now = Date.now();
+    return [t('filters.sampleKeyword1'), t('filters.sampleKeyword2'), t('filters.sampleKeyword3')]
+      .map((kw, i) => ({
+        id: -(i + 1),
+        block_keyword: kw,
+        allow_keyword: null,
+        target_title: 1,
+        target_description: 1,
+        created_at: now,
+        updated_at: now,
+      }));
+  }, [t]);
+  const displayFilters = tutorialVisible && filters.length === 0 ? sampleFilters : filters;
 
   // フィルタ一覧を読み込む
   const loadFilters = React.useCallback(async () => {
@@ -435,10 +521,12 @@ export default function FiltersScreen() {
         onPressSortButton={handlePressSortButton}
         onPressAdd={handlePressAdd}
         onConfirmDelete={handleConfirmDelete}
+        addRef={addRef}
       />
 
+      <View ref={listRef} style={styles.listWrapper}>
       <FlatList
-        data={filters}
+        data={displayFilters}
         renderItem={({ item }) => {
           if (!item.id) return null;
           const filterId = item.id;
@@ -468,6 +556,7 @@ export default function FiltersScreen() {
           </View>
         }
       />
+      </View>
 
       <FilterSortModal
         visible={sortModalVisible}
@@ -475,12 +564,24 @@ export default function FiltersScreen() {
         onClose={() => setSortModalVisible(false)}
         onSelectSort={handleSelectSort}
       />
+
+      <CoachMarks
+        visible={tutorialVisible}
+        steps={tutorialSteps}
+        onDone={handleTutorialDone}
+        continues
+        startAtLast={tutorialStartAtLast}
+        onBackBeforeFirst={handleTutorialBack}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  listWrapper: {
     flex: 1,
   },
   header: {

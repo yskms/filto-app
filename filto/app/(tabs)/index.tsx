@@ -11,13 +11,18 @@ import {
   Animated,
   Alert,
   PanResponder,
+  Dimensions,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Article } from '@/types/Article';
 import { FeedSelectModal } from '@/components/FeedSelectModal';
 import { FeedSortType } from '@/components/FeedSortModal';
+import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 import { Feed } from '@/types/Feed';
 import { FilterEngine } from '@/services/FilterEngine';
 import { FilterService, Filter } from '@/services/FilterService';
@@ -38,7 +43,7 @@ import { LoadingView } from '@/components/LoadingView';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
-const SCROLL_TOP_THRESHOLD = 500; // この位置を超えたら「トップへ戻る」ボタンを表示
+const SCROLL_TOP_THRESHOLD = 250; // この位置を超えたら「トップへ戻る」ボタンを表示
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string, justNow: string): string => {
@@ -148,7 +153,10 @@ const HomeHeader: React.FC<{
   onPressFeedSelect: () => void;
   onPressStarFilter: () => void;
   onPressRefresh: () => void;
-}> = ({ feedName, showStarredOnly, onPressFeedSelect, onPressStarFilter, onPressRefresh }) => {
+  feedSelectorRef: React.RefObject<View | null>;
+  refreshRef: React.RefObject<View | null>;
+  starFilterRef: React.RefObject<View | null>;
+}> = ({ feedName, showStarredOnly, onPressFeedSelect, onPressStarFilter, onPressRefresh, feedSelectorRef, refreshRef, starFilterRef }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'icon');
@@ -159,6 +167,7 @@ const HomeHeader: React.FC<{
     <View style={[styles.headerContainer, { borderBottomColor: borderColor, backgroundColor }]}>
       <View style={styles.header}>
         <TouchableOpacity
+          ref={feedSelectorRef}
           style={styles.feedSelector}
           onPress={onPressFeedSelect}
           activeOpacity={0.7}
@@ -169,6 +178,7 @@ const HomeHeader: React.FC<{
 
         <View style={styles.headerButtons}>
           <TouchableOpacity
+            ref={starFilterRef}
             style={[styles.starButton, { backgroundColor: showStarredOnly ? starBtnActiveBg : starBtnBg }]}
             onPress={onPressStarFilter}
             activeOpacity={0.7}
@@ -177,6 +187,7 @@ const HomeHeader: React.FC<{
           </TouchableOpacity>
 
           <TouchableOpacity
+            ref={refreshRef}
             style={styles.refreshButton}
             onPress={onPressRefresh}
             activeOpacity={0.7}
@@ -218,6 +229,19 @@ export default function HomeScreen() {
   // スクロール位置保持
   const flatListRef = React.useRef<FlatList>(null);
   const isInitialLoad = React.useRef(true);
+
+  // 初回チュートリアル（コーチマーク）
+  const [tutorialVisible, setTutorialVisible] = React.useState(false);
+  const [tutorialPending, setTutorialPending] = React.useState(false);
+  const [homeStartAtLast, setHomeStartAtLast] = React.useState(false);
+  // ツアーが一周してホームへ戻ってきたとき、初回取得が終わるまで待つスピナー
+  const [waitingArticles, setWaitingArticles] = React.useState(false);
+  const hasAutoSyncedRef = React.useRef(false);
+  const feedSelectorRef = React.useRef<View>(null);
+  const refreshRef = React.useRef<View>(null);
+  const starFilterRef = React.useRef<View>(null);
+  const filterBarRef = React.useRef<View>(null);
+  const listWrapperRef = React.useRef<View>(null);
 
   // スクロール連動（カスタムスクロールバー / トップへ戻るボタン）
   const scrollY = React.useRef(new Animated.Value(0)).current;
@@ -330,6 +354,122 @@ export default function HomeScreen() {
     AsyncStorage.setItem('@filto/home/feedSort', sortType).catch(() => {});
   }, []);
 
+  // チュートリアル: 対象要素を実測してハイライト位置を返す
+  const measureNode = React.useCallback(
+    (ref: React.RefObject<View | null>): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = ref.current;
+        if (!node) { resolve(null); return; }
+        requestAnimationFrame(() => {
+          node.measureInWindow((x, y, width, height) => {
+            if (!width || !height) resolve(null);
+            else resolve({ x, y, width, height });
+          });
+        });
+      }),
+    []
+  );
+
+  const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    { measure: () => measureNode(feedSelectorRef), text: t('home.tutFeedDesc') },
+    { measure: () => measureNode(refreshRef), text: t('home.tutRefreshDesc') },
+    {
+      // 記事リストの先頭付近をハイライト（長押しでお気に入り）
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const node = listWrapperRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, width, height) => {
+          if (!width || !height) resolve(null);
+          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(96, Math.max(0, height - 12)) });
+        });
+      }),
+      text: t('home.tutStarDesc'),
+    },
+    { measure: () => measureNode(starFilterRef), text: t('home.tutStarViewDesc') },
+    { measure: () => measureNode(filterBarRef), text: t('home.tutFilterDesc') },
+    {
+      // 下タブの「フィルタ」タブ(4つ中2番目)のアイコンだけを囲う。タブセルの幅一杯
+      // ではなく、アイコン+ラベル相当の小さめのボックスをセル中央に置くことで、
+      // 青枠がセルの内側に余白を持って収まる
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const { width } = Dimensions.get('window');
+        const tabW = width / 4;
+        const node = listWrapperRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, w, h) => {
+          if (!h) { resolve(null); return; }
+          const boxW = Math.min(tabW - 20, 58);
+          const cx = tabW + (tabW - boxW) / 2; // 2番目のタブセルの中央
+          resolve({ x: cx, y: y + h, width: boxW, height: 38 });
+        });
+      }),
+      text: t('home.tutFiltersTabDesc'),
+    },
+  ], [t, measureNode]);
+
+  // ツアー中に背景へ出すダミー記事（実記事が届くまでの間、③長押し・④フィルタの
+  // 説明対象を成立させるため）
+  const dummyArticles = React.useMemo<Article[]>(() => {
+    const now = Date.now();
+    return [1, 2, 3].map((n, i) => ({
+      id: `__demo_${n}`,
+      feedId: '__demo',
+      feedName: t('home.demoFeed'),
+      title: t(`home.demoTitle${n}`),
+      link: '',
+      thumbnailUrl: undefined,
+      publishedAt: new Date(now - (i + 1) * 3600 * 1000).toISOString(),
+      isRead: false,
+      isStarred: false,
+    }));
+  }, [t]);
+
+  // チュートリアル開始/再開。オンボ直後('1')はマウント時、フィルタ画面から「戻る」で
+  // 来たとき('last')はフォーカス時に、フラグを見て開始する
+  useFocusEffect(
+    React.useCallback(() => {
+      AsyncStorage.getItem('@filto/tour/home').then((flag) => {
+        if (flag === '1' || flag === 'last') {
+          AsyncStorage.removeItem('@filto/tour/home').catch(() => {});
+          setHomeStartAtLast(flag === 'last');
+          setTutorialPending(true);
+          setTutorialVisible(true);
+        }
+      }).catch(() => {});
+    }, [])
+  );
+
+  // 「次へ」でフィルタ画面へ進みツアー継続
+  const handleTutorialDone = React.useCallback(async () => {
+    setTutorialVisible(false);
+    setTutorialPending(false);
+    // 遷移先が読む前に確実に書き込む（先頭から開始）
+    try { await AsyncStorage.setItem('@filto/tour/filters', '1'); } catch {}
+    router.navigate('/filters');
+  }, []);
+
+  // ツアーが一周してホームへ戻ってきたら、まず必ず準備スピナーを出し、初回同期が
+  // 完了してから解除する（中途半端な状態を一切見せない）
+  useFocusEffect(
+    React.useCallback(() => {
+      AsyncStorage.getItem('@filto/tour/finish').then((flag) => {
+        if (flag !== '1') return;
+        AsyncStorage.removeItem('@filto/tour/finish').catch(() => {});
+        setWaitingArticles(true);
+        // 既に同期完了済みなら一瞬だけ見せて閉じる。未完了なら完了まで待つ
+        // （通常は hasAutoSynced で解除。これは保険のフォールバック）
+        const delay = hasAutoSyncedRef.current ? 700 : 120000;
+        setTimeout(() => setWaitingArticles(false), delay);
+      }).catch(() => {});
+    }, [])
+  );
+
+  // 初回同期(autoSync の refresh→loadData)が完了したら準備スピナーを解除
+  React.useEffect(() => {
+    hasAutoSyncedRef.current = hasAutoSynced;
+    if (hasAutoSynced) setWaitingArticles(false);
+  }, [hasAutoSynced]);
+
   // 画面フォーカス時にデータを読み込む
   // 初回のみスピナーを表示し、タブ切り替えで戻った時はスクロール位置を保持したまま更新
   useFocusEffect(
@@ -343,37 +483,36 @@ export default function HomeScreen() {
     }, [loadData])
   );
 
-  // 起動時自動同期（一度だけ実行）
-  React.useEffect(() => {
-    const autoSync = async () => {
-      if (hasAutoSynced) {
-        return;
-      }
+  // loadData の最新版を ref で保持（autoSync を1回だけ実行するため deps に入れない）
+  const loadDataRef = React.useRef(loadData);
+  React.useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
 
+  // 起動時自動同期（マウント時に確実に一度だけ実行する）
+  // ※ effect が再実行されると refresh が isRefreshing ガードで即returnし、
+  //   hasAutoSynced が早期に true になってしまうため、ref で多重実行を防ぐ
+  const autoSyncStartedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (autoSyncStartedRef.current) return;
+    autoSyncStartedRef.current = true;
+
+    const autoSync = async () => {
       try {
-        // 設定を確認
         const autoSyncEnabled = await AsyncStorage.getItem('@filto/display_behavior/autoSyncOnStartup');
         if (autoSyncEnabled === 'false') {
-          setHasAutoSynced(true); // 無効の場合も実行済みフラグを立てる
+          setHasAutoSynced(true);
           return;
         }
-
-        // バックグラウンドで同期実行
+        // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）
         await SyncService.refresh();
-
-        // データを再読み込み（スピナーを出さず＝FlatListを再マウントせず、
-        // 閲覧中のスクロール位置を保ったまま更新する）
-        await loadData(false);
-
+        await loadDataRef.current(false);
         setHasAutoSynced(true);
       } catch (_) {
-        // エラーでもアプリは正常に動作
         setHasAutoSynced(true);
       }
     };
 
     autoSync();
-  }, [hasAutoSynced, loadData]);
+  }, []);
 
   // フィルタ適用
   React.useEffect(() => {
@@ -591,6 +730,12 @@ export default function HomeScreen() {
   // PanResponderが参照する最新ジオメトリを保持
   scrollbarGeomRef.current = { trackH, thumbH, maxScroll };
 
+  // 初回ツアー表示中はダミー記事＋サンプルのフィルタ件数を表示する
+  // （実記事が届いても差し替えず、ツアー終了後に通常表示へ）
+  const showTutorialDemo = tutorialVisible || tutorialPending;
+  const displayArticles = showTutorialDemo ? dummyArticles : filteredArticles;
+  const displayBlockedCount = showTutorialDemo ? 8 : blockedByFilters;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <HomeHeader
@@ -599,10 +744,14 @@ export default function HomeScreen() {
         onPressFeedSelect={handleFeedSelect}
         onPressStarFilter={handleToggleStarFilter}
         onPressRefresh={handleRefresh}
+        feedSelectorRef={feedSelectorRef}
+        refreshRef={refreshRef}
+        starFilterRef={starFilterRef}
       />
 
-      {blockedByFilters > 0 && (
+      {displayBlockedCount > 0 && (
         <TouchableOpacity
+          ref={filterBarRef}
           style={[styles.filterBar, { backgroundColor: filterBarBg }]}
           onPress={() => setShowBlockedKeywords(prev => !prev)}
           activeOpacity={0.7}
@@ -611,7 +760,7 @@ export default function HomeScreen() {
           <Text style={[styles.filterBarText, { color: filterBarText, flex: 1 }]}>
             {showBlockedKeywords
               ? t('home.articlesFilteredShown')
-              : t('home.articlesFiltered', { count: blockedByFilters })}
+              : t('home.articlesFiltered', { count: displayBlockedCount })}
           </Text>
           <Text style={[styles.filterBarAction, { color: filterBarText }]}>
             {showBlockedKeywords ? t('home.hide') : t('home.show')}
@@ -625,16 +774,17 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
-      {isLoading ? (
+      {isLoading && !showTutorialDemo ? (
         <LoadingView />
       ) : (
         <View
+          ref={listWrapperRef}
           style={styles.listWrapper}
           onLayout={(e) => setListViewportH(e.nativeEvent.layout.height)}
         >
           <FlatList
             ref={flatListRef}
-            data={filteredArticles}
+            data={displayArticles}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}
             removeClippedSubviews={true}
@@ -706,6 +856,25 @@ export default function HomeScreen() {
         onSelectFeeds={handleSelectFeeds}
         onSelectSort={handleSelectFeedSort}
       />
+
+      {/* 初回の使い方ツアー（実画面の要素を指すコーチマーク）。次画面へ続く */}
+      <CoachMarks
+        visible={tutorialVisible}
+        steps={tutorialSteps}
+        onDone={handleTutorialDone}
+        continues
+        startAtLast={homeStartAtLast}
+      />
+
+      {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}
+      <Modal visible={waitingArticles} animationType="fade" onRequestClose={() => {}}>
+        <View style={[styles.waitingOverlay, { backgroundColor }]}>
+          <ActivityIndicator size="large" color={ACCENT} />
+          <Text style={[styles.waitingText, { color: emptyIconColor }]}>
+            {t('home.preparingArticles')}
+          </Text>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -784,6 +953,15 @@ const styles = StyleSheet.create({
   },
   listWrapper: {
     flex: 1,
+  },
+  waitingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  waitingText: {
+    fontSize: 15,
   },
   listContent: {
     flexGrow: 1,

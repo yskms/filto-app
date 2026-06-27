@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { useToast } from '@/providers/toast';
 import { LoadingView } from '@/components/LoadingView';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 
 // ヘッダーコンポーネント
 const FilterEditHeader: React.FC<{
@@ -92,6 +94,62 @@ export default function FilterEditScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const dangerColor = useThemeColor({}, 'danger');
   const buttonTextColor = useThemeColor({ light: '#fff', dark: '#151718' }, 'text');
+
+  // 初回チュートリアル（フィルタ画面から引き継ぎ）
+  const [tutorialVisible, setTutorialVisible] = useState(false);
+  const [tutorialStartAtLast, setTutorialStartAtLast] = useState(false);
+  const blockRef = useRef<View>(null);
+  const allowRef = useRef<View>(null);
+  const targetRef = useRef<View>(null);
+
+  const measureNode = React.useCallback(
+    (ref: React.RefObject<View | null>): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = ref.current;
+        if (!node) { resolve(null); return; }
+        requestAnimationFrame(() => {
+          node.measureInWindow((x, y, width, height) => {
+            if (!width || !height) resolve(null);
+            else resolve({ x, y, width, height });
+          });
+        });
+      }),
+    []
+  );
+
+  const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    { measure: () => measureNode(blockRef), text: t('filters.tutBlockDesc') },
+    { measure: () => measureNode(allowRef), text: t('filters.tutAllowDesc') },
+    { measure: () => measureNode(targetRef), text: t('filters.tutTargetDesc') },
+  ], [t, measureNode]);
+
+  // フィルタ画面の「次へ」('1')で push されてきたら、フラグを見てツアー継続。
+  // 即 visible にして暗幕を出す（計測は CoachMarks 側でリトライ）
+  React.useEffect(() => {
+    AsyncStorage.getItem('@filto/tour/filterEdit').then((flag) => {
+      if (flag === '1' || flag === 'last') {
+        AsyncStorage.removeItem('@filto/tour/filterEdit').catch(() => {});
+        setTutorialStartAtLast(flag === 'last');
+        setTutorialVisible(true);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // 最初のステップで「戻る」→ フィルタ画面のツアー最後へ戻る
+  const handleTutorialBack = React.useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/filters', 'last'); } catch {}
+    router.dismissAll();
+    router.navigate('/filters');
+  }, [router]);
+
+  // 最後の「次へ」で、フィード画面へ進みツアー継続
+  const handleTutorialDone = React.useCallback(async () => {
+    setTutorialVisible(false);
+    try { await AsyncStorage.setItem('@filto/tour/feeds', '1'); } catch {}
+    router.dismissAll();
+    router.navigate('/feeds');
+  }, [router]);
 
   // 編集モード時、フィルタを読み込む
   React.useEffect(() => {
@@ -206,7 +264,7 @@ export default function FilterEditScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* ブロックキーワード */}
-          <View style={styles.fieldContainer}>
+          <View ref={blockRef} style={styles.fieldContainer}>
             <ThemedText style={styles.label}>{t('filters.blockKeyword')}</ThemedText>
             <TextInput
               style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
@@ -220,7 +278,7 @@ export default function FilterEditScreen() {
           </View>
 
           {/* 許可キーワード */}
-          <View style={styles.fieldContainer}>
+          <View ref={allowRef} style={styles.fieldContainer}>
             <ThemedText style={styles.label}>{t('filters.allowKeyword')}</ThemedText>
             <ThemedText style={styles.hint}>{t('filters.allowKeywordHint')}</ThemedText>
             <TextInput
@@ -236,7 +294,7 @@ export default function FilterEditScreen() {
           </View>
 
           {/* 検索対象 */}
-          <View style={styles.fieldContainer}>
+          <View ref={targetRef} style={styles.fieldContainer}>
             <ThemedText style={styles.label}>{t('filters.searchTarget')}</ThemedText>
             <View style={styles.checkboxRow}>
               <Checkbox
@@ -283,6 +341,15 @@ export default function FilterEditScreen() {
             )}
           </View>
         </ScrollView>
+
+        <CoachMarks
+          visible={tutorialVisible}
+          steps={tutorialSteps}
+          onDone={handleTutorialDone}
+          continues
+          startAtLast={tutorialStartAtLast}
+          onBackBeforeFirst={handleTutorialBack}
+        />
       </SafeAreaView>
     </>
   );

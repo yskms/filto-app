@@ -1942,5 +1942,11 @@
     "category": "auto",
     "title": "Motor1",
     "url": "https://www.motor1.com/rss/articles/all/"
+  },
+  {
+    "lang": "ja",
+    "category": "food",
+    "title": "朝時間.jp",
+    "url": "https://asajikan.jp/feed"
   }
 ]

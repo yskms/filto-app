@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -18,7 +19,6 @@ import {
   seedFiltersFromTopics,
 } from '@/database/init';
 import { DEFAULT_FEED_CATEGORIES } from '@/constants/defaultFeeds';
-import { SyncService } from '@/services/SyncService';
 
 const FEED_CATEGORIES = DEFAULT_FEED_CATEGORIES;
 
@@ -144,8 +144,11 @@ export default function OnboardingScreen({ onComplete }: Props) {
       await seedFeedsFromSelection(feeds);
       await seedFiltersFromTopics(Array.from(selectedKeywords));
 
-      try { await SyncService.refresh(); } catch {}
+      // ホームで初回チュートリアル（コーチマーク）を表示するためのフラグ
+      await AsyncStorage.setItem('@filto/tour/home', '1');
 
+      // 初回同期はホーム側の autoSync に任せる（二重 refresh のレースを避ける）。
+      // ホームへ即遷移し、取得を待つ間にダミー記事を背景にツアーを進めてもらう。
       onComplete();
     } catch {
       Alert.alert(t('errors.operationFailed'));
@@ -229,9 +232,6 @@ export default function OnboardingScreen({ onComplete }: Props) {
                   onPress={() => toggleKeyword(kw)}
                   activeOpacity={0.7}
                 >
-                  {checked && (
-                    <Ionicons name="checkmark" size={13} color="#fff" style={styles.chipIcon} />
-                  )}
                   <ThemedText style={[styles.chipLabel, checked && styles.chipLabelChecked]}>
                     {kw}
                   </ThemedText>
@@ -247,7 +247,6 @@ export default function OnboardingScreen({ onComplete }: Props) {
           <TouchableOpacity
             style={[styles.btn, styles.backBtn, { borderColor }]}
             onPress={() => { setStep(1); scrollRef.current?.scrollTo({ y: 0, animated: false }); }}
-            disabled={loading}
           >
             <ThemedText style={styles.backBtnText}>{t('onboarding.back')}</ThemedText>
           </TouchableOpacity>
