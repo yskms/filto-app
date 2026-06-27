@@ -70,22 +70,24 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   }, [pulse]);
   const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] });
 
-  // ハイライトのリングを常時ゆっくり鼓動させて注目を促す
+  // ハイライトのリングを常時ゆっくり鼓動させて注目を促す。倍率で縮めると小さい
+  // 枠は動きがほぼ見えないので、サイズに依らず一定px内側へ収縮させる（layout を
+  // 動かすため native driver は使わない）
   const ringPulse = React.useRef(new Animated.Value(0)).current;
   React.useEffect(() => {
     if (!visible) return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(ringPulse, { toValue: 1, duration: 750, useNativeDriver: true }),
-        Animated.timing(ringPulse, { toValue: 0, duration: 750, useNativeDriver: true }),
+        Animated.timing(ringPulse, { toValue: 1, duration: 800, useNativeDriver: false }),
+        Animated.timing(ringPulse, { toValue: 0, duration: 800, useNativeDriver: false }),
       ])
     );
     loop.start();
     return () => loop.stop();
   }, [visible, ringPulse]);
-  // 外に膨らむとハイライトの縁を越えて暗幕に隠れるので、内側に縮む方向で鼓動させる
-  const ringScale = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.975] });
-  const ringOpacity = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.6] });
+  const RING_INSET = 2.5; // 鼓動で内側に縮むpx量（控えめ）
+  const ringInset = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [0, RING_INSET] });
+  const ringOpacity = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.7] });
 
   // 表示開始時はインデックスをリセット（前画面から戻ってきたときは最後から）。
   // 直前のハイライトは消して暗幕だけの状態にする
@@ -240,7 +242,13 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
         <View pointerEvents="none" style={[styles.dim, { top: hy + hh, left: 0, right: 0, bottom: 0 }]} />
         <Animated.View
           pointerEvents="none"
-          style={[styles.ring, { top: hy, left: hx, width: hw, height: hh, opacity: ringOpacity, transform: [{ scale: ringScale }] }]}
+          style={[styles.ring, {
+            top: Animated.add(hy, ringInset),
+            left: Animated.add(hx, ringInset),
+            width: Animated.subtract(hw, Animated.multiply(ringInset, 2)),
+            height: Animated.subtract(hh, Animated.multiply(ringInset, 2)),
+            opacity: ringOpacity,
+          }]}
         />
       </Pressable>
 
