@@ -83,8 +83,9 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
     loop.start();
     return () => loop.stop();
   }, [visible, ringPulse]);
-  const ringScale = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] });
-  const ringOpacity = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.55] });
+  // 外に膨らむとハイライトの縁を越えて暗幕に隠れるので、内側に縮む方向で鼓動させる
+  const ringScale = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] });
+  const ringOpacity = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.6] });
 
   // 表示開始時はインデックスをリセット（前画面から戻ってきたときは最後から）。
   // 直前のハイライトは消して暗幕だけの状態にする
