@@ -50,6 +50,9 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   const [index, setIndex] = React.useState(0); // 計測対象（遷移先）
   const [shownIndex, setShownIndex] = React.useState(0); // 実際に表示中のステップ
   const [rect, setRect] = React.useState<CoachRect | null>(null);
+  // 最終ステップがどうしても計測できないとき、自動遷移せずハイライト無しで
+  // カードだけ中央表示するフォールバック
+  const [noHighlight, setNoHighlight] = React.useState(false);
   const { height: screenH } = Dimensions.get('window');
 
   // 「次へ」以外をタップしたときに、押す場所を点滅で誘導する
@@ -75,6 +78,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
       setIndex(start);
       setShownIndex(start);
       setRect(null);
+      setNoHighlight(false);
     }
   }, [visible, startAtLast, steps.length]);
 
@@ -82,6 +86,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // それでも計測できないステップ（非表示要素など）はスキップする
   React.useEffect(() => {
     if (!visible) return;
+    setNoHighlight(false); // 新しいステップの計測を始めるのでフォールバックは解除
     const cur = steps[index];
     let cancelled = false;
     let attempt = 0;
@@ -107,7 +112,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
         if (attempt >= 20) {
           if (valid) { setRect(r!); setShownIndex(index); } // 安定しなくても打ち切って表示
           else if (index + 1 < steps.length) setIndex(index + 1); // 計測不可ならスキップ
-          else onDone();
+          else { setShownIndex(index); setNoHighlight(true); } // 最終ステップ：自動遷移せずカードだけ出す
           return;
         }
         setTimeout(() => settle(valid ? r! : null), 70);
@@ -122,8 +127,9 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
 
   if (!visible) return null;
 
-  // rect 未確定（計測中/遷移直後）でも、暗幕だけは即時に出してタップを塞ぐ
-  if (!rect) {
+  // rect 未確定（計測中/遷移直後）でも、暗幕だけは即時に出してタップを塞ぐ。
+  // フォールバック表示中(noHighlight)はカードを出すのでここでは抜けない
+  if (!rect && !noHighlight) {
     return (
       <Modal visible transparent animationType="fade" onRequestClose={onDone}>
         <View style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
@@ -133,14 +139,6 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
 
   const step = steps[shownIndex];
   if (!step) return null;
-
-  const hx = rect.x - PAD;
-  const hw = rect.width + PAD * 2;
-  // 上端がオーバーレイ上端より上に出る分だけ下げる（下端は維持）。
-  // 上部のアイコン(更新/スター)の枠が見切れるのを防ぐ
-  const rawTop = rect.y - PAD;
-  const hy = Math.max(rawTop, MIN_TOP);
-  const hh = rect.height + PAD * 2 - (hy - rawTop);
 
   // ボタン操作・進捗・最終判定は「表示中のステップ(shownIndex)」基準にする
   const isLast = shownIndex + 1 >= steps.length;
@@ -153,6 +151,53 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
     else onBackBeforeFirst?.();
   };
   const showBack = shownIndex > 0 || !!onBackBeforeFirst;
+
+  // 説明カード（ハイライト有無の両方で使い回す。pos で位置だけ差し替え）
+  const cardNode = (pos: object) => (
+    <View style={[styles.card, { backgroundColor: cardBg, borderColor: ACCENT }, pos]}>
+      <Text style={[styles.cardTitle, { color: textColor }]}>{step.title}</Text>
+      <Text style={[styles.cardDesc, { color: hintColor }]}>{step.desc}</Text>
+      <View style={styles.footer}>
+        <Text style={[styles.progress, { color: hintColor }]}>
+          {shownIndex + 1} / {steps.length}
+        </Text>
+        <View style={styles.footerRight}>
+          {showBack && (
+            <TouchableOpacity onPress={back} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={[styles.back, { color: hintColor }]}>{t('common.back')}</Text>
+            </TouchableOpacity>
+          )}
+          <Animated.View style={{ transform: [{ scale: pulseScale }] }}>
+            <TouchableOpacity onPress={next} style={styles.nextBtn} activeOpacity={0.8}>
+              <Text style={styles.nextText}>
+                {isLast && !continues ? t('home.tutorialDone') : t('home.tutorialNext')}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </View>
+    </View>
+  );
+
+  // フォールバック：位置が取れなかった最終ステップ。全面暗幕＋中央寄りカードのみ
+  if (!rect) {
+    return (
+      <Modal visible transparent animationType="fade" onRequestClose={onDone}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={triggerPulse}>
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
+        </Pressable>
+        {cardNode({ top: screenH * 0.4 })}
+      </Modal>
+    );
+  }
+
+  const hx = rect.x - PAD;
+  const hw = rect.width + PAD * 2;
+  // 上端がオーバーレイ上端より上に出る分だけ下げる（下端は維持）。
+  // 上部のアイコン(更新/スター)の枠が見切れるのを防ぐ
+  const rawTop = rect.y - PAD;
+  const hy = Math.max(rawTop, MIN_TOP);
+  const hh = rect.height + PAD * 2 - (hy - rawTop);
 
   // ハイライトが画面上寄りなら下に、下寄りなら上にカードを出す
   const below = hy + hh / 2 < screenH * 0.5;
@@ -172,29 +217,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
       </Pressable>
 
       {/* 説明カード */}
-      <View style={[styles.card, { backgroundColor: cardBg, borderColor: ACCENT }, cardPos]}>
-        <Text style={[styles.cardTitle, { color: textColor }]}>{step.title}</Text>
-        <Text style={[styles.cardDesc, { color: hintColor }]}>{step.desc}</Text>
-        <View style={styles.footer}>
-          <Text style={[styles.progress, { color: hintColor }]}>
-            {shownIndex + 1} / {steps.length}
-          </Text>
-          <View style={styles.footerRight}>
-            {showBack && (
-              <TouchableOpacity onPress={back} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Text style={[styles.back, { color: hintColor }]}>{t('common.back')}</Text>
-              </TouchableOpacity>
-            )}
-            <Animated.View style={{ transform: [{ scale: pulseScale }] }}>
-              <TouchableOpacity onPress={next} style={styles.nextBtn} activeOpacity={0.8}>
-                <Text style={styles.nextText}>
-                  {isLast && !continues ? t('home.tutorialDone') : t('home.tutorialNext')}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-        </View>
-      </View>
+      {cardNode(cardPos)}
     </Modal>
   );
 };
