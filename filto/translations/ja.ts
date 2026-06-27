@@ -124,6 +124,8 @@ export const ja = {
     // Feeds画面
     feeds: {
       title: 'フィード',
+      tutTabTitle: 'フィード管理',
+      tutTabDesc: '下の「フィード」タブをタップすると、いつでもこの画面を開けます。',
       tutListTitle: '登録済みのフィード',
       tutListDesc: '購読中のフィードがここに並びます。スワイプや削除モードで整理できます。',
       tutAddTitle: 'フィードを追加',

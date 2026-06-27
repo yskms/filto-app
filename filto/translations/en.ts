@@ -124,6 +124,8 @@ export const en = {
   // Feeds screen
   feeds: {
     title: 'Feeds',
+    tutTabTitle: 'Manage feeds',
+    tutTabDesc: 'Tap the Feeds tab below to open this screen anytime.',
     tutListTitle: 'Your feeds',
     tutListDesc: 'Feeds you subscribe to appear here. Swipe or use delete mode to manage them.',
     tutAddTitle: 'Add a feed',

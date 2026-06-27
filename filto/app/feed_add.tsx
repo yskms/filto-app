@@ -48,6 +48,7 @@ export default function FeedAddScreen() {
   const [tutorialVisible, setTutorialVisible] = useState(false);
   const [tutorialStartAtLast, setTutorialStartAtLast] = useState(false);
   const urlSecRef = useRef<View>(null);
+  const pasteRef = useRef<View>(null);
   const fetchRef = useRef<View>(null);
   const nameSecRef = useRef<View>(null);
 
@@ -84,7 +85,23 @@ export default function FeedAddScreen() {
   );
 
   const tutorialSteps = React.useMemo<CoachStep[]>(() => [
-    { measure: () => measureNode(urlSecRef), title: t('feeds.feedUrl'), desc: t('feeds.tutUrlDesc') },
+    {
+      // URL欄 + クリップボード貼り付けボタン までをまとめて囲う
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const u = urlSecRef.current;
+        if (!u) { resolve(null); return; }
+        u.measureInWindow((ux, uy, uw, uh) => {
+          if (!uw || !uh) { resolve(null); return; }
+          const p = pasteRef.current;
+          if (!p) { resolve({ x: ux, y: uy, width: uw, height: uh }); return; }
+          p.measureInWindow((px, py, pw, ph) => {
+            const bottom = (py && ph) ? py + ph : uy + uh;
+            resolve({ x: ux, y: uy, width: uw, height: Math.max(uh, bottom - uy) });
+          });
+        });
+      }),
+      title: t('feeds.feedUrl'), desc: t('feeds.tutUrlDesc'),
+    },
     { measure: () => measureNode(fetchRef), title: t('feeds.fetchFeedMeta'), desc: t('feeds.tutFetchDesc') },
     { measure: () => measureNode(nameSecRef), title: t('feeds.feedName'), desc: t('feeds.tutNameDesc') },
   ], [t, measureNode]);
@@ -260,6 +277,7 @@ export default function FeedAddScreen() {
 
             {/* Paste Button */}
             <TouchableOpacity
+              ref={pasteRef}
               style={[styles.pasteButton, { borderColor }]}
               onPress={handlePaste}
               activeOpacity={0.7}

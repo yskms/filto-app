@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
@@ -266,6 +266,22 @@ export default function FeedsScreen() {
   );
 
   const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    {
+      // 下タブの「フィード」タブ(4つ中3番目)のアイコンを囲う
+      measure: () => new Promise<CoachRect | null>((resolve) => {
+        const { width } = Dimensions.get('window');
+        const tabW = width / 4;
+        const node = listRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, w, h) => {
+          if (!h) { resolve(null); return; }
+          const boxW = Math.min(tabW - 20, 58);
+          const cx = tabW * 2 + (tabW - boxW) / 2; // 3番目(フィード)タブ中央
+          resolve({ x: cx, y: y + h, width: boxW, height: 38 });
+        });
+      }),
+      title: t('feeds.tutTabTitle'), desc: t('feeds.tutTabDesc'),
+    },
     {
       measure: () => new Promise<CoachRect | null>((resolve) => {
         const node = listRef.current;
