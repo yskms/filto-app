@@ -70,6 +70,22 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   }, [pulse]);
   const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] });
 
+  // ハイライトのリングを常時ゆっくり鼓動させて注目を促す
+  const ringPulse = React.useRef(new Animated.Value(0)).current;
+  React.useEffect(() => {
+    if (!visible) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ringPulse, { toValue: 1, duration: 750, useNativeDriver: true }),
+        Animated.timing(ringPulse, { toValue: 0, duration: 750, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [visible, ringPulse]);
+  const ringScale = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] });
+  const ringOpacity = ringPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.55] });
+
   // 表示開始時はインデックスをリセット（前画面から戻ってきたときは最後から）。
   // 直前のハイライトは消して暗幕だけの状態にする
   React.useEffect(() => {
@@ -221,7 +237,10 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
         <View pointerEvents="none" style={[styles.dim, { top: hy, left: 0, width: Math.max(0, hx), height: hh }]} />
         <View pointerEvents="none" style={[styles.dim, { top: hy, left: hx + hw, right: 0, height: hh }]} />
         <View pointerEvents="none" style={[styles.dim, { top: hy + hh, left: 0, right: 0, bottom: 0 }]} />
-        <View pointerEvents="none" style={[styles.ring, { top: hy, left: hx, width: hw, height: hh }]} />
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.ring, { top: hy, left: hx, width: hw, height: hh, opacity: ringOpacity, transform: [{ scale: ringScale }] }]}
+        />
       </Pressable>
 
       {/* 説明カード */}
