@@ -44,6 +44,7 @@ const MIN_TOP = 4; // ハイライト上端の最小位置（オーバーレイ�
 export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false, startAtLast = false, onBackBeforeFirst }) => {
   const { t } = useTranslation();
   const cardBg = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
   const hintColor = useThemeColor({ light: '#687076', dark: '#9BA1A6' }, 'background');
 
   const [index, setIndex] = React.useState(0); // 計測対象（遷移先）
@@ -154,7 +155,16 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // 説明カード（ハイライト有無の両方で使い回す。pos で位置だけ差し替え）
   const cardNode = (pos: object) => (
     <View style={[styles.card, { backgroundColor: cardBg, borderColor: ACCENT }, pos]}>
-      <Text style={[styles.cardText, { color: ACCENT }]}>{step.text}</Text>
+      <Text style={[styles.cardText, { color: textColor }]}>
+        {/* `*…*` で囲んだ部分だけアクセント色で強調する */}
+        {step.text.split('*').map((seg, i) =>
+          i % 2 === 1 ? (
+            <Text key={i} style={{ color: ACCENT }}>{seg}</Text>
+          ) : (
+            seg
+          )
+        )}
+      </Text>
       <View style={styles.footer}>
         <Text style={[styles.progress, { color: hintColor }]}>
           {shownIndex + 1} / {steps.length}
@@ -241,7 +251,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 12,
   },
-  cardText: { fontSize: 16, fontWeight: '700', lineHeight: 23 },
+  cardText: { fontSize: 18, fontWeight: '700', lineHeight: 26 },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
