@@ -597,8 +597,8 @@ export default function HomeScreen() {
     try {
       setRefreshing(true);
 
-      // RSS同期を実行
-      const result = await SyncService.refresh();
+      // RSS同期を実行（手動更新は明示操作なのでWiFi限定設定を無視して必ず取得）
+      const result = await SyncService.refresh({ ignoreWifiOnly: true });
 
       if (result.offline) {
         Alert.alert(t('common.error'), t('home.offlineError'));

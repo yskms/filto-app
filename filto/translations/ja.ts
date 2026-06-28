@@ -232,6 +232,7 @@ export const ja = {
       resetError: 'リセットに失敗しました',
       sectionWifiOnly: 'WiFi時のみ取得',
       wifiOnlyRss: 'WiFi接続時のみRSSを取得',
+      wifiOnlyHint: 'オンにすると、起動時の自動取得をWiFi接続時のみ行います。手動の更新（引っ張って更新）はモバイル回線でも実行されます。',
       sectionMinRefresh: '最低更新間隔',
       minRefreshThrottle: '連打防止の最低更新間隔',
       sectionFuture: '（将来）',

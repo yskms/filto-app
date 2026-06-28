@@ -9,6 +9,7 @@ import * as Network from 'expo-network';
 const STORAGE_KEY_LAST_SYNC_TIME = '@filto/lastSyncTime';
 const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
 const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
+const STORAGE_KEY_WIFI_ONLY_FETCH = '@filto/data_management/wifiOnlyFetch';
 
 /**
  * SyncService
@@ -31,16 +32,49 @@ export const SyncService = {
   },
 
   /**
-   * 全フィードを同期
-   * @returns 取得成功フィード数と新規記事数、オフライン時は offline: true
+   * 「WiFi接続時のみ取得」設定が有効かどうかを取得
    */
-  async refresh(): Promise<{ fetched: number; newArticles: number; deleted?: number; offline?: boolean }> {
+  async isWifiOnlyFetchEnabled(): Promise<boolean> {
+    try {
+      const value = await AsyncStorage.getItem(STORAGE_KEY_WIFI_ONLY_FETCH);
+      return value === 'true'; // デフォルト: false（無効）
+    } catch (_) {
+      return false;
+    }
+  },
+
+  /**
+   * 全フィードを同期
+   * @param options.ignoreWifiOnly 「WiFi接続時のみ取得」設定を無視する（手動更新など明示操作で使う）
+   * @returns 取得成功フィード数と新規記事数。オフライン時は offline: true、
+   *          WiFi限定設定でモバイル回線のためスキップした場合は skippedNotWifi: true
+   */
+  async refresh(options?: { ignoreWifiOnly?: boolean }): Promise<{
+    fetched: number;
+    newArticles: number;
+    deleted?: number;
+    offline?: boolean;
+    skippedNotWifi?: boolean;
+  }> {
     // ネットワーク接続チェック
     // isConnected / isInternetReachable は boolean | null のため、
     // null（判定不能）はオンラインとして扱い、明示的に false のときのみオフライン扱いにする
     const networkState = await Network.getNetworkStateAsync();
     if (networkState.isConnected === false || networkState.isInternetReachable === false) {
       return { fetched: 0, newArticles: 0, offline: true };
+    }
+
+    // 「WiFi接続時のみ取得」設定のチェック（自動同期で使用、手動更新は ignoreWifiOnly で無視）
+    if (!options?.ignoreWifiOnly && (await this.isWifiOnlyFetchEnabled())) {
+      // WiFi以外（モバイル回線など）の場合は取得をスキップ。
+      // type が判定不能（UNKNOWN/undefined）のときは制限せず取得する
+      if (
+        networkState.type !== undefined &&
+        networkState.type !== Network.NetworkStateType.WIFI &&
+        networkState.type !== Network.NetworkStateType.UNKNOWN
+      ) {
+        return { fetched: 0, newArticles: 0, skippedNotWifi: true };
+      }
     }
 
     // 多重実行防止

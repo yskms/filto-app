@@ -232,6 +232,7 @@ export const en = {
     resetError: 'Failed to reset',
     sectionWifiOnly: 'Wi‑Fi only',
     wifiOnlyRss: 'Fetch RSS only on Wi‑Fi',
+    wifiOnlyHint: 'When on, automatic fetch at startup runs only on Wi‑Fi. Manual refresh (pull to refresh) still works on cellular.',
     sectionMinRefresh: 'Minimum refresh interval',
     minRefreshThrottle: 'Minimum interval to prevent rapid refresh',
     sectionFuture: 'Future',
