@@ -24,9 +24,11 @@ import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
 const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
+const STORAGE_KEY_MIN_REFRESH_INTERVAL = '@filto/data_management/minRefreshIntervalMinutes';
 
 const RETENTION_OPTIONS = [7, 30, 90, 0];
 const MANUAL_DELETE_OPTIONS = [-1, 1, 3, 7, 14];
+const MIN_REFRESH_OPTIONS = [0, 1, 3, 5, 10];
 
 const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -257,7 +259,9 @@ export default function DataManagementScreen() {
   const toggleOnBg = useThemeColor({ light: '#34C759', dark: '#30d158' }, 'background');
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
+  const [minRefreshInterval, setMinRefreshInterval] = useState(0);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
+  const [minRefreshDropdownVisible, setMinRefreshDropdownVisible] = useState(false);
   const [manualDeleteModalVisible, setManualDeleteModalVisible] = useState(false);
   const [manualDeleteDays, setManualDeleteDays] = useState(-1);
   const [manualDeleteIncludeStarred, setManualDeleteIncludeStarred] = useState(false);
@@ -272,12 +276,14 @@ export default function DataManagementScreen() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const [savedRetention, savedStarred] = await Promise.all([
+      const [savedRetention, savedStarred, savedMinRefresh] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS),
         AsyncStorage.getItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO),
+        AsyncStorage.getItem(STORAGE_KEY_MIN_REFRESH_INTERVAL),
       ]);
       if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
       if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
+      if (savedMinRefresh !== null) setMinRefreshInterval(parseInt(savedMinRefresh, 10));
     } catch (_) {
     }
   }, []);
@@ -288,6 +294,15 @@ export default function DataManagementScreen() {
     try {
       setArticleRetentionDays(days);
       await AsyncStorage.setItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS, days.toString());
+    } catch (_) {
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
+    }
+  };
+
+  const handleChangeMinRefreshInterval = async (minutes: number) => {
+    try {
+      setMinRefreshInterval(minutes);
+      await AsyncStorage.setItem(STORAGE_KEY_MIN_REFRESH_INTERVAL, minutes.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -389,6 +404,13 @@ export default function DataManagementScreen() {
   const getRetentionLabel = () =>
     retentionOptions.find((o) => o.value === articleRetentionDays)?.label ?? t('dataManagement.days', { count: 30 });
 
+  const minRefreshOptions = MIN_REFRESH_OPTIONS.map((value) => ({
+    value,
+    label: value === 0 ? t('dataManagement.minRefreshNoLimit') : t('dataManagement.minutes', { count: value }),
+  }));
+  const getMinRefreshLabel = () =>
+    minRefreshOptions.find((o) => o.value === minRefreshInterval)?.label ?? t('dataManagement.minRefreshNoLimit');
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -429,7 +451,8 @@ export default function DataManagementScreen() {
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionMinRefresh')}>
-          <ComingSoonRow title={t('dataManagement.minRefreshThrottle')} />
+          <Dropdown label={t('dataManagement.minRefreshThrottle')} value={getMinRefreshLabel()} onPress={() => setMinRefreshDropdownVisible(true)} />
+          <ThemedText style={styles.minRefreshHint}>{t('dataManagement.minRefreshHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionFuture')}>
@@ -452,6 +475,15 @@ export default function DataManagementScreen() {
         selectedValue={articleRetentionDays}
         onSelect={handleChangeRetentionDays}
         onClose={() => setRetentionDropdownVisible(false)}
+      />
+
+      <DropdownModal
+        visible={minRefreshDropdownVisible}
+        title={t('dataManagement.selectMinRefreshTitle')}
+        options={minRefreshOptions}
+        selectedValue={minRefreshInterval}
+        onSelect={handleChangeMinRefreshInterval}
+        onClose={() => setMinRefreshDropdownVisible(false)}
       />
 
       <ManualDeleteModal
@@ -523,6 +555,7 @@ const styles = StyleSheet.create({
   },
   dropdownValue: { fontSize: 16 },
   dropdownIcon: { fontSize: 12 },
+  minRefreshHint: { fontSize: 12, lineHeight: 17, marginTop: 10, opacity: 0.7 },
   manualDeleteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   manualDeleteText: { fontSize: 16 },
   arrow: { fontSize: 20 },

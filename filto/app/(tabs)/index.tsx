@@ -597,6 +597,17 @@ export default function HomeScreen() {
     try {
       setRefreshing(true);
 
+      // 連打防止の最低更新間隔チェック（制限中なら残り時間を案内して中断）
+      const cooldown = await SyncService.getManualRefreshCooldown();
+      if (cooldown !== null) {
+        const minutes = Math.ceil(cooldown / 60);
+        Alert.alert(
+          t('dataManagement.minRefreshThrottle'),
+          t('home.refreshThrottled', { minutes })
+        );
+        return;
+      }
+
       // RSS同期を実行
       const result = await SyncService.refresh();
 

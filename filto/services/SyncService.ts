@@ -9,6 +9,7 @@ import * as Network from 'expo-network';
 const STORAGE_KEY_LAST_SYNC_TIME = '@filto/lastSyncTime';
 const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
 const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
+const STORAGE_KEY_MIN_REFRESH_INTERVAL = '@filto/data_management/minRefreshIntervalMinutes';
 
 /**
  * SyncService
@@ -143,6 +144,35 @@ export const SyncService = {
     } catch (_) {
       return true; // エラー時は同期する
     }
+  },
+
+  /**
+   * 「連打防止の最低更新間隔」設定（分）を取得
+   * @returns 最低更新間隔（分）。0 は制限なし。デフォルト: 0
+   */
+  async getMinRefreshIntervalMinutes(): Promise<number> {
+    try {
+      const value = await AsyncStorage.getItem(STORAGE_KEY_MIN_REFRESH_INTERVAL);
+      const parsed = value ? parseInt(value, 10) : NaN;
+      return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
+    } catch (_) {
+      return 0;
+    }
+  },
+
+  /**
+   * 手動更新が最低更新間隔の制限にかかっているかを判定する。
+   * @returns 制限中なら次に更新できるまでの残り秒数、許可なら null
+   */
+  async getManualRefreshCooldown(): Promise<number | null> {
+    const minutes = await this.getMinRefreshIntervalMinutes();
+    if (minutes <= 0) return null; // 制限なし
+    const lastSync = await this.getLastSyncTime();
+    if (lastSync === null) return null; // 同期履歴なし
+    const intervalMs = minutes * 60 * 1000;
+    const elapsed = Date.now() - lastSync;
+    if (elapsed >= intervalMs) return null; // 制限を過ぎている
+    return Math.ceil((intervalMs - elapsed) / 1000); // 残り秒数
   },
 
   /**
