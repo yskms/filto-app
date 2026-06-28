@@ -62,6 +62,7 @@ export const ja = {
       tutFeedDesc: '表示するフィードの*切替・複数選択*ができます。',
       tutRefreshDesc: '*更新ボタン*です。一覧を下に引っ張っても更新できます。',
       tutStarDesc: '記事を*長押し*すると、お気に入りに登録できます。',
+      tutLayoutDesc: '記事の表示を*大きな画像*に切り替えられます。',
       tutStarViewDesc: '*お気に入り*した記事だけを表示できます。',
       tutFilterDesc: '*非表示にした記事*を、タップで一覧に表示できます。',
       tutFiltersTabDesc: 'ここから*ブロックフィルタ*を管理できます。',
