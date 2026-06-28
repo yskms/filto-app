@@ -74,12 +74,6 @@
   {
     "lang": "en",
     "category": "culture",
-    "title": "Vice",
-    "url": "https://www.vice.com/en/rss"
-  },
-  {
-    "lang": "en",
-    "category": "culture",
     "title": "Vox",
     "url": "https://www.vox.com/rss/index.xml"
   },
@@ -230,12 +224,6 @@
   {
     "lang": "en",
     "category": "game",
-    "title": "GamesRadar+",
-    "url": "https://www.gamesradar.com/rss/"
-  },
-  {
-    "lang": "en",
-    "category": "game",
     "title": "IGN",
     "url": "https://feeds.ign.com/ign/all"
   },
@@ -248,12 +236,6 @@
   {
     "lang": "en",
     "category": "game",
-    "title": "Nintendo Life",
-    "url": "https://www.nintendolife.com/feeds/latest"
-  },
-  {
-    "lang": "en",
-    "category": "game",
     "title": "PC Gamer",
     "url": "https://www.pcgamer.com/rss/"
   },
@@ -262,18 +244,6 @@
     "category": "game",
     "title": "Polygon",
     "url": "https://www.polygon.com/rss/index.xml"
-  },
-  {
-    "lang": "en",
-    "category": "game",
-    "title": "Rock Paper Shotgun",
-    "url": "https://www.rockpapershotgun.com/feed"
-  },
-  {
-    "lang": "en",
-    "category": "game",
-    "title": "VG247",
-    "url": "https://www.vg247.com/feed"
   },
   {
     "lang": "en",
@@ -356,26 +326,8 @@
   {
     "lang": "en",
     "category": "tech",
-    "title": "9to5Google",
-    "url": "https://9to5google.com/feed/"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "9to5Mac",
-    "url": "https://9to5mac.com/feed/"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
     "title": "Android Authority",
     "url": "https://www.androidauthority.com/feed/"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "Android Police",
-    "url": "https://www.androidpolice.com/feed/"
   },
   {
     "lang": "en",
@@ -404,12 +356,6 @@
   {
     "lang": "en",
     "category": "tech",
-    "title": "Mashable",
-    "url": "https://mashable.com/feeds/rss/all"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
     "title": "TechCrunch",
     "url": "https://techcrunch.com/feed/"
   },
@@ -422,32 +368,8 @@
   {
     "lang": "en",
     "category": "tech",
-    "title": "The Next Web",
-    "url": "https://thenextweb.com/feed"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "The Register",
-    "url": "https://www.theregister.com/headlines.atom"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
     "title": "The Verge",
     "url": "https://www.theverge.com/rss/index.xml"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "Tom's Hardware",
-    "url": "https://www.tomshardware.com/feeds/all"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "VentureBeat",
-    "url": "https://venturebeat.com/feed/"
   },
   {
     "lang": "en",
@@ -500,18 +422,6 @@
   {
     "lang": "en",
     "category": "world",
-    "title": "BBC World",
-    "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
-  },
-  {
-    "lang": "en",
-    "category": "world",
-    "title": "CBS News",
-    "url": "https://www.cbsnews.com/latest/rss/main"
-  },
-  {
-    "lang": "en",
-    "category": "world",
     "title": "DW News",
     "url": "https://rss.dw.com/rdf/rss-en-all"
   },
@@ -520,12 +430,6 @@
     "category": "world",
     "title": "New York Times Home",
     "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
-  },
-  {
-    "lang": "en",
-    "category": "world",
-    "title": "New York Times World",
-    "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
   },
   {
     "lang": "en",
@@ -1748,32 +1652,8 @@
   {
     "lang": "en",
     "category": "fitness",
-    "title": "Bicycling",
-    "url": "https://www.bicycling.com/rss/all.xml/"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
     "title": "Healthline",
     "url": "https://www.healthline.com/rss/health-news"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Eat This Not That",
-    "url": "https://www.eatthis.com/feed/"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Breaking Muscle",
-    "url": "https://breakingmuscle.com/feed/"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Yoga Journal",
-    "url": "https://www.yogajournal.com/feed/"
   },
   {
     "lang": "ja",
@@ -1790,32 +1670,8 @@
   {
     "lang": "en",
     "category": "fitness",
-    "title": "Triathlete",
-    "url": "https://www.triathlete.com/feed/"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Trail Runner",
-    "url": "https://www.trailrunnermag.com/feed/"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "iRunFar",
-    "url": "https://www.irunfar.com/feed"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
     "title": "Muscle & Fitness",
     "url": "https://www.muscleandfitness.com/feed/"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Men's Journal",
-    "url": "https://www.mensjournal.com/feed/"
   },
   {
     "lang": "ja",

@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 72件 / EN 92件
+// 収録数: JA 72件 / EN 68件
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -182,12 +182,9 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     id: "world",
     label: "World News",
     feeds: [
-      { id: "default_en_bbci", title: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
       { id: "default_en_nytimes", title: "New York Times Home", url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" },
-      { id: "default_en_bbci2", title: "BBC News", url: "https://feeds.bbci.co.uk/news/rss.xml" },
-      { id: "default_en_nytimes2", title: "New York Times World", url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml" },
+      { id: "default_en_bbci", title: "BBC News", url: "https://feeds.bbci.co.uk/news/rss.xml" },
       { id: "default_en_npr", title: "NPR News", url: "https://feeds.npr.org/1001/rss.xml" },
-      { id: "default_en_cbsnews", title: "CBS News", url: "https://www.cbsnews.com/latest/rss/main" },
       { id: "default_en_time", title: "Time", url: "https://time.com/feed/" },
       { id: "default_en_skynews", title: "Sky News World", url: "https://feeds.skynews.com/feeds/rss/world.xml" },
     ],
@@ -196,21 +193,13 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     id: "tech",
     label: "Technology",
     feeds: [
-      { id: "default_en_9to5google", title: "9to5Google", url: "https://9to5google.com/feed/" },
       { id: "default_en_arstechnica", title: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index" },
       { id: "default_en_engadget", title: "Engadget", url: "https://www.engadget.com/rss.xml" },
       { id: "default_en_androidauthority", title: "Android Authority", url: "https://www.androidauthority.com/feed/" },
-      { id: "default_en_mashable", title: "Mashable", url: "https://mashable.com/feeds/rss/all" },
-      { id: "default_en_androidpolice", title: "Android Police", url: "https://www.androidpolice.com/feed/" },
       { id: "default_en_techradar", title: "TechRadar", url: "https://www.techradar.com/rss" },
       { id: "default_en_theverge", title: "The Verge", url: "https://www.theverge.com/rss/index.xml" },
       { id: "default_en_wired", title: "Wired", url: "https://www.wired.com/feed/rss" },
-      { id: "default_en_venturebeat", title: "VentureBeat", url: "https://venturebeat.com/feed/" },
       { id: "default_en_gizmodo", title: "Gizmodo", url: "https://gizmodo.com/rss" },
-      { id: "default_en_thenextweb", title: "The Next Web", url: "https://thenextweb.com/feed" },
-      { id: "default_en_tomshardware", title: "Tom's Hardware", url: "https://www.tomshardware.com/feeds/all" },
-      { id: "default_en_9to5mac", title: "9to5Mac", url: "https://9to5mac.com/feed/" },
-      { id: "default_en_theregister", title: "The Register", url: "https://www.theregister.com/headlines.atom" },
       { id: "default_en_macrumors", title: "MacRumors", url: "https://feeds.macrumors.com/MacRumors-All" },
     ],
   },
@@ -240,15 +229,11 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "Gaming",
     feeds: [
       { id: "default_en_gamespot", title: "GameSpot", url: "https://www.gamespot.com/feeds/mashup/" },
-      { id: "default_en_gamesradar", title: "GamesRadar+", url: "https://www.gamesradar.com/rss/" },
       { id: "default_en_eurogamer", title: "Eurogamer", url: "https://www.eurogamer.net/feed" },
       { id: "default_en_ign", title: "IGN", url: "https://feeds.ign.com/ign/all" },
-      { id: "default_en_nintendolife", title: "Nintendo Life", url: "https://www.nintendolife.com/feeds/latest" },
       { id: "default_en_kotaku", title: "Kotaku", url: "https://kotaku.com/rss" },
-      { id: "default_en_vg247", title: "VG247", url: "https://www.vg247.com/feed" },
       { id: "default_en_pcgamer", title: "PC Gamer", url: "https://www.pcgamer.com/rss/" },
       { id: "default_en_polygon", title: "Polygon", url: "https://www.polygon.com/rss/index.xml" },
-      { id: "default_en_rockpapershotgun", title: "Rock Paper Shotgun", url: "https://www.rockpapershotgun.com/feed" },
     ],
   },
   {
@@ -265,7 +250,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     id: "sports",
     label: "Sports",
     feeds: [
-      { id: "default_en_bbci3", title: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml" },
+      { id: "default_en_bbci2", title: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/rss.xml" },
       { id: "default_en_skysports", title: "Sky Sports", url: "https://www.skysports.com/rss/12040" },
       { id: "default_en_cbssports", title: "CBS Sports", url: "https://www.cbssports.com/rss/headlines/" },
     ],
@@ -279,16 +264,8 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_en_womenshealthmag", title: "Women's Health", url: "https://www.womenshealthmag.com/rss/all.xml/" },
       { id: "default_en_runnersworld", title: "Runner's World", url: "https://www.runnersworld.com/rss/all.xml/" },
       { id: "default_en_prevention", title: "Prevention", url: "https://www.prevention.com/rss/all.xml/" },
-      { id: "default_en_bicycling", title: "Bicycling", url: "https://www.bicycling.com/rss/all.xml/" },
       { id: "default_en_healthline", title: "Healthline", url: "https://www.healthline.com/rss/health-news" },
-      { id: "default_en_eatthis", title: "Eat This Not That", url: "https://www.eatthis.com/feed/" },
-      { id: "default_en_breakingmuscle", title: "Breaking Muscle", url: "https://breakingmuscle.com/feed/" },
-      { id: "default_en_yogajournal", title: "Yoga Journal", url: "https://www.yogajournal.com/feed/" },
-      { id: "default_en_triathlete", title: "Triathlete", url: "https://www.triathlete.com/feed/" },
-      { id: "default_en_trailrunnermag", title: "Trail Runner", url: "https://www.trailrunnermag.com/feed/" },
-      { id: "default_en_irunfar", title: "iRunFar", url: "https://www.irunfar.com/feed" },
       { id: "default_en_muscleandfitness", title: "Muscle & Fitness", url: "https://www.muscleandfitness.com/feed/" },
-      { id: "default_en_mensjournal", title: "Men's Journal", url: "https://www.mensjournal.com/feed/" },
     ],
   },
   {
@@ -357,7 +334,6 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_en_vox", title: "Vox", url: "https://www.vox.com/rss/index.xml" },
       { id: "default_en_slate", title: "Slate", url: "https://slate.com/feeds/all.rss" },
       { id: "default_en_buzzfeed", title: "BuzzFeed", url: "https://www.buzzfeed.com/us.xml" },
-      { id: "default_en_vice", title: "Vice", url: "https://www.vice.com/en/rss" },
     ],
   },
   ],

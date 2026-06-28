@@ -160,19 +160,6 @@
   },
   {
     "lang": "en",
-    "category": "culture",
-    "title": "Vice",
-    "url": "https://www.vice.com/en/rss",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 10,
-    "withThumb": 9,
-    "checked": 10,
-    "ratio": "0.90",
-    "feedTitle": "English - VICE"
-  },
-  {
-    "lang": "en",
     "category": "design",
     "title": "Dezeen",
     "url": "https://www.dezeen.com/feed/",
@@ -453,19 +440,6 @@
   {
     "lang": "en",
     "category": "game",
-    "title": "GamesRadar+",
-    "url": "https://www.gamesradar.com/rss/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 50,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": " Latest from GamesRadar+ "
-  },
-  {
-    "lang": "en",
-    "category": "game",
     "title": "Eurogamer",
     "url": "https://www.eurogamer.net/feed",
     "status": "OK",
@@ -492,19 +466,6 @@
   {
     "lang": "en",
     "category": "game",
-    "title": "Nintendo Life",
-    "url": "https://www.nintendolife.com/feeds/latest",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 25,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Nintendo Life | Latest Updates"
-  },
-  {
-    "lang": "en",
-    "category": "game",
     "title": "Kotaku",
     "url": "https://kotaku.com/rss",
     "status": "OK",
@@ -514,19 +475,6 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "Kotaku"
-  },
-  {
-    "lang": "en",
-    "category": "game",
-    "title": "VG247",
-    "url": "https://www.vg247.com/feed",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 100,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "VG247 Latest Articles Feed"
   },
   {
     "lang": "en",
@@ -553,19 +501,6 @@
     "checked": 10,
     "ratio": "1.00",
     "feedTitle": "Polygon.com"
-  },
-  {
-    "lang": "en",
-    "category": "game",
-    "title": "Rock Paper Shotgun",
-    "url": "https://www.rockpapershotgun.com/feed",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 100,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Rock Paper Shotgun Latest Articles Feed"
   },
   {
     "lang": "en",
@@ -729,19 +664,6 @@
   {
     "lang": "en",
     "category": "tech",
-    "title": "9to5Google",
-    "url": "https://9to5google.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 100,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "9to5Google"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
     "title": "Ars Technica",
     "url": "https://feeds.arstechnica.com/arstechnica/index",
     "status": "OK",
@@ -777,32 +699,6 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "Android Authority"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "Mashable",
-    "url": "https://mashable.com/feeds/rss/all",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 100,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Mashable"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "Android Police",
-    "url": "https://www.androidpolice.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 10,
-    "withThumb": 10,
-    "checked": 10,
-    "ratio": "1.00",
-    "feedTitle": "Android Police"
   },
   {
     "lang": "en",
@@ -859,19 +755,6 @@
   {
     "lang": "en",
     "category": "tech",
-    "title": "VentureBeat",
-    "url": "https://venturebeat.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 7,
-    "withThumb": 7,
-    "checked": 7,
-    "ratio": "1.00",
-    "feedTitle": "VentureBeat"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
     "title": "Gizmodo",
     "url": "https://gizmodo.com/rss",
     "status": "OK",
@@ -881,58 +764,6 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "Gizmodo"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "The Next Web",
-    "url": "https://thenextweb.com/feed",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 10,
-    "withThumb": 10,
-    "checked": 10,
-    "ratio": "1.00",
-    "feedTitle": "The Next Web"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "Tom's Hardware",
-    "url": "https://www.tomshardware.com/feeds/all",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 50,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": " Latest from Tom's Hardware "
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "9to5Mac",
-    "url": "https://9to5mac.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 100,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "9to5Mac"
-  },
-  {
-    "lang": "en",
-    "category": "tech",
-    "title": "The Register",
-    "url": "https://www.theregister.com/headlines.atom",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 50,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "www.theregister.com - Articles"
   },
   {
     "lang": "en",
@@ -1000,19 +831,6 @@
   {
     "lang": "en",
     "category": "world",
-    "title": "BBC World",
-    "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 30,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "BBC News"
-  },
-  {
-    "lang": "en",
-    "category": "world",
     "title": "New York Times Home",
     "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
     "status": "OK",
@@ -1035,19 +853,6 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "BBC News"
-  },
-  {
-    "lang": "en",
-    "category": "world",
-    "title": "New York Times World",
-    "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 59,
-    "withThumb": 18,
-    "checked": 20,
-    "ratio": "0.90",
-    "feedTitle": "NYT > World News"
   },
   {
     "lang": "en",
@@ -1082,19 +887,6 @@
     "url": "https://www.theguardian.com/world/rss",
     "status": "FAIL",
     "reason": "parse error"
-  },
-  {
-    "lang": "en",
-    "category": "world",
-    "title": "CBS News",
-    "url": "https://www.cbsnews.com/latest/rss/main",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 30,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Home - CBSNews.com"
   },
   {
     "lang": "en",
@@ -3275,19 +3067,6 @@
   {
     "lang": "en",
     "category": "fitness",
-    "title": "Bicycling",
-    "url": "https://www.bicycling.com/rss/all.xml/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 50,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Latest Content - Bicycling"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
     "title": "Healthline",
     "url": "https://www.healthline.com/rss/health-news",
     "status": "OK",
@@ -3297,45 +3076,6 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "Healthline News RSS Feed"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Eat This Not That",
-    "url": "https://www.eatthis.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 10,
-    "withThumb": 8,
-    "checked": 10,
-    "ratio": "0.80",
-    "feedTitle": "Eat This Not That"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Breaking Muscle",
-    "url": "https://breakingmuscle.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 12,
-    "withThumb": 12,
-    "checked": 12,
-    "ratio": "1.00",
-    "feedTitle": "Breaking Muscle"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Yoga Journal",
-    "url": "https://www.yogajournal.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 10,
-    "withThumb": 10,
-    "checked": 10,
-    "ratio": "1.00",
-    "feedTitle": "Yoga Journal"
   },
   {
     "lang": "ja",
@@ -3366,45 +3106,6 @@
   {
     "lang": "en",
     "category": "fitness",
-    "title": "Triathlete",
-    "url": "https://www.triathlete.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 20,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Triathlete"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Trail Runner",
-    "url": "https://www.trailrunnermag.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 12,
-    "withThumb": 12,
-    "checked": 12,
-    "ratio": "1.00",
-    "feedTitle": "Trail Runner Magazine"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "iRunFar",
-    "url": "https://www.irunfar.com/feed",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 5,
-    "withThumb": 5,
-    "checked": 5,
-    "ratio": "1.00",
-    "feedTitle": "iRunFar"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
     "title": "Muscle & Fitness",
     "url": "https://www.muscleandfitness.com/feed/",
     "status": "OK",
@@ -3414,19 +3115,6 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "Muscle & Fitness"
-  },
-  {
-    "lang": "en",
-    "category": "fitness",
-    "title": "Men's Journal",
-    "url": "https://www.mensjournal.com/feed/",
-    "status": "OK",
-    "kind": "rss2",
-    "items": 50,
-    "withThumb": 20,
-    "checked": 20,
-    "ratio": "1.00",
-    "feedTitle": "Men's Journal"
   },
   {
     "lang": "ja",
