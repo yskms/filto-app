@@ -240,6 +240,17 @@ export const en = {
     manualDeleteNow: 'Delete articles now',
     opmlImportExport: 'OPML Import / Export',
     dataBackupRestore: 'Data backup / restore',
+    backupExport: 'Export backup',
+    backupRestore: 'Restore from backup',
+    backupHint: 'Export or restore your feeds, filters, allow keywords, and settings as a JSON file. Articles are not included since they are re-fetched on sync.',
+    backupInProgress: 'Processing...',
+    shareUnavailable: 'Sharing is not available on this device.',
+    backupExportError: 'Failed to export backup.',
+    backupRestoreConfirm: 'Restore from a backup. Items are added to your existing feeds and filters, and settings are overwritten (theme/language apply after restart). Continue?',
+    backupRestoreSelectFile: 'Select file',
+    backupRestoreComplete: 'Restored ({{feeds}} feeds / {{filters}} filters / {{keywords}} keywords added).',
+    backupRestoreInvalid: 'This is not a valid backup file.',
+    backupRestoreError: 'Failed to restore.',
   },
 
   // Global Allow Keywords screen

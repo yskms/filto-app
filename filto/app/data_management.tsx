@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { resetAllData } from '@/database/init';
 import { SyncService } from '@/services/SyncService';
+import { BackupService } from '@/services/BackupService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -269,6 +270,7 @@ export default function DataManagementScreen() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isBackupBusy, setIsBackupBusy] = useState(false);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -349,6 +351,57 @@ export default function DataManagementScreen() {
     }
   };
 
+  const handleExportBackup = async () => {
+    if (isBackupBusy) return;
+    try {
+      setIsBackupBusy(true);
+      const result = await BackupService.exportToFile();
+      if (result.status === 'unavailable') {
+        Alert.alert(t('dataManagement.backupExport'), t('dataManagement.shareUnavailable'));
+      }
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.backupExportError'));
+    } finally {
+      setIsBackupBusy(false);
+    }
+  };
+
+  const runImportBackup = async () => {
+    try {
+      setIsBackupBusy(true);
+      const result = await BackupService.importFromFile();
+      if (result.status === 'invalid') {
+        Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreInvalid'));
+      } else if (result.status === 'imported') {
+        Alert.alert(
+          t('common.done'),
+          t('dataManagement.backupRestoreComplete', {
+            feeds: result.feeds,
+            filters: result.filters,
+            keywords: result.keywords,
+          })
+        );
+      }
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.backupRestoreError'));
+    } finally {
+      setIsBackupBusy(false);
+    }
+  };
+
+  const handleImportBackup = () => {
+    if (isBackupBusy) return;
+    // 復元は設定の上書きを伴うため確認してから実行
+    Alert.alert(
+      t('dataManagement.backupRestore'),
+      t('dataManagement.backupRestoreConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('dataManagement.backupRestoreSelectFile'), onPress: runImportBackup },
+      ]
+    );
+  };
+
   const handleResetAllData = () => {
     Alert.alert(
       t('dataManagement.resetAllData'),
@@ -400,6 +453,9 @@ export default function DataManagementScreen() {
       {isResetting && (
         <LoadingOverlay message={t('dataManagement.resetInProgress')} />
       )}
+      {isBackupBusy && (
+        <LoadingOverlay message={t('dataManagement.backupInProgress')} />
+      )}
 
       <ScrollView style={styles.content}>
         <SettingSection title={t('dataManagement.articleRetention')}>
@@ -432,10 +488,21 @@ export default function DataManagementScreen() {
           <ComingSoonRow title={t('dataManagement.minRefreshThrottle')} />
         </SettingSection>
 
+        <SettingSection title={t('dataManagement.dataBackupRestore')}>
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleExportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupExport')}</ThemedText>
+            <Ionicons name="share-outline" size={20} color={arrowColor} />
+          </TouchableOpacity>
+          <View style={styles.comingSoonDivider} />
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleImportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupRestore')}</ThemedText>
+            <Ionicons name="download-outline" size={20} color={arrowColor} />
+          </TouchableOpacity>
+          <ThemedText style={styles.backupHint}>{t('dataManagement.backupHint')}</ThemedText>
+        </SettingSection>
+
         <SettingSection title={t('dataManagement.sectionFuture')}>
           <ComingSoonRow title={t('dataManagement.opmlImportExport')} />
-          <View style={styles.comingSoonDivider} />
-          <ComingSoonRow title={t('dataManagement.dataBackupRestore')} />
         </SettingSection>
 
         <SettingSection title="">
@@ -530,6 +597,7 @@ const styles = StyleSheet.create({
   comingSoonRowText: { fontSize: 14 },
   comingSoonBadge: { fontSize: 12, fontStyle: 'italic' },
   comingSoonDivider: { height: 1, marginVertical: 4 },
+  backupHint: { fontSize: 12, lineHeight: 17, marginTop: 12, opacity: 0.7 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   dropdownModalContent: { borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },
   dropdownModalTitle: { fontSize: 16, fontWeight: '600', marginBottom: 16, textAlign: 'center' },

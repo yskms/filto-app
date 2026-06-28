@@ -240,6 +240,17 @@ export const ja = {
       manualDeleteNow: '記事を今すぐ削除',
       opmlImportExport: 'OPMLのインポート / エクスポート',
       dataBackupRestore: 'データのバックアップ / 復元',
+      backupExport: 'バックアップを書き出す',
+      backupRestore: 'バックアップから復元',
+      backupHint: 'フィード・フィルタ・許可キーワード・各種設定をJSONファイルとして書き出し / 復元できます。記事は同期で再取得されるため含まれません。',
+      backupInProgress: '処理中...',
+      shareUnavailable: 'この端末では共有を利用できません。',
+      backupExportError: 'バックアップの書き出しに失敗しました。',
+      backupRestoreConfirm: 'バックアップから復元します。既存のフィードやフィルタに追加され、設定は上書きされます（テーマ・言語などは再起動後に反映）。よろしいですか？',
+      backupRestoreSelectFile: 'ファイルを選択',
+      backupRestoreComplete: '復元しました（フィード{{feeds}}件 / フィルタ{{filters}}件 / キーワード{{keywords}}件を追加）。',
+      backupRestoreInvalid: '有効なバックアップファイルではありませんでした。',
+      backupRestoreError: '復元に失敗しました。',
     },
   
     // Global Allow Keywords画面
