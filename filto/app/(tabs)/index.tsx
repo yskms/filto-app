@@ -62,13 +62,17 @@ const getTimeAgo = (publishedAt: string, justNow: string): string => {
 };
 
 // 記事アイテムコンポーネント
+// ホームの記事レイアウト（コンパクト＝小サムネ／ラージ＝全幅大画像）
+type LayoutMode = 'compact' | 'large';
+
 const ArticleItem = React.memo<{
   article: Article;
   onPress: (article: Article) => void;
   onLongPress: (article: Article) => void;
   highlightAnim: Animated.Value;
   isBlocked?: boolean;
-}>(({ article, onPress, onLongPress, highlightAnim, isBlocked = false }) => {
+  large?: boolean;
+}>(({ article, onPress, onLongPress, highlightAnim, isBlocked = false, large = false }) => {
   const { t } = useTranslation();
   const timeAgo = getTimeAgo(article.publishedAt, t('home.justNow'));
 
@@ -98,24 +102,24 @@ const ArticleItem = React.memo<{
           (article.isRead || isBlocked) && styles.readContainer,
         ]}
       >
-        <View style={styles.articleContent}>
+        <View style={large ? styles.articleContentLarge : styles.articleContent}>
           {article.thumbnailUrl ? (
             <Image
               source={{ uri: article.thumbnailUrl }}
-              style={[styles.thumbnail, { backgroundColor: placeholderBg }]}
+              style={[large ? styles.thumbnailLarge : styles.thumbnail, { backgroundColor: placeholderBg }]}
               resizeMode="cover"
             />
           ) : (
-            <View style={[styles.thumbnailPlaceholder, { backgroundColor: placeholderBg }]}>
-              <Ionicons name="newspaper-outline" size={24} color={subtextColor} />
+            <View style={[large ? styles.thumbnailPlaceholderLarge : styles.thumbnailPlaceholder, { backgroundColor: placeholderBg }]}>
+              <Ionicons name="newspaper-outline" size={large ? 40 : 24} color={subtextColor} />
             </View>
           )}
 
-          <View style={styles.textContainer}>
+          <View style={large ? styles.textContainerLarge : styles.textContainer}>
             <View style={styles.titleRow}>
               <Text
                 style={[styles.title, { color: textColor }, (article.isRead || isBlocked) && { color: subtextColor, fontWeight: '400' }]}
-                numberOfLines={2}
+                numberOfLines={large ? 3 : 2}
               >
                 {article.title}
               </Text>
@@ -150,13 +154,16 @@ const ArticleItem = React.memo<{
 const HomeHeader: React.FC<{
   feedName: string;
   showStarredOnly: boolean;
+  layoutMode: LayoutMode;
   onPressFeedSelect: () => void;
   onPressStarFilter: () => void;
+  onPressLayoutToggle: () => void;
   onPressRefresh: () => void;
   feedSelectorRef: React.RefObject<View | null>;
   refreshRef: React.RefObject<View | null>;
   starFilterRef: React.RefObject<View | null>;
-}> = ({ feedName, showStarredOnly, onPressFeedSelect, onPressStarFilter, onPressRefresh, feedSelectorRef, refreshRef, starFilterRef }) => {
+  layoutToggleRef: React.RefObject<View | null>;
+}> = ({ feedName, showStarredOnly, layoutMode, onPressFeedSelect, onPressStarFilter, onPressLayoutToggle, onPressRefresh, feedSelectorRef, refreshRef, starFilterRef, layoutToggleRef }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'icon');
@@ -177,6 +184,19 @@ const HomeHeader: React.FC<{
         </TouchableOpacity>
 
         <View style={styles.headerButtons}>
+          <TouchableOpacity
+            ref={layoutToggleRef}
+            style={styles.refreshButton}
+            onPress={onPressLayoutToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={layoutMode === 'large' ? 'list-outline' : 'image-outline'}
+              size={22}
+              color={iconColor}
+            />
+          </TouchableOpacity>
+
           <TouchableOpacity
             ref={starFilterRef}
             style={[styles.starButton, { backgroundColor: showStarredOnly ? starBtnActiveBg : starBtnBg }]}
@@ -222,6 +242,7 @@ export default function HomeScreen() {
 
   // Display & Behavior（既読表示など）
   const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
+  const [layoutMode, setLayoutMode] = React.useState<LayoutMode>('compact');
 
   // 起動時自動同期の実行済みフラグ
   const [hasAutoSynced, setHasAutoSynced] = React.useState(false);
@@ -240,6 +261,7 @@ export default function HomeScreen() {
   const feedSelectorRef = React.useRef<View>(null);
   const refreshRef = React.useRef<View>(null);
   const starFilterRef = React.useRef<View>(null);
+  const layoutToggleRef = React.useRef<View>(null);
   const filterBarRef = React.useRef<View>(null);
   const listWrapperRef = React.useRef<View>(null);
 
@@ -348,6 +370,22 @@ export default function HomeScreen() {
       .catch(() => {});
   }, []);
 
+  // 保存済みの記事レイアウトを読み込む
+  React.useEffect(() => {
+    AsyncStorage.getItem('@filto/display_behavior/layoutMode')
+      .then(saved => { if (saved === 'compact' || saved === 'large') setLayoutMode(saved); })
+      .catch(() => {});
+  }, []);
+
+  // 記事レイアウトを切替・永続化する
+  const handleToggleLayout = React.useCallback(() => {
+    setLayoutMode(prev => {
+      const next: LayoutMode = prev === 'compact' ? 'large' : 'compact';
+      AsyncStorage.setItem('@filto/display_behavior/layoutMode', next).catch(() => {});
+      return next;
+    });
+  }, []);
+
   // フィード並び順を変更・永続化する
   const handleSelectFeedSort = React.useCallback((sortType: FeedSortType) => {
     setFeedSort(sortType);
@@ -371,8 +409,12 @@ export default function HomeScreen() {
   );
 
   const tutorialSteps = React.useMemo<CoachStep[]>(() => [
+    // ヘッダーは左→右、その後リスト→下タブの順にハイライトが流れるよう並べる
     { measure: () => measureNode(feedSelectorRef), text: t('home.tutFeedDesc') },
+    { measure: () => measureNode(layoutToggleRef), text: t('home.tutLayoutDesc') },
+    { measure: () => measureNode(starFilterRef), text: t('home.tutStarViewDesc') },
     { measure: () => measureNode(refreshRef), text: t('home.tutRefreshDesc') },
+    { measure: () => measureNode(filterBarRef), text: t('home.tutFilterDesc') },
     {
       // 記事リストの先頭付近をハイライト（長押しでお気に入り）
       measure: () => new Promise<CoachRect | null>((resolve) => {
@@ -385,8 +427,6 @@ export default function HomeScreen() {
       }),
       text: t('home.tutStarDesc'),
     },
-    { measure: () => measureNode(starFilterRef), text: t('home.tutStarViewDesc') },
-    { measure: () => measureNode(filterBarRef), text: t('home.tutFilterDesc') },
     {
       // 下タブの「フィルタ」タブ(4つ中2番目)のアイコンだけを囲う。タブセルの幅一杯
       // ではなく、アイコン+ラベル相当の小さめのボックスをセル中央に置くことで、
@@ -707,8 +747,9 @@ export default function HomeScreen() {
       onLongPress={handleLongPressArticle}
       highlightAnim={getHighlightAnim(item.id)}
       isBlocked={blockedKeywordIds.has(item.id)}
+      large={layoutMode === 'large'}
     />
-  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds]);
+  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds, layoutMode]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
@@ -741,12 +782,15 @@ export default function HomeScreen() {
       <HomeHeader
         feedName={selectedFeedName}
         showStarredOnly={showStarredOnly}
+        layoutMode={layoutMode}
         onPressFeedSelect={handleFeedSelect}
         onPressStarFilter={handleToggleStarFilter}
+        onPressLayoutToggle={handleToggleLayout}
         onPressRefresh={handleRefresh}
         feedSelectorRef={feedSelectorRef}
         refreshRef={refreshRef}
         starFilterRef={starFilterRef}
+        layoutToggleRef={layoutToggleRef}
       />
 
       {displayBlockedCount > 0 && (
@@ -1009,6 +1053,26 @@ const styles = StyleSheet.create({
   articleContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+  },
+  articleContentLarge: {
+    flexDirection: 'column',
+  },
+  thumbnailLarge: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  thumbnailPlaceholderLarge: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 8,
+    marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textContainerLarge: {
+    width: '100%',
   },
   thumbnailPlaceholder: {
     width: 60,

@@ -62,6 +62,7 @@ export const en = {
     tutFeedDesc: 'Choose which feed to show, or *select several at once*.',
     tutRefreshDesc: 'This is the *refresh button*. You can also pull down to refresh.',
     tutStarDesc: '*Long-press* an article to add it to favorites.',
+    tutLayoutDesc: 'Switch the article view to *large images*.',
     tutStarViewDesc: 'Show *only your favorited articles*.',
     tutFilterDesc: 'Tap to bring *hidden articles* back into the list.',
     tutFiltersTabDesc: 'Manage your *block filters* from here.',
