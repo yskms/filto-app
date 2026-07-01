@@ -10,8 +10,16 @@ import {
   Pressable,
   InteractionManager,
 } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+
+// Expo Go は edge-to-edge 無効、standalone/dev client ビルドは有効。両者で
+// measureInWindow と Modal の座標系の関係が逆になるため、Modal を全画面へ広げる
+// (statusBarTranslucent) かどうかを実行環境で出し分ける。
+//  - Expo Go(非edge-to-edge): Modal既定(ステータスバー下)が measureInWindow と一致 → translucent無効
+//  - 本番/dev client(edge-to-edge): measureInWindowは全画面上端基準 → translucentで全画面化して一致
+const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 export type CoachRect = { x: number; y: number; width: number; height: number };
 
@@ -144,16 +152,14 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
 
   if (!visible) return null;
 
-  // 各 Modal には statusBarTranslucent / navigationBarTranslucent を付与している。
-  // edge-to-edge 有効(app.json)のビルドでは measureInWindow がステータスバーを含む
-  // 全画面座標を返すため、Modal も全画面に広げないとハイライトがステータスバー高さ分
-  // ズレる（Expo Go では edge-to-edge の扱いが違い再現しないので本番ビルドのみで発覚）。
+  // Modal の statusBarTranslucent は IS_EXPO_GO で出し分ける（上部コメント参照）。
+  // 一律付与すると Expo Go 側がステータスバー高さ分ズレるため。
 
   // rect 未確定（計測中/遷移直後）でも、暗幕だけは即時に出してタップを塞ぐ。
   // フォールバック表示中(noHighlight)はカードを出すのでここでは抜けない
   if (!rect && !noHighlight) {
     return (
-      <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent navigationBarTranslucent>
+      <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent={!IS_EXPO_GO} navigationBarTranslucent={!IS_EXPO_GO}>
         <View style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
       </Modal>
     );
@@ -212,7 +218,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // フォールバック：位置が取れなかった最終ステップ。全面暗幕＋中央寄りカードのみ
   if (!rect) {
     return (
-      <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent navigationBarTranslucent>
+      <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent={!IS_EXPO_GO} navigationBarTranslucent={!IS_EXPO_GO}>
         <Pressable style={StyleSheet.absoluteFill} onPress={triggerPulse}>
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
         </Pressable>
@@ -236,7 +242,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
     : { bottom: screenH - hy + CARD_GAP };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent navigationBarTranslucent>
+    <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent={!IS_EXPO_GO} navigationBarTranslucent={!IS_EXPO_GO}>
       {/* 「次へ」以外をタップしたら点滅で誘導（暗幕・ハイライト穴を含め全面で受ける） */}
       <Pressable style={StyleSheet.absoluteFill} onPress={triggerPulse}>
         <View pointerEvents="none" style={[styles.dim, { top: 0, left: 0, right: 0, height: Math.max(0, hy) }]} />
