@@ -144,11 +144,16 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
 
   if (!visible) return null;
 
+  // 各 Modal には statusBarTranslucent / navigationBarTranslucent を付与している。
+  // edge-to-edge 有効(app.json)のビルドでは measureInWindow がステータスバーを含む
+  // 全画面座標を返すため、Modal も全画面に広げないとハイライトがステータスバー高さ分
+  // ズレる（Expo Go では edge-to-edge の扱いが違い再現しないので本番ビルドのみで発覚）。
+
   // rect 未確定（計測中/遷移直後）でも、暗幕だけは即時に出してタップを塞ぐ。
   // フォールバック表示中(noHighlight)はカードを出すのでここでは抜けない
   if (!rect && !noHighlight) {
     return (
-      <Modal visible transparent animationType="fade" onRequestClose={onDone}>
+      <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent navigationBarTranslucent>
         <View style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
       </Modal>
     );
@@ -207,7 +212,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // フォールバック：位置が取れなかった最終ステップ。全面暗幕＋中央寄りカードのみ
   if (!rect) {
     return (
-      <Modal visible transparent animationType="fade" onRequestClose={onDone}>
+      <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent navigationBarTranslucent>
         <Pressable style={StyleSheet.absoluteFill} onPress={triggerPulse}>
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
         </Pressable>
@@ -231,7 +236,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
     : { bottom: screenH - hy + CARD_GAP };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDone}>
+    <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent navigationBarTranslucent>
       {/* 「次へ」以外をタップしたら点滅で誘導（暗幕・ハイライト穴を含め全面で受ける） */}
       <Pressable style={StyleSheet.absoluteFill} onPress={triggerPulse}>
         <View pointerEvents="none" style={[styles.dim, { top: 0, left: 0, right: 0, height: Math.max(0, hy) }]} />
