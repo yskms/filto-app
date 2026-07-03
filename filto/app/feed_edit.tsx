@@ -228,7 +228,7 @@ export default function FeedEditScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <FeedEditHeader onPressBack={() => router.back()} />
         <LoadingView />
       </SafeAreaView>
@@ -238,7 +238,7 @@ export default function FeedEditScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <FeedEditHeader onPressBack={() => router.back()} />
 
         <KeyboardAvoidingView

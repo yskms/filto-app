@@ -172,7 +172,7 @@ export default function GlobalAllowKeywordsScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <GlobalAllowKeywordsHeader
           onPressBack={handlePressBack}
           remainingCount={remainingCount}
