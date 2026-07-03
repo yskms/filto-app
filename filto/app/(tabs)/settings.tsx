@@ -7,6 +7,7 @@ import type { ComponentProps } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import { restartOnboarding } from '@/utils/onboarding';
 
 interface MenuItem {
   id: string;
@@ -68,6 +69,7 @@ export default function SettingsScreen() {
     { id: 'global_allow_keywords', title: t('settings.globalAllowKeywords'), ionIcon: 'list-outline' },
     { id: 'display_behavior', title: t('settings.displayBehavior'), ionIcon: 'eye-outline' },
     { id: 'data_management', title: t('settings.dataManagement'), ionIcon: 'server-outline' },
+    { id: 'replay_tour', title: t('settings.replayTour'), ionIcon: 'play-circle-outline' },
     { id: 'pro', title: 'Pro', ionIcon: 'star-outline', disabled: true },
     { id: 'about', title: t('settings.about'), ionIcon: 'information-circle-outline' },
   ];
@@ -82,6 +84,9 @@ export default function SettingsScreen() {
         break;
       case 'data_management':
         router.push('/data_management');
+        break;
+      case 'replay_tour':
+        restartOnboarding();
         break;
       case 'pro':
         // 無効化されているので何もしない
