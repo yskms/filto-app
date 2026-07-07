@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { restartOnboarding } from '@/utils/onboarding';
+import { resetFeedsAndFilters } from '@/database/init';
+import { SyncService } from '@/services/SyncService';
 
 interface MenuItem {
   id: string;
@@ -86,7 +88,23 @@ export default function SettingsScreen() {
         router.push('/data_management');
         break;
       case 'replay_tour':
-        restartOnboarding();
+        Alert.alert(
+          t('settings.replayTourConfirmTitle'),
+          t('settings.replayTourConfirmMessage'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('settings.replayTourConfirmButton'),
+              style: 'destructive',
+              onPress: async () => {
+                // 実行中の同期を止めてから消す（削除済みフィードへの記事書き込みを防ぐ）
+                SyncService.cancelOngoing();
+                await resetFeedsAndFilters();
+                restartOnboarding();
+              },
+            },
+          ]
+        );
         break;
       case 'pro':
         // 無効化されているので何もしない
@@ -95,7 +113,7 @@ export default function SettingsScreen() {
         router.push('/about');
         break;
     }
-  }, [router]);
+  }, [router, t]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
