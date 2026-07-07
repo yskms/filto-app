@@ -16,6 +16,8 @@ interface MenuItem {
   title: string;
   ionIcon?: ComponentProps<typeof Ionicons>['name'];
   disabled?: boolean;
+  /** この項目の前にグループ区切りの余白を入れる */
+  sectionBreak?: boolean;
 }
 
 // メニューアイテムコンポーネント
@@ -68,10 +70,12 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
 
   const menuItems: MenuItem[] = [
+    // 一般設定グループ（使い方・表示方針の選び直し）
     { id: 'global_allow_keywords', title: t('settings.globalAllowKeywords'), ionIcon: 'list-outline' },
     { id: 'display_behavior', title: t('settings.displayBehavior'), ionIcon: 'eye-outline' },
-    { id: 'data_management', title: t('settings.dataManagement'), ionIcon: 'server-outline' },
     { id: 'replay_tour', title: t('settings.replayTour'), ionIcon: 'play-circle-outline' },
+    // データ・システムグループ（区切りで分ける）
+    { id: 'data_management', title: t('settings.dataManagement'), ionIcon: 'server-outline', sectionBreak: true },
     { id: 'pro', title: 'Pro', ionIcon: 'star-outline', disabled: true },
     { id: 'about', title: t('settings.about'), ionIcon: 'information-circle-outline' },
   ];
@@ -122,10 +126,13 @@ export default function SettingsScreen() {
       <FlatList
         data={menuItems}
         renderItem={({ item }) => (
-          <MenuItemRow
-            item={item}
-            onPress={() => handlePressMenuItem(item.id)}
-          />
+          <>
+            {item.sectionBreak && <View style={styles.sectionBreak} />}
+            <MenuItemRow
+              item={item}
+              onPress={() => handlePressMenuItem(item.id)}
+            />
+          </>
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { backgroundColor }]}
@@ -138,6 +145,9 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  sectionBreak: {
+    height: 24,
   },
   header: {
     height: 48,
