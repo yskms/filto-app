@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { resetAllData } from '@/database/init';
+import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -364,7 +365,14 @@ export default function DataManagementScreen() {
               // 実行中の同期を止めてから消す（古いフィードへの記事書き込みを防ぐ）
               SyncService.cancelOngoing();
               await resetAllData();
-              Alert.alert(t('common.done'), t('dataManagement.resetComplete'));
+              Alert.alert(
+                t('common.done'),
+                t('dataManagement.resetComplete') + '\n' + t('dataManagement.replayTourPrompt'),
+                [
+                  { text: t('dataManagement.replayTourLater'), style: 'cancel' },
+                  { text: t('dataManagement.replayTourConfirm'), onPress: () => { restartOnboarding(); } },
+                ]
+              );
             } catch (_) {
               Alert.alert(t('common.error'), t('dataManagement.resetError'));
             } finally {
@@ -390,7 +398,7 @@ export default function DataManagementScreen() {
     retentionOptions.find((o) => o.value === articleRetentionDays)?.label ?? t('dataManagement.days', { count: 30 });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DataManagementHeader onPressBack={() => router.back()} />
 

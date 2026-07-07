@@ -245,7 +245,7 @@ export default function FilterEditScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
         <LoadingView />
       </SafeAreaView>
@@ -255,7 +255,7 @@ export default function FilterEditScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
 
         <ScrollView

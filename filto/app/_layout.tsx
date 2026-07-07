@@ -11,6 +11,7 @@ import { ToastProvider } from '@/providers/toast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase, isOnboardingComplete } from '@/database/init';
 import OnboardingScreen from '@/components/OnboardingScreen';
+import { subscribeRestartOnboarding } from '@/utils/onboarding';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -52,6 +53,9 @@ export default function RootLayout() {
       .catch(() => setOnboardingDone(true))
       .finally(() => setDbReady(true));
   }, []);
+
+  // 設定・データ管理からの「初回ガイドをやり直す」でオンボーディングを再表示する
+  useEffect(() => subscribeRestartOnboarding(() => setOnboardingDone(false)), []);
 
   if (!dbReady) {
     return (

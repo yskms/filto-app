@@ -228,7 +228,7 @@ export default function FeedAddScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <View style={[styles.header, { backgroundColor, borderBottomColor: borderColor }]}>
           <TouchableOpacity
             style={styles.backButton}
