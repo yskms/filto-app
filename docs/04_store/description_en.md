@@ -1,8 +1,16 @@
 # Store Description (English)
 
+Last updated: 2026-07-08 (full rewrite at v1.1.6 release)
+
+## App Name
+
+Filto
+
+---
+
 ## Short Description (Google Play / 80 chars)
 
-Your feed, your rules. Block the noise with keyword filters. No account. No cloud.
+Mute unwanted topics with keyword filters. No algorithms. No account required.
 
 ---
 
@@ -11,56 +19,70 @@ Your feed, your rules. Block the noise with keyword filters. No account. No clou
 Your feed. Your rules.
 
 Filto is an RSS reader that puts you in control.
-No algorithm. No recommendations. Just the sources you choose.
+
+Mute unwanted topics with keyword filters, and follow only the sources you choose. No recommendation algorithms decide what you see.
 
 ---
 
-KEYWORD FILTERS
+MUTE UNWANTED TOPICS
 
-Block topics you don't want to see — and set exceptions for what you do.
+Just like muting words on social media, you can organize RSS articles with keywords.
 
-Example:
-Block "Politics" — but allow "Tech Policy" or "Privacy"
-Block "Sports" — but allow "Formula 1"
-
-Each filter lets you define a block keyword plus optional allow keywords.
-Fine-grained control that no recommendation engine can match.
+Add names of people, shows, companies, products, or any other topics you do not want to see. Articles containing those keywords can be hidden from your feed.
 
 ---
 
-FULLY LOCAL. FULLY PRIVATE.
+KEEP WHAT YOU WANT TO READ
 
-No account required. No cloud sync. No data ever leaves your device.
-Filto fetches RSS directly — that's it.
+Set allowed keywords as exceptions to your block rules.
+
+For example:
+Hide sports news — but keep Formula 1.
+Hide politics — but keep technology policy.
+
+Fine-tune your feed to match what you want to read.
+
+---
+
+FOLLOW ONLY THE SOURCES YOU CHOOSE
+
+Your feed contains articles from the RSS sources you add.
+
+Follow news sites, blogs, tech publications, hobby sites, and more — all in one place.
+
+---
+
+SIMPLE AND PRIVATE
+
+No account required. Your feed settings and saved articles stay on your device.
 
 ---
 
 FEATURES
 
-· Add any RSS feed from any source
-· Block / Allow keyword filters
-· Global Allow List — override all filters for must-see topics
-· Favorites — long-press any article to save it
-· Auto-sync on launch (customizable)
-· Article retention settings
-· Light / Dark theme
-· English / Japanese
+· Add RSS and Atom feeds
+· Hide articles with block keywords
+· Use allowed keywords as exceptions
+· Prioritize must-see topics
+· Save favorite articles
+· Switch feed layouts
+· Refresh feeds automatically
+· Set article retention periods
+· Light and dark themes
+· English and Japanese support
 
 ---
 
-WHO IT'S FOR
-
-· RSS users who want signal, not noise
-· Anyone tired of algorithm-driven feeds
-· Privacy-conscious readers who prefer local-first apps
+Your feed. Your rules.
 
 ---
 
-Articles open in your preferred browser.
-Simple. Fast. Yours.
+## iOS Promotional Text (170 chars)
+
+Mute unwanted people, shows, companies, and topics with keyword filters. Read only the sources you choose.
 
 ---
 
 ## Keywords (App Store / 100 chars)
 
-rss,reader,news,feed,filter,privacy,blog,local,offline,keyword,subscribe,curator,tech,aggregate,sync
+rss,reader,news,feed,filter,privacy,blog,keyword,subscribe,curation,aggregate,sync,mute,block,topics
