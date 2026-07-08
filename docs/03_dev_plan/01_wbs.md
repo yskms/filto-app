@@ -393,7 +393,9 @@
   - 大カテゴリを定番中心に縮小（Tech 16→8 / Fitness 15→7 / Gaming 10→6）で初回取得を軽量化
 
 #### リリース
-- [x] v1.1.5（Android / iOS）※ビルド・申請対応
+- [x] v1.1.5 Android（2026年6月28日 製品版公開）
+  - ※ eas submit の releaseStatus: completed により意図せず即時100%公開（スクショ・リリースノート未設定のまま）。以後 draft 運用に変更
+  - ※ iOS はASCへビルド提出済みだが審査未提出のまま、本番ビルドでツアーのズレが発覚し v1.1.6 に統合
 
 **進捗**:
 - 完了: 4/4タスク（100%）
@@ -411,6 +413,59 @@
 - **改善**:
   - 切替トグルは連打耐性を優先し、あえて関数型 setState を維持（stale closure を回避）
   - フィード一覧は生成パイプライン（feed-candidates → verify → 再生成）のソースから編集し、再生成で復活しないようにする
+
+---
+
+### 初回設定のやり直し & edge-to-edge対応（v1.1.6）
+
+#### 本番ビルドのツアーずれ修正（edge-to-edge対応）
+- [x] 初回ツアーのハイライトが本番ビルドだけステータスバー分ズレる問題を解消
+  - 原因: edge-to-edge の standalone では Modal が全画面（画面上端基準）になる一方、measureInWindow はコンテンツ基準を返すため座標系が不一致（Expo Go では Modal が非全画面のため再現せず）
+  - 切り分け: 推測での修正（statusBarTranslucent 一律付与→Expo Go側がズレる、オーバーレイ自己補正→Modal別ウィンドウで ovl=0,0 となり無効）を経て、デバッグHUD入りAPKで実測値を取得して確定
+  - 対策: 全画面Modal時のみ insets.top を加算（FULLSCREEN_MODAL 定数で statusBarTranslucent と補正を同一駆動）。端末ごとのステータスバー高さ（Pixel=68 / Pixel3=28）に自動追従
+- [x] 小画面端末で吹き出しカードがハイライトに重なる問題を解消
+  - 原因: 上側カードの bottom 基準が window 高さで、window<screen の端末（Pixel3 の3ボタンナビ等）でズレる → 全画面Modal時は screen 高さを使用
+- [x] プッシュ7画面の最下部ボタンが3ボタンナビに隠れて押せない問題を解消
+  - data_management / filter_edit / feed_add / feed_edit / global_allow_keywords / display_behavior / about の SafeAreaView を edges={top, bottom} に
+
+#### 初回設定のやり直し（replay-tour）
+- [x] 設定に「初回設定をやり直す」を追加
+  - イベントバス（utils/onboarding.ts）経由で RootLayout がオンボーディング画面を再表示
+  - 押下時に確認ダイアログを表示（いきなり始まらないように・実機FB反映）
+  - 「やり直す」でフィード・フィルタ（feed_id CASCADE で記事も連動）を削除して選び直す（表示設定・グローバル許可KWは保持・実機FB反映）
+  - データ全リセット後にもやり直し導線を用意
+- [x] 設定メニューを並び替え＋グループ区切りを追加
+  - 一般設定（許可KW／表示と動作／初回設定をやり直す）とデータ・システム系（データ管理／Pro／アプリについて）の間に余白
+
+#### ストア掲載情報の刷新（ASO）
+- [x] 説明文を全面リライト（日英）：悩み起点の構成（ミュート訴求）に変更、iOSプロモーションテキスト新設、キーワード更新
+- [x] リリースノート作成（Android は v1.1.5+v1.1.6 まとめ版、iOS も v1.1.5 未配信のためまとめ版）
+- [x] docs/04_store/description_ja.md / description_en.md を最新化
+
+#### リリース
+- [x] v1.1.6 本番ビルド（iOS build 10 / Android versionCode 11）
+- [x] 両ストアへ提出完了（2026年7月7日）
+  - Android: Play に draft アップロード（リリースノート設定→手動公開待ち）
+  - iOS: ASC へ配信済み（バージョンを1.1.6に変更しビルド紐付け→審査提出待ち）
+- [ ] Android 手動公開 / iOS 審査提出・公開
+
+**進捗**:
+- 完了: 4/5タスク（提出まで完了、公開作業のみ残）
+
+### 振り返り（v1.1.6 replay-tour & edge-to-edge）
+- **達成**:
+  - Expo Go と本番ビルドの座標系差という再現困難な不具合を、デバッグHUDによる実測で確定させて解消
+  - preview ビルド（内部配布APK）を検証サイクルに組み込み、複数端末（Pixel / Pixel3）での検証体制を確立
+  - eas submit の draft 運用に切替え、意図しない即時公開を防止
+- **学び**:
+  - Expo Go と standalone は Modal の座標系・edge-to-edge の扱いが異なり、片方で直してももう片方がズレる。環境の代理判定（IS_EXPO_GO）より「なぜ補正するか」を表す定数（FULLSCREEN_MODAL）で挙動を一括駆動する方が壊れにくい
+  - 推測で修正ビルドを繰り返すより、実測値（デバッグHUD）を1本仕込んで数値で確定させる方が速くて確実
+  - window と screen の高さは端末設定（3ボタンナビ等）で異なる。全画面オーバーレイの配置基準には screen を使う
+  - Apple の契約（無料アプリ契約）は再有効化後、配信APIへの反映にラグがある。403 REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED は時間を置いて再提出
+  - Play の公開済みリリースはノートを後から編集できない。releaseStatus: draft でアップロードのみ行い、Console で確認してから公開する運用が安全
+- **改善**:
+  - 破壊的操作（設定リセット等）の導線には必ず確認ダイアログを入れる
+  - 「やり直す」系の機能は、既存データの扱い（残す/消す）をユーザー目線で設計してから実装する
 
 ---
 
