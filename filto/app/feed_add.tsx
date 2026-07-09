@@ -9,9 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Clipboard,
   ActivityIndicator,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
@@ -152,12 +152,12 @@ export default function FeedAddScreen() {
     setFetchSuccess(false);
   };
 
-  // クリップボードから貼り付け
+  // クリップボードから貼り付け。空白のみの場合は貼り付けない（入力済みURLを消さないため）
   const handlePaste = async () => {
     try {
-      const clipboardText = await Clipboard.getString();
+      const clipboardText = (await Clipboard.getStringAsync()).trim();
       if (clipboardText) {
-        setUrl(clipboardText.trim());
+        setUrl(clipboardText);
         setUrlError(null);
         setFetchSuccess(false);
       }
@@ -308,7 +308,7 @@ export default function FeedAddScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name="clipboard-outline" size={18} color={tintColor} />
-                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>{t('feeds.pasteFromClipboard')}</ThemedText>
+                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>{t('common.pasteFromClipboard')}</ThemedText>
               </View>
             </TouchableOpacity>
 

@@ -8,10 +8,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Clipboard,
   ActivityIndicator,
   Image,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -130,11 +130,12 @@ export default function FeedEditScreen() {
     setFetchSuccess(false);
   };
 
+  // 空白のみの場合は貼り付けない（入力済みURLを消さないため）
   const handlePaste = async () => {
     try {
-      const clipboardText = await Clipboard.getString();
+      const clipboardText = (await Clipboard.getStringAsync()).trim();
       if (clipboardText) {
-        setUrl(clipboardText.trim());
+        setUrl(clipboardText);
         setUrlError(null);
         setFetchSuccess(false);
       }
@@ -142,9 +143,12 @@ export default function FeedEditScreen() {
     }
   };
 
-  const handleCopyUrl = () => {
-    Clipboard.setString(url);
-    showToast(t('feeds.urlCopied'), 'success');
+  const handleCopyUrl = async () => {
+    try {
+      await Clipboard.setStringAsync(url);
+      showToast(t('feeds.urlCopied'), 'success');
+    } catch (_) {
+    }
   };
 
   // 重複フィードのエラー文言（登録済みタイトルが分かる場合は含める）
@@ -321,7 +325,7 @@ export default function FeedEditScreen() {
                 disabled={isBusy}
               >
                 <Ionicons name="clipboard-outline" size={18} color={tintColor} />
-                <ThemedText style={[styles.urlActionText, { color: tintColor }]}>{t('feeds.pasteFromClipboard')}</ThemedText>
+                <ThemedText style={[styles.urlActionText, { color: tintColor }]}>{t('common.pasteFromClipboard')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.urlActionButton, { borderColor }]}
