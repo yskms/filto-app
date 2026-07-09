@@ -60,6 +60,34 @@ export const FeedRepository = {
   },
 
   /**
+   * URLでフィードを取得
+   */
+  async findByUrl(url: string): Promise<Feed | null> {
+    const db = openDatabase();
+    const row = db.getFirstSync<{
+      id: string;
+      title: string;
+      url: string;
+      icon_url: string | null;
+      order_no: number;
+      created_at: number;
+    }>('SELECT * FROM feeds WHERE url = ?', [url]);
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      title: row.title,
+      url: row.url,
+      iconUrl: row.icon_url || undefined,
+      orderNo: row.order_no,
+      createdAt: new Date(row.created_at * 1000).toISOString(),
+    };
+  },
+
+  /**
    * フィードを作成
    */
   async create(feed: Omit<Feed, 'createdAt'>): Promise<void> {
