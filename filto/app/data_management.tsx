@@ -430,8 +430,13 @@ export default function DataManagementScreen() {
     value,
     label: value === 0 ? t('dataManagement.minRefreshNoLimit') : t('dataManagement.minutes', { count: value }),
   }));
+  // 選択肢に無い値が保存されていても、SyncService は保存値どおりに制限をかける。
+  // 「制限なし」と誤表示しないよう、その分数をそのまま出す
   const getMinRefreshLabel = () =>
-    minRefreshOptions.find((o) => o.value === minRefreshInterval)?.label ?? t('dataManagement.minRefreshNoLimit');
+    minRefreshOptions.find((o) => o.value === minRefreshInterval)?.label ??
+    (minRefreshInterval > 0
+      ? t('dataManagement.minutes', { count: minRefreshInterval })
+      : t('dataManagement.minRefreshNoLimit'));
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -475,12 +480,12 @@ export default function DataManagementScreen() {
               <View style={[styles.toggleThumb, wifiOnlyFetch && styles.toggleThumbActive]} />
             </View>
           </TouchableOpacity>
-          <ThemedText style={styles.wifiOnlyHint}>{t('dataManagement.wifiOnlyHint')}</ThemedText>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.wifiOnlyHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionMinRefresh')}>
           <Dropdown label={t('dataManagement.minRefreshThrottle')} value={getMinRefreshLabel()} onPress={() => setMinRefreshDropdownVisible(true)} />
-          <ThemedText style={styles.minRefreshHint}>{t('dataManagement.minRefreshHint')}</ThemedText>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.minRefreshHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionFuture')}>
@@ -571,7 +576,8 @@ const styles = StyleSheet.create({
   toggleThumbActive: { alignSelf: 'flex-end' },
   retentionDescription: { marginBottom: 16 },
   retentionDescriptionText: { fontSize: 13, lineHeight: 18, marginBottom: 12 },
-  wifiOnlyHint: { fontSize: 12, lineHeight: 17, marginTop: 10, opacity: 0.7 },
+  /** 設定セクション下の補足説明 */
+  sectionHint: { fontSize: 12, lineHeight: 17, marginTop: 10, opacity: 0.7 },
   dropdownLabel: { fontSize: 14, fontWeight: '500', marginBottom: 8 },
   dropdown: {
     flexDirection: 'row',
@@ -584,7 +590,6 @@ const styles = StyleSheet.create({
   },
   dropdownValue: { fontSize: 16 },
   dropdownIcon: { fontSize: 12 },
-  minRefreshHint: { fontSize: 12, lineHeight: 17, marginTop: 10, opacity: 0.7 },
   manualDeleteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   manualDeleteText: { fontSize: 16 },
   arrow: { fontSize: 20 },
