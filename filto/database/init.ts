@@ -162,21 +162,14 @@ export async function seedDefaultFilters(): Promise<void> {
 
 export const ONBOARDING_KEY = '@filto/onboardingCompleted';
 
-const ALL_STORAGE_KEYS = [
-  SEED_KEY,
-  FILTER_SEED_KEY,
-  ONBOARDING_KEY,
-  '@filto/data_management/articleRetentionDays',
-  '@filto/data_management/deleteStarredInAutoDelete',
-  '@filto/display_behavior/autoSyncOnStartup',
-  '@filto/display_behavior/language',
-  '@filto/display_behavior/readDisplay',
-  '@filto/display_behavior/theme',
-  '@filto/lastSyncTime',
-];
+/** 本アプリが AsyncStorage に保存するキーの共通プレフィックス */
+const STORAGE_KEY_PREFIX = '@filto/';
 
 /**
  * すべてのデータをリセットする（DB全テーブル削除 + AsyncStorage全クリア）
+ *
+ * AsyncStorage は個別列挙ではなくプレフィックス走査で消す。
+ * 設定キーを増やすたびに列挙し忘れて「リセットしても残る」事故を防ぐため。
  */
 export async function resetAllData(): Promise<void> {
   const database = openDatabase();
@@ -186,7 +179,11 @@ export async function resetAllData(): Promise<void> {
     database.execSync('DELETE FROM filters');
     database.execSync('DELETE FROM global_allow_keywords');
   });
-  await AsyncStorage.multiRemove(ALL_STORAGE_KEYS);
+  const keys = await AsyncStorage.getAllKeys();
+  const filtoKeys = keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX));
+  if (filtoKeys.length > 0) {
+    await AsyncStorage.multiRemove(filtoKeys);
+  }
 }
 
 /**
