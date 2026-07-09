@@ -12,6 +12,18 @@ const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarred
 const STORAGE_KEY_WIFI_ONLY_FETCH = '@filto/data_management/wifiOnlyFetch';
 
 /**
+ * WiFi以外の接続（モバイル回線など）かどうか。
+ * type が判定不能（UNKNOWN/undefined）のときは制限しない方向に倒すため false を返す。
+ */
+function isNonWifiConnection(networkState: Network.NetworkState): boolean {
+  return (
+    networkState.type !== undefined &&
+    networkState.type !== Network.NetworkStateType.WIFI &&
+    networkState.type !== Network.NetworkStateType.UNKNOWN
+  );
+}
+
+/**
  * SyncService
  * RSSフィードの同期処理を担当
  */
@@ -44,6 +56,20 @@ export const SyncService = {
   },
 
   /**
+   * 手動更新の前に「モバイル回線で取得しますか？」の確認を出すべきか。
+   * 「WiFi接続時のみ取得」がオンで、かつ現在WiFi以外で接続しているときだけ true。
+   * オフライン時は refresh 側でオフラインエラーを出すため false を返す。
+   */
+  async shouldConfirmMobileFetch(): Promise<boolean> {
+    if (!(await this.isWifiOnlyFetchEnabled())) return false;
+    const networkState = await Network.getNetworkStateAsync();
+    if (networkState.isConnected === false || networkState.isInternetReachable === false) {
+      return false;
+    }
+    return isNonWifiConnection(networkState);
+  },
+
+  /**
    * 全フィードを同期
    * @param options.ignoreWifiOnly 「WiFi接続時のみ取得」設定を無視する（手動更新など明示操作で使う）
    * @returns 取得成功フィード数と新規記事数。オフライン時は offline: true、
@@ -66,13 +92,8 @@ export const SyncService = {
 
     // 「WiFi接続時のみ取得」設定のチェック（自動同期で使用、手動更新は ignoreWifiOnly で無視）
     if (!options?.ignoreWifiOnly && (await this.isWifiOnlyFetchEnabled())) {
-      // WiFi以外（モバイル回線など）の場合は取得をスキップ。
-      // type が判定不能（UNKNOWN/undefined）のときは制限せず取得する
-      if (
-        networkState.type !== undefined &&
-        networkState.type !== Network.NetworkStateType.WIFI &&
-        networkState.type !== Network.NetworkStateType.UNKNOWN
-      ) {
+      // WiFi以外（モバイル回線など）の場合は取得をスキップ
+      if (isNonWifiConnection(networkState)) {
         return { fetched: 0, newArticles: 0, skippedNotWifi: true };
       }
     }

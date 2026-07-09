@@ -593,7 +593,7 @@ export default function HomeScreen() {
     setFilteredArticles(displayed);
   }, [articles, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
 
-  const handleRefresh = React.useCallback(async () => {
+  const runRefresh = React.useCallback(async () => {
     try {
       setRefreshing(true);
 
@@ -617,6 +617,26 @@ export default function HomeScreen() {
       setRefreshing(false);
     }
   }, [loadData, t]);
+
+  // 手動更新。「WiFi接続時のみ取得」がオンでモバイル回線のときは、
+  // 通信量が発生する旨を確認してから取得する（判定に失敗したらそのまま取得）
+  const handleRefresh = React.useCallback(async () => {
+    try {
+      if (await SyncService.shouldConfirmMobileFetch()) {
+        Alert.alert(
+          t('home.mobileFetchConfirmTitle'),
+          t('home.mobileFetchConfirmMessage'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('home.mobileFetchConfirmButton'), onPress: () => { void runRefresh(); } },
+          ]
+        );
+        return;
+      }
+    } catch (_) {
+    }
+    await runRefresh();
+  }, [runRefresh, t]);
 
   // スクロール監視（バー連動 + ボタン表示切替）
   const handleScroll = React.useMemo(
