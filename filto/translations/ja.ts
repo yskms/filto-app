@@ -23,6 +23,7 @@ export const ja = {
       filter: 'フィルタ',
       sort: '並び替え',
       refresh: '更新',
+      pasteFromClipboard: 'クリップボードから貼り付け',
     },
   
     // タブバー
@@ -157,7 +158,6 @@ export const ja = {
       fetchingMeta: 'フィード情報を取得中...',
       autoDetecting: 'RSSフィードを自動検出中...',
       autoDetectFailed: 'RSSフィードが見つかりませんでした。正しいRSS URLを入力してください。',
-      pasteFromClipboard: 'クリップボードから貼り付け',
       urlHttpOrHttps: 'http または https で始まるURLを入力してください',
       metaFetchSuccess: 'フィード情報を取得しました',
       metaFetchFailed: 'フィード情報の取得に失敗しました',

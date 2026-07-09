@@ -308,7 +308,7 @@ export default function FeedAddScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name="clipboard-outline" size={18} color={tintColor} />
-                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>{t('feeds.pasteFromClipboard')}</ThemedText>
+                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>{t('common.pasteFromClipboard')}</ThemedText>
               </View>
             </TouchableOpacity>
 

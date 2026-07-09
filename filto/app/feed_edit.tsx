@@ -321,7 +321,7 @@ export default function FeedEditScreen() {
                 disabled={isBusy}
               >
                 <Ionicons name="clipboard-outline" size={18} color={tintColor} />
-                <ThemedText style={[styles.urlActionText, { color: tintColor }]}>{t('feeds.pasteFromClipboard')}</ThemedText>
+                <ThemedText style={[styles.urlActionText, { color: tintColor }]}>{t('common.pasteFromClipboard')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.urlActionButton, { borderColor }]}

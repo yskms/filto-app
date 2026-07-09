@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Clipboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
@@ -176,6 +177,17 @@ export default function FilterEditScreen() {
     }
   };
 
+  // クリップボードからブロックキーワードへ貼り付け
+  const handlePasteBlockKeyword = async () => {
+    try {
+      const clipboardText = await Clipboard.getString();
+      if (clipboardText) {
+        setBlockKeyword(clipboardText.trim().slice(0, 50));
+      }
+    } catch (_) {
+    }
+  };
+
   const handleSave = async () => {
     if (!blockKeyword.trim()) {
       Alert.alert(t('common.error'), t('filters.blockKeywordRequired'));
@@ -274,7 +286,25 @@ export default function FilterEditScreen() {
               maxLength={50}
               editable={!isSaving && !isDeleting}
             />
+
+            {/* クリップボードから貼り付け */}
+            <TouchableOpacity
+              style={[styles.pasteButton, { borderColor }]}
+              onPress={handlePasteBlockKeyword}
+              disabled={isSaving || isDeleting}
+              activeOpacity={0.7}
+            >
+              <View style={styles.pasteButtonInner}>
+                <Ionicons name="clipboard-outline" size={18} color={tintColor} />
+                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>
+                  {t('common.pasteFromClipboard')}
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
           </View>
+
+          {/* ブロック／許可の区切り */}
+          <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
           {/* 許可キーワード */}
           <View ref={allowRef} style={styles.fieldContainer}>
@@ -405,6 +435,28 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  pasteButton: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  pasteButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pasteButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    opacity: 0.5,
+    marginBottom: 24,
   },
   checkboxRow: {
     flexDirection: 'row',

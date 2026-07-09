@@ -23,6 +23,7 @@ export const en = {
     filter: 'Filter',
     sort: 'Sort',
     refresh: 'Refresh',
+    pasteFromClipboard: 'Paste from clipboard',
   },
 
   // Tab bar
@@ -157,7 +158,6 @@ export const en = {
     fetchingMeta: 'Fetching feed info...',
     autoDetecting: 'Auto-detecting RSS feed...',
     autoDetectFailed: 'RSS feed not found. Please enter the correct RSS URL.',
-    pasteFromClipboard: 'Paste from clipboard',
     urlHttpOrHttps: 'URL must start with http or https',
     metaFetchSuccess: 'Feed info loaded',
     metaFetchFailed: 'Failed to fetch feed info',
