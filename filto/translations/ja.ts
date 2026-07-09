@@ -151,6 +151,8 @@ export const ja = {
       httpsRequired: 'HTTPSのURLを入力してください',
       invalidRss: '有効なRSSフィードではありません',
       addError: 'フィードの追加に失敗しました',
+      duplicateUrl: 'このフィードは既に登録されています',
+      duplicateUrlNamed: '「{{title}}」として既に登録されています',
       deleteError: 'フィードの削除に失敗しました',
       fetchingMeta: 'フィード情報を取得中...',
       autoDetecting: 'RSSフィードを自動検出中...',

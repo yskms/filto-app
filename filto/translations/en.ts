@@ -151,6 +151,8 @@ export const en = {
     httpsRequired: 'Please enter HTTPS URL',
     invalidRss: 'Not a valid RSS feed',
     addError: 'Failed to add feed',
+    duplicateUrl: 'This feed is already registered',
+    duplicateUrlNamed: 'Already registered as "{{title}}"',
     deleteError: 'Failed to delete feed',
     fetchingMeta: 'Fetching feed info...',
     autoDetecting: 'Auto-detecting RSS feed...',

@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FeedService } from '@/services/FeedService';
+import { FeedService, DuplicateFeedUrlError } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
 import { Feed } from '@/types/Feed';
 import { ThemedText } from '@/components/themed-text';
@@ -147,6 +147,15 @@ export default function FeedEditScreen() {
     showToast(t('feeds.urlCopied'), 'success');
   };
 
+  // 重複フィードのエラー文言（登録済みタイトルが分かる場合は含める）
+  const duplicateMessage = useCallback(
+    (existingTitle?: string) =>
+      existingTitle
+        ? t('feeds.duplicateUrlNamed', { title: existingTitle })
+        : t('feeds.duplicateUrl'),
+    [t]
+  );
+
   // URLからフィード情報を再取得
   const handleFetchMeta = async () => {
     const validation = validateUrl(url);
@@ -159,6 +168,14 @@ export default function FeedEditScreen() {
     setUrlError(null);
 
     try {
+      // 通信する前に、自分以外のフィードが同じURLを使っていないか確認する
+      const existing = await FeedService.findByUrl(url.trim());
+      if (existing && existing.id !== feed?.id) {
+        setFetchSuccess(false);
+        setUrlError(duplicateMessage(existing.title));
+        return;
+      }
+
       const meta = await RssService.fetchMeta(url.trim());
       if (meta.title) {
         setName(meta.title);
@@ -191,8 +208,15 @@ export default function FeedEditScreen() {
       await FeedService.update({ ...feed, url: trimmedUrl, title: feedName, iconUrl });
       showToast(t('common.saved'), 'success');
       router.back();
-    } catch (_) {
-      Alert.alert(t('common.error'), t('feeds.saveError'));
+    } catch (error) {
+      if (error instanceof DuplicateFeedUrlError) {
+        const message = duplicateMessage(error.existingTitle);
+        setFetchSuccess(false);
+        setUrlError(message);
+        Alert.alert(t('common.error'), message);
+      } else {
+        Alert.alert(t('common.error'), t('feeds.saveError'));
+      }
     } finally {
       setIsSaving(false);
     }

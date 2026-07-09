@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FeedService } from '@/services/FeedService';
+import { FeedService, DuplicateFeedUrlError } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -165,6 +165,15 @@ export default function FeedAddScreen() {
     }
   };
 
+  // 重複フィードのエラー文言（登録済みタイトルが分かる場合は含める）
+  const duplicateMessage = useCallback(
+    (existingTitle?: string) =>
+      existingTitle
+        ? t('feeds.duplicateUrlNamed', { title: existingTitle })
+        : t('feeds.duplicateUrl'),
+    [t]
+  );
+
   // フィード情報を取得
   const handleFetchMeta = async () => {
     const validation = validateUrl(url);
@@ -177,6 +186,14 @@ export default function FeedAddScreen() {
     setUrlError(null);
 
     try {
+      // 通信する前に登録済みかどうかを確認する
+      const existing = await FeedService.findByUrl(url.trim());
+      if (existing) {
+        setFetchSuccess(false);
+        setUrlError(duplicateMessage(existing.title));
+        return;
+      }
+
       const meta = await RssService.fetchMeta(url.trim());
       
       if (meta.title) {
@@ -218,8 +235,15 @@ export default function FeedAddScreen() {
       });
 
       router.back();
-    } catch (_) {
-      Alert.alert(t('common.error'), t('feeds.addError'));
+    } catch (error) {
+      if (error instanceof DuplicateFeedUrlError) {
+        const message = duplicateMessage(error.existingTitle);
+        setFetchSuccess(false);
+        setUrlError(message);
+        Alert.alert(t('common.error'), message);
+      } else {
+        Alert.alert(t('common.error'), t('feeds.addError'));
+      }
     } finally {
       setIsLoading(false);
     }
