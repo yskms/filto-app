@@ -190,6 +190,21 @@ export async function resetAllData(): Promise<void> {
 }
 
 /**
+ * 「初回設定をやり直す」用のスコープ付きリセット。
+ * 初回設定で作られるフィード・フィルタ（および feed_id CASCADE で連動する記事）を
+ * 削除して選び直せる状態にする。表示設定などの AsyncStorage と
+ * グローバル許可キーワードは保持する（初回設定の対象外のため）。
+ */
+export async function resetFeedsAndFilters(): Promise<void> {
+  const database = openDatabase();
+  database.withTransactionSync(() => {
+    database.execSync('DELETE FROM articles');
+    database.execSync('DELETE FROM feeds');
+    database.execSync('DELETE FROM filters');
+  });
+}
+
+/**
  * オンボーディング完了済みかどうかを判定する（既存ユーザーも含む）
  */
 export async function isOnboardingComplete(): Promise<boolean> {

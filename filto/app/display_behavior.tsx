@@ -194,7 +194,7 @@ export default function DisplayBehaviorScreen() {
   const getLanguageLabel = () => LANGUAGE_OPTIONS.find((o) => o.value === language)?.label ?? t('displayBehavior.languageJa');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DisplayBehaviorHeader onPressBack={() => router.back()} />
 
