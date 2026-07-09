@@ -622,6 +622,14 @@ export default function HomeScreen() {
   // 通信量が発生する旨を確認してから取得する（判定に失敗したらそのまま取得）
   const handleRefresh = React.useCallback(async () => {
     try {
+      // 同期実行中（起動直後の自動同期など）は refresh() が黙って何もせず返るため、
+      // 先にここで拾って「更新中」であることを伝える。
+      // この時点では lastSyncTime が未更新なのでクールダウン判定も効かない
+      if (SyncService.isRefreshing) {
+        Alert.alert(t('home.refreshInProgressTitle'), t('home.refreshInProgressMessage'));
+        return;
+      }
+
       // 連打防止の最低更新間隔チェック（制限中なら残り時間を案内して中断）。
       // 通信量の確認より先に行い、制限中は無駄なダイアログを出さない
       const cooldown = await SyncService.getManualRefreshCooldown();
