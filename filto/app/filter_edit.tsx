@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,9 @@ import { useToast } from '@/providers/toast';
 import { LoadingView } from '@/components/LoadingView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
+
+/** キーワード入力の最大文字数（入力欄の maxLength と貼り付け時の切り詰めで共有） */
+const MAX_KEYWORD_LENGTH = 50;
 
 // ヘッダーコンポーネント
 const FilterEditHeader: React.FC<{
@@ -176,6 +180,19 @@ export default function FilterEditScreen() {
     }
   };
 
+  // クリップボードからブロックキーワードへ貼り付け。
+  // 空白のみの場合は貼り付けない（入力済みの値を消さないため）
+  const handlePasteBlockKeyword = async () => {
+    try {
+      const clipboardText = (await Clipboard.getStringAsync()).trim();
+      if (clipboardText) {
+        // maxLength は value の代入を切り詰めないため、ここで明示的に丸める
+        setBlockKeyword(clipboardText.slice(0, MAX_KEYWORD_LENGTH));
+      }
+    } catch (_) {
+    }
+  };
+
   const handleSave = async () => {
     if (!blockKeyword.trim()) {
       Alert.alert(t('common.error'), t('filters.blockKeywordRequired'));
@@ -245,7 +262,7 @@ export default function FilterEditScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
         <LoadingView />
       </SafeAreaView>
@@ -255,7 +272,7 @@ export default function FilterEditScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <FilterEditHeader isEditMode={isEditMode} onPressBack={() => router.back()} />
 
         <ScrollView
@@ -271,10 +288,28 @@ export default function FilterEditScreen() {
               style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
               value={blockKeyword}
               onChangeText={setBlockKeyword}
-              maxLength={50}
+              maxLength={MAX_KEYWORD_LENGTH}
               editable={!isSaving && !isDeleting}
             />
+
+            {/* クリップボードから貼り付け */}
+            <TouchableOpacity
+              style={[styles.pasteButton, { borderColor }]}
+              onPress={handlePasteBlockKeyword}
+              disabled={isSaving || isDeleting}
+              activeOpacity={0.7}
+            >
+              <View style={styles.pasteButtonInner}>
+                <Ionicons name="clipboard-outline" size={18} color={tintColor} />
+                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>
+                  {t('common.pasteFromClipboard')}
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
           </View>
+
+          {/* ブロック／許可の区切り */}
+          <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
           {/* 許可キーワード */}
           <View ref={allowRef} style={styles.fieldContainer}>
@@ -284,7 +319,7 @@ export default function FilterEditScreen() {
               style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
               value={allowKeywords}
               onChangeText={setAllowKeywords}
-              maxLength={50}
+              maxLength={MAX_KEYWORD_LENGTH}
               editable={!isSaving && !isDeleting}
             />
           </View>
@@ -405,6 +440,28 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  pasteButton: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  pasteButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pasteButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    opacity: 0.5,
+    marginBottom: 24,
   },
   checkboxRow: {
     flexDirection: 'row',

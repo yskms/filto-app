@@ -593,23 +593,12 @@ export default function HomeScreen() {
     setFilteredArticles(displayed);
   }, [articles, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
 
-  const handleRefresh = React.useCallback(async () => {
+  const runRefresh = React.useCallback(async () => {
     try {
       setRefreshing(true);
 
-      // 連打防止の最低更新間隔チェック（制限中なら残り時間を案内して中断）
-      const cooldown = await SyncService.getManualRefreshCooldown();
-      if (cooldown !== null) {
-        const minutes = Math.ceil(cooldown / 60);
-        Alert.alert(
-          t('dataManagement.minRefreshThrottle'),
-          t('home.refreshThrottled', { minutes })
-        );
-        return;
-      }
-
-      // RSS同期を実行
-      const result = await SyncService.refresh();
+      // RSS同期を実行（手動更新は明示操作なのでWiFi限定設定を無視して必ず取得）
+      const result = await SyncService.refresh({ ignoreWifiOnly: true });
 
       if (result.offline) {
         Alert.alert(t('common.error'), t('home.offlineError'));
@@ -628,6 +617,37 @@ export default function HomeScreen() {
       setRefreshing(false);
     }
   }, [loadData, t]);
+
+  // 手動更新。「WiFi接続時のみ取得」がオンでモバイル回線のときは、
+  // 通信量が発生する旨を確認してから取得する（判定に失敗したらそのまま取得）
+  const handleRefresh = React.useCallback(async () => {
+    try {
+      // 連打防止の最低更新間隔チェック（制限中なら残り時間を案内して中断）。
+      // 通信量の確認より先に行い、制限中は無駄なダイアログを出さない
+      const cooldown = await SyncService.getManualRefreshCooldown();
+      if (cooldown !== null) {
+        Alert.alert(
+          t('home.refreshThrottledTitle'),
+          t('home.refreshThrottled', { minutes: Math.ceil(cooldown / 60) })
+        );
+        return;
+      }
+
+      if (await SyncService.shouldConfirmMobileFetch()) {
+        Alert.alert(
+          t('home.mobileFetchConfirmTitle'),
+          t('home.mobileFetchConfirmMessage'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('home.mobileFetchConfirmButton'), onPress: () => { void runRefresh(); } },
+          ]
+        );
+        return;
+      }
+    } catch (_) {
+    }
+    await runRefresh();
+  }, [runRefresh, t]);
 
   // スクロール監視（バー連動 + ボタン表示切替）
   const handleScroll = React.useMemo(

@@ -10,8 +10,18 @@ import {
   Pressable,
   InteractionManager,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+
+// Expo Go は edge-to-edge 無効、standalone/dev client ビルドは有効。
+//  - Expo Go(StoreClient): Modalは非translucent＝ステータスバー下から始まり、
+//    measureInWindow(コンテンツ基準)とそのまま一致する → オフセット不要
+//  - 本番/dev client(edge-to-edge): Modalは全画面(画面上端基準)になる一方、
+//    measureInWindowはコンテンツ基準を返すため、insets.top 分を足して合わせる
+const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const FULLSCREEN_MODAL = !IS_EXPO_GO;
 
 export type CoachRect = { x: number; y: number; width: number; height: number };
 
@@ -47,13 +57,22 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   const textColor = useThemeColor({}, 'text');
   const hintColor = useThemeColor({ light: '#687076', dark: '#9BA1A6' }, 'background');
 
+  const insets = useSafeAreaInsets();
+  // 全画面Modal(edge-to-edge/standalone)では measureInWindow(コンテンツ基準)と
+  // Modal内座標(画面上端基準)がステータスバー分ズレるため、その分を足して合わせる。
+  // Expo Go(非全画面Modal)ではズレないのでオフセット0。
+  const topOffset = FULLSCREEN_MODAL ? insets.top : 0;
+
   const [index, setIndex] = React.useState(0); // 計測対象（遷移先）
   const [shownIndex, setShownIndex] = React.useState(0); // 実際に表示中のステップ
   const [rect, setRect] = React.useState<CoachRect | null>(null);
   // 最終ステップがどうしても計測できないとき、自動遷移せずハイライト無しで
   // カードだけ中央表示するフォールバック
   const [noHighlight, setNoHighlight] = React.useState(false);
-  const { height: screenH } = Dimensions.get('window');
+  // カード配置に使う「Modalの座標系の高さ」。全画面Modal(edge-to-edge)は画面全体に
+  // 広がるので screen 高さを使う。window 高さだと端末によってはナビバー分小さく、
+  // 「上側カード」の bottom 基準がズレてハイライトに重なる（Pixel3等 window<screen 端末）。
+  const screenH = (FULLSCREEN_MODAL ? Dimensions.get('screen') : Dimensions.get('window')).height;
 
   // 「次へ」以外をタップしたときに、押す場所を点滅で誘導する
   const pulse = React.useRef(new Animated.Value(0)).current;
@@ -144,11 +163,14 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
 
   if (!visible) return null;
 
+  // Modal の statusBarTranslucent は IS_EXPO_GO で出し分ける（上部コメント参照）。
+  // 一律付与すると Expo Go 側がステータスバー高さ分ズレるため。
+
   // rect 未確定（計測中/遷移直後）でも、暗幕だけは即時に出してタップを塞ぐ。
   // フォールバック表示中(noHighlight)はカードを出すのでここでは抜けない
   if (!rect && !noHighlight) {
     return (
-      <Modal visible transparent animationType="fade" onRequestClose={onDone}>
+      <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent={FULLSCREEN_MODAL} navigationBarTranslucent={FULLSCREEN_MODAL}>
         <View style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
       </Modal>
     );
@@ -207,7 +229,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   // フォールバック：位置が取れなかった最終ステップ。全面暗幕＋中央寄りカードのみ
   if (!rect) {
     return (
-      <Modal visible transparent animationType="fade" onRequestClose={onDone}>
+      <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent={FULLSCREEN_MODAL} navigationBarTranslucent={FULLSCREEN_MODAL}>
         <Pressable style={StyleSheet.absoluteFill} onPress={triggerPulse}>
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />
         </Pressable>
@@ -219,8 +241,9 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   const hx = rect.x - PAD;
   const hw = rect.width + PAD * 2;
   // 上端がオーバーレイ上端より上に出る分だけ下げる（下端は維持）。
-  // 上部のアイコン(更新/スター)の枠が見切れるのを防ぐ
-  const rawTop = rect.y - PAD;
+  // 上部のアイコン(更新/スター)の枠が見切れるのを防ぐ。
+  // topOffset は全画面Modal時のステータスバー分の座標系ズレ補正（上記コメント参照）。
+  const rawTop = rect.y - PAD + topOffset;
   const hy = Math.max(rawTop, MIN_TOP);
   const hh = rect.height + PAD * 2 - (hy - rawTop);
 
@@ -231,7 +254,7 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
     : { bottom: screenH - hy + CARD_GAP };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDone}>
+    <Modal visible transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent={FULLSCREEN_MODAL} navigationBarTranslucent={FULLSCREEN_MODAL}>
       {/* 「次へ」以外をタップしたら点滅で誘導（暗幕・ハイライト穴を含め全面で受ける） */}
       <Pressable style={StyleSheet.absoluteFill} onPress={triggerPulse}>
         <View pointerEvents="none" style={[styles.dim, { top: 0, left: 0, right: 0, height: Math.max(0, hy) }]} />
