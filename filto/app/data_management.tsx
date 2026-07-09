@@ -26,9 +26,11 @@ import { LoadingOverlay } from '@/components/LoadingOverlay';
 const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
 const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
 const STORAGE_KEY_WIFI_ONLY_FETCH = '@filto/data_management/wifiOnlyFetch';
+const STORAGE_KEY_MIN_REFRESH_INTERVAL = '@filto/data_management/minRefreshIntervalMinutes';
 
 const RETENTION_OPTIONS = [7, 30, 90, 0];
 const MANUAL_DELETE_OPTIONS = [-1, 1, 3, 7, 14];
+const MIN_REFRESH_OPTIONS = [0, 1, 3, 5, 10];
 
 const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -260,7 +262,9 @@ export default function DataManagementScreen() {
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
   const [wifiOnlyFetch, setWifiOnlyFetch] = useState(false);
+  const [minRefreshInterval, setMinRefreshInterval] = useState(0);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
+  const [minRefreshDropdownVisible, setMinRefreshDropdownVisible] = useState(false);
   const [manualDeleteModalVisible, setManualDeleteModalVisible] = useState(false);
   const [manualDeleteDays, setManualDeleteDays] = useState(-1);
   const [manualDeleteIncludeStarred, setManualDeleteIncludeStarred] = useState(false);
@@ -275,14 +279,16 @@ export default function DataManagementScreen() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const [savedRetention, savedStarred, savedWifiOnly] = await Promise.all([
+      const [savedRetention, savedStarred, savedWifiOnly, savedMinRefresh] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS),
         AsyncStorage.getItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO),
         AsyncStorage.getItem(STORAGE_KEY_WIFI_ONLY_FETCH),
+        AsyncStorage.getItem(STORAGE_KEY_MIN_REFRESH_INTERVAL),
       ]);
       if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
       if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
       if (savedWifiOnly !== null) setWifiOnlyFetch(savedWifiOnly === 'true');
+      if (savedMinRefresh !== null) setMinRefreshInterval(parseInt(savedMinRefresh, 10));
     } catch (_) {
     }
   }, []);
@@ -293,6 +299,15 @@ export default function DataManagementScreen() {
     try {
       setArticleRetentionDays(days);
       await AsyncStorage.setItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS, days.toString());
+    } catch (_) {
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
+    }
+  };
+
+  const handleChangeMinRefreshInterval = async (minutes: number) => {
+    try {
+      setMinRefreshInterval(minutes);
+      await AsyncStorage.setItem(STORAGE_KEY_MIN_REFRESH_INTERVAL, minutes.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -411,6 +426,18 @@ export default function DataManagementScreen() {
   const getRetentionLabel = () =>
     retentionOptions.find((o) => o.value === articleRetentionDays)?.label ?? t('dataManagement.days', { count: 30 });
 
+  const minRefreshOptions = MIN_REFRESH_OPTIONS.map((value) => ({
+    value,
+    label: value === 0 ? t('dataManagement.minRefreshNoLimit') : t('dataManagement.minutes', { count: value }),
+  }));
+  // 選択肢に無い値が保存されていても、SyncService は保存値どおりに制限をかける。
+  // 「制限なし」と誤表示しないよう、その分数をそのまま出す
+  const getMinRefreshLabel = () =>
+    minRefreshOptions.find((o) => o.value === minRefreshInterval)?.label ??
+    (minRefreshInterval > 0
+      ? t('dataManagement.minutes', { count: minRefreshInterval })
+      : t('dataManagement.minRefreshNoLimit'));
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -453,11 +480,12 @@ export default function DataManagementScreen() {
               <View style={[styles.toggleThumb, wifiOnlyFetch && styles.toggleThumbActive]} />
             </View>
           </TouchableOpacity>
-          <ThemedText style={styles.wifiOnlyHint}>{t('dataManagement.wifiOnlyHint')}</ThemedText>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.wifiOnlyHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionMinRefresh')}>
-          <ComingSoonRow title={t('dataManagement.minRefreshThrottle')} />
+          <Dropdown label={t('dataManagement.minRefreshThrottle')} value={getMinRefreshLabel()} onPress={() => setMinRefreshDropdownVisible(true)} />
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.minRefreshHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionFuture')}>
@@ -480,6 +508,15 @@ export default function DataManagementScreen() {
         selectedValue={articleRetentionDays}
         onSelect={handleChangeRetentionDays}
         onClose={() => setRetentionDropdownVisible(false)}
+      />
+
+      <DropdownModal
+        visible={minRefreshDropdownVisible}
+        title={t('dataManagement.selectMinRefreshTitle')}
+        options={minRefreshOptions}
+        selectedValue={minRefreshInterval}
+        onSelect={handleChangeMinRefreshInterval}
+        onClose={() => setMinRefreshDropdownVisible(false)}
       />
 
       <ManualDeleteModal
@@ -539,7 +576,8 @@ const styles = StyleSheet.create({
   toggleThumbActive: { alignSelf: 'flex-end' },
   retentionDescription: { marginBottom: 16 },
   retentionDescriptionText: { fontSize: 13, lineHeight: 18, marginBottom: 12 },
-  wifiOnlyHint: { fontSize: 12, lineHeight: 17, marginTop: 10, opacity: 0.7 },
+  /** 設定セクション下の補足説明 */
+  sectionHint: { fontSize: 12, lineHeight: 17, marginTop: 10, opacity: 0.7 },
   dropdownLabel: { fontSize: 14, fontWeight: '500', marginBottom: 8 },
   dropdown: {
     flexDirection: 'row',
