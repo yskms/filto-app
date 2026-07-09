@@ -152,12 +152,12 @@ export default function FeedAddScreen() {
     setFetchSuccess(false);
   };
 
-  // クリップボードから貼り付け
+  // クリップボードから貼り付け。空白のみの場合は貼り付けない（入力済みURLを消さないため）
   const handlePaste = async () => {
     try {
-      const clipboardText = await Clipboard.getStringAsync();
+      const clipboardText = (await Clipboard.getStringAsync()).trim();
       if (clipboardText) {
-        setUrl(clipboardText.trim());
+        setUrl(clipboardText);
         setUrlError(null);
         setFetchSuccess(false);
       }

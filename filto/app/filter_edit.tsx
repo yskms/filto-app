@@ -22,6 +22,9 @@ import { LoadingView } from '@/components/LoadingView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 
+/** キーワード入力の最大文字数（入力欄の maxLength と貼り付け時の切り詰めで共有） */
+const MAX_KEYWORD_LENGTH = 50;
+
 // ヘッダーコンポーネント
 const FilterEditHeader: React.FC<{
   isEditMode: boolean;
@@ -177,12 +180,14 @@ export default function FilterEditScreen() {
     }
   };
 
-  // クリップボードからブロックキーワードへ貼り付け
+  // クリップボードからブロックキーワードへ貼り付け。
+  // 空白のみの場合は貼り付けない（入力済みの値を消さないため）
   const handlePasteBlockKeyword = async () => {
     try {
-      const clipboardText = await Clipboard.getStringAsync();
+      const clipboardText = (await Clipboard.getStringAsync()).trim();
       if (clipboardText) {
-        setBlockKeyword(clipboardText.trim().slice(0, 50));
+        // maxLength は value の代入を切り詰めないため、ここで明示的に丸める
+        setBlockKeyword(clipboardText.slice(0, MAX_KEYWORD_LENGTH));
       }
     } catch (_) {
     }
@@ -283,7 +288,7 @@ export default function FilterEditScreen() {
               style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
               value={blockKeyword}
               onChangeText={setBlockKeyword}
-              maxLength={50}
+              maxLength={MAX_KEYWORD_LENGTH}
               editable={!isSaving && !isDeleting}
             />
 
@@ -314,7 +319,7 @@ export default function FilterEditScreen() {
               style={[styles.textInput, { color: textColor, borderColor, backgroundColor }]}
               value={allowKeywords}
               onChangeText={setAllowKeywords}
-              maxLength={50}
+              maxLength={MAX_KEYWORD_LENGTH}
               editable={!isSaving && !isDeleting}
             />
           </View>
