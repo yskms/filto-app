@@ -447,10 +447,10 @@
 - [x] 両ストアへ提出完了（2026年7月7日）
   - Android: Play に draft アップロード（リリースノート設定→手動公開待ち）
   - iOS: ASC へ配信済み（バージョンを1.1.6に変更しビルド紐付け→審査提出待ち）
-- [ ] Android 手動公開 / iOS 審査提出・公開
+- [x] Android 手動公開 / iOS 審査通過・公開（両ストア公開完了）
 
 **進捗**:
-- 完了: 4/5タスク（提出まで完了、公開作業のみ残）
+- 完了: 5/5タスク（100%）
 
 ### 振り返り（v1.1.6 replay-tour & edge-to-edge）
 - **達成**:
@@ -466,6 +466,41 @@
 - **改善**:
   - 破壊的操作（設定リセット等）の導線には必ず確認ダイアログを入れる
   - 「やり直す」系の機能は、既存データの扱い（残す/消す）をユーザー目線で設計してから実装する
+
+---
+
+### 次期リリース（v1.1.7・開発中）
+
+> ⚠️ **次回ストア配信は新規ビルド必須**
+> `expo-clipboard` などネイティブモジュールを追加しているため、OTA更新では反映されない。
+> 開発中の OPML / バックアップ機能でも `expo-document-picker` / `expo-sharing` を追加予定のため、
+> **dev client の作り直しと実機での動作確認（ファイル選択・共有）が必要**。
+
+#### マージ済み
+- [x] フィルタ編集のブロックキーワードにクリップボード貼り付けボタンを追加
+  - 許可キーワードとの間に区切り線＋余白を入れてセクションを分離
+- [x] 非推奨の React Native `Clipboard` を `expo-clipboard` へ移行（filter_edit / feed_add / feed_edit）
+  - `feed_edit` の「URLをコピー」はコピー成功時のみトーストを表示するよう改善
+- [x] 空白のみのクリップボードを貼り付けると入力値が消える不具合を修正（3画面）
+- [x] `feeds.pasteFromClipboard` を `common.pasteFromClipboard` に集約、`MAX_KEYWORD_LENGTH` を定数化
+- [x] 重複フィードURL追加時に専用エラーを表示
+
+#### 開発中（feature ブランチ）
+- [ ] WiFi接続時のみ取得（`feature/wifi-only-fetch`）
+  - SyncService にWiFi判定を追加。自動同期のみ制限し、手動更新は常時取得。トグルUI
+- [ ] 連打防止の最低更新間隔（`feature/min-refresh-interval`）
+  - クールダウン判定を追加。手動更新が制限中なら残り時間を案内。制限なし/1/3/5/10分から選択
+- [ ] OPMLインポート/エクスポート（`feature/opml-import-export`）
+  - `OpmlService` 新規。OPML書き出し（共有）/取り込み（重複スキップ）。`expo-document-picker` / `expo-sharing` 追加
+- [ ] データのバックアップ/復元（`feature/data-backup-restore`）
+  - `BackupService` 新規。フィード・フィルタ・許可KW・設定をJSONで入出力（復元はマージ＋設定上書き、記事は対象外）
+
+**注意**: OPML とバックアップは同じ2パッケージ（`expo-document-picker` / `expo-sharing`）を `package.json` に追加するため、両方マージする際は競合したら片方の追加行に寄せる。
+
+#### 残タスク
+- [ ] 4機能のマージ（依存・コード変更が独立しているためマージ順は任意）
+- [ ] ネイティブ再ビルド（dev client）＋実機でのファイル選択/共有の動作確認
+- [ ] `components/PasteButton.tsx` への共通化（filter_edit / feed_add / feed_edit で重複）
 
 ---
 
