@@ -9,9 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Clipboard,
   ActivityIndicator,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
@@ -155,7 +155,7 @@ export default function FeedAddScreen() {
   // クリップボードから貼り付け
   const handlePaste = async () => {
     try {
-      const clipboardText = await Clipboard.getString();
+      const clipboardText = await Clipboard.getStringAsync();
       if (clipboardText) {
         setUrl(clipboardText.trim());
         setUrlError(null);

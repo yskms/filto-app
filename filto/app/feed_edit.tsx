@@ -8,10 +8,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Clipboard,
   ActivityIndicator,
   Image,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -132,7 +132,7 @@ export default function FeedEditScreen() {
 
   const handlePaste = async () => {
     try {
-      const clipboardText = await Clipboard.getString();
+      const clipboardText = await Clipboard.getStringAsync();
       if (clipboardText) {
         setUrl(clipboardText.trim());
         setUrlError(null);
@@ -142,9 +142,12 @@ export default function FeedEditScreen() {
     }
   };
 
-  const handleCopyUrl = () => {
-    Clipboard.setString(url);
-    showToast(t('feeds.urlCopied'), 'success');
+  const handleCopyUrl = async () => {
+    try {
+      await Clipboard.setStringAsync(url);
+      showToast(t('feeds.urlCopied'), 'success');
+    } catch (_) {
+    }
   };
 
   // 重複フィードのエラー文言（登録済みタイトルが分かる場合は含める）

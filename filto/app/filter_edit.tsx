@@ -8,8 +8,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Clipboard,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -180,7 +180,7 @@ export default function FilterEditScreen() {
   // クリップボードからブロックキーワードへ貼り付け
   const handlePasteBlockKeyword = async () => {
     try {
-      const clipboardText = await Clipboard.getString();
+      const clipboardText = await Clipboard.getStringAsync();
       if (clipboardText) {
         setBlockKeyword(clipboardText.trim().slice(0, 50));
       }
