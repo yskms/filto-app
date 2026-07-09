@@ -8,10 +8,11 @@ import React, {
     type ReactNode,
   } from 'react';
   import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
   import * as Localization from 'expo-localization';
   import { translations, type SupportedLanguage } from '@/translations';
 
-  const LANGUAGE_STORAGE_KEY = '@filto/display_behavior/language';
+  const LANGUAGE_STORAGE_KEY = StorageKeys.language;
 
   function detectSystemLanguage(): SupportedLanguage {
     const locales = Localization.getLocales();

@@ -3,9 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 
 import { getDefaultFeedsFlat } from '@/constants/defaultFeeds';
+import { StorageKeys, STORAGE_KEY_PREFIX } from '@/constants/storageKeys';
 
-const SEED_KEY = '@filto/defaultFeedsSeeded';
-const FILTER_SEED_KEY = '@filto/defaultFiltersSeeded';
+const SEED_KEY = StorageKeys.defaultFeedsSeeded;
+const FILTER_SEED_KEY = StorageKeys.defaultFiltersSeeded;
 
 const DEFAULT_FILTERS = [
   { block_keyword: 'Trump', allow_keyword: null, target_title: 1, target_description: 1 },
@@ -160,10 +161,7 @@ export async function seedDefaultFilters(): Promise<void> {
   await AsyncStorage.setItem(FILTER_SEED_KEY, 'true');
 }
 
-export const ONBOARDING_KEY = '@filto/onboardingCompleted';
-
-/** 本アプリが AsyncStorage に保存するキーの共通プレフィックス */
-const STORAGE_KEY_PREFIX = '@filto/';
+export const ONBOARDING_KEY = StorageKeys.onboardingCompleted;
 
 /**
  * すべてのデータをリセットする（DB全テーブル削除 + AsyncStorage全クリア）

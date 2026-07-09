@@ -20,6 +20,7 @@ import { useTranslation } from '@/providers/language';
 import { useToast } from '@/providers/toast';
 import { LoadingView } from '@/components/LoadingView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 
 /** キーワード入力の最大文字数（入力欄の maxLength と貼り付け時の切り詰めで共有） */
@@ -130,9 +131,9 @@ export default function FilterEditScreen() {
   // フィルタ画面の「次へ」('1')で push されてきたら、フラグを見てツアー継続。
   // 即 visible にして暗幕を出す（計測は CoachMarks 側でリトライ）
   React.useEffect(() => {
-    AsyncStorage.getItem('@filto/tour/filterEdit').then((flag) => {
+    AsyncStorage.getItem(StorageKeys.tourFilterEdit).then((flag) => {
       if (flag === '1' || flag === 'last') {
-        AsyncStorage.removeItem('@filto/tour/filterEdit').catch(() => {});
+        AsyncStorage.removeItem(StorageKeys.tourFilterEdit).catch(() => {});
         setTutorialStartAtLast(flag === 'last');
         setTutorialVisible(true);
       }
@@ -142,7 +143,7 @@ export default function FilterEditScreen() {
   // 最初のステップで「戻る」→ フィルタ画面のツアー最後へ戻る
   const handleTutorialBack = React.useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/filters', 'last'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFilters, 'last'); } catch {}
     router.dismissAll();
     router.navigate('/filters');
   }, [router]);
@@ -150,7 +151,7 @@ export default function FilterEditScreen() {
   // 最後の「次へ」で、フィード画面へ進みツアー継続
   const handleTutorialDone = React.useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/feeds', '1'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFeeds, '1'); } catch {}
     router.dismissAll();
     router.navigate('/feeds');
   }, [router]);

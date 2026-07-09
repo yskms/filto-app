@@ -33,6 +33,7 @@ import { SyncService } from '@/services/SyncService';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import type { ReadDisplayMode } from '../display_behavior';
 import { Ionicons } from '@expo/vector-icons';
 import { ErrorHandler } from '@/utils/errorHandler';
@@ -352,7 +353,7 @@ export default function HomeScreen() {
       setGlobalAllowKeywords(globalAllowList);
 
       // Display & Behavior の設定を取得
-      const savedReadDisplay = await AsyncStorage.getItem('@filto/display_behavior/readDisplay');
+      const savedReadDisplay = await AsyncStorage.getItem(StorageKeys.readDisplay);
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
         setReadDisplay(savedReadDisplay);
       }
@@ -365,14 +366,14 @@ export default function HomeScreen() {
 
   // 保存済みのフィード並び順を読み込む
   React.useEffect(() => {
-    AsyncStorage.getItem('@filto/home/feedSort')
+    AsyncStorage.getItem(StorageKeys.feedSort)
       .then(saved => { if (saved) setFeedSort(saved as FeedSortType); })
       .catch(() => {});
   }, []);
 
   // 保存済みの記事レイアウトを読み込む
   React.useEffect(() => {
-    AsyncStorage.getItem('@filto/display_behavior/layoutMode')
+    AsyncStorage.getItem(StorageKeys.layoutMode)
       .then(saved => { if (saved === 'compact' || saved === 'large') setLayoutMode(saved); })
       .catch(() => {});
   }, []);
@@ -381,7 +382,7 @@ export default function HomeScreen() {
   const handleToggleLayout = React.useCallback(() => {
     setLayoutMode(prev => {
       const next: LayoutMode = prev === 'compact' ? 'large' : 'compact';
-      AsyncStorage.setItem('@filto/display_behavior/layoutMode', next).catch(() => {});
+      AsyncStorage.setItem(StorageKeys.layoutMode, next).catch(() => {});
       return next;
     });
   }, []);
@@ -389,7 +390,7 @@ export default function HomeScreen() {
   // フィード並び順を変更・永続化する
   const handleSelectFeedSort = React.useCallback((sortType: FeedSortType) => {
     setFeedSort(sortType);
-    AsyncStorage.setItem('@filto/home/feedSort', sortType).catch(() => {});
+    AsyncStorage.setItem(StorageKeys.feedSort, sortType).catch(() => {});
   }, []);
 
   // チュートリアル: 対象要素を実測してハイライト位置を返す
@@ -468,9 +469,9 @@ export default function HomeScreen() {
   // 来たとき('last')はフォーカス時に、フラグを見て開始する
   useFocusEffect(
     React.useCallback(() => {
-      AsyncStorage.getItem('@filto/tour/home').then((flag) => {
+      AsyncStorage.getItem(StorageKeys.tourHome).then((flag) => {
         if (flag === '1' || flag === 'last') {
-          AsyncStorage.removeItem('@filto/tour/home').catch(() => {});
+          AsyncStorage.removeItem(StorageKeys.tourHome).catch(() => {});
           setHomeStartAtLast(flag === 'last');
           setTutorialPending(true);
           setTutorialVisible(true);
@@ -484,7 +485,7 @@ export default function HomeScreen() {
     setTutorialVisible(false);
     setTutorialPending(false);
     // 遷移先が読む前に確実に書き込む（先頭から開始）
-    try { await AsyncStorage.setItem('@filto/tour/filters', '1'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFilters, '1'); } catch {}
     router.navigate('/filters');
   }, []);
 
@@ -492,9 +493,9 @@ export default function HomeScreen() {
   // 完了してから解除する（中途半端な状態を一切見せない）
   useFocusEffect(
     React.useCallback(() => {
-      AsyncStorage.getItem('@filto/tour/finish').then((flag) => {
+      AsyncStorage.getItem(StorageKeys.tourFinish).then((flag) => {
         if (flag !== '1') return;
-        AsyncStorage.removeItem('@filto/tour/finish').catch(() => {});
+        AsyncStorage.removeItem(StorageKeys.tourFinish).catch(() => {});
         setWaitingArticles(true);
         // 既に同期完了済みなら一瞬だけ見せて閉じる。未完了なら完了まで待つ
         // （通常は hasAutoSynced で解除。これは保険のフォールバック）
@@ -537,7 +538,7 @@ export default function HomeScreen() {
 
     const autoSync = async () => {
       try {
-        const autoSyncEnabled = await AsyncStorage.getItem('@filto/display_behavior/autoSyncOnStartup');
+        const autoSyncEnabled = await AsyncStorage.getItem(StorageKeys.autoSyncOnStartup);
         if (autoSyncEnabled === 'false') {
           setHasAutoSynced(true);
           return;

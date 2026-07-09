@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { resetAllData } from '@/database/init';
@@ -23,10 +24,6 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 
-const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
-const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
-const STORAGE_KEY_WIFI_ONLY_FETCH = '@filto/data_management/wifiOnlyFetch';
-const STORAGE_KEY_MIN_REFRESH_INTERVAL = '@filto/data_management/minRefreshIntervalMinutes';
 
 const RETENTION_OPTIONS = [7, 30, 90, 0];
 const MANUAL_DELETE_OPTIONS = [-1, 1, 3, 7, 14];
@@ -280,10 +277,10 @@ export default function DataManagementScreen() {
   const loadSettings = useCallback(async () => {
     try {
       const [savedRetention, savedStarred, savedWifiOnly, savedMinRefresh] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS),
-        AsyncStorage.getItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO),
-        AsyncStorage.getItem(STORAGE_KEY_WIFI_ONLY_FETCH),
-        AsyncStorage.getItem(STORAGE_KEY_MIN_REFRESH_INTERVAL),
+        AsyncStorage.getItem(StorageKeys.articleRetentionDays),
+        AsyncStorage.getItem(StorageKeys.deleteStarredInAutoDelete),
+        AsyncStorage.getItem(StorageKeys.wifiOnlyFetch),
+        AsyncStorage.getItem(StorageKeys.minRefreshIntervalMinutes),
       ]);
       if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
       if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
@@ -298,7 +295,7 @@ export default function DataManagementScreen() {
   const handleChangeRetentionDays = async (days: number) => {
     try {
       setArticleRetentionDays(days);
-      await AsyncStorage.setItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS, days.toString());
+      await AsyncStorage.setItem(StorageKeys.articleRetentionDays, days.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -307,7 +304,7 @@ export default function DataManagementScreen() {
   const handleChangeMinRefreshInterval = async (minutes: number) => {
     try {
       setMinRefreshInterval(minutes);
-      await AsyncStorage.setItem(STORAGE_KEY_MIN_REFRESH_INTERVAL, minutes.toString());
+      await AsyncStorage.setItem(StorageKeys.minRefreshIntervalMinutes, minutes.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -317,7 +314,7 @@ export default function DataManagementScreen() {
     try {
       const next = !deleteStarredInAuto;
       setDeleteStarredInAuto(next);
-      await AsyncStorage.setItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO, next.toString());
+      await AsyncStorage.setItem(StorageKeys.deleteStarredInAutoDelete, next.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -327,7 +324,7 @@ export default function DataManagementScreen() {
     try {
       const next = !wifiOnlyFetch;
       setWifiOnlyFetch(next);
-      await AsyncStorage.setItem(STORAGE_KEY_WIFI_ONLY_FETCH, next.toString());
+      await AsyncStorage.setItem(StorageKeys.wifiOnlyFetch, next.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
