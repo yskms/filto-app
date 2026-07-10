@@ -44,7 +44,10 @@ export const StorageKeys = {
   tourFeeds: '@filto/tour/feeds',
   tourFeedAdd: '@filto/tour/feedAdd',
   tourFinish: '@filto/tour/finish',
-} as const;
+  // satisfies により、STORAGE_KEY_PREFIX で始まらないキーはコンパイルエラーになる。
+  // resetAllData() はプレフィックス走査で削除するため、この制約が破れると
+  // 「リセットしても消えないキー」が生まれてしまう
+} as const satisfies Record<string, `${typeof STORAGE_KEY_PREFIX}${string}`>;
 
 /**
  * バックアップ／復元の対象にする設定キー。
