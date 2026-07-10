@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -145,7 +146,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
       await seedFiltersFromTopics(Array.from(selectedKeywords));
 
       // ホームで初回チュートリアル（コーチマーク）を表示するためのフラグ
-      await AsyncStorage.setItem('@filto/tour/home', '1');
+      await AsyncStorage.setItem(StorageKeys.tourHome, '1');
 
       // 初回同期はホーム側の autoSync に任せる（二重 refresh のレースを避ける）。
       // ホームへ即遷移し、取得を待つ間にダミー記事を背景にツアーを進めてもらう。

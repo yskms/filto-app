@@ -3,14 +3,8 @@ import { RssService } from '@/services/RssService';
 import { ArticleService } from '@/services/ArticleService';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import * as Network from 'expo-network';
-
-// ストレージキー
-const STORAGE_KEY_LAST_SYNC_TIME = '@filto/lastSyncTime';
-const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
-const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
-const STORAGE_KEY_WIFI_ONLY_FETCH = '@filto/data_management/wifiOnlyFetch';
-const STORAGE_KEY_MIN_REFRESH_INTERVAL = '@filto/data_management/minRefreshIntervalMinutes';
 
 /**
  * WiFi以外の接続（モバイル回線など）かどうか。
@@ -49,7 +43,7 @@ export const SyncService = {
    */
   async isWifiOnlyFetchEnabled(): Promise<boolean> {
     try {
-      const value = await AsyncStorage.getItem(STORAGE_KEY_WIFI_ONLY_FETCH);
+      const value = await AsyncStorage.getItem(StorageKeys.wifiOnlyFetch);
       return value === 'true'; // デフォルト: false（無効）
     } catch (_) {
       return false;
@@ -142,7 +136,7 @@ export const SyncService = {
 
       if (this.generation === gen) {
         // 最終同期時刻を保存
-        await AsyncStorage.setItem(STORAGE_KEY_LAST_SYNC_TIME, Date.now().toString());
+        await AsyncStorage.setItem(StorageKeys.lastSyncTime, Date.now().toString());
         // 古い記事を自動削除
         const deletedCount = await this.deleteOldArticlesAuto();
         return { fetched, newArticles, deleted: deletedCount };
@@ -161,12 +155,12 @@ export const SyncService = {
   async deleteOldArticlesAuto(): Promise<number> {
     try {
       // 設定から保持期間を取得
-      const retentionDaysStr = await AsyncStorage.getItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS);
+      const retentionDaysStr = await AsyncStorage.getItem(StorageKeys.articleRetentionDays);
       const parsed = retentionDaysStr ? parseInt(retentionDaysStr, 10) : NaN;
       const retentionDays = Number.isNaN(parsed) ? 30 : parsed; // デフォルト: 30日
 
       // お気に入りも削除するかの設定を取得
-      const deleteStarredStr = await AsyncStorage.getItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO);
+      const deleteStarredStr = await AsyncStorage.getItem(StorageKeys.deleteStarredInAutoDelete);
       const deleteStarred = deleteStarredStr === 'true'; // デフォルト: false
 
       return await ArticleRepository.deleteOldArticles(retentionDays, deleteStarred);
@@ -182,7 +176,7 @@ export const SyncService = {
    */
   async shouldSync(minIntervalMs: number = 30 * 60 * 1000): Promise<boolean> {
     try {
-      const lastSyncTime = await AsyncStorage.getItem(STORAGE_KEY_LAST_SYNC_TIME);
+      const lastSyncTime = await AsyncStorage.getItem(StorageKeys.lastSyncTime);
 
       // 初回（同期履歴なし）
       if (!lastSyncTime) {
@@ -207,7 +201,7 @@ export const SyncService = {
    */
   async getMinRefreshIntervalMinutes(): Promise<number> {
     try {
-      const value = await AsyncStorage.getItem(STORAGE_KEY_MIN_REFRESH_INTERVAL);
+      const value = await AsyncStorage.getItem(StorageKeys.minRefreshIntervalMinutes);
       const parsed = value ? parseInt(value, 10) : NaN;
       return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
     } catch (_) {
@@ -236,7 +230,7 @@ export const SyncService = {
    */
   async getLastSyncTime(): Promise<number | null> {
     try {
-      const lastSyncTime = await AsyncStorage.getItem(STORAGE_KEY_LAST_SYNC_TIME);
+      const lastSyncTime = await AsyncStorage.getItem(StorageKeys.lastSyncTime);
       if (!lastSyncTime) return null;
       const parsed = parseInt(lastSyncTime, 10);
       return Number.isNaN(parsed) ? null : parsed;

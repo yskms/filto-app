@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/providers/theme';
 import { useLanguage, useTranslation } from '@/providers/language';
@@ -15,8 +16,6 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 export type ReadDisplayMode = 'dim' | 'hide';
 
 // 設定のストレージキー
-const STORAGE_KEY_READ_DISPLAY = '@filto/display_behavior/readDisplay';
-const STORAGE_KEY_AUTO_SYNC_ON_STARTUP = '@filto/display_behavior/autoSyncOnStartup';
 
 const DisplayBehaviorHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -125,8 +124,8 @@ export default function DisplayBehaviorScreen() {
   const loadSettings = useCallback(async () => {
     try {
       const [savedRead, savedAuto] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEY_READ_DISPLAY),
-        AsyncStorage.getItem(STORAGE_KEY_AUTO_SYNC_ON_STARTUP),
+        AsyncStorage.getItem(StorageKeys.readDisplay),
+        AsyncStorage.getItem(StorageKeys.autoSyncOnStartup),
       ]);
       
       if (savedRead === 'dim' || savedRead === 'hide') setReadDisplay(savedRead);
@@ -140,7 +139,7 @@ export default function DisplayBehaviorScreen() {
   const handleReadDisplay = async (mode: ReadDisplayMode) => {
     try {
       setReadDisplay(mode);
-      await AsyncStorage.setItem(STORAGE_KEY_READ_DISPLAY, mode);
+      await AsyncStorage.setItem(StorageKeys.readDisplay, mode);
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -150,7 +149,7 @@ export default function DisplayBehaviorScreen() {
     try {
       const next = !autoSyncOnStartup;
       setAutoSyncOnStartup(next);
-      await AsyncStorage.setItem(STORAGE_KEY_AUTO_SYNC_ON_STARTUP, next.toString());
+      await AsyncStorage.setItem(StorageKeys.autoSyncOnStartup, next.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }

@@ -22,6 +22,7 @@ import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 
 export default function FeedAddScreen() {
@@ -55,9 +56,9 @@ export default function FeedAddScreen() {
   // 起動時: ツアー中はキーボードを出さずツアー開始、通常は入力欄へフォーカス
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    AsyncStorage.getItem('@filto/tour/feedAdd').then((flag) => {
+    AsyncStorage.getItem(StorageKeys.tourFeedAdd).then((flag) => {
       if (flag === '1' || flag === 'last') {
-        AsyncStorage.removeItem('@filto/tour/feedAdd').catch(() => {});
+        AsyncStorage.removeItem(StorageKeys.tourFeedAdd).catch(() => {});
         setTutorialStartAtLast(flag === 'last');
         setTutorialVisible(true);
       } else {
@@ -109,7 +110,7 @@ export default function FeedAddScreen() {
   // 最初のステップで「戻る」→ フィード画面のツアー最後へ戻る
   const handleTutorialBack = useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/feeds', 'last'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFeeds, 'last'); } catch {}
     router.dismissAll();
     router.navigate('/feeds');
   }, [router]);
@@ -117,7 +118,7 @@ export default function FeedAddScreen() {
   // 最後の「次へ」で、ホームへ戻り取得完了を待ってツアー終了
   const handleTutorialDone = useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/finish', '1'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFinish, '1'); } catch {}
     router.dismissAll();
     router.navigate('/');
   }, [router]);
