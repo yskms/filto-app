@@ -13,9 +13,11 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { resetAllData } from '@/database/init';
+import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
 import { OpmlService } from '@/services/OpmlService';
 import { ThemedText } from '@/components/themed-text';
@@ -23,11 +25,10 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 
-const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
-const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
 
 const RETENTION_OPTIONS = [7, 30, 90, 0];
 const MANUAL_DELETE_OPTIONS = [-1, 1, 3, 7, 14];
+const MIN_REFRESH_OPTIONS = [0, 1, 3, 5, 10];
 
 const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -258,7 +259,10 @@ export default function DataManagementScreen() {
   const toggleOnBg = useThemeColor({ light: '#34C759', dark: '#30d158' }, 'background');
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
+  const [wifiOnlyFetch, setWifiOnlyFetch] = useState(false);
+  const [minRefreshInterval, setMinRefreshInterval] = useState(0);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
+  const [minRefreshDropdownVisible, setMinRefreshDropdownVisible] = useState(false);
   const [manualDeleteModalVisible, setManualDeleteModalVisible] = useState(false);
   const [manualDeleteDays, setManualDeleteDays] = useState(-1);
   const [manualDeleteIncludeStarred, setManualDeleteIncludeStarred] = useState(false);
@@ -274,12 +278,16 @@ export default function DataManagementScreen() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const [savedRetention, savedStarred] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS),
-        AsyncStorage.getItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO),
+      const [savedRetention, savedStarred, savedWifiOnly, savedMinRefresh] = await Promise.all([
+        AsyncStorage.getItem(StorageKeys.articleRetentionDays),
+        AsyncStorage.getItem(StorageKeys.deleteStarredInAutoDelete),
+        AsyncStorage.getItem(StorageKeys.wifiOnlyFetch),
+        AsyncStorage.getItem(StorageKeys.minRefreshIntervalMinutes),
       ]);
       if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
       if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
+      if (savedWifiOnly !== null) setWifiOnlyFetch(savedWifiOnly === 'true');
+      if (savedMinRefresh !== null) setMinRefreshInterval(parseInt(savedMinRefresh, 10));
     } catch (_) {
     }
   }, []);
@@ -289,7 +297,16 @@ export default function DataManagementScreen() {
   const handleChangeRetentionDays = async (days: number) => {
     try {
       setArticleRetentionDays(days);
-      await AsyncStorage.setItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS, days.toString());
+      await AsyncStorage.setItem(StorageKeys.articleRetentionDays, days.toString());
+    } catch (_) {
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
+    }
+  };
+
+  const handleChangeMinRefreshInterval = async (minutes: number) => {
+    try {
+      setMinRefreshInterval(minutes);
+      await AsyncStorage.setItem(StorageKeys.minRefreshIntervalMinutes, minutes.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -299,7 +316,17 @@ export default function DataManagementScreen() {
     try {
       const next = !deleteStarredInAuto;
       setDeleteStarredInAuto(next);
-      await AsyncStorage.setItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO, next.toString());
+      await AsyncStorage.setItem(StorageKeys.deleteStarredInAutoDelete, next.toString());
+    } catch (_) {
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
+    }
+  };
+
+  const handleToggleWifiOnlyFetch = async () => {
+    try {
+      const next = !wifiOnlyFetch;
+      setWifiOnlyFetch(next);
+      await AsyncStorage.setItem(StorageKeys.wifiOnlyFetch, next.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -405,7 +432,14 @@ export default function DataManagementScreen() {
               // 実行中の同期を止めてから消す（古いフィードへの記事書き込みを防ぐ）
               SyncService.cancelOngoing();
               await resetAllData();
-              Alert.alert(t('common.done'), t('dataManagement.resetComplete'));
+              Alert.alert(
+                t('common.done'),
+                t('dataManagement.resetComplete') + '\n' + t('dataManagement.replayTourPrompt'),
+                [
+                  { text: t('dataManagement.replayTourLater'), style: 'cancel' },
+                  { text: t('dataManagement.replayTourConfirm'), onPress: () => { restartOnboarding(); } },
+                ]
+              );
             } catch (_) {
               Alert.alert(t('common.error'), t('dataManagement.resetError'));
             } finally {
@@ -430,8 +464,20 @@ export default function DataManagementScreen() {
   const getRetentionLabel = () =>
     retentionOptions.find((o) => o.value === articleRetentionDays)?.label ?? t('dataManagement.days', { count: 30 });
 
+  const minRefreshOptions = MIN_REFRESH_OPTIONS.map((value) => ({
+    value,
+    label: value === 0 ? t('dataManagement.minRefreshNoLimit') : t('dataManagement.minutes', { count: value }),
+  }));
+  // 選択肢に無い値が保存されていても、SyncService は保存値どおりに制限をかける。
+  // 「制限なし」と誤表示しないよう、その分数をそのまま出す
+  const getMinRefreshLabel = () =>
+    minRefreshOptions.find((o) => o.value === minRefreshInterval)?.label ??
+    (minRefreshInterval > 0
+      ? t('dataManagement.minutes', { count: minRefreshInterval })
+      : t('dataManagement.minRefreshNoLimit'));
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DataManagementHeader onPressBack={() => router.back()} />
 
@@ -469,11 +515,18 @@ export default function DataManagementScreen() {
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionWifiOnly')}>
-          <ComingSoonRow title={t('dataManagement.wifiOnlyRss')} />
+          <TouchableOpacity style={styles.toggleRow} onPress={handleToggleWifiOnlyFetch} activeOpacity={0.7}>
+            <ThemedText style={styles.toggleLabelText}>{t('dataManagement.wifiOnlyRss')}</ThemedText>
+            <View style={[styles.toggle, { backgroundColor: wifiOnlyFetch ? toggleOnBg : toggleOffBg }]}>
+              <View style={[styles.toggleThumb, wifiOnlyFetch && styles.toggleThumbActive]} />
+            </View>
+          </TouchableOpacity>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.wifiOnlyHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionMinRefresh')}>
-          <ComingSoonRow title={t('dataManagement.minRefreshThrottle')} />
+          <Dropdown label={t('dataManagement.minRefreshThrottle')} value={getMinRefreshLabel()} onPress={() => setMinRefreshDropdownVisible(true)} />
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.minRefreshHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.opmlImportExport')}>
@@ -507,6 +560,15 @@ export default function DataManagementScreen() {
         selectedValue={articleRetentionDays}
         onSelect={handleChangeRetentionDays}
         onClose={() => setRetentionDropdownVisible(false)}
+      />
+
+      <DropdownModal
+        visible={minRefreshDropdownVisible}
+        title={t('dataManagement.selectMinRefreshTitle')}
+        options={minRefreshOptions}
+        selectedValue={minRefreshInterval}
+        onSelect={handleChangeMinRefreshInterval}
+        onClose={() => setMinRefreshDropdownVisible(false)}
       />
 
       <ManualDeleteModal
@@ -566,6 +628,8 @@ const styles = StyleSheet.create({
   toggleThumbActive: { alignSelf: 'flex-end' },
   retentionDescription: { marginBottom: 16 },
   retentionDescriptionText: { fontSize: 13, lineHeight: 18, marginBottom: 12 },
+  /** 設定セクション下の補足説明 */
+  sectionHint: { fontSize: 12, lineHeight: 17, marginTop: 10, opacity: 0.7 },
   dropdownLabel: { fontSize: 14, fontWeight: '500', marginBottom: 8 },
   dropdown: {
     flexDirection: 'row',

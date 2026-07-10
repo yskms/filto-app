@@ -7,6 +7,7 @@ import Reanimated from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 import { Ionicons } from '@expo/vector-icons';
 import { FilterService, Filter } from '@/services/FilterService';
@@ -263,9 +264,9 @@ export default function FiltersScreen() {
   // 即 visible にして暗幕を出す（計測は CoachMarks 側でレイアウト確定までリトライ）
   useFocusEffect(
     React.useCallback(() => {
-      AsyncStorage.getItem('@filto/tour/filters').then((flag) => {
+      AsyncStorage.getItem(StorageKeys.tourFilters).then((flag) => {
         if (flag === '1' || flag === 'last') {
-          AsyncStorage.removeItem('@filto/tour/filters').catch(() => {});
+          AsyncStorage.removeItem(StorageKeys.tourFilters).catch(() => {});
           setTutorialStartAtLast(flag === 'last');
           setTutorialVisible(true);
         }
@@ -276,14 +277,14 @@ export default function FiltersScreen() {
   // 最初のステップで「戻る」→ ホーム画面のツアー最後へ戻る
   const handleTutorialBack = React.useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/home', 'last'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourHome, 'last'); } catch {}
     router.navigate('/');
   }, [router]);
 
   // 最後の「次へ」で、フィルタ追加画面へ遷移してツアーを継続する
   const handleTutorialDone = React.useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/filterEdit', '1'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFilterEdit, '1'); } catch {}
     router.push('/filter_edit');
   }, [router]);
 

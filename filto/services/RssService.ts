@@ -167,21 +167,22 @@ function extractAtomIconUrl(feedNode: Record<string, unknown>, feedUrl: string):
 /**
  * エンコーディングを自動検出してテキストを取得
  */
+const FEED_REQUEST_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+  'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*',
+  'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+  'Cache-Control': 'no-cache',
+  'Pragma': 'no-cache',
+} as const;
+
 async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(url, { 
+    const response = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-        'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*',
-        'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-        'Referer': 'https://journal.meti.go.jp/',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-      },
+      headers: FEED_REQUEST_HEADERS,
     });
 
     // 202 Accepted の場合は再試行
@@ -196,14 +197,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string>
       try {
         const response2 = await fetch(url, {
           signal: controller2.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-            'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*',
-            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-            'Referer': 'https://journal.meti.go.jp/',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-          },
+          headers: FEED_REQUEST_HEADERS,
         });
         
         
@@ -255,12 +249,9 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string>
     if (arrayBuffer.byteLength === 0) {
       
       // 再度fetchを実行
-      const response2 = await fetch(url, { 
+      const response2 = await fetch(url, {
         signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'application/rss+xml, application/xml, text/xml, */*',
-        },
+        headers: FEED_REQUEST_HEADERS,
       });
       
       const text = await response2.text();

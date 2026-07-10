@@ -12,6 +12,7 @@ import { Feed } from '@/types/Feed';
 import { FeedService } from '@/services/FeedService';
 import { FeedSortModal, FeedSortType } from '@/components/FeedSortModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
@@ -299,9 +300,9 @@ export default function FeedsScreen() {
   // フィルタ追加画面('1')or フィード追加画面からの戻り('last')でツアーを開始/再開
   useFocusEffect(
     React.useCallback(() => {
-      AsyncStorage.getItem('@filto/tour/feeds').then((flag) => {
+      AsyncStorage.getItem(StorageKeys.tourFeeds).then((flag) => {
         if (flag === '1' || flag === 'last') {
-          AsyncStorage.removeItem('@filto/tour/feeds').catch(() => {});
+          AsyncStorage.removeItem(StorageKeys.tourFeeds).catch(() => {});
           setTutorialStartAtLast(flag === 'last');
           setTutorialVisible(true);
         }
@@ -312,14 +313,14 @@ export default function FeedsScreen() {
   // 最初のステップで「戻る」→ フィルタ追加画面のツアー最後へ戻る（再push）
   const handleTutorialBack = React.useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/filterEdit', 'last'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFilterEdit, 'last'); } catch {}
     router.push('/filter_edit');
   }, [router]);
 
   // 最後の「次へ」で、フィード追加画面へ進みツアー継続
   const handleTutorialDone = React.useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/feedAdd', '1'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFeedAdd, '1'); } catch {}
     router.push('/feed_add');
   }, [router]);
 

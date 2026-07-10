@@ -3,9 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 
 import { getDefaultFeedsFlat } from '@/constants/defaultFeeds';
+import { StorageKeys, STORAGE_KEY_PREFIX } from '@/constants/storageKeys';
 
-const SEED_KEY = '@filto/defaultFeedsSeeded';
-const FILTER_SEED_KEY = '@filto/defaultFiltersSeeded';
+const SEED_KEY = StorageKeys.defaultFeedsSeeded;
+const FILTER_SEED_KEY = StorageKeys.defaultFiltersSeeded;
 
 const DEFAULT_FILTERS = [
   { block_keyword: 'Trump', allow_keyword: null, target_title: 1, target_description: 1 },
@@ -160,23 +161,13 @@ export async function seedDefaultFilters(): Promise<void> {
   await AsyncStorage.setItem(FILTER_SEED_KEY, 'true');
 }
 
-export const ONBOARDING_KEY = '@filto/onboardingCompleted';
-
-const ALL_STORAGE_KEYS = [
-  SEED_KEY,
-  FILTER_SEED_KEY,
-  ONBOARDING_KEY,
-  '@filto/data_management/articleRetentionDays',
-  '@filto/data_management/deleteStarredInAutoDelete',
-  '@filto/display_behavior/autoSyncOnStartup',
-  '@filto/display_behavior/language',
-  '@filto/display_behavior/readDisplay',
-  '@filto/display_behavior/theme',
-  '@filto/lastSyncTime',
-];
+export const ONBOARDING_KEY = StorageKeys.onboardingCompleted;
 
 /**
  * すべてのデータをリセットする（DB全テーブル削除 + AsyncStorage全クリア）
+ *
+ * AsyncStorage は個別列挙ではなくプレフィックス走査で消す。
+ * 設定キーを増やすたびに列挙し忘れて「リセットしても残る」事故を防ぐため。
  */
 export async function resetAllData(): Promise<void> {
   const database = openDatabase();
@@ -186,7 +177,26 @@ export async function resetAllData(): Promise<void> {
     database.execSync('DELETE FROM filters');
     database.execSync('DELETE FROM global_allow_keywords');
   });
-  await AsyncStorage.multiRemove(ALL_STORAGE_KEYS);
+  const keys = await AsyncStorage.getAllKeys();
+  const filtoKeys = keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX));
+  if (filtoKeys.length > 0) {
+    await AsyncStorage.multiRemove(filtoKeys);
+  }
+}
+
+/**
+ * 「初回設定をやり直す」用のスコープ付きリセット。
+ * 初回設定で作られるフィード・フィルタ（および feed_id CASCADE で連動する記事）を
+ * 削除して選び直せる状態にする。表示設定などの AsyncStorage と
+ * グローバル許可キーワードは保持する（初回設定の対象外のため）。
+ */
+export async function resetFeedsAndFilters(): Promise<void> {
+  const database = openDatabase();
+  database.withTransactionSync(() => {
+    database.execSync('DELETE FROM articles');
+    database.execSync('DELETE FROM feeds');
+    database.execSync('DELETE FROM filters');
+  });
 }
 
 /**

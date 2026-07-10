@@ -33,6 +33,7 @@ import { SyncService } from '@/services/SyncService';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import type { ReadDisplayMode } from '../display_behavior';
 import { Ionicons } from '@expo/vector-icons';
 import { ErrorHandler } from '@/utils/errorHandler';
@@ -264,6 +265,9 @@ export default function HomeScreen() {
   const layoutToggleRef = React.useRef<View>(null);
   const filterBarRef = React.useRef<View>(null);
   const listWrapperRef = React.useRef<View>(null);
+  // ツアーで「長押しでお気に入り」をハイライトする対象（先頭の記事1件）。
+  // レイアウト（コンパクト/大画像）で記事の高さが変わるため、固定値ではなく実測する
+  const firstArticleRef = React.useRef<View>(null);
 
   // スクロール連動（カスタムスクロールバー / トップへ戻るボタン）
   const scrollY = React.useRef(new Animated.Value(0)).current;
@@ -352,7 +356,7 @@ export default function HomeScreen() {
       setGlobalAllowKeywords(globalAllowList);
 
       // Display & Behavior の設定を取得
-      const savedReadDisplay = await AsyncStorage.getItem('@filto/display_behavior/readDisplay');
+      const savedReadDisplay = await AsyncStorage.getItem(StorageKeys.readDisplay);
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
         setReadDisplay(savedReadDisplay);
       }
@@ -365,14 +369,14 @@ export default function HomeScreen() {
 
   // 保存済みのフィード並び順を読み込む
   React.useEffect(() => {
-    AsyncStorage.getItem('@filto/home/feedSort')
+    AsyncStorage.getItem(StorageKeys.feedSort)
       .then(saved => { if (saved) setFeedSort(saved as FeedSortType); })
       .catch(() => {});
   }, []);
 
   // 保存済みの記事レイアウトを読み込む
   React.useEffect(() => {
-    AsyncStorage.getItem('@filto/display_behavior/layoutMode')
+    AsyncStorage.getItem(StorageKeys.layoutMode)
       .then(saved => { if (saved === 'compact' || saved === 'large') setLayoutMode(saved); })
       .catch(() => {});
   }, []);
@@ -381,7 +385,7 @@ export default function HomeScreen() {
   const handleToggleLayout = React.useCallback(() => {
     setLayoutMode(prev => {
       const next: LayoutMode = prev === 'compact' ? 'large' : 'compact';
-      AsyncStorage.setItem('@filto/display_behavior/layoutMode', next).catch(() => {});
+      AsyncStorage.setItem(StorageKeys.layoutMode, next).catch(() => {});
       return next;
     });
   }, []);
@@ -389,8 +393,23 @@ export default function HomeScreen() {
   // フィード並び順を変更・永続化する
   const handleSelectFeedSort = React.useCallback((sortType: FeedSortType) => {
     setFeedSort(sortType);
-    AsyncStorage.setItem('@filto/home/feedSort', sortType).catch(() => {});
+    AsyncStorage.setItem(StorageKeys.feedSort, sortType).catch(() => {});
   }, []);
+
+  // 先頭記事が計測できないとき（描画前など）に使う代用ハイライト。
+  // リスト上部を控えめな高さで囲う
+  const measureListTopFallback = React.useCallback(
+    (): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = listWrapperRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, width, height) => {
+          if (!width || !height) resolve(null);
+          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(96, Math.max(0, height - 12)) });
+        });
+      }),
+    []
+  );
 
   // チュートリアル: 対象要素を実測してハイライト位置を返す
   const measureNode = React.useCallback(
@@ -416,13 +435,14 @@ export default function HomeScreen() {
     { measure: () => measureNode(refreshRef), text: t('home.tutRefreshDesc') },
     { measure: () => measureNode(filterBarRef), text: t('home.tutFilterDesc') },
     {
-      // 記事リストの先頭付近をハイライト（長押しでお気に入り）
+      // 先頭の記事1件をハイライト（長押しでお気に入り）。
+      // 記事の高さはレイアウトで変わるので実測する。取れないときはリスト先頭付近で代用
       measure: () => new Promise<CoachRect | null>((resolve) => {
-        const node = listWrapperRef.current;
-        if (!node) { resolve(null); return; }
-        node.measureInWindow((x, y, width, height) => {
-          if (!width || !height) resolve(null);
-          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(96, Math.max(0, height - 12)) });
+        const first = firstArticleRef.current;
+        if (!first) { resolve(measureListTopFallback()); return; }
+        first.measureInWindow((x, y, width, height) => {
+          if (width && height) resolve({ x, y, width, height });
+          else resolve(measureListTopFallback());
         });
       }),
       text: t('home.tutStarDesc'),
@@ -445,7 +465,7 @@ export default function HomeScreen() {
       }),
       text: t('home.tutFiltersTabDesc'),
     },
-  ], [t, measureNode]);
+  ], [t, measureNode, measureListTopFallback]);
 
   // ツアー中に背景へ出すダミー記事（実記事が届くまでの間、③長押し・④フィルタの
   // 説明対象を成立させるため）
@@ -468,9 +488,9 @@ export default function HomeScreen() {
   // 来たとき('last')はフォーカス時に、フラグを見て開始する
   useFocusEffect(
     React.useCallback(() => {
-      AsyncStorage.getItem('@filto/tour/home').then((flag) => {
+      AsyncStorage.getItem(StorageKeys.tourHome).then((flag) => {
         if (flag === '1' || flag === 'last') {
-          AsyncStorage.removeItem('@filto/tour/home').catch(() => {});
+          AsyncStorage.removeItem(StorageKeys.tourHome).catch(() => {});
           setHomeStartAtLast(flag === 'last');
           setTutorialPending(true);
           setTutorialVisible(true);
@@ -484,7 +504,7 @@ export default function HomeScreen() {
     setTutorialVisible(false);
     setTutorialPending(false);
     // 遷移先が読む前に確実に書き込む（先頭から開始）
-    try { await AsyncStorage.setItem('@filto/tour/filters', '1'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFilters, '1'); } catch {}
     router.navigate('/filters');
   }, []);
 
@@ -492,9 +512,9 @@ export default function HomeScreen() {
   // 完了してから解除する（中途半端な状態を一切見せない）
   useFocusEffect(
     React.useCallback(() => {
-      AsyncStorage.getItem('@filto/tour/finish').then((flag) => {
+      AsyncStorage.getItem(StorageKeys.tourFinish).then((flag) => {
         if (flag !== '1') return;
-        AsyncStorage.removeItem('@filto/tour/finish').catch(() => {});
+        AsyncStorage.removeItem(StorageKeys.tourFinish).catch(() => {});
         setWaitingArticles(true);
         // 既に同期完了済みなら一瞬だけ見せて閉じる。未完了なら完了まで待つ
         // （通常は hasAutoSynced で解除。これは保険のフォールバック）
@@ -537,7 +557,7 @@ export default function HomeScreen() {
 
     const autoSync = async () => {
       try {
-        const autoSyncEnabled = await AsyncStorage.getItem('@filto/display_behavior/autoSyncOnStartup');
+        const autoSyncEnabled = await AsyncStorage.getItem(StorageKeys.autoSyncOnStartup);
         if (autoSyncEnabled === 'false') {
           setHasAutoSynced(true);
           return;
@@ -593,12 +613,12 @@ export default function HomeScreen() {
     setFilteredArticles(displayed);
   }, [articles, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
 
-  const handleRefresh = React.useCallback(async () => {
+  const runRefresh = React.useCallback(async () => {
     try {
       setRefreshing(true);
 
-      // RSS同期を実行
-      const result = await SyncService.refresh();
+      // RSS同期を実行（手動更新は明示操作なのでWiFi限定設定を無視して必ず取得）
+      const result = await SyncService.refresh({ ignoreWifiOnly: true });
 
       if (result.offline) {
         Alert.alert(t('common.error'), t('home.offlineError'));
@@ -617,6 +637,45 @@ export default function HomeScreen() {
       setRefreshing(false);
     }
   }, [loadData, t]);
+
+  // 手動更新。「WiFi接続時のみ取得」がオンでモバイル回線のときは、
+  // 通信量が発生する旨を確認してから取得する（判定に失敗したらそのまま取得）
+  const handleRefresh = React.useCallback(async () => {
+    try {
+      // 同期実行中（起動直後の自動同期など）は refresh() が黙って何もせず返るため、
+      // 先にここで拾って「更新中」であることを伝える。
+      // この時点では lastSyncTime が未更新なのでクールダウン判定も効かない
+      if (SyncService.isRefreshing) {
+        Alert.alert(t('home.refreshInProgressTitle'), t('home.refreshInProgressMessage'));
+        return;
+      }
+
+      // 連打防止の最低更新間隔チェック（制限中なら残り時間を案内して中断）。
+      // 通信量の確認より先に行い、制限中は無駄なダイアログを出さない
+      const cooldown = await SyncService.getManualRefreshCooldown();
+      if (cooldown !== null) {
+        Alert.alert(
+          t('home.refreshThrottledTitle'),
+          t('home.refreshThrottled', { minutes: Math.ceil(cooldown / 60) })
+        );
+        return;
+      }
+
+      if (await SyncService.shouldConfirmMobileFetch()) {
+        Alert.alert(
+          t('home.mobileFetchConfirmTitle'),
+          t('home.mobileFetchConfirmMessage'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('home.mobileFetchConfirmButton'), onPress: () => { void runRefresh(); } },
+          ]
+        );
+        return;
+      }
+    } catch (_) {
+    }
+    await runRefresh();
+  }, [runRefresh, t]);
 
   // スクロール監視（バー連動 + ボタン表示切替）
   const handleScroll = React.useMemo(
@@ -740,16 +799,25 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const renderItem = React.useCallback(({ item }: { item: Article }) => (
-    <ArticleItem
-      article={item}
-      onPress={handlePressArticle}
-      onLongPress={handleLongPressArticle}
-      highlightAnim={getHighlightAnim(item.id)}
-      isBlocked={blockedKeywordIds.has(item.id)}
-      large={layoutMode === 'large'}
-    />
-  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds, layoutMode]);
+  const renderItem = React.useCallback(({ item, index }: { item: Article; index: number }) => {
+    const row = (
+      <ArticleItem
+        article={item}
+        onPress={handlePressArticle}
+        onLongPress={handleLongPressArticle}
+        highlightAnim={getHighlightAnim(item.id)}
+        isBlocked={blockedKeywordIds.has(item.id)}
+        large={layoutMode === 'large'}
+      />
+    );
+    // 先頭の1件だけツアーの計測対象にする（collapsable=false でAndroidでも計測可能に）
+    if (index !== 0) return row;
+    return (
+      <View ref={firstArticleRef} collapsable={false}>
+        {row}
+      </View>
+    );
+  }, [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds, layoutMode]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
