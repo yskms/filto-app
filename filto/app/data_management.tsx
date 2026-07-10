@@ -20,7 +20,12 @@ import { resetAllData } from '@/database/init';
 import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
 import { OpmlService } from '@/services/OpmlService';
-import { BackupService } from '@/services/BackupService';
+import {
+  BackupService,
+  type BackupData,
+  type BackupImportMode,
+  type BackupPickResult,
+} from '@/services/BackupService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -386,30 +391,30 @@ export default function DataManagementScreen() {
     }
   };
 
-  const runImportBackup = async () => {
+  const applyBackup = async (data: BackupData, mode: BackupImportMode) => {
     try {
       setIsBackupBusy(true);
-      const result = await BackupService.importFromFile();
-      if (result.status === 'invalid') {
-        Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreInvalid'));
-      } else if (result.status === 'unsupportedVersion') {
-        Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreUnsupported'));
-      } else if (result.status === 'imported') {
-        // 上限で入りきらなかった許可キーワードがあれば、消えたと誤解されないよう明示する
-        const skippedNote =
-          result.keywordsSkipped > 0
-            ? '\n' + t('dataManagement.backupRestoreKeywordsSkipped', { count: result.keywordsSkipped })
-            : '';
-        Alert.alert(
-          t('common.done'),
-          t('dataManagement.backupRestoreComplete', {
-            feeds: result.feeds,
-            filters: result.filters,
-            keywords: result.keywords,
-            articles: result.articles,
-          }) + skippedNote
-        );
-      }
+      const result = await BackupService.applyBackup(data, mode);
+
+      // 黙って捨てると「消えた」と誤解されるものだけ補足する
+      const notes = [
+        result.starredRestored > 0
+          ? t('dataManagement.backupRestoreStarredRestored', { count: result.starredRestored })
+          : '',
+        result.keywordsSkipped > 0
+          ? t('dataManagement.backupRestoreKeywordsSkipped', { count: result.keywordsSkipped })
+          : '',
+      ].filter(Boolean);
+
+      Alert.alert(
+        t('common.done'),
+        t('dataManagement.backupRestoreComplete', {
+          feeds: result.feeds,
+          filters: result.filters,
+          keywords: result.keywords,
+          articles: result.articles,
+        }) + (notes.length > 0 ? '\n' + notes.join('\n') : '')
+      );
     } catch (_) {
       Alert.alert(t('common.error'), t('dataManagement.backupRestoreError'));
     } finally {
@@ -417,17 +422,83 @@ export default function DataManagementScreen() {
     }
   };
 
-  const handleImportBackup = () => {
-    if (isBackupBusy) return;
-    // 復元は設定の上書きを伴うため確認してから実行
+  /** 置き換えは取り消せないうえ、失われる記事の量がバックアップの中身で変わるため個別に確認する */
+  const confirmReplace = (picked: Extract<BackupPickResult, { status: 'ok' }>) => {
+    // 範囲を記録していない古いバックアップは、お気に入りのみの可能性を排除できないので警告する
+    const articleWarning =
+      picked.includeAllArticles === true
+        ? ''
+        : '\n\n' + t('dataManagement.backupReplaceStarredOnlyWarning');
+
     Alert.alert(
-      t('dataManagement.backupRestore'),
-      t('dataManagement.backupRestoreConfirm'),
+      t('dataManagement.backupReplaceConfirmTitle'),
+      t('dataManagement.backupReplaceConfirmMessage', {
+        feeds: picked.feeds,
+        filters: picked.filters,
+        keywords: picked.keywords,
+        articles: picked.articles,
+      }) + articleWarning,
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('dataManagement.backupRestoreSelectFile'), onPress: runImportBackup },
+        {
+          text: t('dataManagement.backupReplaceExecute'),
+          style: 'destructive',
+          onPress: () => applyBackup(picked.data, 'replace'),
+        },
       ]
     );
+  };
+
+  const runImportBackup = async () => {
+    let picked;
+    try {
+      setIsBackupBusy(true);
+      // 読み込んで検証するだけ。ここではまだ何も書き換えない
+      picked = await BackupService.pickBackupFile();
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.backupRestoreError'));
+      return;
+    } finally {
+      setIsBackupBusy(false);
+    }
+
+    if (picked.status === 'cancelled') return;
+    if (picked.status === 'invalid') {
+      Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreInvalid'));
+      return;
+    }
+    if (picked.status === 'unsupportedVersion') {
+      Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreUnsupported'));
+      return;
+    }
+
+    // 中身の件数を見せたうえで、追加か置き換えかを選ばせる
+    Alert.alert(
+      t('dataManagement.backupRestoreModeTitle'),
+      t('dataManagement.backupRestoreModeMessage', {
+        feeds: picked.feeds,
+        filters: picked.filters,
+        keywords: picked.keywords,
+        articles: picked.articles,
+      }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('dataManagement.backupRestoreModeReplace'),
+          style: 'destructive',
+          onPress: () => confirmReplace(picked as Extract<BackupPickResult, { status: 'ok' }>),
+        },
+        {
+          text: t('dataManagement.backupRestoreModeMerge'),
+          onPress: () => applyBackup((picked as Extract<BackupPickResult, { status: 'ok' }>).data, 'merge'),
+        },
+      ]
+    );
+  };
+
+  const handleImportBackup = () => {
+    if (isBackupBusy) return;
+    runImportBackup();
   };
 
   const handleExportOpml = async () => {

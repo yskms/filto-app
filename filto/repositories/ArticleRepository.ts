@@ -191,6 +191,38 @@ export const ArticleRepository = {
   },
 
   /**
+   * 指定した記事にお気に入りを立てる（外すことはしない）。
+   *
+   * バックアップ復元用。insertMany は INSERT OR IGNORE なので、すでに端末にある記事は
+   * 行ごとスキップされ is_starred が反映されない。そこで挿入後に立て直す。
+   * 既読状態は端末側を正とするため触らない（古いバックアップで既読が巻き戻るのを避ける）。
+   *
+   * @returns 実際にお気に入りが立った件数
+   */
+  async starManyByLink(targets: { feedId: string; link: string }[]): Promise<number> {
+    if (targets.length === 0) return 0;
+
+    const db = openDatabase();
+    let starred = 0;
+
+    db.withTransactionSync(() => {
+      for (const target of targets) {
+        try {
+          const result = db.runSync(
+            'UPDATE articles SET is_starred = 1 WHERE feed_id = ? AND link = ? AND is_starred = 0',
+            [target.feedId, target.link]
+          );
+          starred += result.changes;
+        } catch (_) {
+          // 1件の失敗は無視して残りを継続
+        }
+      }
+    });
+
+    return starred;
+  },
+
+  /**
    * お気に入り記事のみを取得
    */
   async listStarred(): Promise<Article[]> {

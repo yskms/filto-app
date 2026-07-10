@@ -15,6 +15,10 @@ import { writeAndShare, type ShareExportResult } from '@/utils/exportFile';
  * 記事はエクスポート時に「お気に入りのみ」か「すべて」を選べる。
  * 表示設定（テーマ・言語など）は対象外：端末ごとに選ぶ性質で項目数も少なく、
  * 復元しても Provider が起動時に読むため即時反映されず分かりにくいため。
+ *
+ * 復元はファイルを読んでから「追加(merge)」か「置き換え(replace)」を選ぶ二段構え。
+ * 置き換えは取り消せないうえ、バックアップの記事の範囲によって失われる量が変わるため、
+ * 中身を数えてから確認したい。
  */
 
 const BACKUP_VERSION = 1;
@@ -52,7 +56,7 @@ interface BackupArticle {
   isStarred: boolean;
 }
 
-interface BackupData {
+export interface BackupData {
   app: typeof BACKUP_APP_ID;
   version: number;
   exportedAt: string;
@@ -61,6 +65,12 @@ interface BackupData {
   globalAllowKeywords: string[];
   /** エクスポート時の選択により「お気に入りのみ」または「すべての記事」 */
   articles: BackupArticle[];
+  /**
+   * articles が全記事か、お気に入りのみか。
+   * 置き換え復元で「何が失われるか」を正しく警告するために必要。
+   * この項目が無い古いバックアップもあるため、読む側では省略を許容する。
+   */
+  includeAllArticles: boolean;
 }
 
 /**
@@ -79,21 +89,69 @@ function articleKey(feedId: string, link: string): string {
 
 export type BackupExportResult = ShareExportResult;
 
-export type BackupImportResult =
+/** 復元の方式 */
+export type BackupImportMode =
+  /** 既存データを残したまま、足りないものを追加する */
+  | 'merge'
+  /** 既存のフィード・フィルタ・許可キーワード・記事をすべて消してから取り込む */
+  | 'replace';
+
+/** ファイルを選んで検証した結果。中身の件数を確認ダイアログに出すために持ち回る */
+export type BackupPickResult =
   | {
-      status: 'imported';
+      status: 'ok';
+      data: BackupData;
       feeds: number;
       filters: number;
       keywords: number;
       articles: number;
-      /** 無料版の上限などで復元できなかった許可キーワードの件数 */
-      keywordsSkipped: number;
+      /** null は「範囲を記録していない古いバックアップ」。保守的に警告する */
+      includeAllArticles: boolean | null;
     }
   | { status: 'cancelled' }
   /** JSONとして読めない、または Filto のバックアップではない */
   | { status: 'invalid' }
   /** このアプリより新しい形式のバックアップ（読み込むと壊れる可能性がある） */
   | { status: 'unsupportedVersion' };
+
+export interface BackupApplyResult {
+  feeds: number;
+  filters: number;
+  keywords: number;
+  articles: number;
+  /** すでに端末にあった記事のうち、バックアップを見てお気に入りを立て直した件数 */
+  starredRestored: number;
+  /** 無料版の上限などで復元できなかった許可キーワードの件数 */
+  keywordsSkipped: number;
+}
+
+/**
+ * 既存のフィード・フィルタ・許可キーワード・記事をすべて削除する（置き換え復元用）。
+ *
+ * 記事は feeds の ON DELETE CASCADE では消えない。SQLite の外部キー制約は既定でオフで、
+ * このアプリは PRAGMA foreign_keys を有効にしていないため。明示的に先に消す。
+ * 表示設定など AsyncStorage のデータは対象外（バックアップにも含めていない）。
+ */
+async function wipeExistingData(): Promise<void> {
+  await ArticleRepository.deleteOldArticles(-1, true);
+
+  for (const feed of await FeedService.list()) {
+    try {
+      await FeedService.delete(feed.id);
+    } catch (_) {}
+  }
+  for (const filter of await FilterService.list()) {
+    if (filter.id === undefined) continue;
+    try {
+      await FilterService.delete(filter.id);
+    } catch (_) {}
+  }
+  for (const keyword of await GlobalAllowKeywordService.list()) {
+    try {
+      await GlobalAllowKeywordService.delete(keyword.id);
+    } catch (_) {}
+  }
+}
 
 export const BackupService = {
   /**
@@ -114,6 +172,7 @@ export const BackupService = {
       app: BACKUP_APP_ID,
       version: BACKUP_VERSION,
       exportedAt: new Date().toISOString(),
+      includeAllArticles: options.includeAllArticles,
       feeds: feeds.map((f) => ({ url: f.url, title: f.title, iconUrl: f.iconUrl })),
       filters: filters.map((f) => ({
         block_keyword: f.block_keyword,
@@ -148,10 +207,10 @@ export const BackupService = {
   },
 
   /**
-   * バックアップ JSON を選択して取り込む（マージ）。
-   * 既存と重複するフィード / フィルタ / 許可キーワード / 記事はスキップする。
+   * バックアップ JSON を選択して検証する。まだ何も書き込まない。
+   * 呼び出し側はこの件数をユーザーに見せてから applyBackup を呼ぶ。
    */
-  async importFromFile(): Promise<BackupImportResult> {
+  async pickBackupFile(): Promise<BackupPickResult> {
     const picked = await DocumentPicker.getDocumentAsync({
       type: ['application/json', 'text/plain', '*/*'],
       copyToCacheDirectory: true,
@@ -180,11 +239,46 @@ export const BackupService = {
       return { status: 'unsupportedVersion' };
     }
 
+    const articles = Array.isArray(data.articles) ? data.articles : [];
+
+    return {
+      status: 'ok',
+      data: {
+        app: BACKUP_APP_ID,
+        version: typeof data.version === 'number' ? data.version : BACKUP_VERSION,
+        exportedAt: typeof data.exportedAt === 'string' ? data.exportedAt : '',
+        feeds: data.feeds,
+        filters: Array.isArray(data.filters) ? data.filters : [],
+        globalAllowKeywords: Array.isArray(data.globalAllowKeywords) ? data.globalAllowKeywords : [],
+        articles,
+        includeAllArticles: data.includeAllArticles === true,
+      },
+      feeds: data.feeds.length,
+      filters: Array.isArray(data.filters) ? data.filters.length : 0,
+      keywords: Array.isArray(data.globalAllowKeywords) ? data.globalAllowKeywords.length : 0,
+      articles: articles.length,
+      includeAllArticles: typeof data.includeAllArticles === 'boolean' ? data.includeAllArticles : null,
+    };
+  },
+
+  /**
+   * 検証済みのバックアップを取り込む。
+   *
+   * merge: 既存と重複するフィード / フィルタ / 許可キーワード / 記事はスキップする。
+   *        すでにある記事にはバックアップのお気に入りを立て直すが、既読状態は変えない。
+   * replace: 先に既存データを消してから同じ取り込みを行う。
+   */
+  async applyBackup(data: BackupData, mode: BackupImportMode): Promise<BackupApplyResult> {
+    if (mode === 'replace') {
+      await wipeExistingData();
+    }
+
     let feedsAdded = 0;
     let filtersAdded = 0;
     let keywordsAdded = 0;
     let keywordsSkipped = 0;
     let articlesAdded = 0;
+    let starredRestored = 0;
 
     // フィード（URL重複はスキップ）
     const existingFeeds = await FeedService.list();
@@ -202,61 +296,57 @@ export const BackupService = {
     }
 
     // フィルタ（内容が一致するものはスキップ）
-    if (Array.isArray(data.filters)) {
-      const existingFilters = await FilterService.list();
-      const existingSigs = new Set(
-        existingFilters.map((f) =>
-          filterSignature({
-            block_keyword: f.block_keyword,
-            allow_keyword: f.allow_keyword,
-            target_title: f.target_title,
-            target_description: f.target_description,
-          })
-        )
-      );
-      for (const filter of data.filters) {
-        if (!filter || typeof filter.block_keyword !== 'string') continue;
-        const normalized: BackupFilter = {
-          block_keyword: filter.block_keyword,
-          allow_keyword: filter.allow_keyword ?? null,
-          target_title: filter.target_title ? 1 : 0,
-          target_description: filter.target_description ? 1 : 0,
-        };
-        const sig = filterSignature(normalized);
-        if (existingSigs.has(sig)) continue;
-        try {
-          const now = Math.floor(Date.now() / 1000);
-          await FilterService.save({ ...normalized, created_at: now, updated_at: now } as Filter);
-          existingSigs.add(sig);
-          filtersAdded++;
-        } catch (_) {}
-      }
+    const existingFilters = await FilterService.list();
+    const existingSigs = new Set(
+      existingFilters.map((f) =>
+        filterSignature({
+          block_keyword: f.block_keyword,
+          allow_keyword: f.allow_keyword,
+          target_title: f.target_title,
+          target_description: f.target_description,
+        })
+      )
+    );
+    for (const filter of data.filters) {
+      if (!filter || typeof filter.block_keyword !== 'string') continue;
+      const normalized: BackupFilter = {
+        block_keyword: filter.block_keyword,
+        allow_keyword: filter.allow_keyword ?? null,
+        target_title: filter.target_title ? 1 : 0,
+        target_description: filter.target_description ? 1 : 0,
+      };
+      const sig = filterSignature(normalized);
+      if (existingSigs.has(sig)) continue;
+      try {
+        const now = Math.floor(Date.now() / 1000);
+        await FilterService.save({ ...normalized, created_at: now, updated_at: now } as Filter);
+        existingSigs.add(sig);
+        filtersAdded++;
+      } catch (_) {}
     }
 
     // グローバル許可キーワード（重複・上限超過はスキップ）
-    if (Array.isArray(data.globalAllowKeywords)) {
-      const existingKeywords = await GlobalAllowKeywordService.list();
-      const existingKw = new Set(existingKeywords.map((k) => k.keyword));
-      for (const keyword of data.globalAllowKeywords) {
-        if (typeof keyword !== 'string' || existingKw.has(keyword)) continue;
-        try {
-          const result = await GlobalAllowKeywordService.create(keyword);
-          if (result.success) {
-            existingKw.add(keyword);
-            keywordsAdded++;
-          } else {
-            // 無料版の上限などで登録できなかった。黙って捨てるとデータが
-            // 消えたように見えるため、件数を数えてユーザーに伝える
-            keywordsSkipped++;
-          }
-        } catch (_) {
+    const existingKeywords = await GlobalAllowKeywordService.list();
+    const existingKw = new Set(existingKeywords.map((k) => k.keyword));
+    for (const keyword of data.globalAllowKeywords) {
+      if (typeof keyword !== 'string' || existingKw.has(keyword)) continue;
+      try {
+        const result = await GlobalAllowKeywordService.create(keyword);
+        if (result.success) {
+          existingKw.add(keyword);
+          keywordsAdded++;
+        } else {
+          // 無料版の上限などで登録できなかった。黙って捨てるとデータが
+          // 消えたように見えるため、件数を数えてユーザーに伝える
           keywordsSkipped++;
         }
+      } catch (_) {
+        keywordsSkipped++;
       }
     }
 
     // 記事（フィードURL → 復元後のフィードID に貼り替えて取り込む）
-    if (Array.isArray(data.articles) && data.articles.length > 0) {
+    if (data.articles.length > 0) {
       // フィード復元後の一覧で URL → ID の対応を作る
       const feedIdByUrl = new Map((await FeedService.list()).map((f) => [f.url, f.id]));
 
@@ -267,11 +357,17 @@ export const BackupService = {
       );
 
       const toInsert: Article[] = [];
+      const starTargets: { feedId: string; link: string }[] = [];
+
       for (const article of data.articles) {
         if (!article || typeof article.link !== 'string' || typeof article.feedUrl !== 'string') continue;
         const feedId = feedIdByUrl.get(article.feedUrl);
         // 対応するフィードが無い（復元されなかった）記事は取り込まない
         if (!feedId) continue;
+
+        if (article.isStarred) {
+          starTargets.push({ feedId, link: article.link });
+        }
 
         const key = articleKey(feedId, article.link);
         if (existingKeys.has(key)) continue;
@@ -297,14 +393,20 @@ export const BackupService = {
           articlesAdded = toInsert.length;
         } catch (_) {}
       }
+
+      // 挿入をスキップされた既存記事にお気に入りを立て直す。
+      // 新規挿入分はすでに is_starred = 1 なので、この件数には数えられない
+      try {
+        starredRestored = await ArticleRepository.starManyByLink(starTargets);
+      } catch (_) {}
     }
 
     return {
-      status: 'imported',
       feeds: feedsAdded,
       filters: filtersAdded,
       keywords: keywordsAdded,
       articles: articlesAdded,
+      starredRestored,
       keywordsSkipped,
     };
   },

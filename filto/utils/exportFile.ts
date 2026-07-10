@@ -27,9 +27,19 @@ function cleanupExportedFiles(prefix: string): void {
   }
 }
 
-/** YYYYMMDD 形式の日付スタンプ */
-function dateStamp(): string {
-  return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+/**
+ * YYYYMMDD_HHMMSS 形式のスタンプ。
+ *
+ * 同じ日に複数回書き出したとき、保存先で同名ファイルを上書きしてしまうため秒まで含める。
+ * 端末のローカル時刻を使う（UTCだと日本時間の朝が前日の日付になる）。
+ */
+function timeStamp(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}` +
+    `_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`
+  );
 }
 
 /**
@@ -48,7 +58,7 @@ export async function writeAndShare(
   // 前回のエクスポート残骸を掃除してから書き出す
   cleanupExportedFiles(prefix);
 
-  const file = new File(Paths.cache, `${prefix}${dateStamp()}.${extension}`);
+  const file = new File(Paths.cache, `${prefix}${timeStamp()}.${extension}`);
   if (file.exists) file.delete();
   file.create();
   file.write(content);
