@@ -289,6 +289,8 @@ export const en = {
     backupRestoreStarredRestored: 'Restored favorites on {{count}} existing article(s).',
     backupRestoreInvalid: 'This is not a valid backup file.',
     backupRestoreUnsupported: 'This backup was created with a newer version. Please update the app.',
+    backupRestoreFeedsSkipped: '{{count}} feed(s) could not be imported.',
+    backupRestoreArticlesSkipped: '{{count}} article(s) could not be imported.',
     backupRestoreKeywordsSkipped: '{{count}} allow keyword(s) could not be added due to the limit.',
     backupRestoreError: 'Failed to restore.',
   },

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -273,6 +273,8 @@ export default function DataManagementScreen() {
   const [isOpmlBusy, setIsOpmlBusy] = useState(false);
   const [isBackupBusy, setIsBackupBusy] = useState(false);
   const [backupIncludeAllArticles, setBackupIncludeAllArticles] = useState(false);
+  /** 二度押しの即時ガード。isBackupBusy は再レンダリングまで更新されないため併用する */
+  const backupBusyRef = useRef(false);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -377,7 +379,9 @@ export default function DataManagementScreen() {
   };
 
   const handleExportBackup = async () => {
-    if (isBackupBusy) return;
+    // state だけでは同じフレーム内の二度押しを止められない（handleImportBackup と同様）
+    if (isBackupBusy || backupBusyRef.current) return;
+    backupBusyRef.current = true;
     try {
       setIsBackupBusy(true);
       const result = await BackupService.exportToFile({ includeAllArticles: backupIncludeAllArticles });
@@ -388,18 +392,29 @@ export default function DataManagementScreen() {
       Alert.alert(t('common.error'), t('dataManagement.backupExportError'));
     } finally {
       setIsBackupBusy(false);
+      backupBusyRef.current = false;
     }
   };
 
   const applyBackup = async (data: BackupData, mode: BackupImportMode) => {
     try {
       setIsBackupBusy(true);
+      // 置き換えは全データを消す。進行中の同期が消した直後のフィードに記事を書き戻すのを防ぐ
+      if (mode === 'replace') {
+        SyncService.cancelOngoing();
+      }
       const result = await BackupService.applyBackup(data, mode);
 
       // 黙って捨てると「消えた」と誤解されるものだけ補足する
       const notes = [
         result.starredRestored > 0
           ? t('dataManagement.backupRestoreStarredRestored', { count: result.starredRestored })
+          : '',
+        result.feedsSkipped > 0
+          ? t('dataManagement.backupRestoreFeedsSkipped', { count: result.feedsSkipped })
+          : '',
+        result.articlesSkipped > 0
+          ? t('dataManagement.backupRestoreArticlesSkipped', { count: result.articlesSkipped })
           : '',
         result.keywordsSkipped > 0
           ? t('dataManagement.backupRestoreKeywordsSkipped', { count: result.keywordsSkipped })
@@ -423,34 +438,33 @@ export default function DataManagementScreen() {
   };
 
   /** 置き換えは取り消せないうえ、失われる記事の量がバックアップの中身で変わるため個別に確認する */
-  const confirmReplace = (picked: Extract<BackupPickResult, { status: 'ok' }>) => {
+  const confirmReplace = (data: BackupData) => {
     // 範囲を記録していない古いバックアップは、お気に入りのみの可能性を排除できないので警告する
-    const articleWarning =
-      picked.includeAllArticles === true
-        ? ''
-        : '\n\n' + t('dataManagement.backupReplaceStarredOnlyWarning');
+    const articleWarning = data.includeAllArticles
+      ? ''
+      : '\n\n' + t('dataManagement.backupReplaceStarredOnlyWarning');
 
     Alert.alert(
       t('dataManagement.backupReplaceConfirmTitle'),
       t('dataManagement.backupReplaceConfirmMessage', {
-        feeds: picked.feeds,
-        filters: picked.filters,
-        keywords: picked.keywords,
-        articles: picked.articles,
+        feeds: data.feeds.length,
+        filters: data.filters.length,
+        keywords: data.globalAllowKeywords.length,
+        articles: data.articles.length,
       }) + articleWarning,
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
           text: t('dataManagement.backupReplaceExecute'),
           style: 'destructive',
-          onPress: () => applyBackup(picked.data, 'replace'),
+          onPress: () => applyBackup(data, 'replace'),
         },
       ]
     );
   };
 
   const runImportBackup = async () => {
-    let picked;
+    let picked: BackupPickResult;
     try {
       setIsBackupBusy(true);
       // 読み込んで検証するだけ。ここではまだ何も書き換えない
@@ -460,6 +474,7 @@ export default function DataManagementScreen() {
       return;
     } finally {
       setIsBackupBusy(false);
+      backupBusyRef.current = false;
     }
 
     if (picked.status === 'cancelled') return;
@@ -472,32 +487,38 @@ export default function DataManagementScreen() {
       return;
     }
 
+    // const に束ねると絞り込みが onPress のクロージャまで残る
+    const { data } = picked;
+
     // 中身の件数を見せたうえで、追加か置き換えかを選ばせる
     Alert.alert(
       t('dataManagement.backupRestoreModeTitle'),
       t('dataManagement.backupRestoreModeMessage', {
-        feeds: picked.feeds,
-        filters: picked.filters,
-        keywords: picked.keywords,
-        articles: picked.articles,
+        feeds: data.feeds.length,
+        filters: data.filters.length,
+        keywords: data.globalAllowKeywords.length,
+        articles: data.articles.length,
       }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
           text: t('dataManagement.backupRestoreModeReplace'),
           style: 'destructive',
-          onPress: () => confirmReplace(picked as Extract<BackupPickResult, { status: 'ok' }>),
+          onPress: () => confirmReplace(data),
         },
         {
           text: t('dataManagement.backupRestoreModeMerge'),
-          onPress: () => applyBackup((picked as Extract<BackupPickResult, { status: 'ok' }>).data, 'merge'),
+          onPress: () => applyBackup(data, 'merge'),
         },
       ]
     );
   };
 
   const handleImportBackup = () => {
-    if (isBackupBusy) return;
+    // isBackupBusy は state のため、同じフレーム内の二度押しを止められない。
+    // DocumentPicker が二重に開くのを防ぐため ref で弾く
+    if (isBackupBusy || backupBusyRef.current) return;
+    backupBusyRef.current = true;
     runImportBackup();
   };
 

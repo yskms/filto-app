@@ -43,19 +43,14 @@ function timeStamp(): string {
 }
 
 /**
- * 内容をキャッシュに書き出して共有シートを開く。
+ * 内容をキャッシュに書き出してファイルURIを返す（共有はしない）。
  *
  * @param prefix ファイル名の接頭辞（`filto_feeds_` など）。掃除対象の判別にも使う
  * @param extension 拡張子（`opml` / `json`）
  * @param content 書き出す文字列
  */
-export async function writeAndShare(
-  prefix: string,
-  extension: string,
-  content: string,
-  options: { mimeType: string; dialogTitle: string; UTI: string }
-): Promise<ShareExportResult> {
-  // 前回のエクスポート残骸を掃除してから書き出す
+export function writeCacheFile(prefix: string, extension: string, content: string): string {
+  // 前回の残骸を掃除してから書き出す
   cleanupExportedFiles(prefix);
 
   const file = new File(Paths.cache, `${prefix}${timeStamp()}.${extension}`);
@@ -63,10 +58,24 @@ export async function writeAndShare(
   file.create();
   file.write(content);
 
+  return file.uri;
+}
+
+/**
+ * 内容をキャッシュに書き出して共有シートを開く。
+ */
+export async function writeAndShare(
+  prefix: string,
+  extension: string,
+  content: string,
+  options: { mimeType: string; dialogTitle: string; UTI: string }
+): Promise<ShareExportResult> {
+  const uri = writeCacheFile(prefix, extension, content);
+
   if (!(await Sharing.isAvailableAsync())) {
     return { status: 'unavailable' };
   }
 
-  await Sharing.shareAsync(file.uri, options);
+  await Sharing.shareAsync(uri, options);
   return { status: 'shared' };
 }

@@ -289,6 +289,8 @@ export const ja = {
       backupRestoreStarredRestored: '既存の記事{{count}}件にお気に入りを復元しました。',
       backupRestoreInvalid: '有効なバックアップファイルではありませんでした。',
       backupRestoreUnsupported: 'このバックアップは新しいバージョンで作成されています。アプリを更新してください。',
+      backupRestoreFeedsSkipped: 'フィード{{count}}件は取り込めませんでした。',
+      backupRestoreArticlesSkipped: '記事{{count}}件は取り込めませんでした。',
       backupRestoreKeywordsSkipped: '許可キーワード{{count}}件は上限のため追加できませんでした。',
       backupRestoreError: '復元に失敗しました。',
     },
