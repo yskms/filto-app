@@ -391,14 +391,24 @@ export default function DataManagementScreen() {
       const result = await BackupService.importFromFile();
       if (result.status === 'invalid') {
         Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreInvalid'));
+      } else if (result.status === 'unsupportedVersion') {
+        Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreUnsupported'));
       } else if (result.status === 'imported') {
+        // 上限で入りきらなかった許可キーワードがあれば、消えたと誤解されないよう明示する
+        const skippedNote =
+          result.keywordsSkipped > 0
+            ? '\n' + t('dataManagement.backupRestoreKeywordsSkipped', { count: result.keywordsSkipped })
+            : '';
         Alert.alert(
           t('common.done'),
           t('dataManagement.backupRestoreComplete', {
             feeds: result.feeds,
             filters: result.filters,
             keywords: result.keywords,
-          })
+          }) +
+            skippedNote +
+            '\n' +
+            t('dataManagement.backupRestoreRestartNote')
         );
       }
     } catch (_) {

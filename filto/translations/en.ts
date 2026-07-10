@@ -280,6 +280,9 @@ export const en = {
     backupRestoreSelectFile: 'Select file',
     backupRestoreComplete: 'Restored ({{feeds}} feeds / {{filters}} filters / {{keywords}} keywords added).',
     backupRestoreInvalid: 'This is not a valid backup file.',
+    backupRestoreUnsupported: 'This backup was created with a newer version. Please update the app.',
+    backupRestoreKeywordsSkipped: '{{count}} allow keyword(s) could not be added due to the limit.',
+    backupRestoreRestartNote: 'Settings such as theme and language take effect after restarting the app.',
     backupRestoreError: 'Failed to restore.',
   },
 

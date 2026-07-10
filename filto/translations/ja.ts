@@ -280,6 +280,9 @@ export const ja = {
       backupRestoreSelectFile: 'ファイルを選択',
       backupRestoreComplete: '復元しました（フィード{{feeds}}件 / フィルタ{{filters}}件 / キーワード{{keywords}}件を追加）。',
       backupRestoreInvalid: '有効なバックアップファイルではありませんでした。',
+      backupRestoreUnsupported: 'このバックアップは新しいバージョンで作成されています。アプリを更新してください。',
+      backupRestoreKeywordsSkipped: '許可キーワード{{count}}件は上限のため追加できませんでした。',
+      backupRestoreRestartNote: 'テーマや言語などの設定は、次回起動時に反映されます。',
       backupRestoreError: '復元に失敗しました。',
     },
   

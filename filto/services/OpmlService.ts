@@ -1,9 +1,9 @@
-import { Directory, File, Paths } from 'expo-file-system';
+import { File } from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
-import * as Sharing from 'expo-sharing';
 import { XMLParser } from 'fast-xml-parser';
 import { FeedService } from '@/services/FeedService';
 import { getFaviconUrl, isValidFeedUrl } from '@/utils/feedUrl';
+import { writeAndShare } from '@/utils/exportFile';
 import { Feed } from '@/types/Feed';
 
 /**
@@ -20,21 +20,6 @@ const parser = new XMLParser({
 
 /** エクスポートしたOPMLファイル名の接頭辞（掃除対象の判別に使う） */
 const EXPORT_FILE_PREFIX = 'filto_feeds_';
-
-/**
- * 過去のエクスポートで残ったキャッシュ上のOPMLを削除する。
- * 失敗しても本処理は続行する（キャッシュはOSも回収するため）。
- */
-function cleanupExportedFiles(): void {
-  try {
-    for (const entry of new Directory(Paths.cache).list()) {
-      if (entry instanceof File && entry.name.startsWith(EXPORT_FILE_PREFIX)) {
-        entry.delete();
-      }
-    }
-  } catch (_) {
-  }
-}
 
 /** XML 特殊文字をエスケープ */
 function escapeXml(value: string): string {
@@ -118,29 +103,11 @@ export const OpmlService = {
       return { status: 'empty' };
     }
 
-    const xml = buildOpml(feeds);
-
-    // 共有シートに渡したファイルは、受け取り側がいつ読むか分からないため
-    // 共有直後には消さない。代わりに次回エクスポート時に前回分を掃除する
-    cleanupExportedFiles();
-
-    // 日付入りのファイル名でキャッシュに書き出し
-    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const file = new File(Paths.cache, `${EXPORT_FILE_PREFIX}${stamp}.opml`);
-    if (file.exists) file.delete();
-    file.create();
-    file.write(xml);
-
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(file.uri, {
-        mimeType: 'text/x-opml',
-        dialogTitle: 'Filto OPML',
-        UTI: 'org.opml.opml',
-      });
-      return { status: 'shared' };
-    }
-
-    return { status: 'unavailable' };
+    return writeAndShare(EXPORT_FILE_PREFIX, 'opml', buildOpml(feeds), {
+      mimeType: 'text/x-opml',
+      dialogTitle: 'Filto OPML',
+      UTI: 'org.opml.opml',
+    });
   },
 
   /**
