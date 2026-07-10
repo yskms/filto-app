@@ -265,6 +265,9 @@ export default function HomeScreen() {
   const layoutToggleRef = React.useRef<View>(null);
   const filterBarRef = React.useRef<View>(null);
   const listWrapperRef = React.useRef<View>(null);
+  // ツアーで「長押しでお気に入り」をハイライトする対象（先頭の記事1件）。
+  // レイアウト（コンパクト/大画像）で記事の高さが変わるため、固定値ではなく実測する
+  const firstArticleRef = React.useRef<View>(null);
 
   // スクロール連動（カスタムスクロールバー / トップへ戻るボタン）
   const scrollY = React.useRef(new Animated.Value(0)).current;
@@ -393,6 +396,21 @@ export default function HomeScreen() {
     AsyncStorage.setItem(StorageKeys.feedSort, sortType).catch(() => {});
   }, []);
 
+  // 先頭記事が計測できないとき（描画前など）に使う代用ハイライト。
+  // リスト上部を控えめな高さで囲う
+  const measureListTopFallback = React.useCallback(
+    (): Promise<CoachRect | null> =>
+      new Promise((resolve) => {
+        const node = listWrapperRef.current;
+        if (!node) { resolve(null); return; }
+        node.measureInWindow((x, y, width, height) => {
+          if (!width || !height) resolve(null);
+          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(96, Math.max(0, height - 12)) });
+        });
+      }),
+    []
+  );
+
   // チュートリアル: 対象要素を実測してハイライト位置を返す
   const measureNode = React.useCallback(
     (ref: React.RefObject<View | null>): Promise<CoachRect | null> =>
@@ -417,13 +435,14 @@ export default function HomeScreen() {
     { measure: () => measureNode(refreshRef), text: t('home.tutRefreshDesc') },
     { measure: () => measureNode(filterBarRef), text: t('home.tutFilterDesc') },
     {
-      // 記事リストの先頭付近をハイライト（長押しでお気に入り）
+      // 先頭の記事1件をハイライト（長押しでお気に入り）。
+      // 記事の高さはレイアウトで変わるので実測する。取れないときはリスト先頭付近で代用
       measure: () => new Promise<CoachRect | null>((resolve) => {
-        const node = listWrapperRef.current;
-        if (!node) { resolve(null); return; }
-        node.measureInWindow((x, y, width, height) => {
-          if (!width || !height) resolve(null);
-          else resolve({ x: x + 8, y: y + 6, width: width - 16, height: Math.min(96, Math.max(0, height - 12)) });
+        const first = firstArticleRef.current;
+        if (!first) { resolve(measureListTopFallback()); return; }
+        first.measureInWindow((x, y, width, height) => {
+          if (width && height) resolve({ x, y, width, height });
+          else resolve(measureListTopFallback());
         });
       }),
       text: t('home.tutStarDesc'),
@@ -446,7 +465,7 @@ export default function HomeScreen() {
       }),
       text: t('home.tutFiltersTabDesc'),
     },
-  ], [t, measureNode]);
+  ], [t, measureNode, measureListTopFallback]);
 
   // ツアー中に背景へ出すダミー記事（実記事が届くまでの間、③長押し・④フィルタの
   // 説明対象を成立させるため）
@@ -780,16 +799,25 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const renderItem = React.useCallback(({ item }: { item: Article }) => (
-    <ArticleItem
-      article={item}
-      onPress={handlePressArticle}
-      onLongPress={handleLongPressArticle}
-      highlightAnim={getHighlightAnim(item.id)}
-      isBlocked={blockedKeywordIds.has(item.id)}
-      large={layoutMode === 'large'}
-    />
-  ), [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds, layoutMode]);
+  const renderItem = React.useCallback(({ item, index }: { item: Article; index: number }) => {
+    const row = (
+      <ArticleItem
+        article={item}
+        onPress={handlePressArticle}
+        onLongPress={handleLongPressArticle}
+        highlightAnim={getHighlightAnim(item.id)}
+        isBlocked={blockedKeywordIds.has(item.id)}
+        large={layoutMode === 'large'}
+      />
+    );
+    // 先頭の1件だけツアーの計測対象にする（collapsable=false でAndroidでも計測可能に）
+    if (index !== 0) return row;
+    return (
+      <View ref={firstArticleRef} collapsable={false}>
+        {row}
+      </View>
+    );
+  }, [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds, layoutMode]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
