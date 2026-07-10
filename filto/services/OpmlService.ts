@@ -3,6 +3,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 import { XMLParser } from 'fast-xml-parser';
 import { FeedService } from '@/services/FeedService';
+import { getFaviconUrl, isValidFeedUrl } from '@/utils/feedUrl';
 import { Feed } from '@/types/Feed';
 
 /**
@@ -172,6 +173,13 @@ export const OpmlService = {
     let skipped = 0;
 
     for (const entry of collected) {
+      // 手動追加(feed_add)と同じ基準で検証する。http/https 以外を登録すると
+      // 同期のたびに失敗し続ける壊れたフィードが永続化されてしまう
+      if (!isValidFeedUrl(entry.url)) {
+        skipped++;
+        continue;
+      }
+
       if (seen.has(entry.url)) {
         skipped++;
         continue;
@@ -184,7 +192,12 @@ export const OpmlService = {
       }
 
       try {
-        await FeedService.create({ url: entry.url, title: entry.title });
+        // オンボーディングでの登録と同様、ファビコンをアイコンとして補完する
+        await FeedService.create({
+          url: entry.url,
+          title: entry.title,
+          iconUrl: getFaviconUrl(entry.url),
+        });
         added++;
       } catch (_) {
         skipped++;

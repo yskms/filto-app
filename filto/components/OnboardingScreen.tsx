@@ -20,6 +20,7 @@ import {
   seedFiltersFromTopics,
 } from '@/database/init';
 import { DEFAULT_FEED_CATEGORIES } from '@/constants/defaultFeeds';
+import { getFaviconUrl } from '@/utils/feedUrl';
 
 const FEED_CATEGORIES = DEFAULT_FEED_CATEGORIES;
 
@@ -64,18 +65,6 @@ const BLOCK_KEYWORDS: Record<string, string[]> = {
     'Horoscope', 'Astrology', 'Zodiac', 'Tarot', 'Spiritual', 'Psychic',
   ],
 };
-
-function getFaviconUrl(feedUrl: string): string {
-  try {
-    let domain = new URL(feedUrl).hostname;
-    // feeds./feed. はRSS配信専用サブドメインでGoogleのファビコンDBに未登録のケースがあるため除去する
-    if (domain.startsWith('feeds.')) domain = domain.slice('feeds.'.length);
-    else if (domain.startsWith('feed.')) domain = domain.slice('feed.'.length);
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
-  } catch {
-    return '';
-  }
-}
 
 const ACCENT = '#0a7ea4';
 

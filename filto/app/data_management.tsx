@@ -539,7 +539,7 @@ export default function DataManagementScreen() {
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlImport')}</ThemedText>
             <Ionicons name="download-outline" size={20} color={arrowColor} />
           </TouchableOpacity>
-          <ThemedText style={styles.opmlHint}>{t('dataManagement.opmlHint')}</ThemedText>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.opmlHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionFuture')}>
@@ -649,7 +649,6 @@ const styles = StyleSheet.create({
   comingSoonRowText: { fontSize: 14 },
   comingSoonBadge: { fontSize: 12, fontStyle: 'italic' },
   comingSoonDivider: { height: 1, marginVertical: 4 },
-  opmlHint: { fontSize: 12, lineHeight: 17, marginTop: 12, opacity: 0.7 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   dropdownModalContent: { borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },
   dropdownModalTitle: { fontSize: 16, fontWeight: '600', marginBottom: 16, textAlign: 'center' },
