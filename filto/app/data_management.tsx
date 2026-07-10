@@ -267,6 +267,7 @@ export default function DataManagementScreen() {
   const [isResetting, setIsResetting] = useState(false);
   const [isOpmlBusy, setIsOpmlBusy] = useState(false);
   const [isBackupBusy, setIsBackupBusy] = useState(false);
+  const [backupIncludeAllArticles, setBackupIncludeAllArticles] = useState(false);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -374,7 +375,7 @@ export default function DataManagementScreen() {
     if (isBackupBusy) return;
     try {
       setIsBackupBusy(true);
-      const result = await BackupService.exportToFile();
+      const result = await BackupService.exportToFile({ includeAllArticles: backupIncludeAllArticles });
       if (result.status === 'unavailable') {
         Alert.alert(t('dataManagement.backupExport'), t('dataManagement.shareUnavailable'));
       }
@@ -405,10 +406,8 @@ export default function DataManagementScreen() {
             feeds: result.feeds,
             filters: result.filters,
             keywords: result.keywords,
-          }) +
-            skippedNote +
-            '\n' +
-            t('dataManagement.backupRestoreRestartNote')
+            articles: result.articles,
+          }) + skippedNote
         );
       }
     } catch (_) {
@@ -601,6 +600,18 @@ export default function DataManagementScreen() {
         </SettingSection>
 
         <SettingSection title={t('dataManagement.dataBackupRestore')}>
+          <TouchableOpacity
+            style={styles.toggleRow}
+            onPress={() => setBackupIncludeAllArticles((prev) => !prev)}
+            activeOpacity={0.7}
+            disabled={isBackupBusy}
+          >
+            <ThemedText style={styles.toggleLabelText}>{t('dataManagement.backupIncludeAllArticles')}</ThemedText>
+            <View style={[styles.toggle, { backgroundColor: backupIncludeAllArticles ? toggleOnBg : toggleOffBg }]}>
+              <View style={[styles.toggleThumb, backupIncludeAllArticles && styles.toggleThumbActive]} />
+            </View>
+          </TouchableOpacity>
+          <View style={styles.rowDivider} />
           <TouchableOpacity style={styles.manualDeleteRow} onPress={handleExportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupExport')}</ThemedText>
             <Ionicons name="share-outline" size={20} color={arrowColor} />

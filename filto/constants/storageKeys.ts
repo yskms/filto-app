@@ -49,23 +49,3 @@ export const StorageKeys = {
   // 「リセットしても消えないキー」が生まれてしまう
 } as const satisfies Record<string, `${typeof STORAGE_KEY_PREFIX}${string}`>;
 
-/**
- * バックアップ／復元の対象にする設定キー。
- *
- * 端末やタイミングに依存する値は含めない:
- * - ツアーの進行フラグ（一時的）
- * - シード済みフラグ・オンボーディング完了フラグ（その端末の初期化状態）
- * - 最終同期時刻（復元先で誤って更新を抑制してしまうため）
- */
-export const BACKUP_SETTING_KEYS = [
-  StorageKeys.articleRetentionDays,
-  StorageKeys.deleteStarredInAutoDelete,
-  StorageKeys.wifiOnlyFetch,
-  StorageKeys.minRefreshIntervalMinutes,
-  StorageKeys.autoSyncOnStartup,
-  StorageKeys.language,
-  StorageKeys.readDisplay,
-  StorageKeys.theme,
-  StorageKeys.layoutMode,
-  StorageKeys.feedSort,
-] as const;

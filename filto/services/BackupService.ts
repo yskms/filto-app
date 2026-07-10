@@ -1,17 +1,20 @@
 import { File } from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BACKUP_SETTING_KEYS } from '@/constants/storageKeys';
 import { FeedService } from '@/services/FeedService';
 import { FilterService, Filter } from '@/services/FilterService';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
+import { ArticleRepository } from '@/repositories/ArticleRepository';
+import { Article } from '@/types/Article';
 import { isValidFeedUrl } from '@/utils/feedUrl';
 import { writeAndShare, type ShareExportResult } from '@/utils/exportFile';
 
 /**
  * BackupService
- * フィード・フィルタ・許可キーワード・設定を JSON でバックアップ / 復元する。
- * 記事は同期で再取得できるため対象外。
+ * フィード・フィルタ・グローバル許可キーワード・記事を JSON でバックアップ / 復元する。
+ *
+ * 記事はエクスポート時に「お気に入りのみ」か「すべて」を選べる。
+ * 表示設定（テーマ・言語など）は対象外：端末ごとに選ぶ性質で項目数も少なく、
+ * 復元しても Provider が起動時に読むため即時反映されず分かりにくいため。
  */
 
 const BACKUP_VERSION = 1;
@@ -33,6 +36,22 @@ interface BackupFilter {
   target_description: number;
 }
 
+/**
+ * 記事はフィードのIDではなくURLで紐づける。
+ * 復元時にフィードのIDは新しく採番されるため、IDのままでは対応が取れなくなる。
+ */
+interface BackupArticle {
+  feedUrl: string;
+  feedName: string;
+  title: string;
+  link: string;
+  summary?: string;
+  thumbnailUrl?: string;
+  publishedAt: string;
+  isRead: boolean;
+  isStarred: boolean;
+}
+
 interface BackupData {
   app: typeof BACKUP_APP_ID;
   version: number;
@@ -40,7 +59,8 @@ interface BackupData {
   feeds: BackupFeed[];
   filters: BackupFilter[];
   globalAllowKeywords: string[];
-  settings: Record<string, string>;
+  /** エクスポート時の選択により「お気に入りのみ」または「すべての記事」 */
+  articles: BackupArticle[];
 }
 
 /**
@@ -52,6 +72,11 @@ function filterSignature(f: BackupFilter): string {
   return JSON.stringify([f.block_keyword, f.allow_keyword ?? '', f.target_title, f.target_description]);
 }
 
+/** 記事の重複判定キー（DBの UNIQUE(feed_id, link) に対応） */
+function articleKey(feedId: string, link: string): string {
+  return JSON.stringify([feedId, link]);
+}
+
 export type BackupExportResult = ShareExportResult;
 
 export type BackupImportResult =
@@ -60,7 +85,7 @@ export type BackupImportResult =
       feeds: number;
       filters: number;
       keywords: number;
-      settings: number;
+      articles: number;
       /** 無料版の上限などで復元できなかった許可キーワードの件数 */
       keywordsSkipped: number;
     }
@@ -72,20 +97,18 @@ export type BackupImportResult =
 
 export const BackupService = {
   /**
-   * 全データ（記事を除く）を JSON にまとめて共有シートを開く。
+   * フィード・フィルタ・許可キーワード・記事を JSON にまとめて共有シートを開く。
+   * @param options.includeAllArticles true なら全記事、false ならお気に入りのみ
    */
-  async exportToFile(): Promise<BackupExportResult> {
-    const [feeds, filters, keywords, settingsEntries] = await Promise.all([
+  async exportToFile(options: { includeAllArticles: boolean }): Promise<BackupExportResult> {
+    const [feeds, filters, keywords, articles] = await Promise.all([
       FeedService.list(),
       FilterService.list(),
       GlobalAllowKeywordService.list(),
-      AsyncStorage.multiGet(BACKUP_SETTING_KEYS),
+      options.includeAllArticles ? ArticleRepository.listAll() : ArticleRepository.listStarred(),
     ]);
 
-    const settings: Record<string, string> = {};
-    for (const [key, value] of settingsEntries) {
-      if (value !== null) settings[key] = value;
-    }
+    const feedUrlById = new Map(feeds.map((f) => [f.id, f.url]));
 
     const data: BackupData = {
       app: BACKUP_APP_ID,
@@ -99,7 +122,22 @@ export const BackupService = {
         target_description: f.target_description,
       })),
       globalAllowKeywords: keywords.map((k) => k.keyword),
-      settings,
+      articles: articles.flatMap((a) => {
+        const feedUrl = feedUrlById.get(a.feedId);
+        // 対応するフィードが無い記事（削除済みフィードの残骸など）は持ち出さない
+        if (!feedUrl) return [];
+        return [{
+          feedUrl,
+          feedName: a.feedName,
+          title: a.title,
+          link: a.link,
+          summary: a.summary,
+          thumbnailUrl: a.thumbnailUrl,
+          publishedAt: a.publishedAt,
+          isRead: a.isRead,
+          isStarred: a.isStarred,
+        }];
+      }),
     };
 
     return writeAndShare(EXPORT_FILE_PREFIX, 'json', JSON.stringify(data, null, 2), {
@@ -111,8 +149,7 @@ export const BackupService = {
 
   /**
    * バックアップ JSON を選択して取り込む（マージ）。
-   * 既存と重複するフィード / フィルタ / キーワードはスキップし、設定は上書きする。
-   * 一部の設定（テーマ・言語など）は次回起動時に反映される。
+   * 既存と重複するフィード / フィルタ / 許可キーワード / 記事はスキップする。
    */
   async importFromFile(): Promise<BackupImportResult> {
     const picked = await DocumentPicker.getDocumentAsync({
@@ -147,7 +184,7 @@ export const BackupService = {
     let filtersAdded = 0;
     let keywordsAdded = 0;
     let keywordsSkipped = 0;
-    let settingsApplied = 0;
+    let articlesAdded = 0;
 
     // フィード（URL重複はスキップ）
     const existingFeeds = await FeedService.list();
@@ -218,17 +255,46 @@ export const BackupService = {
       }
     }
 
-    // 設定（上書き）
-    if (data.settings && typeof data.settings === 'object') {
-      const pairs: [string, string][] = [];
-      for (const key of BACKUP_SETTING_KEYS) {
-        const value = data.settings[key];
-        if (typeof value === 'string') pairs.push([key, value]);
+    // 記事（フィードURL → 復元後のフィードID に貼り替えて取り込む）
+    if (Array.isArray(data.articles) && data.articles.length > 0) {
+      // フィード復元後の一覧で URL → ID の対応を作る
+      const feedIdByUrl = new Map((await FeedService.list()).map((f) => [f.url, f.id]));
+
+      // insertMany は INSERT OR IGNORE なので重複は静かに捨てられる。
+      // 「N件追加」と正しく伝えるため、実際に入る件数だけを数える
+      const existingKeys = new Set(
+        (await ArticleRepository.listAll()).map((a) => articleKey(a.feedId, a.link))
+      );
+
+      const toInsert: Article[] = [];
+      for (const article of data.articles) {
+        if (!article || typeof article.link !== 'string' || typeof article.feedUrl !== 'string') continue;
+        const feedId = feedIdByUrl.get(article.feedUrl);
+        // 対応するフィードが無い（復元されなかった）記事は取り込まない
+        if (!feedId) continue;
+
+        const key = articleKey(feedId, article.link);
+        if (existingKeys.has(key)) continue;
+        existingKeys.add(key);
+
+        toInsert.push({
+          id: '', // insertMany では使われない（id は AUTOINCREMENT）
+          feedId,
+          feedName: article.feedName,
+          title: article.title,
+          link: article.link,
+          summary: article.summary,
+          thumbnailUrl: article.thumbnailUrl,
+          publishedAt: article.publishedAt,
+          isRead: !!article.isRead,
+          isStarred: !!article.isStarred,
+        });
       }
-      if (pairs.length > 0) {
+
+      if (toInsert.length > 0) {
         try {
-          await AsyncStorage.multiSet(pairs);
-          settingsApplied = pairs.length;
+          await ArticleRepository.insertMany(toInsert);
+          articlesAdded = toInsert.length;
         } catch (_) {}
       }
     }
@@ -238,7 +304,7 @@ export const BackupService = {
       feeds: feedsAdded,
       filters: filtersAdded,
       keywords: keywordsAdded,
-      settings: settingsApplied,
+      articles: articlesAdded,
       keywordsSkipped,
     };
   },
