@@ -403,6 +403,8 @@ export default function DataManagementScreen() {
       const result = await OpmlService.importFromFile();
       if (result.status === 'invalid') {
         Alert.alert(t('dataManagement.opmlImport'), t('dataManagement.opmlImportInvalid'));
+      } else if (result.status === 'noFeeds') {
+        Alert.alert(t('dataManagement.opmlImport'), t('dataManagement.opmlImportNoFeeds'));
       } else if (result.status === 'imported') {
         Alert.alert(
           t('common.done'),

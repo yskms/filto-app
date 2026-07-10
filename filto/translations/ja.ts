@@ -269,6 +269,7 @@ export const ja = {
       opmlShareUnavailable: 'この端末では共有を利用できません。',
       opmlImportComplete: '{{added}}件を追加しました（{{skipped}}件はスキップ）。',
       opmlImportInvalid: '有効なOPMLファイルではありませんでした。',
+      opmlImportNoFeeds: 'このOPMLにはフィードが含まれていませんでした。',
       opmlImportError: 'インポートに失敗しました。',
       dataBackupRestore: 'データのバックアップ / 復元',
     },

@@ -269,6 +269,7 @@ export const en = {
     opmlShareUnavailable: 'Sharing is not available on this device.',
     opmlImportComplete: 'Added {{added}} feed(s) ({{skipped}} skipped).',
     opmlImportInvalid: 'This is not a valid OPML file.',
+    opmlImportNoFeeds: 'This OPML file contains no feeds.',
     opmlImportError: 'Failed to import.',
     dataBackupRestore: 'Data backup / restore',
   },

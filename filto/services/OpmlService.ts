@@ -1,4 +1,4 @@
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 import { XMLParser } from 'fast-xml-parser';
@@ -17,6 +17,24 @@ const parser = new XMLParser({
   processEntities: true,
   htmlEntities: true,
 });
+
+/** エクスポートしたOPMLファイル名の接頭辞（掃除対象の判別に使う） */
+const EXPORT_FILE_PREFIX = 'filto_feeds_';
+
+/**
+ * 過去のエクスポートで残ったキャッシュ上のOPMLを削除する。
+ * 失敗しても本処理は続行する（キャッシュはOSも回収するため）。
+ */
+function cleanupExportedFiles(): void {
+  try {
+    for (const entry of new Directory(Paths.cache).list()) {
+      if (entry instanceof File && entry.name.startsWith(EXPORT_FILE_PREFIX)) {
+        entry.delete();
+      }
+    }
+  } catch (_) {
+  }
+}
 
 /** XML 特殊文字をエスケープ */
 function escapeXml(value: string): string {
@@ -78,14 +96,17 @@ function collectOutlines(
 }
 
 export type OpmlExportResult =
-  | { status: 'shared'; count: number }
-  | { status: 'unavailable'; count: number; uri: string }
+  | { status: 'shared' }
+  | { status: 'unavailable' }
   | { status: 'empty' };
 
 export type OpmlImportResult =
-  | { status: 'imported'; added: number; skipped: number; total: number }
+  | { status: 'imported'; added: number; skipped: number }
   | { status: 'cancelled' }
-  | { status: 'invalid' };
+  /** OPMLとして解釈できなかった */
+  | { status: 'invalid' }
+  /** OPMLとしては正しいが、購読フィード（xmlUrl）が1件も無い */
+  | { status: 'noFeeds' };
 
 export const OpmlService = {
   /**
@@ -99,9 +120,13 @@ export const OpmlService = {
 
     const xml = buildOpml(feeds);
 
+    // 共有シートに渡したファイルは、受け取り側がいつ読むか分からないため
+    // 共有直後には消さない。代わりに次回エクスポート時に前回分を掃除する
+    cleanupExportedFiles();
+
     // 日付入りのファイル名でキャッシュに書き出し
     const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const file = new File(Paths.cache, `filto_feeds_${stamp}.opml`);
+    const file = new File(Paths.cache, `${EXPORT_FILE_PREFIX}${stamp}.opml`);
     if (file.exists) file.delete();
     file.create();
     file.write(xml);
@@ -112,10 +137,10 @@ export const OpmlService = {
         dialogTitle: 'Filto OPML',
         UTI: 'org.opml.opml',
       });
-      return { status: 'shared', count: feeds.length };
+      return { status: 'shared' };
     }
 
-    return { status: 'unavailable', count: feeds.length, uri: file.uri };
+    return { status: 'unavailable' };
   },
 
   /**
@@ -159,8 +184,10 @@ export const OpmlService = {
     const collected: { url: string; title?: string }[] = [];
     collectOutlines(body['outline'], collected);
 
+    // OPMLの構造は正しいが購読フィードが含まれていないケース。
+    // 「壊れたファイル」とは区別して案内する
     if (collected.length === 0) {
-      return { status: 'invalid' };
+      return { status: 'noFeeds' };
     }
 
     // 既存フィードの URL 集合（重複登録を避ける）
@@ -204,6 +231,6 @@ export const OpmlService = {
       }
     }
 
-    return { status: 'imported', added, skipped, total: collected.length };
+    return { status: 'imported', added, skipped };
   },
 };
