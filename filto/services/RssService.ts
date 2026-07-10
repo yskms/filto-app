@@ -2,6 +2,7 @@ import { XMLParser } from 'fast-xml-parser';
 import * as Encoding from 'encoding-japanese';
 
 import { Article } from '@/types/Article';
+import { getFaviconUrl } from '@/utils/feedUrl';
 
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_ARTICLES = 50;
@@ -41,21 +42,6 @@ function toIsoDateOrNow(dateLike: unknown): string {
   const ms = new Date(text).getTime();
   if (Number.isNaN(ms)) return new Date().toISOString();
   return new Date(ms).toISOString();
-}
-
-/**
- * ファビコンAPIでフォールバック画像を生成
- */
-function getFaviconUrl(feedUrl: string): string {
-  try {
-    let domain = new URL(feedUrl).hostname;
-    // feeds./feed. はRSS配信専用サブドメインでGoogleのファビコンDBに未登録のケースがあるため除去する
-    if (domain.startsWith('feeds.')) domain = domain.slice('feeds.'.length);
-    else if (domain.startsWith('feed.')) domain = domain.slice('feed.'.length);
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
-  } catch {
-    return '';
-  }
 }
 
 /**

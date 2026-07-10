@@ -19,6 +19,7 @@ import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { resetAllData } from '@/database/init';
 import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
+import { OpmlService } from '@/services/OpmlService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -273,6 +274,7 @@ export default function DataManagementScreen() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isOpmlBusy, setIsOpmlBusy] = useState(false);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -376,6 +378,47 @@ export default function DataManagementScreen() {
     }
   };
 
+  const handleExportOpml = async () => {
+    if (isOpmlBusy) return;
+    try {
+      setIsOpmlBusy(true);
+      const result = await OpmlService.exportToFile();
+      if (result.status === 'empty') {
+        Alert.alert(t('dataManagement.opmlExport'), t('dataManagement.opmlExportEmpty'));
+      } else if (result.status === 'unavailable') {
+        Alert.alert(t('dataManagement.opmlExport'), t('dataManagement.opmlShareUnavailable'));
+      }
+      // shared の場合は共有シートが結果なので追加の通知は不要
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.opmlExportError'));
+    } finally {
+      setIsOpmlBusy(false);
+    }
+  };
+
+  const handleImportOpml = async () => {
+    if (isOpmlBusy) return;
+    try {
+      setIsOpmlBusy(true);
+      const result = await OpmlService.importFromFile();
+      if (result.status === 'invalid') {
+        Alert.alert(t('dataManagement.opmlImport'), t('dataManagement.opmlImportInvalid'));
+      } else if (result.status === 'noFeeds') {
+        Alert.alert(t('dataManagement.opmlImport'), t('dataManagement.opmlImportNoFeeds'));
+      } else if (result.status === 'imported') {
+        Alert.alert(
+          t('common.done'),
+          t('dataManagement.opmlImportComplete', { added: result.added, skipped: result.skipped })
+        );
+      }
+      // cancelled は通知しない
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.opmlImportError'));
+    } finally {
+      setIsOpmlBusy(false);
+    }
+  };
+
   const handleResetAllData = () => {
     Alert.alert(
       t('dataManagement.resetAllData'),
@@ -446,6 +489,9 @@ export default function DataManagementScreen() {
       {isResetting && (
         <LoadingOverlay message={t('dataManagement.resetInProgress')} />
       )}
+      {isOpmlBusy && (
+        <LoadingOverlay message={t('dataManagement.opmlInProgress')} />
+      )}
 
       <ScrollView style={styles.content}>
         <SettingSection title={t('dataManagement.articleRetention')}>
@@ -485,9 +531,20 @@ export default function DataManagementScreen() {
           <ThemedText style={styles.sectionHint}>{t('dataManagement.minRefreshHint')}</ThemedText>
         </SettingSection>
 
-        <SettingSection title={t('dataManagement.sectionFuture')}>
-          <ComingSoonRow title={t('dataManagement.opmlImportExport')} />
+        <SettingSection title={t('dataManagement.opmlImportExport')}>
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleExportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlExport')}</ThemedText>
+            <Ionicons name="share-outline" size={20} color={arrowColor} />
+          </TouchableOpacity>
           <View style={styles.comingSoonDivider} />
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleImportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlImport')}</ThemedText>
+            <Ionicons name="download-outline" size={20} color={arrowColor} />
+          </TouchableOpacity>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.opmlHint')}</ThemedText>
+        </SettingSection>
+
+        <SettingSection title={t('dataManagement.sectionFuture')}>
           <ComingSoonRow title={t('dataManagement.dataBackupRestore')} />
         </SettingSection>
 
