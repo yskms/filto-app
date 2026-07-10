@@ -9,11 +9,12 @@ import React, {
 } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 
 type ThemePreference = 'light' | 'dark' | 'system';
 type ThemeMode = 'light' | 'dark';
 
-const THEME_STORAGE_KEY = '@filto/display_behavior/theme';
+const THEME_STORAGE_KEY = StorageKeys.theme;
 
 interface ThemeContextValue {
   mode: ThemeMode;

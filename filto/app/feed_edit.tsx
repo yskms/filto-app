@@ -8,14 +8,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Clipboard,
   ActivityIndicator,
   Image,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FeedService } from '@/services/FeedService';
+import { FeedService, DuplicateFeedUrlError } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
 import { Feed } from '@/types/Feed';
 import { ThemedText } from '@/components/themed-text';
@@ -130,11 +130,12 @@ export default function FeedEditScreen() {
     setFetchSuccess(false);
   };
 
+  // 空白のみの場合は貼り付けない（入力済みURLを消さないため）
   const handlePaste = async () => {
     try {
-      const clipboardText = await Clipboard.getString();
+      const clipboardText = (await Clipboard.getStringAsync()).trim();
       if (clipboardText) {
-        setUrl(clipboardText.trim());
+        setUrl(clipboardText);
         setUrlError(null);
         setFetchSuccess(false);
       }
@@ -142,10 +143,22 @@ export default function FeedEditScreen() {
     }
   };
 
-  const handleCopyUrl = () => {
-    Clipboard.setString(url);
-    showToast(t('feeds.urlCopied'), 'success');
+  const handleCopyUrl = async () => {
+    try {
+      await Clipboard.setStringAsync(url);
+      showToast(t('feeds.urlCopied'), 'success');
+    } catch (_) {
+    }
   };
+
+  // 重複フィードのエラー文言（登録済みタイトルが分かる場合は含める）
+  const duplicateMessage = useCallback(
+    (existingTitle?: string) =>
+      existingTitle
+        ? t('feeds.duplicateUrlNamed', { title: existingTitle })
+        : t('feeds.duplicateUrl'),
+    [t]
+  );
 
   // URLからフィード情報を再取得
   const handleFetchMeta = async () => {
@@ -159,6 +172,14 @@ export default function FeedEditScreen() {
     setUrlError(null);
 
     try {
+      // 通信する前に、自分以外のフィードが同じURLを使っていないか確認する
+      const existing = await FeedService.findByUrl(url.trim());
+      if (existing && existing.id !== feed?.id) {
+        setFetchSuccess(false);
+        setUrlError(duplicateMessage(existing.title));
+        return;
+      }
+
       const meta = await RssService.fetchMeta(url.trim());
       if (meta.title) {
         setName(meta.title);
@@ -191,8 +212,15 @@ export default function FeedEditScreen() {
       await FeedService.update({ ...feed, url: trimmedUrl, title: feedName, iconUrl });
       showToast(t('common.saved'), 'success');
       router.back();
-    } catch (_) {
-      Alert.alert(t('common.error'), t('feeds.saveError'));
+    } catch (error) {
+      if (error instanceof DuplicateFeedUrlError) {
+        const message = duplicateMessage(error.existingTitle);
+        setFetchSuccess(false);
+        setUrlError(message);
+        Alert.alert(t('common.error'), message);
+      } else {
+        Alert.alert(t('common.error'), t('feeds.saveError'));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -228,7 +256,7 @@ export default function FeedEditScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <FeedEditHeader onPressBack={() => router.back()} />
         <LoadingView />
       </SafeAreaView>
@@ -238,7 +266,7 @@ export default function FeedEditScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <FeedEditHeader onPressBack={() => router.back()} />
 
         <KeyboardAvoidingView
@@ -297,7 +325,7 @@ export default function FeedEditScreen() {
                 disabled={isBusy}
               >
                 <Ionicons name="clipboard-outline" size={18} color={tintColor} />
-                <ThemedText style={[styles.urlActionText, { color: tintColor }]}>{t('feeds.pasteFromClipboard')}</ThemedText>
+                <ThemedText style={[styles.urlActionText, { color: tintColor }]}>{t('common.pasteFromClipboard')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.urlActionButton, { borderColor }]}

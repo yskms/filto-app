@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -19,6 +20,7 @@ import {
   seedFiltersFromTopics,
 } from '@/database/init';
 import { DEFAULT_FEED_CATEGORIES } from '@/constants/defaultFeeds';
+import { getFaviconUrl } from '@/utils/feedUrl';
 
 const FEED_CATEGORIES = DEFAULT_FEED_CATEGORIES;
 
@@ -63,18 +65,6 @@ const BLOCK_KEYWORDS: Record<string, string[]> = {
     'Horoscope', 'Astrology', 'Zodiac', 'Tarot', 'Spiritual', 'Psychic',
   ],
 };
-
-function getFaviconUrl(feedUrl: string): string {
-  try {
-    let domain = new URL(feedUrl).hostname;
-    // feeds./feed. はRSS配信専用サブドメインでGoogleのファビコンDBに未登録のケースがあるため除去する
-    if (domain.startsWith('feeds.')) domain = domain.slice('feeds.'.length);
-    else if (domain.startsWith('feed.')) domain = domain.slice('feed.'.length);
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
-  } catch {
-    return '';
-  }
-}
 
 const ACCENT = '#0a7ea4';
 
@@ -145,7 +135,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
       await seedFiltersFromTopics(Array.from(selectedKeywords));
 
       // ホームで初回チュートリアル（コーチマーク）を表示するためのフラグ
-      await AsyncStorage.setItem('@filto/tour/home', '1');
+      await AsyncStorage.setItem(StorageKeys.tourHome, '1');
 
       // 初回同期はホーム側の autoSync に任せる（二重 refresh のレースを避ける）。
       // ホームへ即遷移し、取得を待つ間にダミー記事を背景にツアーを進めてもらう。

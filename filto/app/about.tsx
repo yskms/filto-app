@@ -40,7 +40,7 @@ export default function AboutScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <AboutHeader onPressBack={() => router.back()} />
         <View style={[styles.content, { backgroundColor }]}>
           <ThemedText style={styles.appName}>Filto</ThemedText>

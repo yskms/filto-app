@@ -13,21 +13,23 @@ import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { resetAllData } from '@/database/init';
+import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
+import { OpmlService } from '@/services/OpmlService';
 import { BackupService } from '@/services/BackupService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 
-const STORAGE_KEY_ARTICLE_RETENTION_DAYS = '@filto/data_management/articleRetentionDays';
-const STORAGE_KEY_DELETE_STARRED_IN_AUTO = '@filto/data_management/deleteStarredInAutoDelete';
 
 const RETENTION_OPTIONS = [7, 30, 90, 0];
 const MANUAL_DELETE_OPTIONS = [-1, 1, 3, 7, 14];
+const MIN_REFRESH_OPTIONS = [0, 1, 3, 5, 10];
 
 const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -239,16 +241,6 @@ const ManualDeleteModal: React.FC<{
   );
 };
 
-const ComingSoonRow: React.FC<{ title: string }> = ({ title }) => {
-  const { t } = useTranslation();
-  return (
-    <View style={styles.comingSoonRow}>
-      <ThemedText style={styles.comingSoonRowText}>{title}</ThemedText>
-      <ThemedText style={styles.comingSoonBadge}>{t('dataManagement.comingSoon')}</ThemedText>
-    </View>
-  );
-};
-
 export default function DataManagementScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -258,7 +250,10 @@ export default function DataManagementScreen() {
   const toggleOnBg = useThemeColor({ light: '#34C759', dark: '#30d158' }, 'background');
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
+  const [wifiOnlyFetch, setWifiOnlyFetch] = useState(false);
+  const [minRefreshInterval, setMinRefreshInterval] = useState(0);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
+  const [minRefreshDropdownVisible, setMinRefreshDropdownVisible] = useState(false);
   const [manualDeleteModalVisible, setManualDeleteModalVisible] = useState(false);
   const [manualDeleteDays, setManualDeleteDays] = useState(-1);
   const [manualDeleteIncludeStarred, setManualDeleteIncludeStarred] = useState(false);
@@ -270,16 +265,21 @@ export default function DataManagementScreen() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isOpmlBusy, setIsOpmlBusy] = useState(false);
   const [isBackupBusy, setIsBackupBusy] = useState(false);
 
   const loadSettings = useCallback(async () => {
     try {
-      const [savedRetention, savedStarred] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS),
-        AsyncStorage.getItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO),
+      const [savedRetention, savedStarred, savedWifiOnly, savedMinRefresh] = await Promise.all([
+        AsyncStorage.getItem(StorageKeys.articleRetentionDays),
+        AsyncStorage.getItem(StorageKeys.deleteStarredInAutoDelete),
+        AsyncStorage.getItem(StorageKeys.wifiOnlyFetch),
+        AsyncStorage.getItem(StorageKeys.minRefreshIntervalMinutes),
       ]);
       if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
       if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
+      if (savedWifiOnly !== null) setWifiOnlyFetch(savedWifiOnly === 'true');
+      if (savedMinRefresh !== null) setMinRefreshInterval(parseInt(savedMinRefresh, 10));
     } catch (_) {
     }
   }, []);
@@ -289,7 +289,16 @@ export default function DataManagementScreen() {
   const handleChangeRetentionDays = async (days: number) => {
     try {
       setArticleRetentionDays(days);
-      await AsyncStorage.setItem(STORAGE_KEY_ARTICLE_RETENTION_DAYS, days.toString());
+      await AsyncStorage.setItem(StorageKeys.articleRetentionDays, days.toString());
+    } catch (_) {
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
+    }
+  };
+
+  const handleChangeMinRefreshInterval = async (minutes: number) => {
+    try {
+      setMinRefreshInterval(minutes);
+      await AsyncStorage.setItem(StorageKeys.minRefreshIntervalMinutes, minutes.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -299,7 +308,17 @@ export default function DataManagementScreen() {
     try {
       const next = !deleteStarredInAuto;
       setDeleteStarredInAuto(next);
-      await AsyncStorage.setItem(STORAGE_KEY_DELETE_STARRED_IN_AUTO, next.toString());
+      await AsyncStorage.setItem(StorageKeys.deleteStarredInAutoDelete, next.toString());
+    } catch (_) {
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
+    }
+  };
+
+  const handleToggleWifiOnlyFetch = async () => {
+    try {
+      const next = !wifiOnlyFetch;
+      setWifiOnlyFetch(next);
+      await AsyncStorage.setItem(StorageKeys.wifiOnlyFetch, next.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -402,6 +421,47 @@ export default function DataManagementScreen() {
     );
   };
 
+  const handleExportOpml = async () => {
+    if (isOpmlBusy) return;
+    try {
+      setIsOpmlBusy(true);
+      const result = await OpmlService.exportToFile();
+      if (result.status === 'empty') {
+        Alert.alert(t('dataManagement.opmlExport'), t('dataManagement.opmlExportEmpty'));
+      } else if (result.status === 'unavailable') {
+        Alert.alert(t('dataManagement.opmlExport'), t('dataManagement.opmlShareUnavailable'));
+      }
+      // shared の場合は共有シートが結果なので追加の通知は不要
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.opmlExportError'));
+    } finally {
+      setIsOpmlBusy(false);
+    }
+  };
+
+  const handleImportOpml = async () => {
+    if (isOpmlBusy) return;
+    try {
+      setIsOpmlBusy(true);
+      const result = await OpmlService.importFromFile();
+      if (result.status === 'invalid') {
+        Alert.alert(t('dataManagement.opmlImport'), t('dataManagement.opmlImportInvalid'));
+      } else if (result.status === 'noFeeds') {
+        Alert.alert(t('dataManagement.opmlImport'), t('dataManagement.opmlImportNoFeeds'));
+      } else if (result.status === 'imported') {
+        Alert.alert(
+          t('common.done'),
+          t('dataManagement.opmlImportComplete', { added: result.added, skipped: result.skipped })
+        );
+      }
+      // cancelled は通知しない
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.opmlImportError'));
+    } finally {
+      setIsOpmlBusy(false);
+    }
+  };
+
   const handleResetAllData = () => {
     Alert.alert(
       t('dataManagement.resetAllData'),
@@ -417,7 +477,14 @@ export default function DataManagementScreen() {
               // 実行中の同期を止めてから消す（古いフィードへの記事書き込みを防ぐ）
               SyncService.cancelOngoing();
               await resetAllData();
-              Alert.alert(t('common.done'), t('dataManagement.resetComplete'));
+              Alert.alert(
+                t('common.done'),
+                t('dataManagement.resetComplete') + '\n' + t('dataManagement.replayTourPrompt'),
+                [
+                  { text: t('dataManagement.replayTourLater'), style: 'cancel' },
+                  { text: t('dataManagement.replayTourConfirm'), onPress: () => { restartOnboarding(); } },
+                ]
+              );
             } catch (_) {
               Alert.alert(t('common.error'), t('dataManagement.resetError'));
             } finally {
@@ -442,8 +509,20 @@ export default function DataManagementScreen() {
   const getRetentionLabel = () =>
     retentionOptions.find((o) => o.value === articleRetentionDays)?.label ?? t('dataManagement.days', { count: 30 });
 
+  const minRefreshOptions = MIN_REFRESH_OPTIONS.map((value) => ({
+    value,
+    label: value === 0 ? t('dataManagement.minRefreshNoLimit') : t('dataManagement.minutes', { count: value }),
+  }));
+  // 選択肢に無い値が保存されていても、SyncService は保存値どおりに制限をかける。
+  // 「制限なし」と誤表示しないよう、その分数をそのまま出す
+  const getMinRefreshLabel = () =>
+    minRefreshOptions.find((o) => o.value === minRefreshInterval)?.label ??
+    (minRefreshInterval > 0
+      ? t('dataManagement.minutes', { count: minRefreshInterval })
+      : t('dataManagement.minRefreshNoLimit'));
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DataManagementHeader onPressBack={() => router.back()} />
 
@@ -452,6 +531,9 @@ export default function DataManagementScreen() {
       )}
       {isResetting && (
         <LoadingOverlay message={t('dataManagement.resetInProgress')} />
+      )}
+      {isOpmlBusy && (
+        <LoadingOverlay message={t('dataManagement.opmlInProgress')} />
       )}
       {isBackupBusy && (
         <LoadingOverlay message={t('dataManagement.backupInProgress')} />
@@ -481,11 +563,31 @@ export default function DataManagementScreen() {
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionWifiOnly')}>
-          <ComingSoonRow title={t('dataManagement.wifiOnlyRss')} />
+          <TouchableOpacity style={styles.toggleRow} onPress={handleToggleWifiOnlyFetch} activeOpacity={0.7}>
+            <ThemedText style={styles.toggleLabelText}>{t('dataManagement.wifiOnlyRss')}</ThemedText>
+            <View style={[styles.toggle, { backgroundColor: wifiOnlyFetch ? toggleOnBg : toggleOffBg }]}>
+              <View style={[styles.toggleThumb, wifiOnlyFetch && styles.toggleThumbActive]} />
+            </View>
+          </TouchableOpacity>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.wifiOnlyHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionMinRefresh')}>
-          <ComingSoonRow title={t('dataManagement.minRefreshThrottle')} />
+          <Dropdown label={t('dataManagement.minRefreshThrottle')} value={getMinRefreshLabel()} onPress={() => setMinRefreshDropdownVisible(true)} />
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.minRefreshHint')}</ThemedText>
+        </SettingSection>
+
+        <SettingSection title={t('dataManagement.opmlImportExport')}>
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleExportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlExport')}</ThemedText>
+            <Ionicons name="share-outline" size={20} color={arrowColor} />
+          </TouchableOpacity>
+          <View style={styles.rowDivider} />
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleImportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlImport')}</ThemedText>
+            <Ionicons name="download-outline" size={20} color={arrowColor} />
+          </TouchableOpacity>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.opmlHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.dataBackupRestore')}>
@@ -493,7 +595,7 @@ export default function DataManagementScreen() {
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupExport')}</ThemedText>
             <Ionicons name="share-outline" size={20} color={arrowColor} />
           </TouchableOpacity>
-          <View style={styles.comingSoonDivider} />
+          <View style={styles.rowDivider} />
           <TouchableOpacity style={styles.manualDeleteRow} onPress={handleImportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupRestore')}</ThemedText>
             <Ionicons name="download-outline" size={20} color={arrowColor} />
@@ -501,9 +603,6 @@ export default function DataManagementScreen() {
           <ThemedText style={styles.backupHint}>{t('dataManagement.backupHint')}</ThemedText>
         </SettingSection>
 
-        <SettingSection title={t('dataManagement.sectionFuture')}>
-          <ComingSoonRow title={t('dataManagement.opmlImportExport')} />
-        </SettingSection>
 
         <SettingSection title="">
           <TouchableOpacity style={styles.resetRow} onPress={handleResetAllData} activeOpacity={0.7} disabled={isResetting}>
@@ -519,6 +618,15 @@ export default function DataManagementScreen() {
         selectedValue={articleRetentionDays}
         onSelect={handleChangeRetentionDays}
         onClose={() => setRetentionDropdownVisible(false)}
+      />
+
+      <DropdownModal
+        visible={minRefreshDropdownVisible}
+        title={t('dataManagement.selectMinRefreshTitle')}
+        options={minRefreshOptions}
+        selectedValue={minRefreshInterval}
+        onSelect={handleChangeMinRefreshInterval}
+        onClose={() => setMinRefreshDropdownVisible(false)}
       />
 
       <ManualDeleteModal
@@ -578,6 +686,8 @@ const styles = StyleSheet.create({
   toggleThumbActive: { alignSelf: 'flex-end' },
   retentionDescription: { marginBottom: 16 },
   retentionDescriptionText: { fontSize: 13, lineHeight: 18, marginBottom: 12 },
+  /** 設定セクション下の補足説明 */
+  sectionHint: { fontSize: 12, lineHeight: 17, marginTop: 10, opacity: 0.7 },
   dropdownLabel: { fontSize: 14, fontWeight: '500', marginBottom: 8 },
   dropdown: {
     flexDirection: 'row',
@@ -593,10 +703,7 @@ const styles = StyleSheet.create({
   manualDeleteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   manualDeleteText: { fontSize: 16 },
   arrow: { fontSize: 20 },
-  comingSoonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
-  comingSoonRowText: { fontSize: 14 },
-  comingSoonBadge: { fontSize: 12, fontStyle: 'italic' },
-  comingSoonDivider: { height: 1, marginVertical: 4 },
+  rowDivider: { height: 1, marginVertical: 4 },
   backupHint: { fontSize: 12, lineHeight: 17, marginTop: 12, opacity: 0.7 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   dropdownModalContent: { borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },

@@ -9,19 +9,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Clipboard,
   ActivityIndicator,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FeedService } from '@/services/FeedService';
+import { FeedService, DuplicateFeedUrlError } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 
 export default function FeedAddScreen() {
@@ -55,9 +56,9 @@ export default function FeedAddScreen() {
   // 起動時: ツアー中はキーボードを出さずツアー開始、通常は入力欄へフォーカス
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    AsyncStorage.getItem('@filto/tour/feedAdd').then((flag) => {
+    AsyncStorage.getItem(StorageKeys.tourFeedAdd).then((flag) => {
       if (flag === '1' || flag === 'last') {
-        AsyncStorage.removeItem('@filto/tour/feedAdd').catch(() => {});
+        AsyncStorage.removeItem(StorageKeys.tourFeedAdd).catch(() => {});
         setTutorialStartAtLast(flag === 'last');
         setTutorialVisible(true);
       } else {
@@ -109,7 +110,7 @@ export default function FeedAddScreen() {
   // 最初のステップで「戻る」→ フィード画面のツアー最後へ戻る
   const handleTutorialBack = useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/feeds', 'last'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFeeds, 'last'); } catch {}
     router.dismissAll();
     router.navigate('/feeds');
   }, [router]);
@@ -117,7 +118,7 @@ export default function FeedAddScreen() {
   // 最後の「次へ」で、ホームへ戻り取得完了を待ってツアー終了
   const handleTutorialDone = useCallback(async () => {
     setTutorialVisible(false);
-    try { await AsyncStorage.setItem('@filto/tour/finish', '1'); } catch {}
+    try { await AsyncStorage.setItem(StorageKeys.tourFinish, '1'); } catch {}
     router.dismissAll();
     router.navigate('/');
   }, [router]);
@@ -152,18 +153,27 @@ export default function FeedAddScreen() {
     setFetchSuccess(false);
   };
 
-  // クリップボードから貼り付け
+  // クリップボードから貼り付け。空白のみの場合は貼り付けない（入力済みURLを消さないため）
   const handlePaste = async () => {
     try {
-      const clipboardText = await Clipboard.getString();
+      const clipboardText = (await Clipboard.getStringAsync()).trim();
       if (clipboardText) {
-        setUrl(clipboardText.trim());
+        setUrl(clipboardText);
         setUrlError(null);
         setFetchSuccess(false);
       }
     } catch (_) {
     }
   };
+
+  // 重複フィードのエラー文言（登録済みタイトルが分かる場合は含める）
+  const duplicateMessage = useCallback(
+    (existingTitle?: string) =>
+      existingTitle
+        ? t('feeds.duplicateUrlNamed', { title: existingTitle })
+        : t('feeds.duplicateUrl'),
+    [t]
+  );
 
   // フィード情報を取得
   const handleFetchMeta = async () => {
@@ -177,6 +187,14 @@ export default function FeedAddScreen() {
     setUrlError(null);
 
     try {
+      // 通信する前に登録済みかどうかを確認する
+      const existing = await FeedService.findByUrl(url.trim());
+      if (existing) {
+        setFetchSuccess(false);
+        setUrlError(duplicateMessage(existing.title));
+        return;
+      }
+
       const meta = await RssService.fetchMeta(url.trim());
       
       if (meta.title) {
@@ -218,8 +236,15 @@ export default function FeedAddScreen() {
       });
 
       router.back();
-    } catch (_) {
-      Alert.alert(t('common.error'), t('feeds.addError'));
+    } catch (error) {
+      if (error instanceof DuplicateFeedUrlError) {
+        const message = duplicateMessage(error.existingTitle);
+        setFetchSuccess(false);
+        setUrlError(message);
+        Alert.alert(t('common.error'), message);
+      } else {
+        Alert.alert(t('common.error'), t('feeds.addError'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -228,7 +253,7 @@ export default function FeedAddScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <View style={[styles.header, { backgroundColor, borderBottomColor: borderColor }]}>
           <TouchableOpacity
             style={styles.backButton}
@@ -284,7 +309,7 @@ export default function FeedAddScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name="clipboard-outline" size={18} color={tintColor} />
-                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>{t('feeds.pasteFromClipboard')}</ThemedText>
+                <ThemedText style={[styles.pasteButtonText, { color: tintColor }]}>{t('common.pasteFromClipboard')}</ThemedText>
               </View>
             </TouchableOpacity>
 
