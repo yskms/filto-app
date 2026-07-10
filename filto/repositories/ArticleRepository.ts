@@ -126,17 +126,19 @@ export const ArticleRepository = {
   /**
    * 記事を一括挿入（トランザクション）
    * NOTE: INSERT OR IGNOREで重複を自動的にスキップ
+   * @returns 実際に挿入された件数（重複でスキップされた分は含まない）
    */
-  async insertMany(articles: Article[]): Promise<void> {
-    if (articles.length === 0) return;
+  async insertMany(articles: Article[]): Promise<number> {
+    if (articles.length === 0) return 0;
 
     const db = openDatabase();
     const fetchedAt = Math.floor(Date.now() / 1000);
+    let inserted = 0;
 
     db.withTransactionSync(() => {
       for (const article of articles) {
         try {
-          db.runSync(
+          const result = db.runSync(
             `
               INSERT OR IGNORE INTO articles (
                 feed_id,
@@ -164,11 +166,15 @@ export const ArticleRepository = {
               article.isStarred ? 1 : 0,
             ]
           );
+          // INSERT OR IGNORE は重複時に 0 行。実際に入った件数だけを数える
+          inserted += result.changes;
         } catch (_) {
           // 1件の挿入失敗は無視して残りを継続
         }
       }
     });
+
+    return inserted;
   },
 
   /**

@@ -7,6 +7,7 @@ import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { Article } from '@/types/Article';
 import { isValidFeedUrl } from '@/utils/feedUrl';
 import { writeAndShare, type ShareExportResult } from '@/utils/exportFile';
+import { clearUserDataTables } from '@/database/init';
 
 /**
  * BackupService
@@ -125,34 +126,6 @@ export interface BackupApplyResult {
   keywordsSkipped: number;
 }
 
-/**
- * 既存のフィード・フィルタ・許可キーワード・記事をすべて削除する（置き換え復元用）。
- *
- * 記事は feeds の ON DELETE CASCADE では消えない。SQLite の外部キー制約は既定でオフで、
- * このアプリは PRAGMA foreign_keys を有効にしていないため。明示的に先に消す。
- * 表示設定など AsyncStorage のデータは対象外（バックアップにも含めていない）。
- */
-async function wipeExistingData(): Promise<void> {
-  await ArticleRepository.deleteOldArticles(-1, true);
-
-  for (const feed of await FeedService.list()) {
-    try {
-      await FeedService.delete(feed.id);
-    } catch (_) {}
-  }
-  for (const filter of await FilterService.list()) {
-    if (filter.id === undefined) continue;
-    try {
-      await FilterService.delete(filter.id);
-    } catch (_) {}
-  }
-  for (const keyword of await GlobalAllowKeywordService.list()) {
-    try {
-      await GlobalAllowKeywordService.delete(keyword.id);
-    } catch (_) {}
-  }
-}
-
 export const BackupService = {
   /**
    * フィード・フィルタ・許可キーワード・記事を JSON にまとめて共有シートを開く。
@@ -199,7 +172,8 @@ export const BackupService = {
       }),
     };
 
-    return writeAndShare(EXPORT_FILE_PREFIX, 'json', JSON.stringify(data, null, 2), {
+    // 全記事を含めると数MBになりうる。整形はせず1行で書き出す（機械が読むファイルのため）
+    return writeAndShare(EXPORT_FILE_PREFIX, 'json', JSON.stringify(data), {
       mimeType: 'application/json',
       dialogTitle: 'Filto Backup',
       UTI: 'public.json',
@@ -270,7 +244,8 @@ export const BackupService = {
    */
   async applyBackup(data: BackupData, mode: BackupImportMode): Promise<BackupApplyResult> {
     if (mode === 'replace') {
-      await wipeExistingData();
+      // 表示設定など AsyncStorage のデータは消さない（バックアップにも含めていないため）
+      clearUserDataTables();
     }
 
     let feedsAdded = 0;
@@ -350,14 +325,12 @@ export const BackupService = {
       // フィード復元後の一覧で URL → ID の対応を作る
       const feedIdByUrl = new Map((await FeedService.list()).map((f) => [f.url, f.id]));
 
-      // insertMany は INSERT OR IGNORE なので重複は静かに捨てられる。
-      // 「N件追加」と正しく伝えるため、実際に入る件数だけを数える
-      const existingKeys = new Set(
-        (await ArticleRepository.listAll()).map((a) => articleKey(a.feedId, a.link))
-      );
-
+      // 重複判定はDBの UNIQUE(feed_id, link) と INSERT OR IGNORE に任せる。
+      // 事前に既存記事を読み出すと、キーを作るためだけに全記事（本文込み）を
+      // メモリに載せることになるため
       const toInsert: Article[] = [];
       const starTargets: { feedId: string; link: string }[] = [];
+      const seen = new Set<string>();
 
       for (const article of data.articles) {
         if (!article || typeof article.link !== 'string' || typeof article.feedUrl !== 'string') continue;
@@ -369,9 +342,10 @@ export const BackupService = {
           starTargets.push({ feedId, link: article.link });
         }
 
+        // バックアップファイル自体に重複がある場合に備える（DB側の重複はDBが弾く）
         const key = articleKey(feedId, article.link);
-        if (existingKeys.has(key)) continue;
-        existingKeys.add(key);
+        if (seen.has(key)) continue;
+        seen.add(key);
 
         toInsert.push({
           id: '', // insertMany では使われない（id は AUTOINCREMENT）
@@ -387,15 +361,13 @@ export const BackupService = {
         });
       }
 
-      if (toInsert.length > 0) {
-        try {
-          await ArticleRepository.insertMany(toInsert);
-          articlesAdded = toInsert.length;
-        } catch (_) {}
-      }
+      try {
+        // 実際に入った件数（既存と重複した分は除く）を insertMany から受け取る
+        articlesAdded = await ArticleRepository.insertMany(toInsert);
+      } catch (_) {}
 
-      // 挿入をスキップされた既存記事にお気に入りを立て直す。
-      // 新規挿入分はすでに is_starred = 1 なので、この件数には数えられない
+      // すでに端末にあった記事にお気に入りを立て直す。
+      // 新規挿入分は is_starred = 1 で入っているため、この件数には数えられない
       try {
         starredRestored = await ArticleRepository.starManyByLink(starTargets);
       } catch (_) {}
