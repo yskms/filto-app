@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,12 @@ import { resetAllData } from '@/database/init';
 import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
 import { OpmlService } from '@/services/OpmlService';
+import {
+  BackupService,
+  type BackupData,
+  type BackupImportMode,
+  type BackupPickResult,
+} from '@/services/BackupService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -240,16 +246,6 @@ const ManualDeleteModal: React.FC<{
   );
 };
 
-const ComingSoonRow: React.FC<{ title: string }> = ({ title }) => {
-  const { t } = useTranslation();
-  return (
-    <View style={styles.comingSoonRow}>
-      <ThemedText style={styles.comingSoonRowText}>{title}</ThemedText>
-      <ThemedText style={styles.comingSoonBadge}>{t('dataManagement.comingSoon')}</ThemedText>
-    </View>
-  );
-};
-
 export default function DataManagementScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -275,6 +271,10 @@ export default function DataManagementScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isOpmlBusy, setIsOpmlBusy] = useState(false);
+  const [isBackupBusy, setIsBackupBusy] = useState(false);
+  const [backupIncludeAllArticles, setBackupIncludeAllArticles] = useState(false);
+  /** 二度押しの即時ガード。isBackupBusy は再レンダリングまで更新されないため併用する */
+  const backupBusyRef = useRef(false);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -376,6 +376,150 @@ export default function DataManagementScreen() {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleExportBackup = async () => {
+    // state だけでは同じフレーム内の二度押しを止められない（handleImportBackup と同様）
+    if (isBackupBusy || backupBusyRef.current) return;
+    backupBusyRef.current = true;
+    try {
+      setIsBackupBusy(true);
+      const result = await BackupService.exportToFile({ includeAllArticles: backupIncludeAllArticles });
+      if (result.status === 'unavailable') {
+        Alert.alert(t('dataManagement.backupExport'), t('dataManagement.shareUnavailable'));
+      }
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.backupExportError'));
+    } finally {
+      setIsBackupBusy(false);
+      backupBusyRef.current = false;
+    }
+  };
+
+  const applyBackup = async (data: BackupData, mode: BackupImportMode) => {
+    try {
+      setIsBackupBusy(true);
+      // 置き換えは全データを消す。進行中の同期が消した直後のフィードに記事を書き戻すのを防ぐ
+      if (mode === 'replace') {
+        SyncService.cancelOngoing();
+      }
+      const result = await BackupService.applyBackup(data, mode);
+
+      // 黙って捨てると「消えた」と誤解されるものだけ補足する
+      const notes = [
+        result.starredRestored > 0
+          ? t('dataManagement.backupRestoreStarredRestored', { count: result.starredRestored })
+          : '',
+        result.feedsSkipped > 0
+          ? t('dataManagement.backupRestoreFeedsSkipped', { count: result.feedsSkipped })
+          : '',
+        result.articlesSkipped > 0
+          ? t('dataManagement.backupRestoreArticlesSkipped', { count: result.articlesSkipped })
+          : '',
+        result.keywordsSkipped > 0
+          ? t('dataManagement.backupRestoreKeywordsSkipped', { count: result.keywordsSkipped })
+          : '',
+      ].filter(Boolean);
+
+      Alert.alert(
+        t('common.done'),
+        t('dataManagement.backupRestoreComplete', {
+          feeds: result.feeds,
+          filters: result.filters,
+          keywords: result.keywords,
+          articles: result.articles,
+        }) + (notes.length > 0 ? '\n' + notes.join('\n') : '')
+      );
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.backupRestoreError'));
+    } finally {
+      setIsBackupBusy(false);
+    }
+  };
+
+  /** 置き換えは取り消せないうえ、失われる記事の量がバックアップの中身で変わるため個別に確認する */
+  const confirmReplace = (data: BackupData) => {
+    // 範囲を記録していない古いバックアップは、お気に入りのみの可能性を排除できないので警告する
+    const articleWarning = data.includeAllArticles
+      ? ''
+      : '\n\n' + t('dataManagement.backupReplaceStarredOnlyWarning');
+
+    Alert.alert(
+      t('dataManagement.backupReplaceConfirmTitle'),
+      t('dataManagement.backupReplaceConfirmMessage', {
+        feeds: data.feeds.length,
+        filters: data.filters.length,
+        keywords: data.globalAllowKeywords.length,
+        articles: data.articles.length,
+      }) + articleWarning,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('dataManagement.backupReplaceExecute'),
+          style: 'destructive',
+          onPress: () => applyBackup(data, 'replace'),
+        },
+      ]
+    );
+  };
+
+  const runImportBackup = async () => {
+    let picked: BackupPickResult;
+    try {
+      setIsBackupBusy(true);
+      // 読み込んで検証するだけ。ここではまだ何も書き換えない
+      picked = await BackupService.pickBackupFile();
+    } catch (_) {
+      Alert.alert(t('common.error'), t('dataManagement.backupRestoreError'));
+      return;
+    } finally {
+      setIsBackupBusy(false);
+      backupBusyRef.current = false;
+    }
+
+    if (picked.status === 'cancelled') return;
+    if (picked.status === 'invalid') {
+      Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreInvalid'));
+      return;
+    }
+    if (picked.status === 'unsupportedVersion') {
+      Alert.alert(t('dataManagement.backupRestore'), t('dataManagement.backupRestoreUnsupported'));
+      return;
+    }
+
+    // const に束ねると絞り込みが onPress のクロージャまで残る
+    const { data } = picked;
+
+    // 中身の件数を見せたうえで、追加か置き換えかを選ばせる
+    Alert.alert(
+      t('dataManagement.backupRestoreModeTitle'),
+      t('dataManagement.backupRestoreModeMessage', {
+        feeds: data.feeds.length,
+        filters: data.filters.length,
+        keywords: data.globalAllowKeywords.length,
+        articles: data.articles.length,
+      }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('dataManagement.backupRestoreModeReplace'),
+          style: 'destructive',
+          onPress: () => confirmReplace(data),
+        },
+        {
+          text: t('dataManagement.backupRestoreModeMerge'),
+          onPress: () => applyBackup(data, 'merge'),
+        },
+      ]
+    );
+  };
+
+  const handleImportBackup = () => {
+    // isBackupBusy は state のため、同じフレーム内の二度押しを止められない。
+    // DocumentPicker が二重に開くのを防ぐため ref で弾く
+    if (isBackupBusy || backupBusyRef.current) return;
+    backupBusyRef.current = true;
+    runImportBackup();
   };
 
   const handleExportOpml = async () => {
@@ -492,6 +636,9 @@ export default function DataManagementScreen() {
       {isOpmlBusy && (
         <LoadingOverlay message={t('dataManagement.opmlInProgress')} />
       )}
+      {isBackupBusy && (
+        <LoadingOverlay message={t('dataManagement.backupInProgress')} />
+      )}
 
       <ScrollView style={styles.content}>
         <SettingSection title={t('dataManagement.articleRetention')}>
@@ -536,7 +683,7 @@ export default function DataManagementScreen() {
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlExport')}</ThemedText>
             <Ionicons name="share-outline" size={20} color={arrowColor} />
           </TouchableOpacity>
-          <View style={styles.comingSoonDivider} />
+          <View style={styles.rowDivider} />
           <TouchableOpacity style={styles.manualDeleteRow} onPress={handleImportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlImport')}</ThemedText>
             <Ionicons name="download-outline" size={20} color={arrowColor} />
@@ -544,9 +691,31 @@ export default function DataManagementScreen() {
           <ThemedText style={styles.sectionHint}>{t('dataManagement.opmlHint')}</ThemedText>
         </SettingSection>
 
-        <SettingSection title={t('dataManagement.sectionFuture')}>
-          <ComingSoonRow title={t('dataManagement.dataBackupRestore')} />
+        <SettingSection title={t('dataManagement.dataBackupRestore')}>
+          <TouchableOpacity
+            style={styles.toggleRow}
+            onPress={() => setBackupIncludeAllArticles((prev) => !prev)}
+            activeOpacity={0.7}
+            disabled={isBackupBusy}
+          >
+            <ThemedText style={styles.toggleLabelText}>{t('dataManagement.backupIncludeAllArticles')}</ThemedText>
+            <View style={[styles.toggle, { backgroundColor: backupIncludeAllArticles ? toggleOnBg : toggleOffBg }]}>
+              <View style={[styles.toggleThumb, backupIncludeAllArticles && styles.toggleThumbActive]} />
+            </View>
+          </TouchableOpacity>
+          <View style={styles.rowDivider} />
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleExportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupExport')}</ThemedText>
+            <Ionicons name="share-outline" size={20} color={arrowColor} />
+          </TouchableOpacity>
+          <View style={styles.rowDivider} />
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleImportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupRestore')}</ThemedText>
+            <Ionicons name="download-outline" size={20} color={arrowColor} />
+          </TouchableOpacity>
+          <ThemedText style={styles.backupHint}>{t('dataManagement.backupHint')}</ThemedText>
         </SettingSection>
+
 
         <SettingSection title="">
           <TouchableOpacity style={styles.resetRow} onPress={handleResetAllData} activeOpacity={0.7} disabled={isResetting}>
@@ -647,10 +816,8 @@ const styles = StyleSheet.create({
   manualDeleteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   manualDeleteText: { fontSize: 16 },
   arrow: { fontSize: 20 },
-  comingSoonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
-  comingSoonRowText: { fontSize: 14 },
-  comingSoonBadge: { fontSize: 12, fontStyle: 'italic' },
-  comingSoonDivider: { height: 1, marginVertical: 4 },
+  rowDivider: { height: 1, marginVertical: 4 },
+  backupHint: { fontSize: 12, lineHeight: 17, marginTop: 12, opacity: 0.7 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   dropdownModalContent: { borderRadius: 12, padding: 20, width: '80%', maxWidth: 300 },
   dropdownModalTitle: { fontSize: 16, fontWeight: '600', marginBottom: 16, textAlign: 'center' },

@@ -164,12 +164,13 @@ export async function seedDefaultFilters(): Promise<void> {
 export const ONBOARDING_KEY = StorageKeys.onboardingCompleted;
 
 /**
- * すべてのデータをリセットする（DB全テーブル削除 + AsyncStorage全クリア）
+ * DB上のユーザーデータ（フィード・フィルタ・許可キーワード・記事）を1トランザクションで全削除する。
+ * AsyncStorage の設定には触れない。
  *
- * AsyncStorage は個別列挙ではなくプレフィックス走査で消す。
- * 設定キーを増やすたびに列挙し忘れて「リセットしても残る」事故を防ぐため。
+ * articles を明示的に消しているのは、feeds への ON DELETE CASCADE が効かないため。
+ * SQLite の外部キー制約は既定で無効で、このアプリは PRAGMA foreign_keys を有効にしていない。
  */
-export async function resetAllData(): Promise<void> {
+export function clearUserDataTables(): void {
   const database = openDatabase();
   database.withTransactionSync(() => {
     database.execSync('DELETE FROM articles');
@@ -177,6 +178,16 @@ export async function resetAllData(): Promise<void> {
     database.execSync('DELETE FROM filters');
     database.execSync('DELETE FROM global_allow_keywords');
   });
+}
+
+/**
+ * すべてのデータをリセットする（DB全テーブル削除 + AsyncStorage全クリア）
+ *
+ * AsyncStorage は個別列挙ではなくプレフィックス走査で消す。
+ * 設定キーを増やすたびに列挙し忘れて「リセットしても残る」事故を防ぐため。
+ */
+export async function resetAllData(): Promise<void> {
+  clearUserDataTables();
   const keys = await AsyncStorage.getAllKeys();
   const filtoKeys = keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX));
   if (filtoKeys.length > 0) {
@@ -186,9 +197,10 @@ export async function resetAllData(): Promise<void> {
 
 /**
  * 「初回設定をやり直す」用のスコープ付きリセット。
- * 初回設定で作られるフィード・フィルタ（および feed_id CASCADE で連動する記事）を
- * 削除して選び直せる状態にする。表示設定などの AsyncStorage と
- * グローバル許可キーワードは保持する（初回設定の対象外のため）。
+ * 初回設定で作られるフィード・フィルタと、それに紐づく記事を削除して選び直せる状態にする。
+ * 表示設定などの AsyncStorage とグローバル許可キーワードは保持する（初回設定の対象外のため）。
+ *
+ * 記事は CASCADE では消えないため明示的に削除する（clearUserDataTables のコメント参照）。
  */
 export async function resetFeedsAndFilters(): Promise<void> {
   const database = openDatabase();

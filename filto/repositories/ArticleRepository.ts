@@ -126,17 +126,19 @@ export const ArticleRepository = {
   /**
    * 記事を一括挿入（トランザクション）
    * NOTE: INSERT OR IGNOREで重複を自動的にスキップ
+   * @returns 実際に挿入された件数（重複でスキップされた分は含まない）
    */
-  async insertMany(articles: Article[]): Promise<void> {
-    if (articles.length === 0) return;
+  async insertMany(articles: Article[]): Promise<number> {
+    if (articles.length === 0) return 0;
 
     const db = openDatabase();
     const fetchedAt = Math.floor(Date.now() / 1000);
+    let inserted = 0;
 
     db.withTransactionSync(() => {
       for (const article of articles) {
         try {
-          db.runSync(
+          const result = db.runSync(
             `
               INSERT OR IGNORE INTO articles (
                 feed_id,
@@ -164,11 +166,15 @@ export const ArticleRepository = {
               article.isStarred ? 1 : 0,
             ]
           );
+          // INSERT OR IGNORE は重複時に 0 行。実際に入った件数だけを数える
+          inserted += result.changes;
         } catch (_) {
           // 1件の挿入失敗は無視して残りを継続
         }
       }
     });
+
+    return inserted;
   },
 
   /**
@@ -188,6 +194,38 @@ export const ArticleRepository = {
       'UPDATE articles SET is_starred = CASE WHEN is_starred = 1 THEN 0 ELSE 1 END WHERE id = ?',
       [id]
     );
+  },
+
+  /**
+   * 指定した記事にお気に入りを立てる（外すことはしない）。
+   *
+   * バックアップ復元用。insertMany は INSERT OR IGNORE なので、すでに端末にある記事は
+   * 行ごとスキップされ is_starred が反映されない。そこで挿入後に立て直す。
+   * 既読状態は端末側を正とするため触らない（古いバックアップで既読が巻き戻るのを避ける）。
+   *
+   * @returns 実際にお気に入りが立った件数
+   */
+  async starManyByLink(targets: { feedId: string; link: string }[]): Promise<number> {
+    if (targets.length === 0) return 0;
+
+    const db = openDatabase();
+    let starred = 0;
+
+    db.withTransactionSync(() => {
+      for (const target of targets) {
+        try {
+          const result = db.runSync(
+            'UPDATE articles SET is_starred = 1 WHERE feed_id = ? AND link = ? AND is_starred = 0',
+            [target.feedId, target.link]
+          );
+          starred += result.changes;
+        } catch (_) {
+          // 1件の失敗は無視して残りを継続
+        }
+      }
+    });
+
+    return starred;
   },
 
   /**
