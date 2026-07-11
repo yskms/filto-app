@@ -27,6 +27,7 @@ import {
   type BackupPickResult,
 } from '@/services/BackupService';
 import { ThemedText } from '@/components/themed-text';
+import { Toggle } from '@/components/Toggle';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
@@ -251,8 +252,6 @@ export default function DataManagementScreen() {
   const { t } = useTranslation();
   const arrowColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
-  const toggleOffBg = useThemeColor({ light: '#ccc', dark: '#555' }, 'background');
-  const toggleOnBg = useThemeColor({ light: '#34C759', dark: '#30d158' }, 'background');
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
   const [wifiOnlyFetch, setWifiOnlyFetch] = useState(false);
@@ -646,12 +645,11 @@ export default function DataManagementScreen() {
             <ThemedText style={styles.retentionDescriptionText}>
               {t('dataManagement.retentionDescription')}
             </ThemedText>
-            <TouchableOpacity style={styles.toggleRow} onPress={handleToggleDeleteStarredInAuto} activeOpacity={0.7}>
-              <ThemedText style={styles.toggleLabelText}>{t('dataManagement.deleteStarredToo')}</ThemedText>
-              <View style={[styles.toggle, { backgroundColor: deleteStarredInAuto ? toggleOnBg : toggleOffBg }]}>
-                <View style={[styles.toggleThumb, deleteStarredInAuto && styles.toggleThumbActive]} />
-              </View>
-            </TouchableOpacity>
+            <Toggle
+              value={deleteStarredInAuto}
+              onToggle={handleToggleDeleteStarredInAuto}
+              label={t('dataManagement.deleteStarredToo')}
+            />
           </View>
           <Dropdown label={t('dataManagement.retentionPeriodLabel')} value={getRetentionLabel()} onPress={() => setRetentionDropdownVisible(true)} />
         </SettingSection>
@@ -664,12 +662,11 @@ export default function DataManagementScreen() {
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionWifiOnly')}>
-          <TouchableOpacity style={styles.toggleRow} onPress={handleToggleWifiOnlyFetch} activeOpacity={0.7}>
-            <ThemedText style={styles.toggleLabelText}>{t('dataManagement.wifiOnlyRss')}</ThemedText>
-            <View style={[styles.toggle, { backgroundColor: wifiOnlyFetch ? toggleOnBg : toggleOffBg }]}>
-              <View style={[styles.toggleThumb, wifiOnlyFetch && styles.toggleThumbActive]} />
-            </View>
-          </TouchableOpacity>
+          <Toggle
+            value={wifiOnlyFetch}
+            onToggle={handleToggleWifiOnlyFetch}
+            label={t('dataManagement.wifiOnlyRss')}
+          />
           <ThemedText style={styles.sectionHint}>{t('dataManagement.wifiOnlyHint')}</ThemedText>
         </SettingSection>
 
@@ -692,17 +689,12 @@ export default function DataManagementScreen() {
         </SettingSection>
 
         <SettingSection title={t('dataManagement.dataBackupRestore')}>
-          <TouchableOpacity
-            style={styles.toggleRow}
-            onPress={() => setBackupIncludeAllArticles((prev) => !prev)}
-            activeOpacity={0.7}
+          <Toggle
+            value={backupIncludeAllArticles}
+            onToggle={() => setBackupIncludeAllArticles((prev) => !prev)}
+            label={t('dataManagement.backupIncludeAllArticles')}
             disabled={isBackupBusy}
-          >
-            <ThemedText style={styles.toggleLabelText}>{t('dataManagement.backupIncludeAllArticles')}</ThemedText>
-            <View style={[styles.toggle, { backgroundColor: backupIncludeAllArticles ? toggleOnBg : toggleOffBg }]}>
-              <View style={[styles.toggleThumb, backupIncludeAllArticles && styles.toggleThumbActive]} />
-            </View>
-          </TouchableOpacity>
+          />
           <View style={styles.rowDivider} />
           <TouchableOpacity style={styles.manualDeleteRow} onPress={handleExportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupExport')}</ThemedText>
@@ -785,18 +777,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionContent: { borderRadius: 12, padding: 16 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  toggleLabelText: { fontSize: 14 },
-  toggle: {
-    width: 50,
-    height: 30,
-    borderRadius: 15,
-    padding: 2,
-    justifyContent: 'center',
-  },
-  toggleActive: {},
-  toggleThumb: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff' },
-  toggleThumbActive: { alignSelf: 'flex-end' },
   retentionDescription: { marginBottom: 16 },
   retentionDescriptionText: { fontSize: 13, lineHeight: 18, marginBottom: 12 },
   /** 設定セクション下の補足説明 */

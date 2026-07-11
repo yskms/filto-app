@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/providers/theme';
 import { useLanguage, useTranslation } from '@/providers/language';
 import { ThemedText } from '@/components/themed-text';
+import { Toggle } from '@/components/Toggle';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 // 既読表示モード
@@ -118,8 +119,6 @@ export default function DisplayBehaviorScreen() {
   const [readDisplayModalVisible, setReadDisplayModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const toggleOffBg = useThemeColor({ light: '#e0e0e0', dark: '#555' }, 'background');
-  const toggleOnBg = useThemeColor({ light: '#34C759', dark: '#30d158' }, 'background');
 
   const loadSettings = useCallback(async () => {
     try {
@@ -223,16 +222,11 @@ export default function DisplayBehaviorScreen() {
         </SettingSection>
 
         <SettingSection title={t('displayBehavior.startupBehavior')}>
-          <TouchableOpacity style={styles.toggleRow} onPress={handleToggleAutoSync} activeOpacity={0.7}>
-            <View style={styles.toggleLabel}>
-              <ThemedText style={styles.toggleDescription}>
-                {t('displayBehavior.autoSyncOnStartup')}
-              </ThemedText>
-            </View>
-            <View style={[styles.toggle, { backgroundColor: autoSyncOnStartup ? toggleOnBg : toggleOffBg }]}>
-              <View style={[styles.toggleThumb, autoSyncOnStartup && styles.toggleThumbActive]} />
-            </View>
-          </TouchableOpacity>
+          <Toggle
+            value={autoSyncOnStartup}
+            onToggle={handleToggleAutoSync}
+            label={t('displayBehavior.autoSyncOnStartup')}
+          />
         </SettingSection>
       </ScrollView>
 
@@ -337,43 +331,6 @@ const styles = StyleSheet.create({
   dropdownIcon: {
     fontSize: 20,
     opacity: 0.4,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  toggleLabel: {
-    flex: 1,
-    marginRight: 16,
-  },
-  toggleDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    opacity: 0.8,
-  },
-  toggle: {
-    width: 51,
-    height: 31,
-    borderRadius: 15.5,
-    padding: 2,
-    justifyContent: 'center',
-  },
-  toggleActive: {},
-  toggleThumb: {
-    width: 27,
-    height: 27,
-    borderRadius: 13.5,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  toggleThumbActive: {
-    transform: [{ translateX: 20 }],
   },
   dropdownModalOverlay: {
     flex: 1,
