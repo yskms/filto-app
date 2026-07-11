@@ -174,19 +174,26 @@ export async function seedDefaultFilters(): Promise<void> {
 export const ONBOARDING_KEY = StorageKeys.onboardingCompleted;
 
 /**
+ * 指定したテーブルの全行を1トランザクションで削除する。
+ * テーブル名は呼び出し側のリテラル定数のみを想定（外部入力を渡さないこと）。
+ */
+function deleteAllFromTables(tables: string[]): void {
+  const database = openDatabase();
+  database.withTransactionSync(() => {
+    for (const table of tables) {
+      database.execSync(`DELETE FROM ${table}`);
+    }
+  });
+}
+
+/**
  * DB上のユーザーデータ（フィード・フィルタ・許可キーワード・記事）を1トランザクションで全削除する。
  * AsyncStorage の設定には触れない。
  *
  * feeds を消せば記事は CASCADE で連動削除されるが、意図を明示するため articles も直接消す。
  */
 export function clearUserDataTables(): void {
-  const database = openDatabase();
-  database.withTransactionSync(() => {
-    database.execSync('DELETE FROM articles');
-    database.execSync('DELETE FROM feeds');
-    database.execSync('DELETE FROM filters');
-    database.execSync('DELETE FROM global_allow_keywords');
-  });
+  deleteAllFromTables(['articles', 'feeds', 'filters', 'global_allow_keywords']);
 }
 
 /**
@@ -210,14 +217,10 @@ export async function resetAllData(): Promise<void> {
  * 表示設定などの AsyncStorage とグローバル許可キーワードは保持する（初回設定の対象外のため）。
  *
  * feeds を消せば記事は CASCADE で連動削除されるが、意図を明示するため articles も直接消す。
+ * グローバル許可キーワードは残すため clearUserDataTables は使わない。
  */
 export async function resetFeedsAndFilters(): Promise<void> {
-  const database = openDatabase();
-  database.withTransactionSync(() => {
-    database.execSync('DELETE FROM articles');
-    database.execSync('DELETE FROM feeds');
-    database.execSync('DELETE FROM filters');
-  });
+  deleteAllFromTables(['articles', 'feeds', 'filters']);
 }
 
 /**
