@@ -469,12 +469,11 @@
 
 ---
 
-### 次期リリース（v1.1.7・開発中）
+### 次期リリース（v1.1.7・開発完了、ビルド/提出待ち）
 
 > ⚠️ **次回ストア配信は新規ビルド必須**
-> `expo-clipboard` などネイティブモジュールを追加しているため、OTA更新では反映されない。
-> 開発中の OPML / バックアップ機能でも `expo-document-picker` / `expo-sharing` を追加予定のため、
-> **dev client の作り直しと実機での動作確認（ファイル選択・共有）が必要**。
+> `expo-clipboard` / `expo-document-picker` / `expo-sharing` などネイティブモジュールを追加しているため、
+> OTA更新では反映されない。**dev client の作り直しと実機での動作確認（ファイル選択・共有）が必要**。
 
 #### マージ済み
 - [x] フィルタ編集のブロックキーワードにクリップボード貼り付けボタンを追加
@@ -485,22 +484,38 @@
 - [x] `feeds.pasteFromClipboard` を `common.pasteFromClipboard` に集約、`MAX_KEYWORD_LENGTH` を定数化
 - [x] 重複フィードURL追加時に専用エラーを表示
 
-#### 開発中（feature ブランチ）
-- [ ] WiFi接続時のみ取得（`feature/wifi-only-fetch`）
-  - SyncService にWiFi判定を追加。自動同期のみ制限し、手動更新は常時取得。トグルUI
-- [ ] 連打防止の最低更新間隔（`feature/min-refresh-interval`）
-  - クールダウン判定を追加。手動更新が制限中なら残り時間を案内。制限なし/1/3/5/10分から選択
-- [ ] OPMLインポート/エクスポート（`feature/opml-import-export`）
-  - `OpmlService` 新規。OPML書き出し（共有）/取り込み（重複スキップ）。`expo-document-picker` / `expo-sharing` 追加
-- [ ] データのバックアップ/復元（`feature/data-backup-restore`）
-  - `BackupService` 新規。フィード・フィルタ・許可KW・設定をJSONで入出力（復元はマージ＋設定上書き、記事は対象外）
+#### マージ済み（機能ブランチ 4本 → 共通化 → 追加改善）
+> マージ順は ① WiFiのみ → ② 最低更新間隔 → ③ ストレージキー集約 → ④ OPML → ⑤ バックアップ の順で実施。
+> ②で設定キーを出し切ってから③で一度に集約し、③のあと⑤を入れることで BackupService が
+> 私的なキー一覧を再生産しないようにした。
 
-**注意**: OPML とバックアップは同じ2パッケージ（`expo-document-picker` / `expo-sharing`）を `package.json` に追加するため、両方マージする際は競合したら片方の追加行に寄せる。
+- [x] WiFi接続時のみ取得（`feature/wifi-only-fetch`、PR #16）
+  - SyncService にWiFi判定を追加。自動同期のみ制限し、手動更新は常時取得。オン時の手動更新は確認ダイアログ。トグルUI
+- [x] 連打防止の最低更新間隔（`feature/min-refresh-interval`、PR #17）
+  - クールダウン判定を追加。手動更新が制限中なら残り時間を案内。制限なし/1/3/5/10分から選択
+- [x] ストレージキーを `constants/storageKeys.ts` に集約（PR #18）
+  - `@filto/` プレフィックスをコンパイル時に強制する型ガード（`satisfies`）付き。
+    `resetAllData` は `getAllKeys()` のプレフィックス走査に変更し、キー追加のたびの列挙漏れを防止
+- [x] OPMLインポート/エクスポート（`feature/opml-import-export`、PR #19）
+  - `OpmlService` 新規。OPML書き出し（共有）/取り込み（URL検証・重複スキップ・ファビコン補完）。`expo-document-picker` / `expo-sharing` 追加
+- [x] データのバックアップ/復元（`feature/data-backup-restore`、PR #20）
+  - `BackupService` 新規。フィード・フィルタ・許可KW・**記事**をJSONで入出力。表示設定は対象外
+  - エクスポートは「すべての記事／お気に入りのみ」をトグルで選択。記事はURLでフィードに紐づけ復元
+  - 復元は中身を見せてから「追加（マージ）／置き換え」を選択。置き換えは二段階確認＋消す前に安全バックアップ、進行中同期のキャンセル
+  - マージ時は既存記事のお気に入りを立て直す（既読は端末側を正として維持）
+- [x] 共通ユーティリティ切り出し
+  - `utils/exportFile.ts`（`writeAndShare` / `writeCacheFile`）で OPML・バックアップの書き出し/共有を共通化
+  - `utils/feedUrl.ts`（`isValidFeedUrl` / `getFaviconUrl`）で重複解消
+- [x] 外部キーを有効化（`fix/enable-foreign-keys`、PR #21）
+  - `PRAGMA foreign_keys = ON` を接続ごとに張り、フィード削除で記事が孤児化する既存バグを修正。
+    有効化前に生まれた孤児記事は初期化時に一度だけ掃除
+- [x] 設定トグルの共通コンポーネント化・削除トランザクションの集約（`refactor/toggle-and-reset-dedup`、PR #22）
+  - `components/Toggle.tsx` に集約（iOS標準スイッチ準拠）。`deleteAllFromTables` で削除処理を共通化
 
 #### 残タスク
-- [ ] 4機能のマージ（依存・コード変更が独立しているためマージ順は任意）
-- [ ] ネイティブ再ビルド（dev client）＋実機でのファイル選択/共有の動作確認
-- [ ] `components/PasteButton.tsx` への共通化（filter_edit / feed_add / feed_edit で重複）
+- [ ] ネイティブ再ビルド（dev client / RC）＋実機でのファイル選択・共有の動作確認
+- [ ] v1.1.7 本番ビルド → iOS/Android ストア提出（リリースノート・WBS更新含む）
+- [ ] `components/PasteButton.tsx` への共通化（filter_edit / feed_add / feed_edit で重複、優先度低）
 
 ---
 

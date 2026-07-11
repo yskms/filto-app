@@ -85,4 +85,4 @@ Mute unwanted people, shows, companies, and topics with keyword filters. Read on
 
 ## Keywords (App Store / 100 chars)
 
-rss,reader,news,feed,filter,privacy,blog,keyword,subscribe,curation,aggregate,sync,mute,block,topics
+rss,reader,news,feed,filter,privacy,blog,keyword,subscribe,curation,sync,mute,block,topics,simple
