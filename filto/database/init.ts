@@ -39,8 +39,12 @@ export function openDatabase(forceNew: boolean = false): SQLite.SQLiteDatabase {
   if (db) {
     return db;
   }
-  
+
   db = SQLite.openDatabaseSync('filto.db');
+  // 外部キー制約はSQLiteでは接続ごとに既定で無効。有効にしないと articles の
+  // ON DELETE CASCADE が働かず、フィード削除で記事が孤児として残る。
+  // トランザクション外でのみ設定できるため、接続を開いた直後にここで張る。
+  db.execSync('PRAGMA foreign_keys = ON');
   return db;
 }
 
@@ -137,6 +141,12 @@ export async function initDatabase(): Promise<void> {
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_global_allow_keyword ON global_allow_keywords(keyword);
   `);
+
+  // 外部キーを有効化する前のバージョンでフィードを削除した端末には、
+  // 親フィードを失った記事が残っている（CASCADE が働かなかったため）。
+  // PRAGMA foreign_keys=ON は既存行を検証しないので、ここで一度だけ掃除する。
+  // 有効化後は孤児が新たに生まれないため、以降このDELETEは0件で終わる。
+  database.execSync('DELETE FROM articles WHERE feed_id NOT IN (SELECT id FROM feeds)');
 }
 
 /**
@@ -167,8 +177,7 @@ export const ONBOARDING_KEY = StorageKeys.onboardingCompleted;
  * DB上のユーザーデータ（フィード・フィルタ・許可キーワード・記事）を1トランザクションで全削除する。
  * AsyncStorage の設定には触れない。
  *
- * articles を明示的に消しているのは、feeds への ON DELETE CASCADE が効かないため。
- * SQLite の外部キー制約は既定で無効で、このアプリは PRAGMA foreign_keys を有効にしていない。
+ * feeds を消せば記事は CASCADE で連動削除されるが、意図を明示するため articles も直接消す。
  */
 export function clearUserDataTables(): void {
   const database = openDatabase();
@@ -200,7 +209,7 @@ export async function resetAllData(): Promise<void> {
  * 初回設定で作られるフィード・フィルタと、それに紐づく記事を削除して選び直せる状態にする。
  * 表示設定などの AsyncStorage とグローバル許可キーワードは保持する（初回設定の対象外のため）。
  *
- * 記事は CASCADE では消えないため明示的に削除する（clearUserDataTables のコメント参照）。
+ * feeds を消せば記事は CASCADE で連動削除されるが、意図を明示するため articles も直接消す。
  */
 export async function resetFeedsAndFilters(): Promise<void> {
   const database = openDatabase();
