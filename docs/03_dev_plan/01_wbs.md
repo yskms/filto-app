@@ -469,7 +469,7 @@
 
 ---
 
-### 次期リリース（v1.1.7・開発完了、ビルド/提出待ち）
+### v1.1.7（提出完了）
 
 > ⚠️ **次回ストア配信は新規ビルド必須**
 > `expo-clipboard` / `expo-document-picker` / `expo-sharing` などネイティブモジュールを追加しているため、
@@ -512,14 +512,40 @@
 - [x] 設定トグルの共通コンポーネント化・削除トランザクションの集約（`refactor/toggle-and-reset-dedup`、PR #22）
   - `components/Toggle.tsx` に集約（iOS標準スイッチ準拠）。`deleteAllFromTables` で削除処理を共通化
 
-#### 残タスク
-- [ ] ネイティブ再ビルド（dev client / RC）＋実機でのファイル選択・共有の動作確認
-- [ ] v1.1.7 本番ビルド → iOS/Android ストア提出（リリースノート・WBS更新含む）
+#### ビルド・提出
+- [x] RCビルド（`preview` / Android APK・versionCode 11）＋実機でファイル選択・共有・各機能を確認
+- [x] v1.1.7 本番ビルド（`production` / iOS build 11・Android versionCode 12、version 1.1.7）
+- [x] リリースノート作成（日英、`docs/04_store/release_notes_v1.1.7.md`）
+- [x] ストア説明文・キーワードに「シンプル」を追加（ASO、PR #23）
+- [x] iOS/Android ストア提出（`eas submit`。Android は `releaseStatus: draft`）
+  - Android 提出はローカルCLIが2分でタイムアウト→サーバー側は継続のため二重スケジュールの可能性あり。
+    DRAFT のため公開影響なし。Play Console で versionCode 12 のドラフトが1つか要確認
+- [x] 両ストアに提出完了（リリースノート・説明文はストア側で手動反映）
+
+#### 残タスク（次期以降）
 - [ ] `components/PasteButton.tsx` への共通化（filter_edit / feed_add / feed_edit で重複、優先度低）
+- [ ] バックグラウンド更新（アプリ起動時に取得済みにする定期フェッチ）※下記「将来対応検討」参照
 
 ---
 
 ## 将来対応検討
+
+### バックグラウンド定期更新（起動前に取得を済ませておく）
+- **狙い**: アプリを開いた時点で既に最新記事が並んでいる体験。頻度は30分〜1時間で十分。頻度は選択制でもよい
+- **方針**: `expo-background-task`（旧 `expo-background-fetch` の後継。Android=WorkManager / iOS=BGTaskScheduler）でタスクを登録し、
+  中身は既存の `SyncService.refresh()` を呼ぶだけ。refresh は UI 非依存のため headless で流用可能
+- **必要な作業**:
+  - `expo-background-task` 追加 → **ネイティブ再ビルド必須**（config plugin が iOS の `UIBackgroundModes` /
+    `BGTaskSchedulerPermittedIdentifiers`、Android の WorkManager を設定）
+  - 実行間隔の設定UI（オフ / 30分 / 1時間 など）と、Wi-Fiのみ設定・最低更新間隔との整合
+  - バックグラウンドでの retention 削除やエラー処理の確認
+- **制約（重要）**:
+  - **iOS は実行タイミングをOSが決める**。指定間隔は「最短の目安」で、実際は利用パターンや充電/ネット状況で前後する。
+    「必ず30分ごと」は保証できない。ユーザーが設定アプリで App のバックグラウンド更新をオフにしていると走らない
+  - **Android は WorkManager で最短15分**。30分/1時間は問題なく設定可能
+  - どちらも**実行時間の許容枠に制限**があるため、フェッチは軽量に保つ（全フィード直列は要注意）
+- **権限**: 位置情報のような**実行時許可ダイアログは不要**。バックグラウンド更新はOS設定のトグルで制御される（プロンプトなし）
+- **工数感**: タスク登録＋設定UIで小〜中規模。既存 refresh を再利用できるため中身は薄い。iOS実機での挙動確認に時間がかかる
 
 ### iPad / iPad mini 対応
 - **現状**: `supportsTablet: false`（iPhone 専用アプリとして提出）
