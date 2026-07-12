@@ -901,6 +901,9 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
             removeClippedSubviews={true}
             showsVerticalScrollIndicator={false}
+            // 起動時の自動同期などで先頭に記事が差し込まれても、見ている位置がズレないよう固定する。
+            // 先頭付近にいるとき（10px以内）だけ新着に追従して先頭へ寄せる
+            maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 10 }}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             onContentSizeChange={(_, h) => setListContentH(h)}
