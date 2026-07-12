@@ -45,7 +45,8 @@
       ],
       "expo-sqlite",
       "expo-localization",
-      "./plugins/withAndroidSplashIconBackground"
+      "./plugins/withAndroidSplashIconBackground",
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true,

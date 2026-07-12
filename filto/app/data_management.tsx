@@ -19,6 +19,7 @@ import { ArticleRepository } from '@/repositories/ArticleRepository';
 import { resetAllData } from '@/database/init';
 import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
+import { BackgroundSync } from '@/services/BackgroundSync';
 import { OpmlService } from '@/services/OpmlService';
 import {
   BackupService,
@@ -255,6 +256,7 @@ export default function DataManagementScreen() {
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
   const [wifiOnlyFetch, setWifiOnlyFetch] = useState(false);
+  const [backgroundFetchEnabled, setBackgroundFetchEnabled] = useState(true);
   const [minRefreshInterval, setMinRefreshInterval] = useState(0);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
   const [minRefreshDropdownVisible, setMinRefreshDropdownVisible] = useState(false);
@@ -277,16 +279,18 @@ export default function DataManagementScreen() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const [savedRetention, savedStarred, savedWifiOnly, savedMinRefresh] = await Promise.all([
+      const [savedRetention, savedStarred, savedWifiOnly, savedMinRefresh, bgEnabled] = await Promise.all([
         AsyncStorage.getItem(StorageKeys.articleRetentionDays),
         AsyncStorage.getItem(StorageKeys.deleteStarredInAutoDelete),
         AsyncStorage.getItem(StorageKeys.wifiOnlyFetch),
         AsyncStorage.getItem(StorageKeys.minRefreshIntervalMinutes),
+        BackgroundSync.isEnabled(),
       ]);
       if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
       if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
       if (savedWifiOnly !== null) setWifiOnlyFetch(savedWifiOnly === 'true');
       if (savedMinRefresh !== null) setMinRefreshInterval(parseInt(savedMinRefresh, 10));
+      setBackgroundFetchEnabled(bgEnabled);
     } catch (_) {
     }
   }, []);
@@ -327,6 +331,18 @@ export default function DataManagementScreen() {
       setWifiOnlyFetch(next);
       await AsyncStorage.setItem(StorageKeys.wifiOnlyFetch, next.toString());
     } catch (_) {
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
+    }
+  };
+
+  const handleToggleBackgroundFetch = async () => {
+    const next = !backgroundFetchEnabled;
+    setBackgroundFetchEnabled(next);
+    try {
+      // 設定の保存とタスクの登録/解除をまとめて行う
+      await BackgroundSync.setEnabled(next);
+    } catch (_) {
+      setBackgroundFetchEnabled(!next); // 失敗したらUIを戻す
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -659,6 +675,15 @@ export default function DataManagementScreen() {
             <ThemedText style={styles.manualDeleteText}>{t('dataManagement.manualDeleteNow')}</ThemedText>
             <Ionicons name="chevron-forward" size={20} color={arrowColor} />
           </TouchableOpacity>
+        </SettingSection>
+
+        <SettingSection title={t('dataManagement.sectionBackgroundFetch')}>
+          <Toggle
+            value={backgroundFetchEnabled}
+            onToggle={handleToggleBackgroundFetch}
+            label={t('dataManagement.backgroundFetch')}
+          />
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.backgroundFetchHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionWifiOnly')}>

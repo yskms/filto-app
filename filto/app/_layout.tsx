@@ -12,6 +12,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase, isOnboardingComplete } from '@/database/init';
 import OnboardingScreen from '@/components/OnboardingScreen';
 import { subscribeRestartOnboarding } from '@/utils/onboarding';
+// import 時にバックグラウンドタスクが定義される（グローバルスコープ登録のため）
+import { BackgroundSync } from '@/services/BackgroundSync';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -52,6 +54,11 @@ export default function RootLayout() {
       .then(setOnboardingDone)
       .catch(() => setOnboardingDone(true))
       .finally(() => setDbReady(true));
+  }, []);
+
+  // 保存済みの設定に合わせてバックグラウンド更新の登録状態を揃える（既定オン）
+  useEffect(() => {
+    BackgroundSync.syncRegistration();
   }, []);
 
   // 設定・データ管理からの「初回ガイドをやり直す」でオンボーディングを再表示する
