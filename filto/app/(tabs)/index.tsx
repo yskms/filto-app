@@ -614,9 +614,6 @@ export default function HomeScreen() {
   }, [articles, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
 
   const runRefresh = React.useCallback(async () => {
-    // 更新開始時に先頭付近にいたかを記録する。更新後は maintainVisibleContentPosition が
-    // offset を調整するため、このタイミングで判定しておく
-    const wasNearTop = scrollOffsetRef.current <= SCROLL_TOP_THRESHOLD;
     try {
       setRefreshing(true);
 
@@ -632,11 +629,15 @@ export default function HomeScreen() {
       // データを再読み込み（RefreshControlが既にスピナーを出すので再マウントしない）
       await loadData(false);
 
-      // 先頭付近にいたときだけ新着を見せるため先頭へ。下にスクロール中は
-      // maintainVisibleContentPosition が位置を保つので動かさない（強制ジャンプを防ぐ）
-      if (wasNearTop) {
-        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-      }
+      // 手動更新は明示操作なので、取得完了後は必ず先頭まで戻す。
+      // 先頭に記事が差し込まれた直後は maintainVisibleContentPosition が offset を
+      // 補正するため、同フレームでスクロールすると途中で止まる。レイアウトが
+      // 落ち着く次フレームまで待ってからスクロールする（2フレーム待つ）
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        });
+      });
     } catch (_) {
       ErrorHandler.showSyncError(t);
     } finally {
