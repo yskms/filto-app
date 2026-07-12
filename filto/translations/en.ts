@@ -185,7 +185,7 @@ export const en = {
   // Settings screen
   settings: {
     title: 'Settings',
-    displayBehavior: 'Display & Behavior',
+    displayBehavior: 'Display',
     dataManagement: 'Data Management',
     globalAllowKeywords: 'Global Allow Keywords',
     replayTour: 'Restart initial setup',
@@ -198,7 +198,7 @@ export const en = {
 
   // Display & Behavior screen
   displayBehavior: {
-    title: 'Display & Behavior',
+    title: 'Display',
     readDisplayMode: 'Read Display Mode',
     readDisplayDim: 'Dim',
     readDisplayHide: 'Hide',
@@ -209,8 +209,6 @@ export const en = {
     language: 'Language',
     languageJa: 'Japanese',
     languageEn: 'English',
-    startupBehavior: 'Startup Behavior',
-    autoSyncOnStartup: 'Automatically refresh RSS feeds on app startup (only if 30+ minutes have passed)',
     saveError: 'Failed to save settings',
   },
 

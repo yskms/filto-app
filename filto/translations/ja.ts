@@ -185,7 +185,7 @@ export const ja = {
     // Settings画面
     settings: {
       title: '設定',
-      displayBehavior: '表示と動作',
+      displayBehavior: '表示',
       dataManagement: 'データ管理',
       globalAllowKeywords: 'グローバル許可キーワード',
       replayTour: '初回設定をやり直す',
@@ -198,7 +198,7 @@ export const ja = {
   
     // Display & Behavior画面
     displayBehavior: {
-      title: '表示と動作',
+      title: '表示',
       readDisplayMode: '既読の表示方法',
       readDisplayDim: '薄く表示',
       readDisplayHide: '非表示',
@@ -209,8 +209,6 @@ export const ja = {
       language: '言語',
       languageJa: '日本語',
       languageEn: 'English',
-      startupBehavior: '起動時の挙動',
-      autoSyncOnStartup: 'アプリ起動時に自動的にRSSフィードを更新します (30分以上経過時のみ)',
       saveError: '設定の保存に失敗しました',
     },
   

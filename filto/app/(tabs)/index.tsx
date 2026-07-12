@@ -547,21 +547,28 @@ export default function HomeScreen() {
   const loadDataRef = React.useRef(loadData);
   React.useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
 
-  // 起動時自動同期（マウント時に確実に一度だけ実行する）
+  // 初回取得（ブートストラップ）。マウント時に確実に一度だけ実行する。
+  // 「起動のたびに同期」は廃止し、オンボーディング完了時に立つ pendingInitialFetch
+  // フラグがあるときだけ取得する。通常の起動は既存記事を即表示し、鮮度は
+  // バックグラウンド更新と手動更新で担保する（記事を手動削除しただけでは取得しない）。
   // ※ effect が再実行されると refresh が isRefreshing ガードで即returnし、
   //   hasAutoSynced が早期に true になってしまうため、ref で多重実行を防ぐ
-  const autoSyncStartedRef = React.useRef(false);
+  const initialFetchStartedRef = React.useRef(false);
   React.useEffect(() => {
-    if (autoSyncStartedRef.current) return;
-    autoSyncStartedRef.current = true;
+    if (initialFetchStartedRef.current) return;
+    initialFetchStartedRef.current = true;
 
-    const autoSync = async () => {
+    const runInitialFetch = async () => {
       try {
-        const autoSyncEnabled = await AsyncStorage.getItem(StorageKeys.autoSyncOnStartup);
-        if (autoSyncEnabled === 'false') {
+        const pending = await AsyncStorage.getItem(StorageKeys.pendingInitialFetch);
+        if (pending !== '1') {
+          // 通常起動：取得せず既存記事を即表示（スピナーを出さない）
           setHasAutoSynced(true);
           return;
         }
+        // オンボーディング直後の一度きりの取得。フラグは先に消し、失敗しても
+        // 次の起動で無限に取得し続けないようにする
+        await AsyncStorage.removeItem(StorageKeys.pendingInitialFetch);
         // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）
         await SyncService.refresh();
         await loadDataRef.current(false);
@@ -571,7 +578,7 @@ export default function HomeScreen() {
       }
     };
 
-    autoSync();
+    runInitialFetch();
   }, []);
 
   // フィルタ適用

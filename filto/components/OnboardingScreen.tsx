@@ -137,8 +137,10 @@ export default function OnboardingScreen({ onComplete }: Props) {
       // ホームで初回チュートリアル（コーチマーク）を表示するためのフラグ
       await AsyncStorage.setItem(StorageKeys.tourHome, '1');
 
-      // 初回同期はホーム側の autoSync に任せる（二重 refresh のレースを避ける）。
-      // ホームへ即遷移し、取得を待つ間にダミー記事を背景にツアーを進めてもらう。
+      // 初回取得を要求するフラグを立てる。ホーム側がこれを見て一度だけ取得し、
+      // その間「記事を準備中」を表示する（初回設定やり直しもこの経路を通る）。
+      // ここでは取得せず即遷移し、取得を待つ間にダミー記事を背景にツアーを進めてもらう。
+      await AsyncStorage.setItem(StorageKeys.pendingInitialFetch, '1');
       onComplete();
     } catch {
       Alert.alert(t('errors.operationFailed'));

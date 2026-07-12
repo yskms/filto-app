@@ -10,7 +10,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/providers/theme';
 import { useLanguage, useTranslation } from '@/providers/language';
 import { ThemedText } from '@/components/themed-text';
-import { Toggle } from '@/components/Toggle';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 // 既読表示モード
@@ -115,20 +114,14 @@ export default function DisplayBehaviorScreen() {
   const { t } = useTranslation();
   
   const [readDisplay, setReadDisplay] = useState<ReadDisplayMode>('dim');
-  const [autoSyncOnStartup, setAutoSyncOnStartup] = useState(true);
   const [readDisplayModalVisible, setReadDisplayModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   const loadSettings = useCallback(async () => {
     try {
-      const [savedRead, savedAuto] = await Promise.all([
-        AsyncStorage.getItem(StorageKeys.readDisplay),
-        AsyncStorage.getItem(StorageKeys.autoSyncOnStartup),
-      ]);
-      
+      const savedRead = await AsyncStorage.getItem(StorageKeys.readDisplay);
       if (savedRead === 'dim' || savedRead === 'hide') setReadDisplay(savedRead);
-      if (savedAuto !== null) setAutoSyncOnStartup(savedAuto === 'true');
     } catch (_) {
     }
   }, []);
@@ -139,16 +132,6 @@ export default function DisplayBehaviorScreen() {
     try {
       setReadDisplay(mode);
       await AsyncStorage.setItem(StorageKeys.readDisplay, mode);
-    } catch (_) {
-      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
-    }
-  };
-
-  const handleToggleAutoSync = async () => {
-    try {
-      const next = !autoSyncOnStartup;
-      setAutoSyncOnStartup(next);
-      await AsyncStorage.setItem(StorageKeys.autoSyncOnStartup, next.toString());
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -214,18 +197,10 @@ export default function DisplayBehaviorScreen() {
         </SettingSection>
 
         <SettingSection title={t('displayBehavior.language')}>
-          <Dropdown 
-            label={t('displayBehavior.language')} 
-            value={getLanguageLabel()} 
-            onPress={() => setLanguageModalVisible(true)} 
-          />
-        </SettingSection>
-
-        <SettingSection title={t('displayBehavior.startupBehavior')}>
-          <Toggle
-            value={autoSyncOnStartup}
-            onToggle={handleToggleAutoSync}
-            label={t('displayBehavior.autoSyncOnStartup')}
+          <Dropdown
+            label={t('displayBehavior.language')}
+            value={getLanguageLabel()}
+            onPress={() => setLanguageModalVisible(true)}
           />
         </SettingSection>
       </ScrollView>

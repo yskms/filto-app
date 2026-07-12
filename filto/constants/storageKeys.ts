@@ -17,6 +17,8 @@ export const StorageKeys = {
   defaultFeedsSeeded: '@filto/defaultFeedsSeeded',
   defaultFiltersSeeded: '@filto/defaultFiltersSeeded',
   onboardingCompleted: '@filto/onboardingCompleted',
+  // オンボーディング完了直後に立て、タブ側の初回取得（ブートストラップ）で消費する一時フラグ
+  pendingInitialFetch: '@filto/pendingInitialFetch',
 
   // 同期
   lastSyncTime: '@filto/lastSyncTime',
@@ -26,9 +28,9 @@ export const StorageKeys = {
   deleteStarredInAutoDelete: '@filto/data_management/deleteStarredInAutoDelete',
   wifiOnlyFetch: '@filto/data_management/wifiOnlyFetch',
   minRefreshIntervalMinutes: '@filto/data_management/minRefreshIntervalMinutes',
+  backgroundFetchEnabled: '@filto/data_management/backgroundFetchEnabled',
 
-  // 表示と動作
-  autoSyncOnStartup: '@filto/display_behavior/autoSyncOnStartup',
+  // 表示
   language: '@filto/display_behavior/language',
   readDisplay: '@filto/display_behavior/readDisplay',
   theme: '@filto/display_behavior/theme',
