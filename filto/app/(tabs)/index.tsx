@@ -629,8 +629,15 @@ export default function HomeScreen() {
       // データを再読み込み（RefreshControlが既にスピナーを出すので再マウントしない）
       await loadData(false);
 
-      // 手動更新は明示操作なので、最新記事を見せるため先頭へ
-      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      // 手動更新は明示操作なので、取得完了後は必ず先頭まで戻す。
+      // 先頭に記事が差し込まれた直後は maintainVisibleContentPosition が offset を
+      // 補正するため、同フレームでスクロールすると途中で止まる。レイアウトが
+      // 落ち着く次フレームまで待ってからスクロールする（2フレーム待つ）
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        });
+      });
     } catch (_) {
       ErrorHandler.showSyncError(t);
     } finally {
@@ -901,6 +908,9 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
             removeClippedSubviews={true}
             showsVerticalScrollIndicator={false}
+            // 起動時の自動同期などで先頭に記事が差し込まれても、見ている位置がズレないよう固定する。
+            // 先頭付近にいるとき（10px以内）だけ新着に追従して先頭へ寄せる
+            maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 10 }}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             onContentSizeChange={(_, h) => setListContentH(h)}
