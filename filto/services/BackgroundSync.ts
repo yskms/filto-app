@@ -36,13 +36,13 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
 });
 
 export const BackgroundSync = {
-  /** バックグラウンド更新が有効か。未設定のときは既定でオン */
+  /** バックグラウンド更新が有効か。未設定・読み取り失敗のときは既定でオン */
   async isEnabled(): Promise<boolean> {
     try {
       const value = await AsyncStorage.getItem(StorageKeys.backgroundFetchEnabled);
       return value === null ? true : value === 'true';
     } catch (_) {
-      return false;
+      return true;
     }
   },
 
@@ -58,6 +58,10 @@ export const BackgroundSync = {
 
   async register(): Promise<void> {
     try {
+      // すでに登録済みなら再登録しない。毎起動で登録し直すと WorkManager /
+      // BGTaskScheduler の待機タイマーがリセットされ、アプリを頻繁に開くと
+      // いつまでも発火しなくなるため
+      if (await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK)) return;
       const status = await BackgroundTask.getStatusAsync();
       // OS 側でバックグラウンド更新が制限されている（設定でオフ等）ときは何もしない
       if (status === BackgroundTask.BackgroundTaskStatus.Restricted) return;

@@ -566,12 +566,15 @@ export default function HomeScreen() {
           setHasAutoSynced(true);
           return;
         }
-        // オンボーディング直後の一度きりの取得。フラグは先に消し、失敗しても
-        // 次の起動で無限に取得し続けないようにする
-        await AsyncStorage.removeItem(StorageKeys.pendingInitialFetch);
+        // オンボーディング直後の一度きりの取得。
         // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）
-        await SyncService.refresh();
+        const result = await SyncService.refresh();
         await loadDataRef.current(false);
+        // 取得できたときだけフラグを消す。オフライン等で取れなかった場合はフラグを
+        // 残し、次の起動で再試行する（マウントごと一度きりなので無限取得にはならない）
+        if (!result.offline) {
+          await AsyncStorage.removeItem(StorageKeys.pendingInitialFetch);
+        }
         setHasAutoSynced(true);
       } catch (_) {
         setHasAutoSynced(true);
