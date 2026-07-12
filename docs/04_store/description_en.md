@@ -18,7 +18,7 @@ Mute unwanted topics with keyword filters. No algorithms. No account required.
 
 Your feed. Your rules.
 
-Filto is an RSS reader that puts you in control.
+Filto is a simple RSS reader that puts you in control.
 
 Mute unwanted topics with keyword filters, and follow only the sources you choose. No recommendation algorithms decide what you see.
 
