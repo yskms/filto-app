@@ -14,6 +14,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Modal,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -546,6 +547,22 @@ export default function HomeScreen() {
   // loadData の最新版を ref で保持（autoSync を1回だけ実行するため deps に入れない）
   const loadDataRef = React.useRef(loadData);
   React.useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
+
+  // アプリがバックグラウンドから前面に戻ったら記事を読み直す。
+  // useFocusEffect は画面遷移でしか発火しないため、これが無いとバックグラウンド更新で
+  // 追加された記事が、別タブに移動して戻るまで反映されない。
+  // loadData(false) なのでスピナーは出ず、スクロール位置も保持される。
+  const appStateRef = React.useRef(AppState.currentState);
+  React.useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      const prev = appStateRef.current;
+      appStateRef.current = nextState;
+      if (nextState === 'active' && (prev === 'background' || prev === 'inactive')) {
+        loadDataRef.current(false);
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   // 初回取得（ブートストラップ）。マウント時に確実に一度だけ実行する。
   // 「起動のたびに同期」は廃止し、オンボーディング完了時に立つ pendingInitialFetch
