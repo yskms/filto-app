@@ -661,13 +661,13 @@ export default function DataManagementScreen() {
             <ThemedText style={styles.retentionDescriptionText}>
               {t('dataManagement.retentionDescription')}
             </ThemedText>
-            <Toggle
-              value={deleteStarredInAuto}
-              onToggle={handleToggleDeleteStarredInAuto}
-              label={t('dataManagement.deleteStarredToo')}
-            />
           </View>
           <Dropdown label={t('dataManagement.retentionPeriodLabel')} value={getRetentionLabel()} onPress={() => setRetentionDropdownVisible(true)} />
+          <Toggle
+            value={deleteStarredInAuto}
+            onToggle={handleToggleDeleteStarredInAuto}
+            label={t('dataManagement.deleteStarredToo')}
+          />
         </SettingSection>
 
         <SettingSection title={t('dataManagement.manualDeleteSection')}>
