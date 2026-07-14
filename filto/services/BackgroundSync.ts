@@ -20,9 +20,10 @@ const BACKGROUND_FETCH_TASK = 'filto-background-fetch';
 
 /**
  * 実行間隔（分）の目安。Android WorkManager / iOS BGTaskScheduler の最短は15分。
- * 頻繁すぎると電池を消費するため約1時間にしている。
+ * 電池と鮮度のバランスで30分にしている。なお端末の省電力制御（App Standby 等）で
+ * 実際にはこれより間引かれることが多い。
  */
-const MINIMUM_INTERVAL_MINUTES = 60;
+const MINIMUM_INTERVAL_MINUTES = 30;
 
 // タスク定義はモジュール読み込み時（グローバルスコープ）で行う必要がある。
 // アプリ起動時にこのモジュールが import されることで登録される。
