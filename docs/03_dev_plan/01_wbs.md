@@ -524,28 +524,41 @@
 
 #### 残タスク（次期以降）
 - [ ] `components/PasteButton.tsx` への共通化（filter_edit / feed_add / feed_edit で重複、優先度低）
-- [ ] バックグラウンド更新（アプリ起動時に取得済みにする定期フェッチ）※下記「将来対応検討」参照
+
+---
+
+### v1.1.8（提出完了）
+
+> ⚠️ **新規ビルド必須**：`expo-background-task` / `expo-task-manager` を追加（OTA不可）。
+
+#### マージ済み
+- [x] 記事リストのスクロール位置を改善（`fix/article-list-scroll-jump`、PR #27）
+  - `maintainVisibleContentPosition` で差し込み時に位置がずれない。手動更新は取得後に確実に先頭へ戻す
+- [x] バックグラウンド更新＋起動時同期の再設計（`feature/background-fetch`、PR #28）
+  - `expo-background-task` でタスク登録。中身は既存 `SyncService.refresh()`。lastSyncTime を更新しクールダウンにも反映、WiFiのみ設定も尊重
+  - 間隔30分目安（OSにより間引かれる／iOSは特に不確実）。データ管理にオン/オフのトグル（既定オン）
+  - 「起動のたびに同期」を廃止し、オンボーディング完了時の一度きりの初回取得に再設計（`pendingInitialFetch`）。通常起動は既存記事を即表示し、記事を手動削除しただけでは再取得しない
+  - 前面復帰時（`AppState`）にホームの記事を読み直し。「表示と動作」→「表示」に改名し起動時同期トグルを削除
+  - オンボーディング連打の突き抜け防止、「初回設定をやり直す」時のみツアーにスキップ、ツアー完走時に完了ダイアログ、文言見直し
+
+#### ビルド・提出
+- [x] preview APK で実機検証（連打・スキップ・文言・前面復帰・バックグラウンド更新）
+- [x] v1.1.8 本番ビルド（`production` / Android versionCode 13、version 1.1.8。ビルド番号は remote 自動採番）
+- [x] リリースノート作成（日英、`docs/04_store/release_notes_v1.1.8.md`）
+- [x] iOS/Android とも提出・審査提出済み（Android は `releaseStatus: draft` → Play Console で手動反映・審査へ）
+  - Android は `--no-wait` だとアップロード未完了のことがある。完了まで待つモードで再実行して成功を確認した
+
+#### 学び
+- Android のバックグラウンド更新は **App Standby Buckets** で数時間に間引かれる（アプリを開かない期間が長いほど遅延）。15分指定でも実機で1〜2時間の遅延を確認。仕様として受容し、確実な更新は手動プルに委ねる
+- WorkManager 定期タスクは最短15分。間隔変更は再インストール（登録クリア）しないと反映されない（頻繁に開くと待機タイマーがリセットされるため、既登録なら再登録しない実装）
 
 ---
 
 ## 将来対応検討
 
-### バックグラウンド定期更新（起動前に取得を済ませておく）
-- **狙い**: アプリを開いた時点で既に最新記事が並んでいる体験。頻度は30分〜1時間で十分。頻度は選択制でもよい
-- **方針**: `expo-background-task`（旧 `expo-background-fetch` の後継。Android=WorkManager / iOS=BGTaskScheduler）でタスクを登録し、
-  中身は既存の `SyncService.refresh()` を呼ぶだけ。refresh は UI 非依存のため headless で流用可能
-- **必要な作業**:
-  - `expo-background-task` 追加 → **ネイティブ再ビルド必須**（config plugin が iOS の `UIBackgroundModes` /
-    `BGTaskSchedulerPermittedIdentifiers`、Android の WorkManager を設定）
-  - 実行間隔の設定UI（オフ / 30分 / 1時間 など）と、Wi-Fiのみ設定・最低更新間隔との整合
-  - バックグラウンドでの retention 削除やエラー処理の確認
-- **制約（重要）**:
-  - **iOS は実行タイミングをOSが決める**。指定間隔は「最短の目安」で、実際は利用パターンや充電/ネット状況で前後する。
-    「必ず30分ごと」は保証できない。ユーザーが設定アプリで App のバックグラウンド更新をオフにしていると走らない
-  - **Android は WorkManager で最短15分**。30分/1時間は問題なく設定可能
-  - どちらも**実行時間の許容枠に制限**があるため、フェッチは軽量に保つ（全フィード直列は要注意）
-- **権限**: 位置情報のような**実行時許可ダイアログは不要**。バックグラウンド更新はOS設定のトグルで制御される（プロンプトなし）
-- **工数感**: タスク登録＋設定UIで小〜中規模。既存 refresh を再利用できるため中身は薄い。iOS実機での挙動確認に時間がかかる
+### バックグラウンド定期更新 → v1.1.8 で実装済み
+- `expo-background-task` で実装（間隔30分・オン/オフのみ）。詳細は上の「v1.1.8」を参照。
+- 実機での結論：Android は App Standby でかなり間引かれる（数時間遅延もあり得る）。「必ず開いた時に最新」は保証できず、確実な更新は手動プルに委ねる方針で確定。
 
 ### iPad / iPad mini 対応
 - **現状**: `supportsTablet: false`（iPhone 専用アプリとして提出）
