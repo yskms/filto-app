@@ -7,6 +7,8 @@ exclude:
   - 02_basic_design
   - 03_dev_plan
   - 04_detail_design
+  - 05_store
+  - 06_reference
   - cursor
   - policy
   - README.md
