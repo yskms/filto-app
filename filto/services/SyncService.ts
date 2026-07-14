@@ -51,6 +51,18 @@ export const SyncService = {
   },
 
   /**
+   * 現在オフラインかどうか。判定不能（null）はオンライン扱い（refresh と同基準）。
+   */
+  async isOffline(): Promise<boolean> {
+    try {
+      const networkState = await Network.getNetworkStateAsync();
+      return networkState.isConnected === false || networkState.isInternetReachable === false;
+    } catch (_) {
+      return false;
+    }
+  },
+
+  /**
    * 手動更新の前に「モバイル回線で取得しますか？」の確認を出すべきか。
    * 「WiFi接続時のみ取得」がオンで、かつ現在WiFi以外で接続しているときだけ true。
    * オフライン時は refresh 側でオフラインエラーを出すため false を返す。

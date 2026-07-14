@@ -47,11 +47,13 @@ interface Props {
   startAtLast?: boolean;
   /** 最初のステップで「戻る」を押したときの処理（前の画面へ戻る）。未指定なら先頭で戻るは出さない */
   onBackBeforeFirst?: () => void;
+  /** 指定するとツアーを飛ばす小さな「スキップ」ボタンを出す（再生時のみ渡す想定） */
+  onSkip?: () => void;
 }
 
 const MIN_TOP = 4; // ハイライト上端の最小位置（オーバーレイ上端での見切れ防止）
 
-export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false, startAtLast = false, onBackBeforeFirst }) => {
+export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues = false, startAtLast = false, onBackBeforeFirst, onSkip }) => {
   const { t } = useTranslation();
   const cardBg = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -205,9 +207,16 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
         )}
       </Text>
       <View style={styles.footer}>
-        <Text style={[styles.progress, { color: hintColor }]}>
-          {shownIndex + 1} / {steps.length}
-        </Text>
+        <View style={styles.footerLeft}>
+          <Text style={[styles.progress, { color: hintColor }]}>
+            {shownIndex + 1} / {steps.length}
+          </Text>
+          {onSkip && (
+            <TouchableOpacity onPress={onSkip} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={[styles.skip, { color: hintColor }]}>{t('home.tutorialSkip')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <View style={styles.footerRight}>
           {showBack && (
             <TouchableOpacity onPress={back} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -302,8 +311,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   footerRight: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   back: { fontSize: 15 },
   progress: { fontSize: 13 },
+  skip: { fontSize: 13, textDecorationLine: 'underline' },
   nextBtn: {
     backgroundColor: ACCENT,
     paddingHorizontal: 20,

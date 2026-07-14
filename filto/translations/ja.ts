@@ -62,6 +62,9 @@ export const ja = {
       articlesFiltered: '{{count}}件がルールにより非表示',
       tutorialNext: '次へ',
       tutorialDone: '完了',
+      tutorialSkip: 'スキップ',
+      tutorialCompleteTitle: 'セットアップ完了',
+      tutorialCompleteMessage: '見たくない話題は、フィルタからいつでも追加・変更できます。',
       preparingArticles: '記事を準備中…',
       demoFeed: 'サンプル',
       demoTitle1: 'ここに記事の見出しが表示されます',
@@ -70,7 +73,7 @@ export const ja = {
       tutFeedDesc: '表示するフィードの*切替・複数選択*ができます。',
       tutRefreshDesc: '*更新ボタン*です。一覧を下に引っ張っても更新できます。',
       tutStarDesc: '記事を*長押し*すると、お気に入りに登録できます。',
-      tutLayoutDesc: '記事の表示を*大きな画像*に切り替えられます。',
+      tutLayoutDesc: '記事の表示を*大きな画像*と*コンパクト*で切り替えられます。',
       tutStarViewDesc: '*お気に入り*した記事だけを表示できます。',
       tutFilterDesc: '*非表示にした記事*を、タップで一覧に表示できます。',
       tutFiltersTabDesc: 'ここから*ブロックフィルタ*を管理できます。',
@@ -185,7 +188,7 @@ export const ja = {
     // Settings画面
     settings: {
       title: '設定',
-      displayBehavior: '表示と動作',
+      displayBehavior: '表示',
       dataManagement: 'データ管理',
       globalAllowKeywords: 'グローバル許可キーワード',
       replayTour: '初回設定をやり直す',
@@ -198,7 +201,7 @@ export const ja = {
   
     // Display & Behavior画面
     displayBehavior: {
-      title: '表示と動作',
+      title: '表示',
       readDisplayMode: '既読の表示方法',
       readDisplayDim: '薄く表示',
       readDisplayHide: '非表示',
@@ -209,8 +212,6 @@ export const ja = {
       language: '言語',
       languageJa: '日本語',
       languageEn: 'English',
-      startupBehavior: '起動時の挙動',
-      autoSyncOnStartup: 'アプリ起動時に自動的にRSSフィードを更新します (30分以上経過時のみ)',
       saveError: '設定の保存に失敗しました',
     },
   
@@ -223,7 +224,7 @@ export const ja = {
       unlimited: '無制限',
       retentionDescription: '設定した期間より古い記事は同期時に自動的に削除されます',
       deleteOldArticles: '古い記事を削除',
-      manualDeleteSection: '手動削除オプション',
+      manualDeleteSection: '記事の手動削除',
       deleteStarredToo: 'スター付き記事も削除',
       manualDeleteTitle: '記事の手動削除',
       manualDeleteSelectPeriod: '削除する期間を選択:',
@@ -246,9 +247,12 @@ export const ja = {
       replayTourConfirm: 'やり直す',
       replayTourLater: 'あとで',
       resetError: 'リセットに失敗しました',
+      sectionBackgroundFetch: 'バックグラウンド更新',
+      backgroundFetch: '有効にする',
+      backgroundFetchHint: 'オンにすると、アプリを閉じている間に自動で記事を取得します。取得のタイミングや頻度は端末の状況によって変わります。',
       sectionWifiOnly: 'WiFi時のみ取得',
       wifiOnlyRss: 'WiFi接続時のみRSSを取得',
-      wifiOnlyHint: 'オンにすると、起動時の自動取得をWiFi接続時のみ行います。（手動での更新は実行可能）',
+      wifiOnlyHint: 'オンにすると、自動での取得（バックグラウンド更新など）をWiFi接続時のみ行います。（手動での更新は実行可能）',
       sectionMinRefresh: '最低更新間隔',
       minRefreshThrottle: '連打防止の最低更新間隔',
       minRefreshNoLimit: '制限なし',
@@ -298,7 +302,7 @@ export const ja = {
     // Global Allow Keywords画面
     globalAllowKeywords: {
       title: 'グローバル許可キーワード',
-      description: 'グローバル許可キーワードは、すべてのフィルタより優先して記事を表示します。',
+      description: 'グローバル許可キーワードは、すべてのフィルタより優先して記事を表示します。\nフィルタによって非表示になる記事でも、このキーワードを含んでいれば表示します。',
       inputPlaceholder: 'キーワードを入力',
       remaining: '残り {{count}} 件',
       noKeywords: 'キーワードがありません',
@@ -316,8 +320,8 @@ export const ja = {
       step1Title: 'どんなニュースを読みますか？',
       step1Subtitle: '気になるカテゴリを選んでください',
       step1Hint: 'フィード画面からいつでも追加・削除できます',
-      step2Title: 'ブロックしたいキーワードはありますか？',
-      step2Subtitle: 'チェックした項目の記事は非表示になります（任意）',
+      step2Title: '見たくない話題はありますか？',
+      step2Subtitle: '選んだキーワードを含む記事は、自動で非表示になります。あとで変更できます',
       next: '次へ',
       back: '戻る',
       start: 'はじめる',

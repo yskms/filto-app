@@ -62,6 +62,9 @@ export const en = {
     articlesFiltered: '{{count}} articles filtered by your keywords',
     tutorialNext: 'Next',
     tutorialDone: 'Done',
+    tutorialSkip: 'Skip',
+    tutorialCompleteTitle: 'You\'re all set',
+    tutorialCompleteMessage: 'You can add or change what to hide anytime from the Filters tab.',
     preparingArticles: 'Getting your articles…',
     demoFeed: 'Sample',
     demoTitle1: 'Article headlines appear here',
@@ -70,7 +73,7 @@ export const en = {
     tutFeedDesc: 'Choose which feed to show, or *select several at once*.',
     tutRefreshDesc: 'This is the *refresh button*. You can also pull down to refresh.',
     tutStarDesc: '*Long-press* an article to add it to favorites.',
-    tutLayoutDesc: 'Switch the article view to *large images*.',
+    tutLayoutDesc: 'Switch the article view between *large images* and *compact*.',
     tutStarViewDesc: 'Show *only your favorited articles*.',
     tutFilterDesc: 'Tap to bring *hidden articles* back into the list.',
     tutFiltersTabDesc: 'Manage your *block filters* from here.',
@@ -185,7 +188,7 @@ export const en = {
   // Settings screen
   settings: {
     title: 'Settings',
-    displayBehavior: 'Display & Behavior',
+    displayBehavior: 'Display',
     dataManagement: 'Data Management',
     globalAllowKeywords: 'Global Allow Keywords',
     replayTour: 'Restart initial setup',
@@ -198,7 +201,7 @@ export const en = {
 
   // Display & Behavior screen
   displayBehavior: {
-    title: 'Display & Behavior',
+    title: 'Display',
     readDisplayMode: 'Read Display Mode',
     readDisplayDim: 'Dim',
     readDisplayHide: 'Hide',
@@ -209,8 +212,6 @@ export const en = {
     language: 'Language',
     languageJa: 'Japanese',
     languageEn: 'English',
-    startupBehavior: 'Startup Behavior',
-    autoSyncOnStartup: 'Automatically refresh RSS feeds on app startup (only if 30+ minutes have passed)',
     saveError: 'Failed to save settings',
   },
 
@@ -223,7 +224,7 @@ export const en = {
     unlimited: 'Unlimited',
     retentionDescription: 'Articles older than the selected period are automatically deleted during sync.',
     deleteOldArticles: 'Delete Old Articles',
-    manualDeleteSection: 'Manual deletion',
+    manualDeleteSection: 'Delete articles manually',
     deleteStarredToo: 'Delete starred articles too',
     manualDeleteTitle: 'Manual Article Deletion',
     manualDeleteSelectPeriod: 'Select deletion period:',
@@ -246,9 +247,12 @@ export const en = {
     replayTourConfirm: 'Restart',
     replayTourLater: 'Later',
     resetError: 'Failed to reset',
+    sectionBackgroundFetch: 'Background updates',
+    backgroundFetch: 'Enable',
+    backgroundFetchHint: 'When on, Filto fetches new articles automatically while the app is closed. The timing and frequency depend on your device.',
     sectionWifiOnly: 'Wi‑Fi only',
     wifiOnlyRss: 'Fetch RSS only on Wi‑Fi',
-    wifiOnlyHint: 'When on, automatic fetch at startup runs only on Wi‑Fi. (Manual refresh still works.)',
+    wifiOnlyHint: 'When on, automatic fetches (such as background updates) run only on Wi‑Fi. (Manual refresh still works.)',
     sectionMinRefresh: 'Minimum refresh interval',
     minRefreshThrottle: 'Minimum interval to prevent rapid refresh',
     minRefreshNoLimit: 'No limit',
@@ -298,7 +302,7 @@ export const en = {
   // Global Allow Keywords screen
   globalAllowKeywords: {
     title: 'Global Allow Keywords',
-    description: 'Global allow keywords take priority over all filters to display articles.',
+    description: 'Global allow keywords take priority over all filters when displaying articles.\nEven an article hidden by a filter stays visible if it contains one of these keywords.',
     inputPlaceholder: 'Enter keyword',
     remaining: '{{count}} remaining',
     noKeywords: 'No keywords',
@@ -316,8 +320,8 @@ export const en = {
     step1Title: 'What news do you want to read?',
     step1Subtitle: 'Select the categories you\'re interested in',
     step1Hint: 'You can add or remove feeds anytime from the Feeds tab',
-    step2Title: 'Want to block any keywords?',
-    step2Subtitle: 'Checked topics will be hidden from your feed (optional)',
+    step2Title: 'Any topics you\'d rather not see?',
+    step2Subtitle: 'Articles with the keywords you pick are hidden automatically. You can change this later',
     next: 'Next',
     back: 'Back',
     start: 'Get Started',

@@ -14,6 +14,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Modal,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -256,6 +257,8 @@ export default function HomeScreen() {
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
   const [tutorialPending, setTutorialPending] = React.useState(false);
   const [homeStartAtLast, setHomeStartAtLast] = React.useState(false);
+  // 「初回設定をやり直す」で再生したツアーのときだけスキップボタンを出す
+  const [tourIsReplay, setTourIsReplay] = React.useState(false);
   // ツアーが一周してホームへ戻ってきたとき、初回取得が終わるまで待つスピナー
   const [waitingArticles, setWaitingArticles] = React.useState(false);
   const hasAutoSyncedRef = React.useRef(false);
@@ -491,6 +494,10 @@ export default function HomeScreen() {
       AsyncStorage.getItem(StorageKeys.tourHome).then((flag) => {
         if (flag === '1' || flag === 'last') {
           AsyncStorage.removeItem(StorageKeys.tourHome).catch(() => {});
+          // 再生ツアーのときだけスキップボタンを出す
+          AsyncStorage.getItem(StorageKeys.tourIsReplay)
+            .then((r) => setTourIsReplay(r === '1'))
+            .catch(() => {});
           setHomeStartAtLast(flag === 'last');
           setTutorialPending(true);
           setTutorialVisible(true);
@@ -508,6 +515,26 @@ export default function HomeScreen() {
     router.navigate('/filters');
   }, []);
 
+  // ツアーをスキップ（再生時のみ）。全ツアーフラグを消してこの先の画面でも起動させず、
+  // 通常のツアー終了と同じく「記事を準備中」を出して初回同期の完了で解除する。
+  const handleSkipTour = React.useCallback(async () => {
+    setTutorialVisible(false);
+    setTutorialPending(false);
+    setTourIsReplay(false);
+    await AsyncStorage.multiRemove([
+      StorageKeys.tourHome,
+      StorageKeys.tourFilters,
+      StorageKeys.tourFilterEdit,
+      StorageKeys.tourFeeds,
+      StorageKeys.tourFeedAdd,
+      StorageKeys.tourFinish,
+      StorageKeys.tourIsReplay,
+    ]).catch(() => {});
+    setWaitingArticles(true);
+    const delay = hasAutoSyncedRef.current ? 700 : 120000;
+    setTimeout(() => setWaitingArticles(false), delay);
+  }, []);
+
   // ツアーが一周してホームへ戻ってきたら、まず必ず準備スピナーを出し、初回同期が
   // 完了してから解除する（中途半端な状態を一切見せない）
   useFocusEffect(
@@ -515,11 +542,15 @@ export default function HomeScreen() {
       AsyncStorage.getItem(StorageKeys.tourFinish).then((flag) => {
         if (flag !== '1') return;
         AsyncStorage.removeItem(StorageKeys.tourFinish).catch(() => {});
+        // 再生フラグも一周終了で片付ける（次回以降に持ち越さない）
+        AsyncStorage.removeItem(StorageKeys.tourIsReplay).catch(() => {});
         setWaitingArticles(true);
         // 既に同期完了済みなら一瞬だけ見せて閉じる。未完了なら完了まで待つ
         // （通常は hasAutoSynced で解除。これは保険のフォールバック）
         const delay = hasAutoSyncedRef.current ? 700 : 120000;
         setTimeout(() => setWaitingArticles(false), delay);
+        // ツアー完走の区切りとして一言（スキップ時は出さない）
+        Alert.alert(t('home.tutorialCompleteTitle'), t('home.tutorialCompleteMessage'));
       }).catch(() => {});
     }, [])
   );
@@ -547,22 +578,46 @@ export default function HomeScreen() {
   const loadDataRef = React.useRef(loadData);
   React.useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
 
-  // 起動時自動同期（マウント時に確実に一度だけ実行する）
+  // アプリがバックグラウンドから前面に戻ったら記事を読み直す。
+  // useFocusEffect は画面遷移でしか発火しないため、これが無いとバックグラウンド更新で
+  // 追加された記事が、別タブに移動して戻るまで反映されない。
+  // loadData(false) なのでスピナーは出ず、スクロール位置も保持される。
+  const appStateRef = React.useRef(AppState.currentState);
+  React.useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      const prev = appStateRef.current;
+      appStateRef.current = nextState;
+      if (nextState === 'active' && (prev === 'background' || prev === 'inactive')) {
+        loadDataRef.current(false);
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // 初回取得（ブートストラップ）。マウント時に確実に一度だけ実行する。
+  // 「起動のたびに同期」は廃止し、オンボーディング完了時に立つ pendingInitialFetch
+  // フラグがあるときだけ取得する。通常の起動は既存記事を即表示し、鮮度は
+  // バックグラウンド更新と手動更新で担保する（記事を手動削除しただけでは取得しない）。
   // ※ effect が再実行されると refresh が isRefreshing ガードで即returnし、
   //   hasAutoSynced が早期に true になってしまうため、ref で多重実行を防ぐ
-  const autoSyncStartedRef = React.useRef(false);
+  const initialFetchStartedRef = React.useRef(false);
   React.useEffect(() => {
-    if (autoSyncStartedRef.current) return;
-    autoSyncStartedRef.current = true;
+    if (initialFetchStartedRef.current) return;
+    initialFetchStartedRef.current = true;
 
-    const autoSync = async () => {
+    const runInitialFetch = async () => {
       try {
-        const autoSyncEnabled = await AsyncStorage.getItem(StorageKeys.autoSyncOnStartup);
-        if (autoSyncEnabled === 'false') {
+        const pending = await AsyncStorage.getItem(StorageKeys.pendingInitialFetch);
+        if (pending !== '1') {
+          // 通常起動：取得せず既存記事を即表示（スピナーを出さない）
           setHasAutoSynced(true);
           return;
         }
-        // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）
+        // オンボーディング直後の一度きりの取得。オフラインで取れなくても再試行は
+        // しない（例外的なケースのため、次回は通常起動とする）。フラグは先に消す。
+        await AsyncStorage.removeItem(StorageKeys.pendingInitialFetch);
+        // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）。
+        // オフライン時のダイアログはオンボーディング完了時に出すため、ここでは出さない
         await SyncService.refresh();
         await loadDataRef.current(false);
         setHasAutoSynced(true);
@@ -571,7 +626,7 @@ export default function HomeScreen() {
       }
     };
 
-    autoSync();
+    runInitialFetch();
   }, []);
 
   // フィルタ適用
@@ -986,6 +1041,7 @@ export default function HomeScreen() {
         onDone={handleTutorialDone}
         continues
         startAtLast={homeStartAtLast}
+        onSkip={tourIsReplay ? handleSkipTour : undefined}
       />
 
       {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}
