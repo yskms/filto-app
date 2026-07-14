@@ -586,13 +586,10 @@ export default function HomeScreen() {
         // オンボーディング直後の一度きりの取得。オフラインで取れなくても再試行は
         // しない（例外的なケースのため、次回は通常起動とする）。フラグは先に消す。
         await AsyncStorage.removeItem(StorageKeys.pendingInitialFetch);
-        // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）
-        const result = await SyncService.refresh();
+        // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）。
+        // オフライン時のダイアログはオンボーディング完了時に出すため、ここでは出さない
+        await SyncService.refresh();
         await loadDataRef.current(false);
-        // オフラインで取得できなかったことを明示する（記事が空になる理由の提示）
-        if (result.offline) {
-          Alert.alert(t('common.error'), t('home.offlineError'));
-        }
         setHasAutoSynced(true);
       } catch (_) {
         setHasAutoSynced(true);

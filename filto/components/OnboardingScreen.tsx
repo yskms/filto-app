@@ -21,6 +21,7 @@ import {
 } from '@/database/init';
 import { DEFAULT_FEED_CATEGORIES } from '@/constants/defaultFeeds';
 import { getFaviconUrl } from '@/utils/feedUrl';
+import { SyncService } from '@/services/SyncService';
 
 const FEED_CATEGORIES = DEFAULT_FEED_CATEGORIES;
 
@@ -141,6 +142,11 @@ export default function OnboardingScreen({ onComplete }: Props) {
       // その間「記事を準備中」を表示する（初回設定やり直しもこの経路を通る）。
       // ここでは取得せず即遷移し、取得を待つ間にダミー記事を背景にツアーを進めてもらう。
       await AsyncStorage.setItem(StorageKeys.pendingInitialFetch, '1');
+      // オフラインなら記事を取得できないため、完了操作のフィードバックとしてここで知らせる
+      // （実際の取得はホーム側で行うが、そちらではダイアログを出さない）
+      if (await SyncService.isOffline()) {
+        Alert.alert(t('common.error'), t('home.offlineError'));
+      }
       onComplete();
     } catch {
       Alert.alert(t('errors.operationFailed'));
