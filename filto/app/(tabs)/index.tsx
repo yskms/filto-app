@@ -549,6 +549,8 @@ export default function HomeScreen() {
         // （通常は hasAutoSynced で解除。これは保険のフォールバック）
         const delay = hasAutoSyncedRef.current ? 700 : 120000;
         setTimeout(() => setWaitingArticles(false), delay);
+        // ツアー完走の区切りとして一言（スキップ時は出さない）
+        Alert.alert(t('home.tutorialCompleteTitle'), t('home.tutorialCompleteMessage'));
       }).catch(() => {});
     }, [])
   );
