@@ -89,6 +89,15 @@ export default function OnboardingScreen({ onComplete }: Props) {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
+  // 連打対策の同期ロック。disabled={loading} は state 反映が1フレーム遅れるため、
+  // ステップ1(次へ)と2(完了)が同じ位置のボタンで、連打すると一気に突き抜けてしまう。
+  // ステップ切替の直後は一定時間ボタン操作を無視する。
+  const actionLockRef = useRef(false);
+  const lockBriefly = () => {
+    actionLockRef.current = true;
+    setTimeout(() => { actionLockRef.current = false; }, 500);
+  };
+
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const hintColor = useThemeColor({ light: '#687076', dark: '#9BA1A6' }, 'background');
@@ -116,15 +125,27 @@ export default function OnboardingScreen({ onComplete }: Props) {
   };
 
   const handleNext = () => {
+    if (actionLockRef.current) return;
     if (selectedCategories.size === 0) {
       Alert.alert(t('onboarding.selectAtLeastOne'));
       return;
     }
+    lockBriefly();
     setStep(2);
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   };
 
+  const handleBack = () => {
+    if (actionLockRef.current) return;
+    lockBriefly();
+    setStep(1);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  };
+
   const handleComplete = async () => {
+    // 完了は連打で二重実行しないよう、ロック中/処理中は無視する（ロックは解除しない）
+    if (actionLockRef.current || loading) return;
+    actionLockRef.current = true;
     setLoading(true);
     try {
       const feeds = categories
@@ -151,6 +172,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
     } catch {
       Alert.alert(t('errors.operationFailed'));
       setLoading(false);
+      actionLockRef.current = false; // 失敗時は再操作を許可する
     }
   };
 
@@ -244,7 +266,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
         {step === 2 && (
           <TouchableOpacity
             style={[styles.btn, styles.backBtn, { borderColor }]}
-            onPress={() => { setStep(1); scrollRef.current?.scrollTo({ y: 0, animated: false }); }}
+            onPress={handleBack}
           >
             <ThemedText style={styles.backBtnText}>{t('onboarding.back')}</ThemedText>
           </TouchableOpacity>
