@@ -302,7 +302,7 @@ export const ja = {
     // Global Allow Keywords画面
     globalAllowKeywords: {
       title: 'グローバル許可キーワード',
-      description: 'グローバル許可キーワードは、すべてのフィルタより優先して記事を表示します。',
+      description: 'グローバル許可キーワードは、すべてのフィルタより優先して記事を表示します。\nフィルタによって非表示になる記事でも、このキーワードを含んでいれば表示します。',
       inputPlaceholder: 'キーワードを入力',
       remaining: '残り {{count}} 件',
       noKeywords: 'キーワードがありません',

@@ -302,7 +302,7 @@ export const en = {
   // Global Allow Keywords screen
   globalAllowKeywords: {
     title: 'Global Allow Keywords',
-    description: 'Global allow keywords take priority over all filters to display articles.',
+    description: 'Global allow keywords take priority over all filters when displaying articles.\nEven an article hidden by a filter stays visible if it contains one of these keywords.',
     inputPlaceholder: 'Enter keyword',
     remaining: '{{count}} remaining',
     noKeywords: 'No keywords',
