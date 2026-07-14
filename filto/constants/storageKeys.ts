@@ -40,6 +40,8 @@ export const StorageKeys = {
   feedSort: '@filto/home/feedSort',
 
   // 初回ツアー（画面をまたぐ進行フラグ。消費時に削除される一時的な値）
+  // 「初回設定をやり直す」で再生したツアーか（再生時のみスキップボタンを出す）
+  tourIsReplay: '@filto/tour/isReplay',
   tourHome: '@filto/tour/home',
   tourFilters: '@filto/tour/filters',
   tourFilterEdit: '@filto/tour/filterEdit',

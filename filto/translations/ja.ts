@@ -62,6 +62,7 @@ export const ja = {
       articlesFiltered: '{{count}}件がルールにより非表示',
       tutorialNext: '次へ',
       tutorialDone: '完了',
+      tutorialSkip: 'スキップ',
       preparingArticles: '記事を準備中…',
       demoFeed: 'サンプル',
       demoTitle1: 'ここに記事の見出しが表示されます',

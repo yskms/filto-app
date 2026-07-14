@@ -62,6 +62,7 @@ export const en = {
     articlesFiltered: '{{count}} articles filtered by your keywords',
     tutorialNext: 'Next',
     tutorialDone: 'Done',
+    tutorialSkip: 'Skip',
     preparingArticles: 'Getting your articles…',
     demoFeed: 'Sample',
     demoTitle1: 'Article headlines appear here',

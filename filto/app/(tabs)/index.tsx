@@ -257,6 +257,8 @@ export default function HomeScreen() {
   const [tutorialVisible, setTutorialVisible] = React.useState(false);
   const [tutorialPending, setTutorialPending] = React.useState(false);
   const [homeStartAtLast, setHomeStartAtLast] = React.useState(false);
+  // 「初回設定をやり直す」で再生したツアーのときだけスキップボタンを出す
+  const [tourIsReplay, setTourIsReplay] = React.useState(false);
   // ツアーが一周してホームへ戻ってきたとき、初回取得が終わるまで待つスピナー
   const [waitingArticles, setWaitingArticles] = React.useState(false);
   const hasAutoSyncedRef = React.useRef(false);
@@ -492,6 +494,10 @@ export default function HomeScreen() {
       AsyncStorage.getItem(StorageKeys.tourHome).then((flag) => {
         if (flag === '1' || flag === 'last') {
           AsyncStorage.removeItem(StorageKeys.tourHome).catch(() => {});
+          // 再生ツアーのときだけスキップボタンを出す
+          AsyncStorage.getItem(StorageKeys.tourIsReplay)
+            .then((r) => setTourIsReplay(r === '1'))
+            .catch(() => {});
           setHomeStartAtLast(flag === 'last');
           setTutorialPending(true);
           setTutorialVisible(true);
@@ -509,6 +515,26 @@ export default function HomeScreen() {
     router.navigate('/filters');
   }, []);
 
+  // ツアーをスキップ（再生時のみ）。全ツアーフラグを消してこの先の画面でも起動させず、
+  // 通常のツアー終了と同じく「記事を準備中」を出して初回同期の完了で解除する。
+  const handleSkipTour = React.useCallback(async () => {
+    setTutorialVisible(false);
+    setTutorialPending(false);
+    setTourIsReplay(false);
+    await AsyncStorage.multiRemove([
+      StorageKeys.tourHome,
+      StorageKeys.tourFilters,
+      StorageKeys.tourFilterEdit,
+      StorageKeys.tourFeeds,
+      StorageKeys.tourFeedAdd,
+      StorageKeys.tourFinish,
+      StorageKeys.tourIsReplay,
+    ]).catch(() => {});
+    setWaitingArticles(true);
+    const delay = hasAutoSyncedRef.current ? 700 : 120000;
+    setTimeout(() => setWaitingArticles(false), delay);
+  }, []);
+
   // ツアーが一周してホームへ戻ってきたら、まず必ず準備スピナーを出し、初回同期が
   // 完了してから解除する（中途半端な状態を一切見せない）
   useFocusEffect(
@@ -516,6 +542,8 @@ export default function HomeScreen() {
       AsyncStorage.getItem(StorageKeys.tourFinish).then((flag) => {
         if (flag !== '1') return;
         AsyncStorage.removeItem(StorageKeys.tourFinish).catch(() => {});
+        // 再生フラグも一周終了で片付ける（次回以降に持ち越さない）
+        AsyncStorage.removeItem(StorageKeys.tourIsReplay).catch(() => {});
         setWaitingArticles(true);
         // 既に同期完了済みなら一瞬だけ見せて閉じる。未完了なら完了まで待つ
         // （通常は hasAutoSynced で解除。これは保険のフォールバック）
@@ -1011,6 +1039,7 @@ export default function HomeScreen() {
         onDone={handleTutorialDone}
         continues
         startAtLast={homeStartAtLast}
+        onSkip={tourIsReplay ? handleSkipTour : undefined}
       />
 
       {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}

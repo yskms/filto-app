@@ -10,6 +10,8 @@ import { useTranslation } from '@/providers/language';
 import { restartOnboarding } from '@/utils/onboarding';
 import { resetFeedsAndFilters } from '@/database/init';
 import { SyncService } from '@/services/SyncService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys } from '@/constants/storageKeys';
 
 interface MenuItem {
   id: string;
@@ -104,6 +106,8 @@ export default function SettingsScreen() {
                 // 実行中の同期を止めてから消す（削除済みフィードへの記事書き込みを防ぐ）
                 SyncService.cancelOngoing();
                 await resetFeedsAndFilters();
+                // 再生ツアーであることを記録（ホームのツアーでスキップボタンを出すため）
+                await AsyncStorage.setItem(StorageKeys.tourIsReplay, '1');
                 restartOnboarding();
               },
             },
