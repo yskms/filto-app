@@ -9,6 +9,7 @@ import {
   Animated,
   Pressable,
   InteractionManager,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
@@ -60,10 +61,13 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
   const hintColor = useThemeColor({ light: '#687076', dark: '#9BA1A6' }, 'background');
 
   const insets = useSafeAreaInsets();
-  // 全画面Modal(edge-to-edge/standalone)では measureInWindow(コンテンツ基準)と
-  // Modal内座標(画面上端基準)がステータスバー分ズレるため、その分を足して合わせる。
-  // Expo Go(非全画面Modal)ではズレないのでオフセット0。
-  const topOffset = FULLSCREEN_MODAL ? insets.top : 0;
+  // 座標系ズレ補正。Android の全画面Modal(edge-to-edge/standalone)では
+  // measureInWindow(コンテンツ基準)と Modal内座標(画面上端基準)がステータスバー分
+  // ズレるため、その分を足して合わせる。
+  //  - Expo Go(非全画面Modal): ズレないのでオフセット0
+  //  - iOS(standalone含む): ウィンドウ原点が画面上端で全画面Modalと一致するため0。
+  //    ここで insets.top を足すとステータスバー分だけ下にズレる（実機で確認）
+  const topOffset = FULLSCREEN_MODAL && Platform.OS === 'android' ? insets.top : 0;
 
   const [index, setIndex] = React.useState(0); // 計測対象（遷移先）
   const [shownIndex, setShownIndex] = React.useState(0); // 実際に表示中のステップ
