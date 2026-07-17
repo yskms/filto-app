@@ -36,10 +36,42 @@ function ensureArray<T>(value: T | T[] | undefined | null): T[] {
   return Array.isArray(value) ? value : [value];
 }
 
+/**
+ * Date.parse が解釈できないタイムゾーン略称と、そのUTCオフセット。
+ * GMT/UT/EST/EDT/CST/CDT/MST/MDT/PST/PDT は RFC 2822 として解釈できるため不要。
+ * IST(印+0530/愛+0100/イスラエル+0200)のように地域で衝突する略称は誤変換を避けて含めない。
+ */
+const TIMEZONE_ABBREVIATIONS: Record<string, string> = {
+  BST: '+0100',
+  WET: '+0000',
+  WEST: '+0100',
+  CET: '+0100',
+  CEST: '+0200',
+  EET: '+0200',
+  EEST: '+0300',
+  MSK: '+0300',
+  JST: '+0900',
+  KST: '+0900',
+  AEST: '+1000',
+  AEDT: '+1100',
+  ACST: '+0930',
+  ACDT: '+1030',
+  AWST: '+0800',
+  NZST: '+1200',
+  NZDT: '+1300',
+};
+
 function toIsoDateOrNow(dateLike: unknown): string {
   const text = getText(dateLike);
   if (!text) return new Date().toISOString();
-  const ms = new Date(text).getTime();
+  let ms = new Date(text).getTime();
+  if (Number.isNaN(ms)) {
+    const normalized = text.replace(
+      /\b([A-Z]{2,4})\b\s*$/,
+      (match, abbr: string) => TIMEZONE_ABBREVIATIONS[abbr] ?? match
+    );
+    ms = new Date(normalized).getTime();
+  }
   if (Number.isNaN(ms)) return new Date().toISOString();
   return new Date(ms).toISOString();
 }

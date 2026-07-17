@@ -7,6 +7,12 @@ import { StorageKeys } from '@/constants/storageKeys';
 import * as Network from 'expo-network';
 
 /**
+ * フィード取得の同時実行数。直列だとネットワーク待ちがフィード数ぶん積み上がるため
+ * 並列で取る。増やすほど速いが、回線・相手サーバへの負荷とメモリが増えるので上限を設ける。
+ */
+const FETCH_CONCURRENCY = 6;
+
+/**
  * WiFi以外の接続（モバイル回線など）かどうか。
  * type が判定不能（UNKNOWN/undefined）のときは制限しない方向に倒すため false を返す。
  */
@@ -119,32 +125,43 @@ export const SyncService = {
       // 全フィード取得
       const feeds = await FeedService.list();
 
-      // 各フィードを順次処理
-      for (const feed of feeds) {
-        // リセット等でキャンセルされたら、それ以上の保存はしない（孤立記事を防ぐ）
-        if (this.generation !== gen) break;
-        try {
-          // 保存前の記事数を取得
-          const beforeCount = (await ArticleService.getArticles(feed.id)).length;
+      // 各フィードを並列処理（同時実行数を FETCH_CONCURRENCY に制限）。
+      // 直列だとネットワーク待ちがフィード数ぶん積み上がり、既定フィードが多い初回は
+      // 数十秒かかっていた。同時に張りすぎると回線やサーバに負荷がかかるため上限を設ける。
+      let cursor = 0;
+      const worker = async () => {
+        for (;;) {
+          // リセット等でキャンセルされたら、それ以上の保存はしない（孤立記事を防ぐ）
+          if (this.generation !== gen) return;
+          const i = cursor++;
+          if (i >= feeds.length) return;
+          const feed = feeds[i];
+          try {
+            // 保存前の記事数を取得
+            const beforeCount = (await ArticleService.getArticles(feed.id)).length;
 
-          // RSS取得（フィードアイコンをサムネイルのフォールバックとして渡す）
-          const articles = await RssService.fetchArticles(feed.url, feed.iconUrl);
+            // RSS取得（フィードアイコンをサムネイルのフォールバックとして渡す）
+            const articles = await RssService.fetchArticles(feed.url, feed.iconUrl);
 
-          // 取得中にキャンセルされていたら保存しない
-          if (this.generation !== gen) break;
+            // 取得中にキャンセルされていたら保存しない
+            if (this.generation !== gen) return;
 
-          // 保存（重複チェックは ArticleService 内で実施）
-          await ArticleService.saveArticles(feed.id, feed.title, articles);
+            // 保存（重複チェックは ArticleService 内で実施）
+            await ArticleService.saveArticles(feed.id, feed.title, articles);
 
-          // 保存後の記事数を取得
-          const afterCount = (await ArticleService.getArticles(feed.id)).length;
+            // 保存後の記事数を取得
+            const afterCount = (await ArticleService.getArticles(feed.id)).length;
 
-          newArticles += afterCount - beforeCount;
-          fetched++;
-        } catch (_) {
-          // フィード単位のエラーは握りつぶして継続
+            newArticles += afterCount - beforeCount;
+            fetched++;
+          } catch (_) {
+            // フィード単位のエラーは握りつぶして継続
+          }
         }
-      }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(FETCH_CONCURRENCY, feeds.length) }, () => worker())
+      );
 
       if (this.generation === gen) {
         // 最終同期時刻を保存
