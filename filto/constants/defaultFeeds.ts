@@ -104,12 +104,9 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "フィットネス・健康",
     feeds: [
       { id: "default_ja_melos", title: "MELOS", url: "https://melos.media/feed" },
-      { id: "default_ja_magazineworld", title: "Tarzan", url: "https://magazineworld.jp/tarzan/feed/" },
       { id: "default_ja_fytte", title: "FYTTE", url: "https://fytte.jp/feed" },
       { id: "default_ja_womenshealthmag", title: "Women's Health", url: "https://www.womenshealthmag.com/jp/rss/all.xml/" },
       { id: "default_ja_yogagene", title: "ヨガジェネレーション", url: "https://www.yoga-gene.com/feed" },
-      { id: "default_ja_triathlonlumina", title: "TRIATHLON LUMINA", url: "https://triathlon-lumina.com/feed" },
-      { id: "default_ja_vokka", title: "VOKKA", url: "https://vokka.jp/feed" },
       { id: "default_ja_rikujyokyogi", title: "月陸Online", url: "https://www.rikujyokyogi.co.jp/feed" },
     ],
   },
@@ -123,7 +120,6 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_hanako", title: "Hanako", url: "https://hanako.tokyo/feed/" },
       { id: "default_ja_vogue", title: "VOGUE JAPAN", url: "https://www.vogue.co.jp/feed/rss" },
       { id: "default_ja_wwdjapan", title: "WWD JAPAN", url: "https://www.wwdjapan.com/feed" },
-      { id: "default_ja_biteki", title: "美的.com", url: "https://www.biteki.com/feed" },
     ],
   },
   {
@@ -132,12 +128,9 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     feeds: [
       { id: "default_ja_casabrutus", title: "Casa BRUTUS", url: "https://casabrutus.com/feed" },
       { id: "default_ja_youpouch", title: "Pouch (youpouch)", url: "https://youpouch.com/feed" },
-      { id: "default_ja_roomclip", title: "RoomClip mag", url: "https://roomclip.jp/mag/feed" },
       { id: "default_ja_roomie", title: "ROOMIE", url: "https://www.roomie.jp/feed/" },
       { id: "default_ja_tabilabo", title: "TABI LABO", url: "https://tabi-labo.com/feed" },
       { id: "default_ja_rocketnews24", title: "ロケットニュース24", url: "https://rocketnews24.com/feed/" },
-      { id: "default_ja_grapee", title: "grape", url: "https://grapee.jp/feed" },
-      { id: "default_ja_getnavi", title: "GetNavi web", url: "https://getnavi.jp/feed/" },
       { id: "default_ja_lmaga", title: "Lmaga.jp", url: "https://news.yahoo.co.jp/rss/media/lmaga/all.xml" },
     ],
   },
@@ -153,7 +146,6 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     id: "food",
     label: "グルメ・料理",
     feeds: [
-      { id: "default_ja_kufura", title: "kufura", url: "https://kufura.jp/feed" },
       { id: "default_ja_tabelog", title: "食べログマガジン", url: "https://magazine.tabelog.com/feed" },
       { id: "default_ja_asajikan", title: "朝時間.jp", url: "https://asajikan.jp/feed" },
     ],
@@ -164,7 +156,6 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     feeds: [
       { id: "default_ja_automesseweb", title: "Auto Messe Web", url: "https://www.automesseweb.jp/feed" },
       { id: "default_ja_bestcarweb", title: "ベストカーWeb", url: "https://bestcarweb.jp/feed" },
-      { id: "default_ja_clicccar", title: "clicccar", url: "https://clicccar.com/feed" },
     ],
   },
   {
@@ -217,7 +208,6 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     id: "science",
     label: "Science",
     feeds: [
-      { id: "default_en_newscientist", title: "New Scientist", url: "https://www.newscientist.com/feed/home/" },
       { id: "default_en_quantamagazine", title: "Quanta Magazine", url: "https://www.quantamagazine.org/feed/" },
       { id: "default_en_phys", title: "Phys.org", url: "https://phys.org/rss-feed/" },
       { id: "default_en_livescience", title: "Live Science", url: "https://www.livescience.com/feeds/all" },
@@ -259,12 +249,10 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     id: "fitness",
     label: "Fitness & Health",
     feeds: [
-      { id: "default_en_self", title: "Self", url: "https://www.self.com/feed/rss" },
       { id: "default_en_menshealth", title: "Men's Health", url: "https://www.menshealth.com/rss/all.xml/" },
       { id: "default_en_womenshealthmag", title: "Women's Health", url: "https://www.womenshealthmag.com/rss/all.xml/" },
       { id: "default_en_runnersworld", title: "Runner's World", url: "https://www.runnersworld.com/rss/all.xml/" },
       { id: "default_en_prevention", title: "Prevention", url: "https://www.prevention.com/rss/all.xml/" },
-      { id: "default_en_healthline", title: "Healthline", url: "https://www.healthline.com/rss/health-news" },
       { id: "default_en_muscleandfitness", title: "Muscle & Fitness", url: "https://www.muscleandfitness.com/feed/" },
     ],
   },
@@ -301,7 +289,6 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     id: "kids",
     label: "Parenting",
     feeds: [
-      { id: "default_en_romper", title: "Romper", url: "https://www.romper.com/rss" },
       { id: "default_en_fatherly", title: "Fatherly", url: "https://www.fatherly.com/feed" },
     ],
   },
@@ -323,7 +310,6 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_en_cntraveler", title: "Conde Nast Traveler", url: "https://www.cntraveler.com/feed/rss" },
       { id: "default_en_thepointsguy", title: "The Points Guy", url: "https://thepointsguy.com/feed/" },
       { id: "default_en_atlasobscura", title: "Atlas Obscura", url: "https://www.atlasobscura.com/feeds/latest" },
-      { id: "default_en_nomadicmatt", title: "Nomadic Matt", url: "https://www.nomadicmatt.com/travel-blog/feed/" },
       { id: "default_en_matadornetwork", title: "Matador Network", url: "https://matadornetwork.com/feed/" },
     ],
   },
