@@ -137,6 +137,28 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
       Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 &&
       Math.abs(a.width - b.width) < 1.5 && Math.abs(a.height - b.height) < 1.5;
 
+    // 確定後もしばらく再計測して追従する。遷移アニメの終盤はイーズアウトで
+    // 減速するため「70ms間の移動が1.5px未満」＝安定と誤判定し、最終位置に届く前に
+    // 確定してしまうことがある（遷移直後だけ数pxズレ、次へ→戻ると直る症状）。
+    // 表示タイミングは変えず、ずれていれば黙って補正する。
+    const follow = (base: CoachRect, left: number) => {
+      if (cancelled || left <= 0) return;
+      setTimeout(() => {
+        if (cancelled) return;
+        cur.measure().then((r) => {
+          if (cancelled || !r || r.width <= 0 || r.height <= 0) return;
+          if (!same(r, base)) setRect(r);
+          follow(r, left - 1);
+        }).catch(() => {});
+      }, 250);
+    };
+
+    const confirm = (r: CoachRect) => {
+      setRect(r);
+      setShownIndex(index);
+      follow(r, 4); // 250ms間隔で約1秒ぶん追従して最終位置に合わせる
+    };
+
     // 2回続けて同じ位置を計測できたら「確定」とみなす（遷移アニメ中は位置が
     // 動くので、止まるまで待つ＝暗幕は出たままハイライトだけ遅れて出す）
     const settle = (prev: CoachRect | null) => {
@@ -146,13 +168,12 @@ export const CoachMarks: React.FC<Props> = ({ visible, steps, onDone, continues 
         const valid = !!(r && r.width > 0 && r.height > 0);
         if (valid && prev && same(r!, prev)) {
           // 安定 → ハイライトと吹き出しを同時に切り替える
-          setRect(r);
-          setShownIndex(index);
+          confirm(r!);
           return;
         }
         attempt++;
         if (attempt >= 20) {
-          if (valid) { setRect(r!); setShownIndex(index); } // 安定しなくても打ち切って表示
+          if (valid) confirm(r!); // 安定しなくても打ち切って表示
           else if (index + 1 < steps.length) setIndex(index + 1); // 計測不可ならスキップ
           else { setShownIndex(index); setNoHighlight(true); } // 最終ステップ：自動遷移せずカードだけ出す
           return;
