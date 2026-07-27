@@ -12,6 +12,16 @@
   <a href="README_EN.md">English</a> | 日本語
 </p>
 
+<p align="center">
+  <a href="https://apps.apple.com/jp/app/filto/id6763070121">
+    <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40" alt="Download on the App Store" />
+  </a>
+  &nbsp;
+  <a href="https://play.google.com/store/apps/details?id=com.yskms.filto">
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png" height="58" alt="Google Play で手に入れよう" />
+  </a>
+</p>
+
 **ローカルフィルタ特化型の軽量RSSリーダー**
 
 Filto は、**記事のノイズを「自分のルール」でコントロールできる**シンプルで実用的なモバイル向けRSSリーダーです。
@@ -168,9 +178,10 @@ filto/
 ## 開発状況
 
 - **個人開発プロジェクト**
-- **初回リリース目標**: 2026年5月
+- **iOS / Android とも公開中**（v1.2.0）
+  - [App Store](https://apps.apple.com/jp/app/filto/id6763070121) ／ [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
 
-※ 課金機能は初期リリースには含まれませんが、将来的な追加を前提とした設計になっています。
+※ 課金機能は現時点で未実装ですが、将来的な追加を前提とした設計になっています。
 
 ---
 

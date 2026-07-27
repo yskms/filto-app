@@ -124,10 +124,10 @@ For complete documentation structure, see [00_main_spec.md](docs/01_requirements
 ## Development Status
 
 - **Personal development project**
-- **Current**: Design to implementation phase
-- **Initial release target**: May 2026
+- **Live on iOS / Android** (v1.2.0)
+  - [App Store](https://apps.apple.com/app/filto/id6763070121) / [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
 
-*Monetization features are not included in the initial release but are planned for future updates.
+*Monetization features are not implemented yet but are planned for future updates.
 
 ---
 
