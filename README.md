@@ -18,7 +18,7 @@
   </a>
   &nbsp;
   <a href="https://play.google.com/store/apps/details?id=com.yskms.filto">
-    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png" height="58" alt="Google Play で手に入れよう" />
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png" height="52" alt="Google Play で手に入れよう" />
   </a>
 </p>
 
