@@ -12,6 +12,16 @@
   English | <a href="README.md">日本語</a>
 </p>
 
+<p align="center">
+  <a href="https://apps.apple.com/app/filto/id6763070121">
+    <img src="https://img.shields.io/badge/Download_on_the-App_Store-0D96F6?style=for-the-badge&logo=apple&logoColor=white" alt="Download on the App Store" height="40" />
+  </a>
+  &nbsp;
+  <a href="https://play.google.com/store/apps/details?id=com.yskms.filto">
+    <img src="https://img.shields.io/badge/Get_it_on-Google_Play-414141?style=for-the-badge&logo=googleplay&logoColor=white" alt="Get it on Google Play" height="40" />
+  </a>
+</p>
+
 **Lightweight RSS Reader with Local Filter Focus**
 
 Filto is a simple and practical mobile RSS reader that lets you **control article noise with your own rules**.
