@@ -14,11 +14,11 @@
 
 <p align="center">
   <a href="https://apps.apple.com/jp/app/filto/id6763070121">
-    <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40" alt="Download on the App Store" />
+    <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40" alt="Download on the App Store" style="vertical-align: middle;" />
   </a>
   &nbsp;
   <a href="https://play.google.com/store/apps/details?id=com.yskms.filto">
-    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png" height="52" alt="Google Play で手に入れよう" />
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png" height="52" alt="Google Play で手に入れよう" style="vertical-align: middle;" />
   </a>
 </p>
 
