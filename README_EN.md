@@ -5,7 +5,8 @@
 <h1 align="center">Filto</h1>
 
 <p align="center">
-  Simple RSS Reader with Powerful Filters
+  See what you want. Hide what you don't.<br>
+  A lightweight RSS reader focused on local filtering.
 </p>
 
 <p align="center">
@@ -18,122 +19,85 @@
   <a href="https://play.google.com/store/apps/details?id=com.yskms.filto"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60" alt="Get it on Google Play" align="middle" /></a>
 </p>
 
-**Lightweight RSS Reader with Local Filter Focus**
-
-Filto is a simple and practical mobile RSS reader that lets you **control article noise with your own rules**.
-
 ---
 
 ## Overview
 
-Many RSS readers face challenges such as:
+Filto is a simple RSS reader that lets you collect only the sources you trust and hide unwanted topics using keyword filters.
 
-- Advanced filters are limited to paid plans
-- Processing relies on cloud services
-- Complex settings can be overwhelming
+Instead of relying on recommendation algorithms, you decide what deserves your attention. Your feed, your rules.
 
-Filto focuses on:
+Many RSS readers focus on collecting information, but filtering out noise is often locked behind paid plans, cloud services, or overly complex rule systems.
 
-- **All article fetching and filtering is done locally**
-- **Simple yet expressive filters**
-- **Quiet experience without push notifications**
+Filto is built around three core ideas:
 
-The goal is to "read only the articles you need, comfortably."
+* **Everything runs locally** — no cloud processing, no account required.
+* **Powerful filtering without unnecessary complexity.**
+* **A quiet reading experience without notification overload.**
 
 ---
 
-## Target Users
+## Who is it for?
 
-- People who use RSS daily but are tired of noise
-- Those who want to curate tech/investment/hobby information their own way
-- Users who see value in premium filters (like Inoreader/Feedly) but are cautious about subscriptions
-- Engineers and indie developers who want to design their own reading experience
+* People who already use RSS but are tired of noisy feeds.
+* Anyone who wants complete control over what they read.
+* Users who like premium filtering features in Feedly or Inoreader, but prefer a lightweight local solution.
+* Developers and makers who want to design their own reading experience.
+* People who think recommendation algorithms can go to hell.
 
 ---
 
-## Key Features
+## Features
 
-- RSS feed management (add, delete, reorder)
-- Local filtering capabilities
-  - Block/allow by keywords
-  - Exception rules (e.g., allow if contains A but also contains B)
-  - Global allow list (prioritized over all filters)
-- Filters apply instantly and on-demand
-- Article content opens in system browser
-- Manual or low-frequency feed updates
-- Light/Dark theme support
-- Support for Japanese/English RSS feeds (UI localization planned)
+* **Hide unwanted topics** using block keywords.
+* **Keep exceptions** with allow keywords (e.g. hide "Sports", but still show articles about "F1").
+* **Global allow list** that always takes priority over filters.
+* **Add, remove, and organize** RSS / Atom feeds.
+* Filters are applied instantly on demand.
+* Favorites, multiple layouts, configurable article retention.
+* Light & dark themes.
+* Supports both English and Japanese RSS feeds.
+
+---
+
+## How it works
+
+<p align="center">
+  <img src="docs/05_store/Screenshot/ss_add_feed.png" width="220" alt="Add your feeds" />
+  &nbsp;
+  <img src="docs/05_store/Screenshot/ss_edit_filter.png" width="220" alt="Create your filters" />
+  &nbsp;
+  <img src="docs/05_store/Screenshot/ss_home_.png" width="220" alt="Enjoy a cleaner feed" />
+</p>
+
+1. **Add your favorite feeds** — RSS and Atom are supported. No account required.
+2. **Create your filters** — Block topics you don't want to see, while allowing specific exceptions.
+3. **Enjoy a cleaner feed** — Only articles that match your own rules are shown. Articles open in your default browser.
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: React Native (Expo)
-- **Language**: TypeScript
-- **Local DB**: SQLite
-- **Architecture**: UI / Service / Repository
-- **Communication**: RSS fetching only (no cloud dependencies)
+* **Frontend:** React Native (Expo)
+* **Language:** TypeScript
+* **Local Database:** SQLite
+* **Architecture:** UI / Service / Repository
+* **Network:** RSS fetching only (no cloud backend)
+
+For development guidelines and project structure, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## Project Structure (Simplified)
+## Project Status
 
-```txt
-FILTO-APP/
-├─ filto/          # Main app (Expo + React Native)
-│  ├─ app/         # UI / Screens (Expo Router)
-│  ├─ components/  # Shared UI components
-│  ├─ hooks/       # Custom hooks
-│  ├─ constants/   # Constants like theme
-│  └─ ...          # Other app-related code
-└─ docs/           # Design documentation
-```
+* Personal project
+* **Available on both iOS and Android** (v1.2.0)
 
----
+App Store: https://apps.apple.com/app/filto/id6763070121
 
-## Documentation
+Google Play: https://play.google.com/store/apps/details?id=com.yskms.filto
 
-- **Requirements**: [00_main_spec.md](docs/01_requirements/00_main_spec.md) - Overall specifications
-- **Dev Plan**: [01_wbs.md](docs/03_dev_plan/01_wbs.md) - Development schedule
-- **Basic Design**: [02_basic_design/](docs/02_basic_design/) - Screen flows, DB design, API design, etc.
-- **Detailed Design**: [04_detail_design/](docs/04_detail_design/) - Detailed specs for each screen
-- **Cursor Guides**: [cursor/](docs/cursor/) - Implementation prompts for Cursor
-
-For complete documentation structure, see [00_main_spec.md](docs/01_requirements/00_main_spec.md)
-
----
-
-## Development Rules
-
-### Commit Message Convention
-- `feat`: New features/screens
-- `fix`: Bug fixes
-- `refactor`: Internal improvements without behavior changes
-- `docs`: Design docs/README updates
-- `chore`: Config/maintenance (no functional impact)
-
-#### Guidelines
-- 1 commit = 1 intent
-- UI-only changes also use `feat`
-- When in doubt, use `feat`
-
----
-
-## UI Mock (Concept)
-
-![UI Mock](docs/02_basic_design/mock/nano-banana_v1_light.png)
-
-*This image is an initial UI concept for design exploration
-
----
-
-## Development Status
-
-- **Personal development project**
-- **Live on iOS / Android** (v1.2.0)
-  - [App Store](https://apps.apple.com/app/filto/id6763070121) / [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
-
-*Monetization features are not implemented yet but are planned for future updates.
+> Monetization is not implemented yet, but the app is designed with future premium features in mind.
 
 ---
 
