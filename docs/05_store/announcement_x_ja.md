@@ -31,9 +31,9 @@
 > ・「スポーツは消すけどF1は読む」みたいな例外設定
 > ・好きなRSSだけを集約／アカウント不要
 >
-> Android版を配信中（iOSは近日）
+> iOS / Android どちらも配信中
 > ▼DL
-> [Google PlayのURL]
+> https://yskms.github.io/filto-app/
 
 ---
 
@@ -45,13 +45,14 @@
 `#個人開発` `#RSS` `#アプリ開発` `#Android`（付けすぎ注意、1〜2個が読みやすい）
 
 ## リンク
-- Google Play: **[要記入]**（Android 1.2.0 公開済み）
+- Google Play: https://play.google.com/store/apps/details?id=com.yskms.filto
+- App Store: https://apps.apple.com/jp/app/filto/id6763070121
 - サポート/紹介ページ: https://yskms.github.io/filto-app/
-- ※ iOS 1.2.0 は審査待ち。両OS揃えてから出すなら 3/3 を「iOS / Android 配信中」に差し替え。
+- ※ 本文はURL1本（紹介ページ）に集約。X はツイート本文に複数URLを入れるとリーチが落ちやすいため、両ストアの直リンクはリプ欄に補足するのがおすすめ。
 
-## 投稿タイミングの選択肢
-- **A. Android先行で今すぐ**：勢い重視。iPhone勢の取りこぼしは「iOSは近日」で受け止める。
-- **B. iOS審査通過を待つ**：新規獲得の取りこぼしゼロ。バズは一度きりなので揃えてから、が無難。
+## 投稿タイミング
+- **iOS / Android とも公開済み**なので、待つ理由はなし。デモ動画さえ用意できたら投稿可。
+- 曜日/時間は、可処分時間の多い**平日夜（21〜23時）や休日昼**が伸びやすい。
 
 ---
 
