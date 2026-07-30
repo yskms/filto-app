@@ -85,7 +85,7 @@ Filto（フィルト）は、好きな情報源だけを集めて、不要な話
 ## 開発状況
 
 - 個人開発プロジェクト
-- **現在 App Store / Google Play にて公開中（v1.2.0） — [App Store](https://apps.apple.com/jp/app/filto/id6763070121) ／ [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
+- **現在 App Store / Google Play にて公開中（v1.2.0）** — [App Store](https://apps.apple.com/jp/app/filto/id6763070121) ／ [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
 
 ※ 今後もローカルファースト・シンプルな思想を維持しながら改善を続けます。
 
