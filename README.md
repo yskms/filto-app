@@ -5,7 +5,7 @@
 <h1 align="center">Filto</h1>
 
 <p align="center">
-  Simple RSS Reader with Powerful Filters
+  見たくない話題は、見ない。ローカルフィルタ特化型の軽量RSSリーダー
 </p>
 
 <p align="center">
@@ -18,53 +18,55 @@
   <a href="https://play.google.com/store/apps/details?id=com.yskms.filto"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png" height="52" alt="Google Play で手に入れよう" align="middle" /></a>
 </p>
 
-**ローカルフィルタ特化型の軽量RSSリーダー**
-
-Filto は、**記事のノイズを「自分のルール」でコントロールできる**シンプルで実用的なモバイル向けRSSリーダーです。
-
 ---
 
 ## 概要
 
-多くのRSSリーダーでは、
+Filto（フィルト）は、好きな情報源だけを集めて、不要な話題をキーワードで非表示にできるシンプルなRSSリーダーです。おすすめアルゴリズムに支配されず、自分で選んだ情報だけを、自分のルールで読めます。
 
-- 高度なフィルタは有料プラン限定
-- クラウド側での処理が前提
-- 設定が複雑で疲れる
+多くのRSSリーダーは「情報を集める」ことが中心です。Filtoは「不要な情報を減らす」ことを中心に設計しています。Filto は次の3点を重視しています。
 
-といった課題があります。
-
-Filto では、
-
-- **記事取得・判定はすべてローカル**
+- **記事の取得・判定はすべてローカル**（クラウド非依存・アカウント登録不要）
 - **シンプルだが表現力のあるフィルタ**
-- **通知に依存しない静かな体験**
-
-を重視し、「必要な記事だけを気持ちよく読む」ことを目的としています。
+- **通知に追われず、自分のタイミングで読む静かな体験**
 
 ---
 
 ## 想定ユーザー
 
 - RSSを日常的に使っているが、ノイズに疲れている人
-- 技術 / 投資 / 趣味系の情報を自分なりに取捨選択したい人
-- Inoreader / Feedly などの有料フィルタに価値は感じるが、課金には慎重な人
+- 多種多様な情報を自分なりに取捨選択したい人
+- 有料フィルタ（Inoreader / Feedly など）に価値は感じるが、課金には慎重な人
 - 「読む体験」を自分で設計したいエンジニア・個人開発者
+- おすすめアルゴリズムなんてクソ喰らえと思っているロックな人
 
 ---
 
 ## 主な特徴
 
-- RSSフィード管理（追加・削除・並び替え）
-- ローカルフィルタ機能
-  - キーワードによるブロック / 許可
-  - 例外ルール（例：Aを含むがBも含む場合は許可）
-  - グローバル許可リスト（すべてのフィルタより優先して許可）
-- フィルタは即時反映・オンデマンド
-- 記事本文はシステムブラウザで表示
-- 手動または低頻度のフィード更新
-- ライト / ダークテーマ対応
-- 日本語 / 英語RSSの両対応（UI多言語化予定）
+- **見たくない話題をキーワードで非表示** — ブロックキーワードで記事を除外
+- **見たい話題は残せる** — 許可キーワードで例外を設定（例：「スポーツ」は非表示だけど、「F1」だけは表示）
+- **グローバル許可キーワード** — すべてのフィルタより優先して表示させる許可キーワード
+- **好きな情報源だけをまとめる** — RSS / Atom フィードを追加・削除・並び替え
+- フィルタは即時・オンデマンドで反映
+- お気に入り保存 / 表示レイアウト切り替え / 記事の保持期間設定
+- ライト / ダークテーマ、日本語 / 英語RSSに対応
+
+---
+
+## 使い方
+
+<p align="center">
+  <img src="docs/05_store/Screenshot/ss_add_feed_jp.png" width="220" alt="情報源を追加" />
+  &nbsp;
+  <img src="docs/05_store/Screenshot/ss_edit_filter_jp.png" width="220" alt="フィルタを設定" />
+  &nbsp;
+  <img src="docs/05_store/Screenshot/ss_home_jp.png" width="220" alt="記事を読む" />
+</p>
+
+1. **情報源を追加** — 読みたい RSS / Atom フィードを登録します（アカウント登録は不要）。
+2. **フィルタを設定** — 見たくないキーワードをブロック。例外として残したいキーワードも指定できます（例：「転職」は非表示だけど、「エンジニア」「デザイナー」が含まれていれば表示する）。
+3. **記事を読む** — 自分のルールで絞り込まれた記事だけが並びます。記事本文は規定ブラウザで開きます。
 
 ---
 
@@ -76,108 +78,16 @@ Filto では、
 - **アーキテクチャ**: UI / Service / Repository
 - **通信**: RSS取得のみ（クラウド依存なし）
 
----
-
-## プロジェクト構成（簡易）
-
-```txt
-FILTO-APP/
-├─ filto/          # アプリ本体（Expo + React Native）
-│  ├─ app/         # UI / Screens（Expo Router）
-│  ├─ components/  # 共通UIコンポーネント
-│  ├─ hooks/       # カスタムフック
-│  ├─ constants/   # テーマなどの定数
-│  └─ ...          # その他アプリ関連コード
-└─ docs/           # 設計ドキュメント一式
-```
-
----
-
-## ドキュメント
-
-- **要件定義**: [00_main_spec.md](docs/01_requirements/00_main_spec.md) - アプリ全体の仕様
-- **開発計画**: [01_wbs.md](docs/03_dev_plan/01_wbs.md) - 開発スケジュール
-- **基本設計**: [02_basic_design/](docs/02_basic_design/) - 画面遷移図・DB設計・API設計など
-- **詳細設計**: [04_detail_design/](docs/04_detail_design/) - 各画面の詳細仕様
-- **Cursor指示書**: [cursor/](docs/cursor/) - Cursor向け実装用プロンプト
-
-詳細は [00_main_spec.md](docs/01_requirements/00_main_spec.md) の「ドキュメント構成」を参照
-
----
-
-## 開発ルール
-
-### コミットメッセージ規約
-- `feat`: 新機能・画面追加
-- `fix`: バグ修正
-- `refactor`: 挙動を変えない内部整理
-- `docs`: 設計書・README修正
-- `chore`: 設定・雑務（機能影響なし）
-
-#### 方針
-- 1コミット = 1意図
-- UIのみでも feat とする
-- 迷ったら feat を使う
-
----
-
-## 命名規則
-
-### ファイル名
-
-| 種類 | 命名規則 | 例 |
-|------|---------|-----|
-| **画面** | snake_case.tsx | `filter_edit.tsx`, `feed_add.tsx` |
-| **コンポーネント** | PascalCase.tsx | `FilterItem.tsx`, `Header.tsx` |
-| **サービス** | PascalCase.ts | `FilterService.ts`, `FeedService.ts` |
-| **リポジトリ** | PascalCase.ts | `FilterRepository.ts`, `FeedRepository.ts` |
-| **ユーティリティ** | camelCase.ts | `dateUtils.ts`, `stringUtils.ts` |
-| **型定義** | PascalCase.ts | `Filter.ts`, `Feed.ts` |
-
-### 変数・関数名
-
-| 種類 | 命名規則 | 例 |
-|------|---------|-----|
-| **変数** | camelCase | `filterList`, `isLoading` |
-| **関数** | camelCase | `handleSave()`, `fetchData()` |
-| **クラス** | PascalCase | `FilterService`, `DatabaseManager` |
-| **定数** | UPPER_SNAKE_CASE | `MAX_FILTERS`, `API_URL` |
-
-### ディレクトリ構造
-```
-docs/
-filto/
-├─ app/                    # 画面（snake_case）
-├─ components/             # コンポーネント（PascalCase）
-├─ services/               # サービス（PascalCase）
-├─ repositories/           # リポジトリ（PascalCase）
-├─ utils/                  # ユーティリティ（camelCase）
-├─ types/                  # 型定義（PascalCase）
-└─ constants/              # 定数（UPPER_SNAKE_CASE）
-```
-
-### データベース（SQLite）
-
-- **テーブル名**: snake_case (`filters`, `global_allow_keywords`)
-- **カラム名**: snake_case (`block_keyword`, `created_at`)
-
----
-
-## UI Mock (Concept)
-
-![UI Mock](docs/02_basic_design/mock/nano-banana_v1_light.png)
-
-※ 本画像は初期検討用のUIイメージです
+開発方針・命名規則・ドキュメント構成は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
 ---
 
 ## 開発状況
 
-- **個人開発プロジェクト**
-- **iOS / Android とも公開中**（v1.2.0）
-  - [App Store](https://apps.apple.com/jp/app/filto/id6763070121) ／ [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
+- 個人開発プロジェクト
+- **現在 App Store / Google Play にて公開中（v1.2.0） — [App Store](https://apps.apple.com/jp/app/filto/id6763070121) ／ [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
 
-※ 課金機能は現時点で未実装ですが、将来的な追加を前提とした設計になっています。
+※ 今後もローカルファースト・シンプルな思想を維持しながら改善を続けます。
 
 ---
 
