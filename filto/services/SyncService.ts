@@ -137,17 +137,32 @@ export const SyncService = {
           if (i >= feeds.length) return;
           const feed = feeds[i];
           try {
-            // 保存前の記事数を取得
-            const beforeCount = (await ArticleService.getArticles(feed.id)).length;
+            // 前回の条件付きGET用バリデータ（ETag / Last-Modified）
+            const fetchState = await FeedService.getFetchState(feed.id);
 
             // RSS取得（フィードアイコンをサムネイルのフォールバックとして渡す）
-            const articles = await RssService.fetchArticles(feed.url, feed.iconUrl);
+            const result = await RssService.fetchArticles(feed.url, feed.iconUrl, {
+              etag: fetchState?.etag ?? null,
+              lastModified: fetchState?.lastModified ?? null,
+            });
 
             // 取得中にキャンセルされていたら保存しない
             if (this.generation !== gen) return;
 
+            // 304（変化なし）: 本文を取っていないので保存はスキップ。取得成功としては数える
+            if (result.notModified) {
+              fetched++;
+              continue;
+            }
+
+            // 保存前の記事数を取得
+            const beforeCount = (await ArticleService.getArticles(feed.id)).length;
+
             // 保存（重複チェックは ArticleService 内で実施）
-            await ArticleService.saveArticles(feed.id, feed.title, articles);
+            await ArticleService.saveArticles(feed.id, feed.title, result.articles);
+
+            // 次回の条件付きGET用にバリデータを保存（無ければ null で上書き）
+            await FeedService.setFetchState(feed.id, result.etag, result.lastModified);
 
             // 保存後の記事数を取得
             const afterCount = (await ArticleService.getArticles(feed.id)).length;

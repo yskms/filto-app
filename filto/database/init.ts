@@ -49,6 +49,28 @@ export function openDatabase(forceNew: boolean = false): SQLite.SQLiteDatabase {
 }
 
 /**
+ * 既存テーブルに列が無ければ追加する（冪等）。
+ *
+ * このアプリはスキーマのバージョン管理を持たず initDatabase で
+ * CREATE TABLE IF NOT EXISTS しているだけなので、既存ユーザーのテーブルには
+ * 後から増やした列が存在しない。PRAGMA table_info で有無を確認し、
+ * 無いときだけ ALTER TABLE ADD COLUMN する。
+ * @param columnDef 例: 'etag TEXT'（列名＋型。DEFAULT を付けても良い）
+ */
+function ensureColumn(
+  database: SQLite.SQLiteDatabase,
+  table: string,
+  columnName: string,
+  columnDef: string
+): void {
+  const columns = database.getAllSync<{ name: string }>(`PRAGMA table_info(${table})`);
+  const exists = columns.some((c) => c.name === columnName);
+  if (!exists) {
+    database.execSync(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`);
+  }
+}
+
+/**
  * データベースを初期化（テーブル作成・インデックス作成）
  */
 export async function initDatabase(): Promise<void> {
@@ -92,6 +114,11 @@ export async function initDatabase(): Promise<void> {
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_feeds_order_no ON feeds(order_no);
   `);
+
+  // 条件付きGET（ETag / Last-Modified）用の列。既存ユーザーのテーブルにも後付けする。
+  // 変化が無ければ 304 で本文DL・パースを省けるため通信量を大きく削減できる。
+  ensureColumn(database, 'feeds', 'etag', 'etag TEXT');
+  ensureColumn(database, 'feeds', 'last_modified', 'last_modified TEXT');
 
   // articles テーブル作成
   database.execSync(`
