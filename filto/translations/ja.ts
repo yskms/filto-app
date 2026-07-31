@@ -182,6 +182,8 @@ export const ja = {
       saveError: 'フィードの保存に失敗しました',
       hideSelected: '{{count}}件を非表示',
       hideAction: '非表示にする',
+      unhideSelected: '{{count}}件を表示',
+      unhideAction: '表示に戻す',
       selectAll: 'すべて選択',
       deselectAll: '選択解除',
       hideModeA11y: '複数のフィードをまとめて非表示',

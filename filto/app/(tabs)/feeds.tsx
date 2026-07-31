@@ -77,12 +77,14 @@ const FeedsHeader: React.FC<{
 // FeedsHeader（選択モード：削除 / 非表示 共通）
 const FeedsHeaderSelectionMode: React.FC<{
   mode: 'delete' | 'hide';
+  // hide モードで、選択がすべて非表示中のとき true（アクションが「表示に戻す」になる）
+  unhideMode: boolean;
   selectedCount: number;
   allSelected: boolean;
   onPressCancel: () => void;
   onPressSelectAll: () => void;
   onPressAction: () => void;
-}> = ({ mode, selectedCount, allSelected, onPressCancel, onPressSelectAll, onPressAction }) => {
+}> = ({ mode, unhideMode, selectedCount, allSelected, onPressCancel, onPressSelectAll, onPressAction }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
@@ -92,8 +94,12 @@ const FeedsHeaderSelectionMode: React.FC<{
   const actionColor = mode === 'delete' ? dangerColor : tintColor;
   const countText = mode === 'delete'
     ? t('feeds.deleteSelected', { count: selectedCount })
-    : t('feeds.hideSelected', { count: selectedCount });
-  const actionText = mode === 'delete' ? t('common.delete') : t('feeds.hideAction');
+    : (unhideMode
+        ? t('feeds.unhideSelected', { count: selectedCount })
+        : t('feeds.hideSelected', { count: selectedCount }));
+  const actionText = mode === 'delete'
+    ? t('common.delete')
+    : (unhideMode ? t('feeds.unhideAction') : t('feeds.hideAction'));
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -115,9 +121,11 @@ const FeedsHeaderSelectionMode: React.FC<{
             activeOpacity={0.7}
             accessibilityLabel={allSelected ? t('feeds.deselectAll') : t('feeds.selectAll')}
           >
-            <ThemedText style={[styles.cancelText, { color: tintColor }]}>
-              {allSelected ? t('feeds.deselectAll') : t('feeds.selectAll')}
-            </ThemedText>
+            <Ionicons
+              name={allSelected ? 'remove-circle-outline' : 'checkmark-done-outline'}
+              size={24}
+              color={tintColor}
+            />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
@@ -281,6 +289,13 @@ export default function FeedsScreen() {
   
   // 開いているスワイプのIDを保持（refで直接管理）
   const openSwipeIdRef = useRef<string | null>(null);
+
+  // 選択中のフィードがすべて「非表示中」か。非表示モードのアクションを
+  // 「非表示にする」/「表示に戻す」で切り替えるために使う（一括解除に対応）。
+  const selectedAllHidden = React.useMemo(
+    () => selectedIds.size > 0 && [...selectedIds].every((id) => feeds.find((f) => f.id === id)?.hiddenFromHome),
+    [selectedIds, feeds]
+  );
 
   // 初回チュートリアル（フィルタ追加画面から引き継ぎ）
   const [tutorialVisible, setTutorialVisible] = useState(false);
@@ -508,12 +523,14 @@ export default function FeedsScreen() {
     ]);
   };
 
-  // 選択したフィードをまとめてホーム非表示にする（非破壊なので確認ダイアログは出さない）
+  // 選択したフィードをまとめて非表示／表示にする（非破壊なので確認ダイアログは出さない）。
+  // 選択がすべて非表示中なら「表示に戻す」、それ以外は「非表示にする」に切り替わる。
   const handleConfirmHide = async () => {
     if (selectedIds.size === 0) return;
+    const targetHidden = !selectedAllHidden;
     try {
       for (const id of selectedIds) {
-        await FeedService.setHiddenFromHome(id, true);
+        await FeedService.setHiddenFromHome(id, targetHidden);
       }
       setMode('none');
       setSelectedIds(new Set());
@@ -568,6 +585,7 @@ export default function FeedsScreen() {
         {mode !== 'none' ? (
           <FeedsHeaderSelectionMode
             mode={mode}
+            unhideMode={selectedAllHidden}
             selectedCount={selectedIds.size}
             allSelected={feeds.length > 0 && selectedIds.size === feeds.length}
             onPressCancel={handleCancelSelection}

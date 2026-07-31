@@ -182,6 +182,8 @@ export const en = {
     saveError: 'Failed to save feed',
     hideSelected: 'Hide {{count}}',
     hideAction: 'Hide',
+    unhideSelected: 'Show {{count}}',
+    unhideAction: 'Show',
     selectAll: 'Select all',
     deselectAll: 'Deselect',
     hideModeA11y: 'Hide multiple feeds at once',
