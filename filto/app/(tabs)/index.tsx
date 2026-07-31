@@ -594,6 +594,17 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, []);
 
+  // 起動直後の自動同期やバックグラウンド同期がアプリ内で走ると、ホームはそれが
+  // 終わる前に描画されるため新着が出ない（別タブに移動して戻ると反映される現象）。
+  // 同期の完了通知を購読し、終わった時点でDBを読み直す。loadData(false) なので
+  // スピナーは出ず、スクロール位置も保持される。
+  React.useEffect(() => {
+    const unsubscribe = SyncService.onSyncComplete(() => {
+      loadDataRef.current(false);
+    });
+    return unsubscribe;
+  }, []);
+
   // 初回取得（ブートストラップ）。マウント時に確実に一度だけ実行する。
   // 「起動のたびに同期」は廃止し、オンボーディング完了時に立つ pendingInitialFetch
   // フラグがあるときだけ取得する。通常の起動は既存記事を即表示し、鮮度は
