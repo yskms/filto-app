@@ -146,7 +146,7 @@ const FeedItem: React.FC<{
   feed: Feed;
   isSelectionMode: boolean;
   isSelected: boolean;
-  isSwipeOpen: boolean;
+  getIsSwipeOpen: () => boolean;
   onToggleSelect: () => void;
   onSwipeHide: () => void;
   onPressEdit: () => void;
@@ -157,7 +157,7 @@ const FeedItem: React.FC<{
   feed,
   isSelectionMode,
   isSelected,
-  isSwipeOpen,
+  getIsSwipeOpen,
   onToggleSelect,
   onSwipeHide,
   onPressEdit,
@@ -190,7 +190,7 @@ const FeedItem: React.FC<{
   };
 
   const handlePress = () => {
-    if (swipeableRef.current && isSwipeOpen) {
+    if (swipeableRef.current && getIsSwipeOpen()) {
       swipeableRef.current.close();
     }
     onToggleSelect();
@@ -251,7 +251,7 @@ const FeedItem: React.FC<{
     >
       <TouchableOpacity
         onPress={() => {
-          if (isSwipeOpen && swipeableRef.current) {
+          if (getIsSwipeOpen() && swipeableRef.current) {
             swipeableRef.current.close();
           } else {
             onPressEdit();
@@ -272,7 +272,6 @@ export default function FeedsScreen() {
   const [mode, setMode] = useState<SelectionMode>('none');
   const isSelectionMode = mode !== 'none';
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [currentSort, setCurrentSort] = useState<FeedSortType>('created_at_desc');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
@@ -404,7 +403,6 @@ export default function FeedsScreen() {
             ref.current.close();
           }
           openSwipeIdRef.current = null;
-          setOpenSwipeId(null);
         }
         // 選択モードをオフ
         if (mode !== 'none') {
@@ -434,7 +432,6 @@ export default function FeedsScreen() {
   const handlePressSortButton = () => {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
     setSortModalVisible(true);
   };
 
@@ -446,7 +443,6 @@ export default function FeedsScreen() {
   const enterSelectionMode = (nextMode: 'delete' | 'hide') => {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
     setSelectedIds(new Set());
     setMode(nextMode);
   };
@@ -457,14 +453,12 @@ export default function FeedsScreen() {
   const handlePressAdd = () => {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
     router.push('/feed_add');
   };
 
   const handlePressEdit = (feedId: string) => {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
     router.push(`/feed_edit?feedId=${feedId}`);
   };
 
@@ -529,36 +523,37 @@ export default function FeedsScreen() {
     }
   };
 
-  // スワイプで単一フィードの非表示/表示をトグル（非破壊なので確認なし）
-  const handleSwipeHide = async (feed: Feed) => {
+  // スワイプで単一フィードの非表示/表示をトグル（非破壊なので確認なし）。
+  // 閉じアニメーションを妨げないよう、DB反映と行の見た目更新はアニメ完了後に行う
+  // （全体 loadFeeds ではなく該当行だけを楽観的に差し替えて再レンダリングを最小化）。
+  const handleSwipeHide = (feed: Feed) => {
     const ref = swipeableRefs.current.get(feed.id);
-    if (ref?.current) {
-      ref.current.close();
+    ref?.current?.close();
+    if (openSwipeIdRef.current === feed.id) {
+      openSwipeIdRef.current = null;
     }
-    openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
-    try {
-      await FeedService.setHiddenFromHome(feed.id, !feed.hiddenFromHome);
-      await loadFeeds();
-    } catch (_) {
-      ErrorHandler.showDatabaseError(t, t('feeds.saveError'));
-    }
+    const nextHidden = !feed.hiddenFromHome;
+    setTimeout(() => {
+      FeedService.setHiddenFromHome(feed.id, nextHidden)
+        .then(() => {
+          setFeeds((prev) => prev.map((f) => (f.id === feed.id ? { ...f, hiddenFromHome: nextHidden } : f)));
+        })
+        .catch(() => ErrorHandler.showDatabaseError(t, t('feeds.saveError')));
+    }, 260);
   };
 
   const handleSwipeableWillOpen = (feedId: string) => {
     // 古いスワイプを閉じる（新しいIDは除外）
     closeOpenSwipe(feedId);
-    
-    // 新しいIDを設定
+    // 開いているIDは ref のみで管理する（state にすると開閉のたびに一覧全体が
+    // 再レンダリングされ、閉じアニメーションが途中で止まってカクつくため）
     openSwipeIdRef.current = feedId;
-    setOpenSwipeId(feedId);
   };
 
   const handleSwipeableWillClose = (feedId: string) => {
     // 自分が開いていた場合のみクリア
     if (openSwipeIdRef.current === feedId) {
       openSwipeIdRef.current = null;
-      setOpenSwipeId(null);
     }
   };
 
@@ -594,13 +589,12 @@ export default function FeedsScreen() {
           data={feeds}
           renderItem={({ item }) => {
             const swipeableRef = getSwipeableRef(item.id);
-            const isSwipeOpen = openSwipeId === item.id;
             return (
               <FeedItem
                 feed={item}
                 isSelectionMode={isSelectionMode}
                 isSelected={selectedIds.has(item.id)}
-                isSwipeOpen={isSwipeOpen}
+                getIsSwipeOpen={() => openSwipeIdRef.current === item.id}
                 onToggleSelect={() => handleToggleSelect(item.id)}
                 onSwipeHide={() => handleSwipeHide(item)}
                 onPressEdit={() => handlePressEdit(item.id)}
