@@ -180,6 +180,8 @@ export const ja = {
       copyUrl: 'URLをコピー',
       urlCopied: 'URLをコピーしました',
       saveError: 'フィードの保存に失敗しました',
+      hideFromHomeLabel: 'ホームで非表示にする',
+      hideFromHomeDescription: 'オンにすると、このフィードの記事をホームの一覧に表示しません。フィードは削除されないので、いつでも元に戻せます。',
       feedNameRequired: 'フィード名を入力してください',
       metaFetched: 'フィード情報を更新しました',
       fetchRequired: 'URLを変更したらフィード情報を取得してください',

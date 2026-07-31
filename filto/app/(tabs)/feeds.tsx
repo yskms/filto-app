@@ -168,7 +168,7 @@ const FeedItem: React.FC<{
       { backgroundColor, borderBottomColor: borderColor },
       isDeleteMode && isSelected && { backgroundColor: selectedBgColor },
     ]}>
-      <View style={styles.feedContent}>
+      <View style={[styles.feedContent, feed.hiddenFromHome && styles.feedContentHidden]}>
         {feed.iconUrl ? (
           <Image
             source={{ uri: feed.iconUrl }}
@@ -183,6 +183,9 @@ const FeedItem: React.FC<{
           <Text style={[styles.feedUrl, { color: subtextColor }]}>{feed.url}</Text>
         </View>
       </View>
+      {feed.hiddenFromHome && !isDeleteMode && (
+        <Ionicons name="eye-off-outline" size={18} color={subtextColor} style={styles.hiddenIndicator} />
+      )}
       {isDeleteMode && (
         <Ionicons
           name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
@@ -670,6 +673,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+  },
+  feedContentHidden: {
+    opacity: 0.45,
+  },
+  hiddenIndicator: {
+    marginLeft: 12,
   },
   feedIcon: {
     fontSize: 24,

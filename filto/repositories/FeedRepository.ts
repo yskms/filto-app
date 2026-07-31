@@ -19,6 +19,7 @@ export const FeedRepository = {
       icon_url: string | null;
       order_no: number;
       created_at: number;
+      hidden_from_home: number;
     }>('SELECT * FROM feeds ORDER BY order_no ASC');
 
     return rows.map(row => ({
@@ -28,6 +29,7 @@ export const FeedRepository = {
       iconUrl: row.icon_url || undefined,
       orderNo: row.order_no,
       createdAt: new Date(row.created_at * 1000).toISOString(),
+      hiddenFromHome: !!row.hidden_from_home,
     }));
   },
 
@@ -43,6 +45,7 @@ export const FeedRepository = {
       icon_url: string | null;
       order_no: number;
       created_at: number;
+      hidden_from_home: number;
     }>('SELECT * FROM feeds WHERE id = ?', [id]);
 
     if (!row) {
@@ -56,6 +59,7 @@ export const FeedRepository = {
       iconUrl: row.icon_url || undefined,
       orderNo: row.order_no,
       createdAt: new Date(row.created_at * 1000).toISOString(),
+      hiddenFromHome: !!row.hidden_from_home,
     };
   },
 
@@ -71,6 +75,7 @@ export const FeedRepository = {
       icon_url: string | null;
       order_no: number;
       created_at: number;
+      hidden_from_home: number;
     }>('SELECT * FROM feeds WHERE url = ?', [url]);
 
     if (!row) {
@@ -84,6 +89,7 @@ export const FeedRepository = {
       iconUrl: row.icon_url || undefined,
       orderNo: row.order_no,
       createdAt: new Date(row.created_at * 1000).toISOString(),
+      hiddenFromHome: !!row.hidden_from_home,
     };
   },
 
@@ -169,6 +175,7 @@ export const FeedRepository = {
       icon_url: string | null;
       order_no: number;
       created_at: number;
+      hidden_from_home: number;
     }>(`SELECT * FROM feeds ORDER BY ${orderBy}`);
 
     return rows.map(row => ({
@@ -178,6 +185,7 @@ export const FeedRepository = {
       iconUrl: row.icon_url || undefined,
       orderNo: row.order_no,
       createdAt: new Date(row.created_at * 1000).toISOString(),
+      hiddenFromHome: !!row.hidden_from_home,
     }));
   },
 
@@ -210,6 +218,14 @@ export const FeedRepository = {
   async setFetchState(feedId: string, etag: string | null, lastModified: string | null): Promise<void> {
     const db = openDatabase();
     db.runSync('UPDATE feeds SET etag = ?, last_modified = ? WHERE id = ?', [etag, lastModified, feedId]);
+  },
+
+  /**
+   * ホーム非表示（ミュート）フラグを更新する。削除ではなく表示制御のみ。
+   */
+  async setHiddenFromHome(feedId: string, hidden: boolean): Promise<void> {
+    const db = openDatabase();
+    db.runSync('UPDATE feeds SET hidden_from_home = ? WHERE id = ?', [hidden ? 1 : 0, feedId]);
   },
 };
 

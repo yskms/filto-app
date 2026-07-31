@@ -23,6 +23,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { useToast } from '@/providers/toast';
 import { LoadingView } from '@/components/LoadingView';
+import { Toggle } from '@/components/Toggle';
 
 // ヘッダーコンポーネント
 const FeedEditHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
@@ -63,6 +64,9 @@ export default function FeedEditScreen() {
   const [urlError, setUrlError] = useState<string | null>(null);
   // URLを変更したらフェッチで再検証するまで保存不可にする
   const [fetchSuccess, setFetchSuccess] = useState(false);
+  // ホーム非表示（ミュート）。保存ボタンとは独立して即時に永続化する
+  const [hiddenFromHome, setHiddenFromHome] = useState(false);
+  const [isTogglingHidden, setIsTogglingHidden] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -93,6 +97,7 @@ export default function FeedEditScreen() {
         setUrl(data.url);
         setName(data.title);
         setIconUrl(data.iconUrl);
+        setHiddenFromHome(data.hiddenFromHome);
       } else {
         router.back();
       }
@@ -223,6 +228,23 @@ export default function FeedEditScreen() {
       }
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // ホーム非表示トグル。保存ボタン（URL再検証ゲート）とは独立して即時に永続化する。
+  const handleToggleHidden = async () => {
+    if (!feed || isTogglingHidden) return;
+    const next = !hiddenFromHome;
+    setHiddenFromHome(next); // 楽観的に反映
+    setIsTogglingHidden(true);
+    try {
+      await FeedService.setHiddenFromHome(feed.id, next);
+      setFeed({ ...feed, hiddenFromHome: next });
+    } catch (_) {
+      setHiddenFromHome(!next); // 失敗したら戻す
+      Alert.alert(t('common.error'), t('feeds.saveError'));
+    } finally {
+      setIsTogglingHidden(false);
     }
   };
 
@@ -377,6 +399,19 @@ export default function FeedEditScreen() {
               <ThemedText style={styles.hint}>{t('feeds.feedNameEmptyHint')}</ThemedText>
             </View>
 
+            {/* ホーム非表示（ミュート） */}
+            <View style={[styles.hiddenSection, { borderTopColor: borderColor }]}>
+              <Toggle
+                value={hiddenFromHome}
+                onToggle={handleToggleHidden}
+                label={t('feeds.hideFromHomeLabel')}
+                disabled={isTogglingHidden}
+              />
+              <ThemedText style={[styles.hint, { color: subtextColor }]}>
+                {t('feeds.hideFromHomeDescription')}
+              </ThemedText>
+            </View>
+
             {needsFetch && (
               <ThemedText style={[styles.fetchHint, { color: dangerColor }]}>{t('feeds.fetchRequired')}</ThemedText>
             )}
@@ -498,6 +533,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.6,
     marginTop: 4,
+  },
+  hiddenSection: {
+    borderTopWidth: 1,
+    paddingTop: 8,
+    marginTop: 4,
+    marginBottom: 16,
   },
   urlActionRow: {
     flexDirection: 'row',

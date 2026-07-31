@@ -180,6 +180,8 @@ export const en = {
     copyUrl: 'Copy URL',
     urlCopied: 'URL copied',
     saveError: 'Failed to save feed',
+    hideFromHomeLabel: 'Hide from Home',
+    hideFromHomeDescription: 'When on, articles from this feed will not appear in your Home list. The feed is not deleted, so you can revert anytime.',
     feedNameRequired: 'Please enter feed name',
     metaFetched: 'Feed info updated',
     fetchRequired: 'Fetch feed info after changing the URL',

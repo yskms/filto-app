@@ -81,6 +81,7 @@ export const FeedService = {
       url: input.url,
       iconUrl: input.iconUrl,
       orderNo,
+      hiddenFromHome: false,
     };
 
     try {
@@ -150,6 +151,13 @@ export const FeedService = {
    */
   async setFetchState(feedId: string, etag: string | null, lastModified: string | null): Promise<void> {
     await FeedRepository.setFetchState(feedId, etag, lastModified);
+  },
+
+  /**
+   * ホーム非表示（ミュート）フラグを更新する
+   */
+  async setHiddenFromHome(feedId: string, hidden: boolean): Promise<void> {
+    await FeedRepository.setHiddenFromHome(feedId, hidden);
   },
 
   /**
