@@ -92,11 +92,7 @@ const FeedsHeaderSelectionMode: React.FC<{
   const { t } = useTranslation();
 
   const actionColor = mode === 'delete' ? dangerColor : tintColor;
-  const countText = mode === 'delete'
-    ? t('feeds.deleteSelected', { count: selectedCount })
-    : (unhideMode
-        ? t('feeds.unhideSelected', { count: selectedCount })
-        : t('feeds.hideSelected', { count: selectedCount }));
+  const countText = t('feeds.selectedCountLabel', { count: selectedCount });
   const actionText = mode === 'delete'
     ? t('common.delete')
     : (unhideMode ? t('feeds.unhideAction') : t('feeds.hideAction'));
@@ -150,7 +146,7 @@ const FeedsHeaderSelectionMode: React.FC<{
 };
 
 // FeedItem コンポーネント
-const FeedItem: React.FC<{
+type FeedItemProps = {
   feed: Feed;
   isSelectionMode: boolean;
   isSelected: boolean;
@@ -161,7 +157,12 @@ const FeedItem: React.FC<{
   swipeableRef: React.RefObject<SwipeableMethods | null>;
   onSwipeableWillOpen: () => void;
   onSwipeableWillClose: (feedId: string) => void;
-}> = ({
+};
+
+// 大量のフィード行で毎タップ全行が再レンダリングされて重くなるのを防ぐためメモ化。
+// コールバックは毎回新規生成されるが挙動は feed.id 依存で安定しているため比較から除外し、
+// 表示に影響する feed / isSelectionMode / isSelected の変化だけで再描画する。
+const FeedItem = React.memo(function FeedItem({
   feed,
   isSelectionMode,
   isSelected,
@@ -172,7 +173,7 @@ const FeedItem: React.FC<{
   swipeableRef,
   onSwipeableWillOpen,
   onSwipeableWillClose,
-}) => {
+}: FeedItemProps) {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -271,7 +272,11 @@ const FeedItem: React.FC<{
       </TouchableOpacity>
     </Swipeable>
   );
-};
+}, (prev, next) =>
+  prev.feed === next.feed &&
+  prev.isSelectionMode === next.isSelectionMode &&
+  prev.isSelected === next.isSelected
+);
 
 export default function FeedsScreen() {
   const router = useRouter();
