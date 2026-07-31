@@ -120,6 +120,9 @@ export async function initDatabase(): Promise<void> {
   ensureColumn(database, 'feeds', 'etag', 'etag TEXT');
   ensureColumn(database, 'feeds', 'last_modified', 'last_modified TEXT');
 
+  // ホームで非表示（ミュート）用の列。削除せずにホーム一覧から外すための非破壊フラグ。
+  ensureColumn(database, 'feeds', 'hidden_from_home', 'hidden_from_home INTEGER NOT NULL DEFAULT 0');
+
   // articles テーブル作成
   database.execSync(`
     CREATE TABLE IF NOT EXISTS articles (

@@ -642,10 +642,15 @@ export default function HomeScreen() {
 
   // フィルタ適用
   React.useEffect(() => {
+    // ホームで非表示（ミュート）にしたフィードの記事は常に除外する（削除ではなく表示制御）
+    const hiddenFeedIds = new Set(feeds.filter(f => f.hiddenFromHome).map(f => f.id));
+    let filtered = hiddenFeedIds.size > 0
+      ? articles.filter(a => !hiddenFeedIds.has(a.feedId))
+      : articles;
+
     // フィードでフィルタリング
-    let filtered = articles;
     if (selectedFeedIds !== null) {
-      filtered = articles.filter(a => selectedFeedIds.includes(a.feedId));
+      filtered = filtered.filter(a => selectedFeedIds.includes(a.feedId));
     }
 
     // お気に入りフィルタを適用
@@ -677,7 +682,7 @@ export default function HomeScreen() {
     }
 
     setFilteredArticles(displayed);
-  }, [articles, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
+  }, [articles, feeds, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
 
   const runRefresh = React.useCallback(async () => {
     try {
@@ -1037,7 +1042,7 @@ export default function HomeScreen() {
       {/* フィード選択モーダル */}
       <FeedSelectModal
         visible={feedModalVisible}
-        feeds={feeds}
+        feeds={feeds.filter(f => !f.hiddenFromHome)}
         selectedFeedIds={selectedFeedIds}
         currentSort={feedSort}
         onClose={() => setFeedModalVisible(false)}
