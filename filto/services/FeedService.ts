@@ -139,6 +139,20 @@ export const FeedService = {
   },
 
   /**
+   * 条件付きGET用のバリデータ（ETag / Last-Modified）を取得
+   */
+  async getFetchState(feedId: string): Promise<{ etag: string | null; lastModified: string | null } | null> {
+    return await FeedRepository.getFetchState(feedId);
+  },
+
+  /**
+   * 条件付きGET用のバリデータを保存
+   */
+  async setFetchState(feedId: string, etag: string | null, lastModified: string | null): Promise<void> {
+    await FeedRepository.setFetchState(feedId, etag, lastModified);
+  },
+
+  /**
    * RSS URLを自動検出
    * @param baseUrl ベースURL（例: https://example.com）
    * @returns 検出されたRSS URL、見つからない場合はnull

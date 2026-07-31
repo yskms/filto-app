@@ -189,124 +189,93 @@ const FEED_REQUEST_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
   'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*',
   'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-  'Cache-Control': 'no-cache',
-  'Pragma': 'no-cache',
 } as const;
+// 注: 以前は Cache-Control / Pragma に no-cache を送っていたが、条件付きGET
+// （ETag / Last-Modified による再検証）と相性が悪く 304 を得にくいため除去した。
 
-async function fetchWithTimeout(url: string, timeoutMs: number): Promise<string> {
+export type FeedFetchResult =
+  | { status: 'notModified' }
+  | { status: 'ok'; text: string; etag: string | null; lastModified: string | null };
+
+type ConditionalValidators = { etag?: string | null; lastModified?: string | null };
+
+/** fetchArticles の結果。304（変化なし）のときは記事を返さず notModified を立てる。 */
+export type FetchArticlesResult =
+  | { notModified: true }
+  | { notModified: false; articles: Article[]; etag: string | null; lastModified: string | null };
+
+/** ベースヘッダに条件付きGET用の If-None-Match / If-Modified-Since を足す */
+function buildRequestHeaders(validators?: ConditionalValidators): Record<string, string> {
+  const headers: Record<string, string> = { ...FEED_REQUEST_HEADERS };
+  if (validators?.etag) headers['If-None-Match'] = validators.etag;
+  if (validators?.lastModified) headers['If-Modified-Since'] = validators.lastModified;
+  return headers;
+}
+
+/** レスポンスから次回の条件付きGETに使うバリデータを取り出す */
+function extractValidators(response: Response): { etag: string | null; lastModified: string | null } {
+  return {
+    etag: response.headers.get('etag'),
+    lastModified: response.headers.get('last-modified'),
+  };
+}
+
+/** フィードのバイト列をエンコーディング判定してデコードする */
+function decodeFeedBytes(arrayBuffer: ArrayBuffer, url: string): string {
+  const bytes = new Uint8Array(arrayBuffer);
+  const encoding = detectEncoding(bytes, url);
+  if (encoding === 'shift_jis') {
+    const unicodeArray = Encoding.convert(Array.from(bytes), { to: 'UNICODE', from: 'SJIS' });
+    return Encoding.codeToString(unicodeArray);
+  }
+  if (encoding === 'euc-jp') {
+    const unicodeArray = Encoding.convert(Array.from(bytes), { to: 'UNICODE', from: 'EUCJP' });
+    return Encoding.codeToString(unicodeArray);
+  }
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+async function fetchWithTimeout(
+  url: string,
+  timeoutMs: number,
+  validators?: ConditionalValidators
+): Promise<FeedFetchResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const headers = buildRequestHeaders(validators);
 
   try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: FEED_REQUEST_HEADERS,
-    });
+    let response = await fetch(url, { signal: controller.signal, headers });
 
-    // 202 Accepted の場合は再試行
+    // 202 Accepted: サーバが生成中。少し待って一度だけ同一条件で取り直す。
     if (response.status === 202) {
-      clearTimeout(timer);
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 再試行
-      const controller2 = new AbortController();
-      const timer2 = setTimeout(() => controller2.abort(), timeoutMs);
-      
-      try {
-        const response2 = await fetch(url, {
-          signal: controller2.signal,
-          headers: FEED_REQUEST_HEADERS,
-        });
-        
-        
-        if (!response2.ok) {
-          throw new Error(`HTTP error on retry: ${response2.status} ${response2.statusText}`);
-        }
-        
-        const arrayBuffer2 = await response2.arrayBuffer();
-        
-        if (arrayBuffer2.byteLength === 0) {
-          throw new Error('Empty response even after retry');
-        }
-        
-        const bytes2 = new Uint8Array(arrayBuffer2);
-        const encoding2 = detectEncoding(bytes2, url);
-        
-        let text2: string;
-        if (encoding2 === 'shift_jis') {
-          const unicodeArray = Encoding.convert(Array.from(bytes2), {
-            to: 'UNICODE',
-            from: 'SJIS',
-          });
-          text2 = Encoding.codeToString(unicodeArray);
-        } else if (encoding2 === 'euc-jp') {
-          const unicodeArray = Encoding.convert(Array.from(bytes2), {
-            to: 'UNICODE',
-            from: 'EUCJP',
-          });
-          text2 = Encoding.codeToString(unicodeArray);
-        } else {
-          const decoder = new TextDecoder('utf-8');
-          text2 = decoder.decode(bytes2);
-        }
-        
-        return text2;
-      } finally {
-        clearTimeout(timer2);
-      }
+      response = await fetch(url, { signal: controller.signal, headers });
     }
-    
+
+    // 変化なし: 本文のダウンロードもパースも省略できる（通信量削減の本命）
+    if (response.status === 304) {
+      return { status: 'notModified' };
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
     }
 
-    // バイナリとして取得
+    // 次回の条件付きGET用にバリデータを控える（本文取得前に読む）
+    const { etag, lastModified } = extractValidators(response);
+
     const arrayBuffer = await response.arrayBuffer();
-    
-    // ArrayBufferが空の場合、text()メソッドで再試行
+
+    // ArrayBufferが空の場合、text()メソッドで一度だけ再試行
     if (arrayBuffer.byteLength === 0) {
-      
-      // 再度fetchを実行
-      const response2 = await fetch(url, {
-        signal: controller.signal,
-        headers: FEED_REQUEST_HEADERS,
-      });
-      
-      const text = await response2.text();
-      return text;
+      const retry = await fetch(url, { signal: controller.signal, headers });
+      const text = await retry.text();
+      return { status: 'ok', text, etag, lastModified };
     }
-    
-    const bytes = new Uint8Array(arrayBuffer);
 
-    // エンコーディングを検出
-    const encoding = detectEncoding(bytes, url);
-
-    // encoding-japaneseでデコード
-    let text: string;
-    if (encoding === 'shift_jis') {
-      // Shift_JIS → Unicodeの配列に変換
-      const unicodeArray = Encoding.convert(Array.from(bytes), {
-        to: 'UNICODE',
-        from: 'SJIS',
-      });
-      // Unicodeの配列 → 文字列
-      text = Encoding.codeToString(unicodeArray);
-    } else if (encoding === 'euc-jp') {
-      // EUC-JP → Unicodeの配列に変換
-      const unicodeArray = Encoding.convert(Array.from(bytes), {
-        to: 'UNICODE',
-        from: 'EUCJP',
-      });
-      // Unicodeの配列 → 文字列
-      text = Encoding.codeToString(unicodeArray);
-    } else {
-      // UTF-8
-      const decoder = new TextDecoder('utf-8');
-      text = decoder.decode(bytes);
-    }
-    
-
-    return text;
+    const text = decodeFeedBytes(arrayBuffer, url);
+    return { status: 'ok', text, etag, lastModified };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.toLowerCase().includes('aborted') || message.toLowerCase().includes('abort')) {
@@ -518,8 +487,13 @@ function generateThumbnailFromUrl(link: string): string | undefined {
 export const RssService = {
   async fetchMeta(url: string): Promise<{ title: string; iconUrl?: string }> {
     try {
-      const xml = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
-      
+      // fetchMeta は条件付きGETを使わない（毎回本文が必要）ため常に 'ok'
+      const result = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
+      if (result.status !== 'ok') {
+        throw new Error('Unexpected 304 without conditional request');
+      }
+      const xml = result.text;
+
       const parsed = parser.parse(xml) as Record<string, unknown>;
 
       // RSS 1.0 (RDF) チェック
@@ -564,10 +538,22 @@ export const RssService = {
     }
   },
 
-  async fetchArticles(url: string, feedIconUrl?: string): Promise<Article[]> {
+  async fetchArticles(
+    url: string,
+    feedIconUrl?: string,
+    validators?: ConditionalValidators
+  ): Promise<FetchArticlesResult> {
     try {
-      const xml = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
-      
+      const fetchRes = await fetchWithTimeout(url, FETCH_TIMEOUT_MS, validators);
+
+      // 変化なし: 既存の記事をそのまま活かし、再パース・保存を行わない
+      if (fetchRes.status === 'notModified') {
+        return { notModified: true };
+      }
+
+      const { etag, lastModified } = fetchRes;
+      const xml = fetchRes.text;
+
       const parsed = parser.parse(xml) as Record<string, unknown>;
 
       const now = Date.now();
@@ -650,7 +636,7 @@ export const RssService = {
           });
         }
 
-        return result;
+        return { notModified: false, articles: result, etag, lastModified };
       }
 
       // RSS 2.0 チェック
@@ -769,7 +755,7 @@ export const RssService = {
           });
         }
 
-        return result;
+        return { notModified: false, articles: result, etag, lastModified };
       }
 
       // Atom チェック
@@ -847,7 +833,7 @@ export const RssService = {
           });
         }
 
-        return result;
+        return { notModified: false, articles: result, etag, lastModified };
       }
 
       throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');

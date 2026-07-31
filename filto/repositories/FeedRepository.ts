@@ -189,5 +189,27 @@ export const FeedRepository = {
     const row = db.getFirstSync<{ count: number }>('SELECT COUNT(*) as count FROM feeds');
     return row?.count || 0;
   },
+
+  /**
+   * 条件付きGET用のバリデータ（ETag / Last-Modified）を取得する。
+   * Feed ドメイン型には載せず、同期処理だけが直接参照する。
+   */
+  async getFetchState(feedId: string): Promise<{ etag: string | null; lastModified: string | null } | null> {
+    const db = openDatabase();
+    const row = db.getFirstSync<{ etag: string | null; last_modified: string | null }>(
+      'SELECT etag, last_modified FROM feeds WHERE id = ?',
+      [feedId]
+    );
+    if (!row) return null;
+    return { etag: row.etag ?? null, lastModified: row.last_modified ?? null };
+  },
+
+  /**
+   * 条件付きGET用のバリデータを保存する（レスポンスに無い場合は null で上書き）。
+   */
+  async setFetchState(feedId: string, etag: string | null, lastModified: string | null): Promise<void> {
+    const db = openDatabase();
+    db.runSync('UPDATE feeds SET etag = ?, last_modified = ? WHERE id = ?', [etag, lastModified, feedId]);
+  },
 };
 
