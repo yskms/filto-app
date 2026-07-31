@@ -107,6 +107,7 @@ export const en = {
     targetTitle: 'Target Title',
     targetDescription: 'Target Description',
     deleteSelected: 'Delete {{count}}',
+    selectedCountLabel: '{{count}} selected',
     confirmDelete: 'Confirm Delete',
     confirmDeleteMessage: 'Delete selected filters?',
     confirmDeleteSingle: 'Delete this filter?',

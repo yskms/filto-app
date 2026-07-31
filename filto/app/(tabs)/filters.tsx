@@ -152,7 +152,7 @@ const FiltersHeader: React.FC<{
           </TouchableOpacity>
         </View>
 
-        <ThemedText style={styles.headerTitle}>{t('filters.deleteSelected', { count: selectedCount })}</ThemedText>
+        <ThemedText style={styles.headerTitle}>{t('filters.selectedCountLabel', { count: selectedCount })}</ThemedText>
 
         <View style={styles.headerSideRight}>
           <TouchableOpacity

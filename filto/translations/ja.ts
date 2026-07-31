@@ -107,6 +107,7 @@ export const ja = {
       targetTitle: 'タイトルを対象',
       targetDescription: '概要を対象',
       deleteSelected: '{{count}}件削除',
+      selectedCountLabel: '{{count}}件選択',
       confirmDelete: '削除確認',
       confirmDeleteMessage: '選択したフィルタを削除しますか?',
       confirmDeleteSingle: 'このフィルタを削除しますか?',
