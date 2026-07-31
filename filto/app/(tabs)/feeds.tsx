@@ -19,13 +19,17 @@ import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 
+// 選択モード: なし / 複数削除 / 複数非表示
+type SelectionMode = 'none' | 'delete' | 'hide';
+
 // FeedsHeader（通常モード）- タブ画面のため戻るボタンなし
 const FeedsHeader: React.FC<{
   onPressSort: () => void;
+  onPressHide: () => void;
   onPressDelete: () => void;
   onPressAdd: () => void;
   addRef: React.RefObject<View | null>;
-}> = ({ onPressSort, onPressDelete, onPressAdd, addRef }) => {
+}> = ({ onPressSort, onPressHide, onPressDelete, onPressAdd, addRef }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'text');
@@ -41,6 +45,14 @@ const FeedsHeader: React.FC<{
           activeOpacity={0.7}
         >
           <Ionicons name="swap-vertical-outline" size={22} color={iconColor} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={onPressHide}
+          activeOpacity={0.7}
+          accessibilityLabel={t('feeds.hideModeA11y')}
+        >
+          <Ionicons name="eye-off-outline" size={22} color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerButton}
@@ -62,17 +74,26 @@ const FeedsHeader: React.FC<{
   );
 };
 
-// FeedsHeader（削除モード）
-const FeedsHeaderDeleteMode: React.FC<{
+// FeedsHeader（選択モード：削除 / 非表示 共通）
+const FeedsHeaderSelectionMode: React.FC<{
+  mode: 'delete' | 'hide';
   selectedCount: number;
+  allSelected: boolean;
   onPressCancel: () => void;
-  onPressDelete: () => void;
-}> = ({ selectedCount, onPressCancel, onPressDelete }) => {
+  onPressSelectAll: () => void;
+  onPressAction: () => void;
+}> = ({ mode, selectedCount, allSelected, onPressCancel, onPressSelectAll, onPressAction }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
   const dangerColor = useThemeColor({}, 'danger');
   const { t } = useTranslation();
+
+  const actionColor = mode === 'delete' ? dangerColor : tintColor;
+  const countText = mode === 'delete'
+    ? t('feeds.deleteSelected', { count: selectedCount })
+    : t('feeds.hideSelected', { count: selectedCount });
+  const actionText = mode === 'delete' ? t('common.delete') : t('feeds.hideAction');
 
   return (
     <View style={[styles.header, { borderBottomColor: borderColor, backgroundColor }]}>
@@ -85,24 +106,36 @@ const FeedsHeaderDeleteMode: React.FC<{
           <ThemedText style={[styles.cancelText, { color: tintColor }]}>{t('common.cancel')}</ThemedText>
         </TouchableOpacity>
       </View>
-      <ThemedText style={styles.selectedCount}>{t('feeds.deleteSelected', { count: selectedCount })}</ThemedText>
+      <ThemedText style={styles.selectedCount}>{countText}</ThemedText>
       <View style={styles.headerSideRight}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={onPressDelete}
-          disabled={selectedCount === 0}
-          activeOpacity={0.7}
-        >
-          <ThemedText
-            style={[
-              styles.deleteText,
-              { color: dangerColor },
-              selectedCount === 0 && styles.deleteTextDisabled,
-            ]}
+        <View style={styles.selectionActions}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={onPressSelectAll}
+            activeOpacity={0.7}
+            accessibilityLabel={allSelected ? t('feeds.deselectAll') : t('feeds.selectAll')}
           >
-            {t('common.delete')}
-          </ThemedText>
-        </TouchableOpacity>
+            <ThemedText style={[styles.cancelText, { color: tintColor }]}>
+              {allSelected ? t('feeds.deselectAll') : t('feeds.selectAll')}
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={onPressAction}
+            disabled={selectedCount === 0}
+            activeOpacity={0.7}
+          >
+            <ThemedText
+              style={[
+                styles.deleteText,
+                { color: actionColor },
+                selectedCount === 0 && styles.deleteTextDisabled,
+              ]}
+            >
+              {actionText}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -111,22 +144,22 @@ const FeedsHeaderDeleteMode: React.FC<{
 // FeedItem コンポーネント
 const FeedItem: React.FC<{
   feed: Feed;
-  isDeleteMode: boolean;
+  isSelectionMode: boolean;
   isSelected: boolean;
   isSwipeOpen: boolean;
   onToggleSelect: () => void;
-  onSwipeDelete: () => void;
+  onSwipeHide: () => void;
   onPressEdit: () => void;
   swipeableRef: React.RefObject<SwipeableMethods | null>;
   onSwipeableWillOpen: () => void;
   onSwipeableWillClose: (feedId: string) => void;
 }> = ({
   feed,
-  isDeleteMode,
+  isSelectionMode,
   isSelected,
   isSwipeOpen,
   onToggleSelect,
-  onSwipeDelete,
+  onSwipeHide,
   onPressEdit,
   swipeableRef,
   onSwipeableWillOpen,
@@ -136,20 +169,21 @@ const FeedItem: React.FC<{
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const subtextColor = useThemeColor({}, 'icon');
-  const dangerColor = useThemeColor({}, 'danger');
+  const hideActionBg = useThemeColor({ light: '#6b7280', dark: '#4b5563' }, 'background');
   const tintColor = useThemeColor({}, 'tint');
   const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
   const iconPlaceholderBg = useThemeColor({ light: '#f0f0f0', dark: '#2a2b2c' }, 'background');
 
+  // スワイプは「非表示/表示」の切り替え（非破壊）。削除は編集画面・複数削除モードに集約した。
   const renderRightActions = () => {
     return (
       <Reanimated.View style={styles.deleteAction}>
         <TouchableOpacity
-          style={[styles.deleteButton, { backgroundColor: dangerColor }]}
-          onPress={onSwipeDelete}
+          style={[styles.deleteButton, { backgroundColor: hideActionBg }]}
+          onPress={onSwipeHide}
           activeOpacity={0.8}
         >
-          <Ionicons name="trash-outline" size={22} color="#fff" />
+          <Ionicons name={feed.hiddenFromHome ? 'eye-outline' : 'eye-off-outline'} size={22} color="#fff" />
         </TouchableOpacity>
       </Reanimated.View>
     );
@@ -166,7 +200,7 @@ const FeedItem: React.FC<{
     <View style={[
       styles.feedItem,
       { backgroundColor, borderBottomColor: borderColor },
-      isDeleteMode && isSelected && { backgroundColor: selectedBgColor },
+      isSelectionMode && isSelected && { backgroundColor: selectedBgColor },
     ]}>
       <View style={[styles.feedContent, feed.hiddenFromHome && styles.feedContentHidden]}>
         {feed.iconUrl ? (
@@ -183,10 +217,10 @@ const FeedItem: React.FC<{
           <Text style={[styles.feedUrl, { color: subtextColor }]}>{feed.url}</Text>
         </View>
       </View>
-      {feed.hiddenFromHome && !isDeleteMode && (
+      {feed.hiddenFromHome && !isSelectionMode && (
         <Ionicons name="eye-off-outline" size={18} color={subtextColor} style={styles.hiddenIndicator} />
       )}
-      {isDeleteMode && (
+      {isSelectionMode && (
         <Ionicons
           name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
           size={22}
@@ -197,7 +231,7 @@ const FeedItem: React.FC<{
     </View>
   );
 
-  if (isDeleteMode) {
+  if (isSelectionMode) {
     return (
       <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
         {content}
@@ -209,7 +243,7 @@ const FeedItem: React.FC<{
     <Swipeable
       ref={swipeableRef}
       renderRightActions={renderRightActions}
-      enabled={!isDeleteMode}
+      enabled={!isSelectionMode}
       rightThreshold={40}
       onSwipeableWillOpen={onSwipeableWillOpen}
       onSwipeableWillClose={() => onSwipeableWillClose(feed.id)}
@@ -235,7 +269,8 @@ export default function FeedsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [feeds, setFeeds] = useState<Feed[]>([]);
-  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [mode, setMode] = useState<SelectionMode>('none');
+  const isSelectionMode = mode !== 'none';
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const [sortModalVisible, setSortModalVisible] = useState(false);
@@ -371,13 +406,13 @@ export default function FeedsScreen() {
           openSwipeIdRef.current = null;
           setOpenSwipeId(null);
         }
-        // 削除モードをオフ
-        if (isDeleteMode) {
-          setIsDeleteMode(false);
+        // 選択モードをオフ
+        if (mode !== 'none') {
+          setMode('none');
           setSelectedIds(new Set());
         }
       };
-    }, [isDeleteMode, loadFeeds])
+    }, [mode, loadFeeds])
   );
 
   // currentSort が変更されたときにフィルタを再読み込み
@@ -408,12 +443,16 @@ export default function FeedsScreen() {
     setSortModalVisible(false);
   };
 
-  const handlePressDelete = () => {
+  const enterSelectionMode = (nextMode: 'delete' | 'hide') => {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
     setOpenSwipeId(null);
-    setIsDeleteMode(true);
+    setSelectedIds(new Set());
+    setMode(nextMode);
   };
+
+  const handlePressDelete = () => enterSelectionMode('delete');
+  const handlePressHide = () => enterSelectionMode('hide');
 
   const handlePressAdd = () => {
     closeOpenSwipe();
@@ -441,9 +480,14 @@ export default function FeedsScreen() {
     });
   };
 
-  const handleCancelDelete = () => {
-    setIsDeleteMode(false);
+  const handleCancelSelection = () => {
+    setMode('none');
     setSelectedIds(new Set());
+  };
+
+  // すべて選択 / 全解除のトグル
+  const handleToggleSelectAll = () => {
+    setSelectedIds((prev) => (prev.size === feeds.length ? new Set() : new Set(feeds.map((f) => f.id))));
   };
 
   const handleConfirmDelete = async () => {
@@ -459,7 +503,7 @@ export default function FeedsScreen() {
             for (const id of selectedIds) {
               await FeedService.delete(id);
             }
-            setIsDeleteMode(false);
+            setMode('none');
             setSelectedIds(new Set());
             await loadFeeds();
           } catch (_) {
@@ -470,39 +514,35 @@ export default function FeedsScreen() {
     ]);
   };
 
-  const handleSwipeDelete = async (feed: Feed) => {
-    Alert.alert(t('feeds.confirmDelete'), t('feeds.confirmDeleteSingle'), [
-      {
-        text: t('common.cancel'),
-        style: 'cancel',
-        onPress: () => {
-          // キャンセル時もスワイプを閉じる
-          const ref = swipeableRefs.current.get(feed.id);
-          if (ref?.current) {
-            ref.current.close();
-          }
-        },
-      },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            // 削除後、スワイプを閉じる
-            const ref = swipeableRefs.current.get(feed.id);
-            if (ref?.current) {
-              ref.current.close();
-            }
-            openSwipeIdRef.current = null;
-            setOpenSwipeId(null);
-            await FeedService.delete(feed.id);
-            await loadFeeds();
-          } catch (_) {
-            ErrorHandler.showDatabaseError(t, t('feeds.deleteError'));
-          }
-        },
-      },
-    ]);
+  // 選択したフィードをまとめてホーム非表示にする（非破壊なので確認ダイアログは出さない）
+  const handleConfirmHide = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      for (const id of selectedIds) {
+        await FeedService.setHiddenFromHome(id, true);
+      }
+      setMode('none');
+      setSelectedIds(new Set());
+      await loadFeeds();
+    } catch (_) {
+      ErrorHandler.showDatabaseError(t, t('feeds.saveError'));
+    }
+  };
+
+  // スワイプで単一フィードの非表示/表示をトグル（非破壊なので確認なし）
+  const handleSwipeHide = async (feed: Feed) => {
+    const ref = swipeableRefs.current.get(feed.id);
+    if (ref?.current) {
+      ref.current.close();
+    }
+    openSwipeIdRef.current = null;
+    setOpenSwipeId(null);
+    try {
+      await FeedService.setHiddenFromHome(feed.id, !feed.hiddenFromHome);
+      await loadFeeds();
+    } catch (_) {
+      ErrorHandler.showDatabaseError(t, t('feeds.saveError'));
+    }
   };
 
   const handleSwipeableWillOpen = (feedId: string) => {
@@ -530,15 +570,19 @@ export default function FeedsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-        {isDeleteMode ? (
-          <FeedsHeaderDeleteMode
+        {mode !== 'none' ? (
+          <FeedsHeaderSelectionMode
+            mode={mode}
             selectedCount={selectedIds.size}
-            onPressCancel={handleCancelDelete}
-            onPressDelete={handleConfirmDelete}
+            allSelected={feeds.length > 0 && selectedIds.size === feeds.length}
+            onPressCancel={handleCancelSelection}
+            onPressSelectAll={handleToggleSelectAll}
+            onPressAction={mode === 'delete' ? handleConfirmDelete : handleConfirmHide}
           />
         ) : (
           <FeedsHeader
             onPressSort={handlePressSortButton}
+            onPressHide={handlePressHide}
             onPressDelete={handlePressDelete}
             onPressAdd={handlePressAdd}
             addRef={addRef}
@@ -554,11 +598,11 @@ export default function FeedsScreen() {
             return (
               <FeedItem
                 feed={item}
-                isDeleteMode={isDeleteMode}
+                isSelectionMode={isSelectionMode}
                 isSelected={selectedIds.has(item.id)}
                 isSwipeOpen={isSwipeOpen}
                 onToggleSelect={() => handleToggleSelect(item.id)}
-                onSwipeDelete={() => handleSwipeDelete(item)}
+                onSwipeHide={() => handleSwipeHide(item)}
                 onPressEdit={() => handlePressEdit(item.id)}
                 swipeableRef={swipeableRef}
                 onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
@@ -629,6 +673,10 @@ const styles = StyleSheet.create({
   headerSideRight: {
     flex: 1,
     alignItems: 'flex-end',
+  },
+  selectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerButton: {
     padding: 8,
