@@ -36,6 +36,32 @@ export const SyncService = {
   generation: 0,
 
   /**
+   * 同期完了リスナー。UI が「走行中の同期が終わったらDBを読み直す」ために購読する。
+   * 起動直後の自動同期やバックグラウンド同期がアプリのJSランタイム内で走ると、
+   * ホームはそれが終わる前に描画されるため、完了を通知して再読込させる。
+   */
+  _syncCompleteListeners: new Set<(info: { newArticles: number }) => void>(),
+
+  /** 同期完了通知を購読する。戻り値の関数で解除。 */
+  onSyncComplete(listener: (info: { newArticles: number }) => void): () => void {
+    this._syncCompleteListeners.add(listener);
+    return () => {
+      this._syncCompleteListeners.delete(listener);
+    };
+  },
+
+  /** 完了をリスナーへ通知（1つのリスナーの例外が他へ波及しないよう握りつぶす） */
+  _emitSyncComplete(info: { newArticles: number }): void {
+    this._syncCompleteListeners.forEach((listener) => {
+      try {
+        listener(info);
+      } catch (_) {
+        // リスナー側の失敗は無視
+      }
+    });
+  },
+
+  /**
    * 実行中の同期をキャンセルする（データリセット時などに呼ぶ）。
    * 世代を進めることで、ループ中の refresh が次の保存前に中断する。
    */
@@ -183,6 +209,8 @@ export const SyncService = {
         await AsyncStorage.setItem(StorageKeys.lastSyncTime, Date.now().toString());
         // 古い記事を自動削除
         const deletedCount = await this.deleteOldArticlesAuto();
+        // 完了を通知（購読中のホーム等がDBを読み直す）
+        this._emitSyncComplete({ newArticles });
         return { fetched, newArticles, deleted: deletedCount };
       }
       return { fetched, newArticles };
