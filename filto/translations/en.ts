@@ -183,6 +183,8 @@ export const en = {
     selectedCountLabel: '{{count}} selected',
     hideAction: 'Hide',
     unhideAction: 'Show',
+    hiddenToast: 'Hid {{count}} from Home',
+    shownToast: 'Restored {{count}} to Home',
     selectAll: 'Select all',
     deselectAll: 'Deselect',
     hideModeA11y: 'Hide multiple feeds at once',

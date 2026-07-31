@@ -183,6 +183,8 @@ export const ja = {
       selectedCountLabel: '{{count}}件選択',
       hideAction: '非表示',
       unhideAction: '表示',
+      hiddenToast: '{{count}}件をホームで非表示にしました',
+      shownToast: '{{count}}件をホームに再表示しました',
       selectAll: 'すべて選択',
       deselectAll: '選択解除',
       hideModeA11y: '複数のフィードをまとめて非表示',

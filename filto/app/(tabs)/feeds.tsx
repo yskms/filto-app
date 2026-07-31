@@ -18,6 +18,7 @@ import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import { useToast } from '@/providers/toast';
 
 // 選択モード: なし / 複数削除 / 複数非表示
 type SelectionMode = 'none' | 'delete' | 'hide';
@@ -215,11 +216,18 @@ const FeedItem = React.memo(function FeedItem({
     );
   };
 
-  const handlePress = () => {
-    if (swipeableRef.current && getIsSwipeOpen()) {
-      swipeableRef.current.close();
+  const handleRowPress = () => {
+    // 選択モード中はタップで選択トグル。通常モードはスワイプが開いていれば閉じ、
+    // そうでなければ編集へ。モード切替で Swipeable を作り直さないよう常に同じツリーを返す。
+    if (isSelectionMode) {
+      onToggleSelect();
+      return;
     }
-    onToggleSelect();
+    if (getIsSwipeOpen() && swipeableRef.current) {
+      swipeableRef.current.close();
+      return;
+    }
+    onPressEdit();
   };
 
   const content = (
@@ -257,14 +265,6 @@ const FeedItem = React.memo(function FeedItem({
     </View>
   );
 
-  if (isSelectionMode) {
-    return (
-      <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
-        {content}
-      </TouchableOpacity>
-    );
-  }
-
   return (
     <Swipeable
       ref={swipeableRef}
@@ -275,16 +275,7 @@ const FeedItem = React.memo(function FeedItem({
       onSwipeableWillClose={() => onSwipeableWillClose(feed.id)}
       overshootRight={false}
     >
-      <TouchableOpacity
-        onPress={() => {
-          if (getIsSwipeOpen() && swipeableRef.current) {
-            swipeableRef.current.close();
-          } else {
-            onPressEdit();
-          }
-        }}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity onPress={handleRowPress} activeOpacity={0.7}>
         {content}
       </TouchableOpacity>
     </Swipeable>
@@ -299,6 +290,7 @@ const FeedItem = React.memo(function FeedItem({
 export default function FeedsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [mode, setMode] = useState<SelectionMode>('none');
   const isSelectionMode = mode !== 'none';
@@ -572,6 +564,7 @@ export default function FeedsScreen() {
   const handleConfirmHide = async () => {
     if (selectedIds.size === 0) return;
     const targetHidden = !selectedAllHidden;
+    const count = selectedIds.size;
     try {
       for (const id of selectedIds) {
         await FeedService.setHiddenFromHome(id, targetHidden);
@@ -579,6 +572,10 @@ export default function FeedsScreen() {
       setMode('none');
       setSelectedIds(new Set());
       await loadFeeds();
+      showToast(
+        targetHidden ? t('feeds.hiddenToast', { count }) : t('feeds.shownToast', { count }),
+        'success'
+      );
     } catch (_) {
       ErrorHandler.showDatabaseError(t, t('feeds.saveError'));
     }
