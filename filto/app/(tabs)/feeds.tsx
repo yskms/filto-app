@@ -146,8 +146,22 @@ const FeedsHeaderSelectionMode: React.FC<{
 };
 
 // FeedItem コンポーネント
+// 行ごとに useThemeColor を何度も呼ぶと、モード切替時の全行再レンダリングで重くなる。
+// 親で1回だけ算出して渡す。
+type FeedItemColors = {
+  backgroundColor: string;
+  textColor: string;
+  borderColor: string;
+  subtextColor: string;
+  hideActionBg: string;
+  tintColor: string;
+  selectedBgColor: string;
+  iconPlaceholderBg: string;
+};
+
 type FeedItemProps = {
   feed: Feed;
+  colors: FeedItemColors;
   isSelectionMode: boolean;
   isSelected: boolean;
   getIsSwipeOpen: () => boolean;
@@ -164,6 +178,7 @@ type FeedItemProps = {
 // 表示に影響する feed / isSelectionMode / isSelected の変化だけで再描画する。
 const FeedItem = React.memo(function FeedItem({
   feed,
+  colors,
   isSelectionMode,
   isSelected,
   getIsSwipeOpen,
@@ -174,14 +189,16 @@ const FeedItem = React.memo(function FeedItem({
   onSwipeableWillOpen,
   onSwipeableWillClose,
 }: FeedItemProps) {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const borderColor = useThemeColor({}, 'tabIconDefault');
-  const subtextColor = useThemeColor({}, 'icon');
-  const hideActionBg = useThemeColor({ light: '#6b7280', dark: '#4b5563' }, 'background');
-  const tintColor = useThemeColor({}, 'tint');
-  const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
-  const iconPlaceholderBg = useThemeColor({ light: '#f0f0f0', dark: '#2a2b2c' }, 'background');
+  const {
+    backgroundColor,
+    textColor,
+    borderColor,
+    subtextColor,
+    hideActionBg,
+    tintColor,
+    selectedBgColor,
+    iconPlaceholderBg,
+  } = colors;
 
   // スワイプは「非表示/表示」の切り替え（非破壊）。削除は編集画面・複数削除モードに集約した。
   const renderRightActions = () => {
@@ -274,6 +291,7 @@ const FeedItem = React.memo(function FeedItem({
   );
 }, (prev, next) =>
   prev.feed === next.feed &&
+  prev.colors === next.colors &&
   prev.isSelectionMode === next.isSelectionMode &&
   prev.isSelected === next.isSelected
 );
@@ -288,6 +306,27 @@ export default function FeedsScreen() {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [currentSort, setCurrentSort] = useState<FeedSortType>('created_at_desc');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
+
+  // FeedItem の色は各行で useThemeColor を呼ばず、ここで一括算出して渡す
+  // （モード切替時に全行が再レンダリングされても行ごとのテーマ計算が発生しない）。
+  const fiBackground = useThemeColor({}, 'background');
+  const fiText = useThemeColor({}, 'text');
+  const fiBorder = useThemeColor({}, 'tabIconDefault');
+  const fiSubtext = useThemeColor({}, 'icon');
+  const fiHideActionBg = useThemeColor({ light: '#6b7280', dark: '#4b5563' }, 'background');
+  const fiTint = useThemeColor({}, 'tint');
+  const fiSelectedBg = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
+  const fiIconPlaceholderBg = useThemeColor({ light: '#f0f0f0', dark: '#2a2b2c' }, 'background');
+  const feedItemColors = React.useMemo<FeedItemColors>(() => ({
+    backgroundColor: fiBackground,
+    textColor: fiText,
+    borderColor: fiBorder,
+    subtextColor: fiSubtext,
+    hideActionBg: fiHideActionBg,
+    tintColor: fiTint,
+    selectedBgColor: fiSelectedBg,
+    iconPlaceholderBg: fiIconPlaceholderBg,
+  }), [fiBackground, fiText, fiBorder, fiSubtext, fiHideActionBg, fiTint, fiSelectedBg, fiIconPlaceholderBg]);
 
   // 各フィードのSwipeable refを管理
   const swipeableRefs = useRef<Map<string, React.RefObject<SwipeableMethods | null>>>(new Map());
@@ -615,6 +654,7 @@ export default function FeedsScreen() {
             return (
               <FeedItem
                 feed={item}
+                colors={feedItemColors}
                 isSelectionMode={isSelectionMode}
                 isSelected={selectedIds.has(item.id)}
                 getIsSwipeOpen={() => openSwipeIdRef.current === item.id}
@@ -629,6 +669,10 @@ export default function FeedsScreen() {
           }}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
+          removeClippedSubviews
+          initialNumToRender={12}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="logo-rss" size={64} color={emptyIconColor} style={styles.emptyIcon} />
