@@ -123,6 +123,11 @@ export async function initDatabase(): Promise<void> {
   // ホームで非表示（ミュート）用の列。削除せずにホーム一覧から外すための非破壊フラグ。
   ensureColumn(database, 'feeds', 'hidden_from_home', 'hidden_from_home INTEGER NOT NULL DEFAULT 0');
 
+  // 記事の手動非表示（スワイプで非表示）。ホーム一覧からは除外するが is_hidden で残し、
+  // 「表示」トグルで淡色表示→スワイプで復元できる（完全に消さない）。
+  ensureColumn(database, 'articles', 'is_hidden', 'is_hidden INTEGER NOT NULL DEFAULT 0');
+  database.execSync('CREATE INDEX IF NOT EXISTS idx_articles_is_hidden ON articles(is_hidden)');
+
   // articles テーブル作成
   database.execSync(`
     CREATE TABLE IF NOT EXISTS articles (

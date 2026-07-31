@@ -42,6 +42,10 @@ import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { LoadingView } from '@/components/LoadingView';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated from 'react-native-reanimated';
+import { useToast } from '@/providers/toast';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
@@ -71,10 +75,13 @@ const ArticleItem = React.memo<{
   article: Article;
   onPress: (article: Article) => void;
   onLongPress: (article: Article) => void;
+  onHide: (article: Article) => void;
+  onRestore: (article: Article) => void;
   highlightAnim: Animated.Value;
   isBlocked?: boolean;
+  isHidden?: boolean;
   large?: boolean;
-}>(({ article, onPress, onLongPress, highlightAnim, isBlocked = false, large = false }) => {
+}>(({ article, onPress, onLongPress, onHide, onRestore, highlightAnim, isBlocked = false, isHidden = false, large = false }) => {
   const { t } = useTranslation();
   const timeAgo = getTimeAgo(article.publishedAt, t('home.justNow'));
 
@@ -84,6 +91,8 @@ const ArticleItem = React.memo<{
   const subtextColor = useThemeColor({}, 'icon');
   const placeholderBg = useThemeColor({ light: '#f0f0f0', dark: '#2a2b2c' }, 'background');
   const highlightColor = useThemeColor({ light: '#fff3cd', dark: '#3a3520' }, 'background');
+  const hideActionBg = useThemeColor({ light: '#6b7280', dark: '#4b5563' }, 'background');
+  const swipeableRef = React.useRef<SwipeableMethods>(null);
 
   // ハイライトアニメーション用の背景色（テーマ対応）
   const animatedBg = highlightAnim.interpolate({
@@ -91,7 +100,30 @@ const ArticleItem = React.memo<{
     outputRange: [bgColor, highlightColor],
   });
 
+  // スワイプで「非表示 / 表示に戻す」。非表示は完全除外だが is_hidden で残し復元可能。
+  const renderRightActions = () => (
+    <Reanimated.View style={styles.hideAction}>
+      <TouchableOpacity
+        style={[styles.hideActionButton, { backgroundColor: hideActionBg }]}
+        onPress={() => {
+          swipeableRef.current?.close();
+          if (isHidden) onRestore(article);
+          else onHide(article);
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name={isHidden ? 'eye-outline' : 'eye-off-outline'} size={22} color="#fff" />
+      </TouchableOpacity>
+    </Reanimated.View>
+  );
+
   return (
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      rightThreshold={40}
+      overshootRight={false}
+    >
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={() => onPress(article)}
@@ -101,7 +133,7 @@ const ArticleItem = React.memo<{
         style={[
           styles.articleContainer,
           { backgroundColor: animatedBg, borderBottomColor: borderColor },
-          (article.isRead || isBlocked) && styles.readContainer,
+          (article.isRead || isBlocked || isHidden) && styles.readContainer,
         ]}
       >
         <View style={large ? styles.articleContentLarge : styles.articleContent}>
@@ -120,7 +152,7 @@ const ArticleItem = React.memo<{
           <View style={large ? styles.textContainerLarge : styles.textContainer}>
             <View style={styles.titleRow}>
               <Text
-                style={[styles.title, { color: textColor }, (article.isRead || isBlocked) && { color: subtextColor, fontWeight: '400' }]}
+                style={[styles.title, { color: textColor }, (article.isRead || isBlocked || isHidden) && { color: subtextColor, fontWeight: '400' }]}
                 numberOfLines={large ? 3 : 2}
               >
                 {article.title}
@@ -130,7 +162,14 @@ const ArticleItem = React.memo<{
               )}
             </View>
             <View style={styles.metaContainer}>
-              {isBlocked && (
+              {isHidden && (
+                <>
+                  <Ionicons name="eye-off" size={11} color={subtextColor} style={{ marginRight: 3 }} />
+                  <Text style={[styles.metaText, { color: subtextColor }]}>{t('home.hiddenLabel')}</Text>
+                  <Text style={[styles.separator, { color: subtextColor }]}>/</Text>
+                </>
+              )}
+              {isBlocked && !isHidden && (
                 <>
                   <Ionicons name="funnel" size={11} color={subtextColor} style={{ marginRight: 3 }} />
                   <Text style={[styles.metaText, { color: subtextColor }]}>{t('home.filteredLabel')}</Text>
@@ -149,6 +188,7 @@ const ArticleItem = React.memo<{
         </View>
       </Animated.View>
     </TouchableOpacity>
+    </Swipeable>
   );
 });
 
@@ -224,6 +264,7 @@ const HomeHeader: React.FC<{
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [refreshing, setRefreshing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   const [articles, setArticles] = React.useState<Article[]>([]);
@@ -238,7 +279,10 @@ export default function HomeScreen() {
   const [globalAllowKeywords, setGlobalAllowKeywords] = React.useState<GlobalAllowKeyword[]>([]);
   const [filteredArticles, setFilteredArticles] = React.useState<Article[]>([]);
   const [blockedByFilters, setBlockedByFilters] = React.useState(0);
-  // ブロックされた記事を（淡色で）表示するかどうか
+  // 手動で非表示にした記事ID。ホーム一覧から除外し、「表示」トグルで淡色表示→復元できる。
+  const [hiddenArticleIds, setHiddenArticleIds] = React.useState<Set<string>>(new Set());
+  const [hiddenInViewCount, setHiddenInViewCount] = React.useState(0);
+  // ブロック記事・非表示記事を（淡色で）表示するかどうか（統合トグル）
   const [showBlockedKeywords, setShowBlockedKeywords] = React.useState(false);
   const [blockedKeywordIds, setBlockedKeywordIds] = React.useState<Set<string>>(new Set());
 
@@ -349,6 +393,10 @@ export default function HomeScreen() {
       // 記事一覧を取得
       const articleList = await ArticleService.getArticles();
       setArticles(articleList);
+
+      // 手動で非表示にした記事ID
+      const hiddenIds = await ArticleService.getHiddenIds();
+      setHiddenArticleIds(new Set(hiddenIds));
 
       // フィルタ一覧を取得
       const filterList = await FilterService.list();
@@ -671,10 +719,14 @@ export default function HomeScreen() {
     setBlockedKeywordIds(blockedIds);
     setBlockedByFilters(blockedIds.size);
 
-    // 通常はブロック記事を非表示。「表示する」がONのときは順序を保ったまま含める
+    // 現在のスコープ内で手動非表示にされている件数（バー表示用）
+    const hiddenInView = filtered.reduce((n, a) => (hiddenArticleIds.has(a.id) ? n + 1 : n), 0);
+    setHiddenInViewCount(hiddenInView);
+
+    // 通常はブロック記事・非表示記事を除外。統合トグルON時は順序を保ったまま含める（淡色表示）
     let displayed = showBlockedKeywords
       ? filtered
-      : filtered.filter(a => !blockedIds.has(a.id));
+      : filtered.filter(a => !blockedIds.has(a.id) && !hiddenArticleIds.has(a.id));
 
     // 既読表示設定に基づいてフィルタリング
     if (readDisplay === 'hide') {
@@ -682,7 +734,7 @@ export default function HomeScreen() {
     }
 
     setFilteredArticles(displayed);
-  }, [articles, feeds, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords]);
+  }, [articles, feeds, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords, hiddenArticleIds]);
 
   const runRefresh = React.useCallback(async () => {
     try {
@@ -877,14 +929,48 @@ export default function HomeScreen() {
     }
   }, []);
 
+  // スワイプで記事を非表示にする（完全除外だが復元可能）。Undoトースト＋「表示」トグルの二重で戻せる。
+  const handleHideArticle = React.useCallback((article: Article) => {
+    ArticleService.setHidden(article.id, true).catch(() => {});
+    setHiddenArticleIds(prev => {
+      const next = new Set(prev);
+      next.add(article.id);
+      return next;
+    });
+    showToast(t('home.articleHiddenToast'), 'success', {
+      label: t('common.undo'),
+      onPress: () => {
+        ArticleService.setHidden(article.id, false).catch(() => {});
+        setHiddenArticleIds(prev => {
+          const next = new Set(prev);
+          next.delete(article.id);
+          return next;
+        });
+      },
+    });
+  }, [showToast, t]);
+
+  // 「表示」トグルで淡色表示中の非表示記事を、スワイプで元に戻す
+  const handleRestoreArticle = React.useCallback((article: Article) => {
+    ArticleService.setHidden(article.id, false).catch(() => {});
+    setHiddenArticleIds(prev => {
+      const next = new Set(prev);
+      next.delete(article.id);
+      return next;
+    });
+  }, []);
+
   const renderItem = React.useCallback(({ item, index }: { item: Article; index: number }) => {
     const row = (
       <ArticleItem
         article={item}
         onPress={handlePressArticle}
         onLongPress={handleLongPressArticle}
+        onHide={handleHideArticle}
+        onRestore={handleRestoreArticle}
         highlightAnim={getHighlightAnim(item.id)}
         isBlocked={blockedKeywordIds.has(item.id)}
+        isHidden={hiddenArticleIds.has(item.id)}
         large={layoutMode === 'large'}
       />
     );
@@ -895,7 +981,7 @@ export default function HomeScreen() {
         {row}
       </View>
     );
-  }, [handlePressArticle, handleLongPressArticle, getHighlightAnim, blockedKeywordIds, layoutMode]);
+  }, [handlePressArticle, handleLongPressArticle, handleHideArticle, handleRestoreArticle, getHighlightAnim, blockedKeywordIds, hiddenArticleIds, layoutMode]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
@@ -922,6 +1008,16 @@ export default function HomeScreen() {
   const showTutorialDemo = tutorialVisible || tutorialPending;
   const displayArticles = showTutorialDemo ? dummyArticles : filteredArticles;
   const displayBlockedCount = showTutorialDemo ? 8 : blockedByFilters;
+  const displayHiddenCount = showTutorialDemo ? 0 : hiddenInViewCount;
+  const revealBarVisible = displayBlockedCount > 0 || displayHiddenCount > 0;
+  // 「フィルタで除外」と「手動で非表示」を1本のバーに統合（逃し対策の恒久導線）
+  const revealBarText = showBlockedKeywords
+    ? t('home.hiddenAndFilteredShown')
+    : displayBlockedCount > 0 && displayHiddenCount > 0
+      ? t('home.filteredAndHidden', { filtered: displayBlockedCount, hidden: displayHiddenCount })
+      : displayHiddenCount > 0
+        ? t('home.articlesHidden', { count: displayHiddenCount })
+        : t('home.articlesFiltered', { count: displayBlockedCount });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
@@ -939,18 +1035,21 @@ export default function HomeScreen() {
         layoutToggleRef={layoutToggleRef}
       />
 
-      {displayBlockedCount > 0 && (
+      {revealBarVisible && (
         <TouchableOpacity
           ref={filterBarRef}
           style={[styles.filterBar, { backgroundColor: filterBarBg }]}
           onPress={() => setShowBlockedKeywords(prev => !prev)}
           activeOpacity={0.7}
         >
-          <Ionicons name="funnel" size={12} color={filterBarText} style={styles.filterBarIcon} />
+          <Ionicons
+            name={displayBlockedCount === 0 && displayHiddenCount > 0 ? 'eye-off' : 'funnel'}
+            size={12}
+            color={filterBarText}
+            style={styles.filterBarIcon}
+          />
           <Text style={[styles.filterBarText, { color: filterBarText, flex: 1 }]}>
-            {showBlockedKeywords
-              ? t('home.articlesFilteredShown')
-              : t('home.articlesFiltered', { count: displayBlockedCount })}
+            {revealBarText}
           </Text>
           <Text style={[styles.filterBarAction, { color: filterBarText }]}>
             {showBlockedKeywords ? t('home.hide') : t('home.show')}
@@ -1199,6 +1298,16 @@ const styles = StyleSheet.create({
   },
   readContainer: {
     opacity: 0.6,
+  },
+  hideAction: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  hideActionButton: {
+    width: 72,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   articleContent: {
     flexDirection: 'row',

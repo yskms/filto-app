@@ -5,6 +5,7 @@ export const ja = {
     // 共通
     common: {
       cancel: 'キャンセル',
+      undo: '取り消す',
       delete: '削除',
       save: '保存',
       saved: '保存しました',
@@ -79,6 +80,11 @@ export const ja = {
       tutFiltersTabDesc: 'ここから*ブロックフィルタ*を管理できます。',
       articlesFilteredShown: 'フィルタ対象の記事も表示中',
       filteredLabel: '非表示',
+      hiddenLabel: '非表示',
+      articlesHidden: '{{count}}件を非表示中',
+      filteredAndHidden: '除外 {{filtered}}件・非表示 {{hidden}}件',
+      hiddenAndFilteredShown: '隠れている記事を表示中',
+      articleHiddenToast: '記事を非表示にしました',
       show: '表示',
       hide: '隠す',
       feedsSelected: '{{count}}件のフィード',
