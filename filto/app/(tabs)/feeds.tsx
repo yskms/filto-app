@@ -591,12 +591,12 @@ export default function FeedsScreen() {
       openSwipeIdRef.current = null;
     }
     const nextHidden = !feed.hiddenFromHome;
+    // 永続化は即時（未反映の窓を作らない）。行の見た目更新だけ閉じアニメ完了後に遅延。
+    FeedService.setHiddenFromHome(feed.id, nextHidden).catch(() =>
+      ErrorHandler.showDatabaseError(t, t('feeds.saveError'))
+    );
     setTimeout(() => {
-      FeedService.setHiddenFromHome(feed.id, nextHidden)
-        .then(() => {
-          setFeeds((prev) => prev.map((f) => (f.id === feed.id ? { ...f, hiddenFromHome: nextHidden } : f)));
-        })
-        .catch(() => ErrorHandler.showDatabaseError(t, t('feeds.saveError')));
+      setFeeds((prev) => prev.map((f) => (f.id === feed.id ? { ...f, hiddenFromHome: nextHidden } : f)));
     }, 260);
   };
 
