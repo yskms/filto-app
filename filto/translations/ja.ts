@@ -108,6 +108,8 @@ export const ja = {
       targetDescription: '概要を対象',
       deleteSelected: '{{count}}件削除',
       selectedCountLabel: '{{count}}件選択',
+      selectAll: 'すべて選択',
+      deselectAll: '選択解除',
       confirmDelete: '削除確認',
       confirmDeleteMessage: '選択したフィルタを削除しますか?',
       confirmDeleteSingle: 'このフィルタを削除しますか?',

@@ -18,34 +18,53 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 
 // フィルタアイテムコンポーネント
-const FilterItem: React.FC<{
+// 行ごとに useThemeColor を呼ぶと、フィルタが増えた際の再レンダリングで重くなるため親で一括算出。
+type FilterItemColors = {
+  backgroundColor: string;
+  textColor: string;
+  borderColor: string;
+  subtextColor: string;
+  dangerColor: string;
+  tintColor: string;
+  selectedBgColor: string;
+};
+
+type FilterItemProps = {
   filter: Filter;
+  colors: FilterItemColors;
   isSelected: boolean;
   deleteMode: boolean;
   swipeableRef: React.RefObject<SwipeableMethods | null>;
-  isSwipeOpen: boolean;
+  getIsSwipeOpen: () => boolean;
   onPress: () => void;
   onPressDelete: () => void;
   onSwipeableWillOpen: () => void;
   onSwipeableWillClose: (filterId: number) => void;
-}> = ({
+};
+
+// フィルタが増えても選択トグルで全行が再レンダリングされないようメモ化。
+// コールバックは毎回生成されるが挙動は filter.id 依存で安定なので比較から除外する。
+const FilterItem = React.memo(function FilterItem({
   filter,
+  colors,
   isSelected,
   deleteMode,
   swipeableRef,
-  isSwipeOpen,
+  getIsSwipeOpen,
   onPress,
   onPressDelete,
   onSwipeableWillOpen,
   onSwipeableWillClose,
-}) => {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const borderColor = useThemeColor({}, 'tabIconDefault');
-  const subtextColor = useThemeColor({}, 'icon');
-  const dangerColor = useThemeColor({}, 'danger');
-  const tintColor = useThemeColor({}, 'tint');
-  const selectedBgColor = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
+}: FilterItemProps) {
+  const {
+    backgroundColor,
+    textColor,
+    borderColor,
+    subtextColor,
+    dangerColor,
+    tintColor,
+    selectedBgColor,
+  } = colors;
   const { t } = useTranslation();
 
   // 削除アクション（右側）- Reanimated版
@@ -65,7 +84,7 @@ const FilterItem: React.FC<{
 
   const handlePress = () => {
     // スワイプが開いている場合は閉じる
-    if (swipeableRef.current && isSwipeOpen) {
+    if (swipeableRef.current && getIsSwipeOpen()) {
       swipeableRef.current.close();
     }
     onPress();
@@ -111,13 +130,20 @@ const FilterItem: React.FC<{
       </TouchableOpacity>
     </Swipeable>
   );
-};
+}, (prev, next) =>
+  prev.filter === next.filter &&
+  prev.colors === next.colors &&
+  prev.deleteMode === next.deleteMode &&
+  prev.isSelected === next.isSelected
+);
 
 // ヘッダーコンポーネント
 const FiltersHeader: React.FC<{
   deleteMode: boolean;
   selectedCount: number;
+  allSelected: boolean;
   onToggleDeleteMode: () => void;
+  onPressSelectAll: () => void;
   onPressSortButton: () => void;
   onPressAdd: () => void;
   onConfirmDelete: () => void;
@@ -125,7 +151,9 @@ const FiltersHeader: React.FC<{
 }> = ({
   deleteMode,
   selectedCount,
+  allSelected,
   onToggleDeleteMode,
+  onPressSelectAll,
   onPressSortButton,
   onPressAdd,
   onConfirmDelete,
@@ -155,18 +183,32 @@ const FiltersHeader: React.FC<{
         <ThemedText style={styles.headerTitle}>{t('filters.selectedCountLabel', { count: selectedCount })}</ThemedText>
 
         <View style={styles.headerSideRight}>
-          <TouchableOpacity
-            onPress={onConfirmDelete}
-            style={styles.headerButton}
-            disabled={selectedCount === 0}
-            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-          >
-            <ThemedText
-              style={[styles.deleteText, { color: dangerColor }, selectedCount === 0 && styles.disabledText]}
+          <View style={styles.selectionActions}>
+            <TouchableOpacity
+              onPress={onPressSelectAll}
+              style={styles.headerButton}
+              hitSlop={{ top: 16, bottom: 16, left: 8, right: 8 }}
+              accessibilityLabel={allSelected ? t('filters.deselectAll') : t('filters.selectAll')}
             >
-              {t('common.delete')}
-            </ThemedText>
-          </TouchableOpacity>
+              <Ionicons
+                name={allSelected ? 'remove-circle-outline' : 'checkmark-done-outline'}
+                size={24}
+                color={tintColor}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onConfirmDelete}
+              style={styles.headerButton}
+              disabled={selectedCount === 0}
+              hitSlop={{ top: 16, bottom: 16, left: 8, right: 16 }}
+            >
+              <ThemedText
+                style={[styles.deleteText, { color: dangerColor }, selectedCount === 0 && styles.disabledText]}
+              >
+                {t('common.delete')}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -209,10 +251,28 @@ export default function FiltersScreen() {
   const { t } = useTranslation();
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
+
+  // FilterItem の色は各行で useThemeColor を呼ばず、親で一括算出して渡す
+  // （フィルタが増えても行ごとのテーマ計算が発生しない）。
+  const fiText = useThemeColor({}, 'text');
+  const fiBorder = useThemeColor({}, 'tabIconDefault');
+  const fiSubtext = useThemeColor({}, 'icon');
+  const fiDanger = useThemeColor({}, 'danger');
+  const fiTint = useThemeColor({}, 'tint');
+  const fiSelectedBg = useThemeColor({ light: '#e3f2fd', dark: '#1e3a5f' }, 'background');
+  const filterItemColors = React.useMemo<FilterItemColors>(() => ({
+    backgroundColor,
+    textColor: fiText,
+    borderColor: fiBorder,
+    subtextColor: fiSubtext,
+    dangerColor: fiDanger,
+    tintColor: fiTint,
+    selectedBgColor: fiSelectedBg,
+  }), [backgroundColor, fiText, fiBorder, fiSubtext, fiDanger, fiTint, fiSelectedBg]);
+
   const [filters, setFilters] = useState<Filter[]>([]);
   const [deleteMode, setDeleteMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [openSwipeId, setOpenSwipeId] = useState<number | null>(null);
   
   // ソート関連のState
   const [sortModalVisible, setSortModalVisible] = useState(false);
@@ -352,7 +412,6 @@ export default function FiltersScreen() {
             ref.current.close();
           }
           openSwipeIdRef.current = null;
-          setOpenSwipeId(null);
         }
         // 削除モードをオフにする
         if (deleteMode) {
@@ -373,7 +432,6 @@ export default function FiltersScreen() {
       // 開いているスワイプを閉じる
       closeOpenSwipe();
       openSwipeIdRef.current = null;
-      setOpenSwipeId(null);
       return newMode;
     });
   }, []);
@@ -382,14 +440,12 @@ export default function FiltersScreen() {
     // 開いているスワイプを閉じる
     closeOpenSwipe();
     openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
     router.push('/filter_edit');
   }, [router]);
 
   const handlePressSortButton = React.useCallback(() => {
     closeOpenSwipe();
     openSwipeIdRef.current = null;
-    setOpenSwipeId(null);
     setSortModalVisible(true);
   }, []);
 
@@ -404,7 +460,6 @@ export default function FiltersScreen() {
       if (openSwipeIdRef.current !== null) {
         closeOpenSwipe();
         openSwipeIdRef.current = null;
-        setOpenSwipeId(null);
         return;
       }
 
@@ -451,7 +506,6 @@ export default function FiltersScreen() {
                   ref.current.close();
                 }
                 openSwipeIdRef.current = null;
-                setOpenSwipeId(null);
                 await FilterService.delete(filterId);
                 await loadFilters();
               } catch (error) {
@@ -496,20 +550,26 @@ export default function FiltersScreen() {
     );
   }, [selectedIds, loadFilters, t]);
 
+  // すべて選択 / 全解除のトグル（実フィルタ対象）
+  const handleToggleSelectAll = React.useCallback(() => {
+    setSelectedIds((prev) => {
+      const allIds = filters.map((f) => f.id).filter((id): id is number => id != null);
+      return prev.length === allIds.length ? [] : allIds;
+    });
+  }, [filters]);
+
   const handleSwipeableWillOpen = (filterId: number) => {
     // 古いスワイプを閉じる（新しいIDは除外）
     closeOpenSwipe(filterId);
     
     // 新しいIDを設定
     openSwipeIdRef.current = filterId;
-    setOpenSwipeId(filterId);
   };
 
   const handleSwipeableWillClose = (filterId: number) => {
     // 自分が開いていた場合のみクリア
     if (openSwipeIdRef.current === filterId) {
       openSwipeIdRef.current = null;
-      setOpenSwipeId(null);
     }
   };
 
@@ -518,7 +578,9 @@ export default function FiltersScreen() {
       <FiltersHeader
         deleteMode={deleteMode}
         selectedCount={selectedIds.length}
+        allSelected={filters.length > 0 && selectedIds.length === filters.length}
         onToggleDeleteMode={handleToggleDeleteMode}
+        onPressSelectAll={handleToggleSelectAll}
         onPressSortButton={handlePressSortButton}
         onPressAdd={handlePressAdd}
         onConfirmDelete={handleConfirmDelete}
@@ -532,14 +594,14 @@ export default function FiltersScreen() {
           if (!item.id) return null;
           const filterId = item.id;
           const swipeableRef = getSwipeableRef(filterId);
-          const isSwipeOpen = openSwipeId === filterId;
           return (
             <FilterItem
               filter={item}
+              colors={filterItemColors}
               isSelected={selectedIds.includes(filterId)}
               deleteMode={deleteMode}
               swipeableRef={swipeableRef}
-              isSwipeOpen={isSwipeOpen}
+              getIsSwipeOpen={() => openSwipeIdRef.current === filterId}
               onPress={() => handlePressFilter(filterId)}
               onPressDelete={() => handlePressDelete(filterId)}
               onSwipeableWillOpen={() => handleSwipeableWillOpen(filterId)}
@@ -549,6 +611,10 @@ export default function FiltersScreen() {
         }}
         keyExtractor={(item) => (item.id ?? 0).toString()}
         contentContainerStyle={styles.listContent}
+        removeClippedSubviews
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        windowSize={7}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="funnel-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
@@ -609,6 +675,10 @@ const styles = StyleSheet.create({
   headerSideRight: {
     flex: 1,
     alignItems: 'flex-end',
+  },
+  selectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerButton: {
     padding: 8,
