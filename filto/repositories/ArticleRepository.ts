@@ -186,6 +186,23 @@ export const ArticleRepository = {
   },
 
   /**
+   * 記事の手動非表示フラグを設定する（スワイプで非表示 / 復元）。
+   */
+  async setHidden(id: string, hidden: boolean): Promise<void> {
+    const db = openDatabase();
+    db.runSync('UPDATE articles SET is_hidden = ? WHERE id = ?', [hidden ? 1 : 0, id]);
+  },
+
+  /**
+   * 非表示中の記事IDを取得する（ホームでの除外・復元判定に使う）。
+   */
+  async getHiddenIds(): Promise<string[]> {
+    const db = openDatabase();
+    const rows = db.getAllSync<{ id: number }>('SELECT id FROM articles WHERE is_hidden = 1');
+    return rows.map((r) => String(r.id));
+  },
+
+  /**
    * お気に入りを切り替える
    */
   async toggleStarred(id: string): Promise<void> {

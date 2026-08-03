@@ -62,4 +62,18 @@ export const ArticleService = {
   async markRead(id: string): Promise<void> {
     await ArticleRepository.markRead(id);
   },
+
+  /**
+   * 記事の手動非表示フラグを設定する（スワイプで非表示 / 復元）
+   */
+  async setHidden(id: string, hidden: boolean): Promise<void> {
+    await ArticleRepository.setHidden(id, hidden);
+  },
+
+  /**
+   * 非表示中の記事IDを取得する
+   */
+  async getHiddenIds(): Promise<string[]> {
+    return await ArticleRepository.getHiddenIds();
+  },
 };

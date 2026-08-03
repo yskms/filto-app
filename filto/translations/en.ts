@@ -5,6 +5,7 @@ export const en = {
   // Common
   common: {
     cancel: 'Cancel',
+    undo: 'Undo',
     delete: 'Delete',
     save: 'Save',
     saved: 'Saved',
@@ -79,6 +80,12 @@ export const en = {
     tutFiltersTabDesc: 'Manage your *block filters* from here.',
     articlesFilteredShown: 'Showing filtered articles too',
     filteredLabel: 'Filtered',
+    hiddenLabel: 'Hidden',
+    articlesHidden: '{{count}} hidden',
+    filteredAndHidden: '{{filtered}} filtered, {{hidden}} hidden',
+    hiddenAndFilteredShown: 'Showing hidden articles too',
+    articleHiddenToast: 'Article hidden',
+    articleShownToast: 'Article restored',
     show: 'Show',
     hide: 'Hide',
     feedsSelected: '{{count}} feeds',
