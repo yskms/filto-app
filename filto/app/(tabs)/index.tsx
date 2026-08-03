@@ -938,11 +938,16 @@ export default function HomeScreen() {
   // （同じ行での2回目の操作を妨げていたため）。DBと状態を一括でトグルするだけ。
   const handleFavoriteArticle = React.useCallback(async (article: Article) => {
     try {
+      // 目標値を明示的に持つ（トグルではないので遅延しても DB とずれない）。
+      const next = !article.isStarred;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await ArticleRepository.toggleStarred(article.id);
-      setArticles(prev =>
-        prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
-      );
+      // 状態更新（＝行の再レンダリング）は閉じアニメ完了後に遅延し、引っ掛かりを防ぐ。
+      setTimeout(() => {
+        setArticles(prev =>
+          prev.map(a => a.id === article.id ? { ...a, isStarred: next } : a)
+        );
+      }, 260);
     } catch (_) {
       ErrorHandler.showDatabaseError(t, t('home.favoriteError'));
     }
