@@ -1370,9 +1370,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 80,
   },
+  // RNGH の TouchableOpacity は flex/百分率だと縮むため、明示的な寸法で埋める。
   hideActionButton: {
-    flex: 1,
-    width: '100%',
+    width: 80,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
