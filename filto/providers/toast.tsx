@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from 'react';
 import { Animated, Text, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -84,8 +84,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   };
   const bgColor = toastColors[scheme][type];
 
+  // showToast は安定なので value をメモ化する。これをしないとトースト表示のたびに
+  // context 値が変わり、useToast を使う画面全体が再レンダリングされてしまう
+  // （記事スワイプ中に発火すると閉じアニメが中断してカクつく原因になっていた）。
+  const contextValue = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       {visible && (
         <Animated.View
