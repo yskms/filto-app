@@ -44,8 +44,10 @@ import { useTranslation } from '@/providers/language';
 import { LoadingView } from '@/components/LoadingView';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { RectButton } from 'react-native-gesture-handler';
 import Reanimated from 'react-native-reanimated';
 import { useToast } from '@/providers/toast';
+import { ArticleActionSheet } from '@/components/ArticleActionSheet';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
@@ -77,6 +79,7 @@ const ArticleItem = React.memo<{
   onLongPress: (article: Article) => void;
   onHide: (article: Article) => void;
   onRestore: (article: Article) => void;
+  onFavorite: (article: Article) => void;
   swipeableRef: React.RefObject<SwipeableMethods | null>;
   getIsSwipeOpen: (id: string) => boolean;
   onSwipeableWillOpen: (id: string) => void;
@@ -85,7 +88,7 @@ const ArticleItem = React.memo<{
   isBlocked?: boolean;
   isHidden?: boolean;
   large?: boolean;
-}>(({ article, onPress, onLongPress, onHide, onRestore, swipeableRef, getIsSwipeOpen, onSwipeableWillOpen, onSwipeableWillClose, highlightAnim, isBlocked = false, isHidden = false, large = false }) => {
+}>(({ article, onPress, onLongPress, onHide, onRestore, onFavorite, swipeableRef, getIsSwipeOpen, onSwipeableWillOpen, onSwipeableWillClose, highlightAnim, isBlocked = false, isHidden = false, large = false }) => {
   const { t } = useTranslation();
   const timeAgo = getTimeAgo(article.publishedAt, t('home.justNow'));
 
@@ -103,20 +106,38 @@ const ArticleItem = React.memo<{
     outputRange: [bgColor, highlightColor],
   });
 
-  // スワイプで「非表示 / 表示に戻す」。非表示は完全除外だが is_hidden で残し復元可能。
+  // 右スワイプで「非表示 / 表示に戻す」。非表示は完全除外だが is_hidden で残し復元可能。
+  // Swipeable のアクション内は RNGH の RectButton を使う（プレーンな Touchable は
+  // 左アクションでタップを取りこぼすため）。RectButton は親を自然に埋める。
   const renderRightActions = () => (
     <Reanimated.View style={styles.hideAction}>
-      <TouchableOpacity
-        style={[styles.hideActionButton, { backgroundColor: hideActionBg }]}
+      <RectButton
+        style={[styles.actionButton, { backgroundColor: hideActionBg }]}
+        rippleColor="rgba(255,255,255,0.35)"
         onPress={() => {
           swipeableRef.current?.close();
           if (isHidden) onRestore(article);
           else onHide(article);
         }}
-        activeOpacity={0.8}
       >
         <Ionicons name={isHidden ? 'eye-outline' : 'eye-off-outline'} size={22} color="#fff" />
-      </TouchableOpacity>
+      </RectButton>
+    </Reanimated.View>
+  );
+
+  // 左スワイプ（逆スワイプ）でお気に入りをトグル。
+  const renderLeftActions = () => (
+    <Reanimated.View style={styles.favAction}>
+      <RectButton
+        style={[styles.actionButton, { backgroundColor: '#f59e0b' }]}
+        rippleColor="rgba(255,255,255,0.35)"
+        onPress={() => {
+          swipeableRef.current?.close();
+          onFavorite(article);
+        }}
+      >
+        <Ionicons name={article.isStarred ? 'star' : 'star-outline'} size={22} color="#fff" />
+      </RectButton>
     </Reanimated.View>
   );
 
@@ -124,8 +145,11 @@ const ArticleItem = React.memo<{
     <Swipeable
       ref={swipeableRef}
       renderRightActions={renderRightActions}
+      renderLeftActions={renderLeftActions}
       rightThreshold={40}
+      leftThreshold={40}
       overshootRight={false}
+      overshootLeft={false}
       onSwipeableWillOpen={() => onSwipeableWillOpen(article.id)}
       onSwipeableWillClose={() => onSwipeableWillClose(article.id)}
     >
@@ -293,6 +317,8 @@ export default function HomeScreen() {
   // 手動で非表示にした記事ID。ホーム一覧から除外し、「表示」トグルで淡色表示→復元できる。
   const [hiddenArticleIds, setHiddenArticleIds] = React.useState<Set<string>>(new Set());
   const [hiddenInViewCount, setHiddenInViewCount] = React.useState(0);
+  // 長押しで開くコンテキストメニュー対象の記事（null で閉）
+  const [actionSheetArticle, setActionSheetArticle] = React.useState<Article | null>(null);
   // ブロック記事・非表示記事を（淡色で）表示するかどうか（統合トグル）
   const [showBlockedKeywords, setShowBlockedKeywords] = React.useState(false);
   const [blockedKeywordIds, setBlockedKeywordIds] = React.useState<Set<string>>(new Set());
@@ -907,70 +933,46 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const handleLongPressArticle = React.useCallback(async (article: Article) => {
+  // 左スワイプでお気に入りをトグル。スワイプ自体がフィードバックになるため、
+  // 長押し時代の派手なハイライトアニメ（useNativeDriver:false）は使わない
+  // （同じ行での2回目の操作を妨げていたため）。DBと状態を一括でトグルするだけ。
+  const handleFavoriteArticle = React.useCallback(async (article: Article) => {
     try {
-      // 現在の状態を取得（追加か削除か）
-      const isAdding = !article.isStarred;
-      
-      // お気に入りを切り替え
-      await ArticleRepository.toggleStarred(article.id);
-      
-      // ハプティックフィードバック（軽い振動）
+      // 目標値を明示的に持つ（トグルではないので遅延しても DB とずれない）。
+      const next = !article.isStarred;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      // ハイライトアニメーション
-      const anim = getHighlightAnim(article.id);
-      
-      if (isAdding) {
-        // 追加時: 素早く2回光る（パパッと）
-        Animated.sequence([
-          // 1回目
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 100,
-            useNativeDriver: false,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 100,
-            useNativeDriver: false,
-          }),
-          // 2回目
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 100,
-            useNativeDriver: false,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 150,
-            useNativeDriver: false,
-          }),
-        ]).start();
-      } else {
-        // 削除時: 1回光る
-        Animated.sequence([
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: false,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: false,
-          }),
-        ]).start();
-      }
-      
-      // ローカルの状態も更新
-      setArticles(prev => 
-        prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
-      );
+      await ArticleRepository.toggleStarred(article.id);
+      // 状態更新（＝行の再レンダリング）は閉じアニメ完了後に遅延し、引っ掛かりを防ぐ。
+      setTimeout(() => {
+        setArticles(prev =>
+          prev.map(a => a.id === article.id ? { ...a, isStarred: next } : a)
+        );
+      }, 260);
     } catch (_) {
       ErrorHandler.showDatabaseError(t, t('home.favoriteError'));
     }
-  }, []);
+  }, [t]);
+
+  // 長押しでコンテキストメニュー（この記事/このサイトを非表示）を開く。
+  // 別の行のスワイプが開いていたら閉じる。
+  const handleLongPressArticle = React.useCallback((article: Article) => {
+    closeOpenSwipe();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActionSheetArticle(article);
+  }, [closeOpenSwipe]);
+
+  // このサイト（フィード）ごとホームで非表示にする。Undoトースト＋フィード画面で復元可能。
+  const handleHideSite = React.useCallback((article: Article) => {
+    FeedService.setHiddenFromHome(article.feedId, true).catch(() => {});
+    setFeeds(prev => prev.map(f => f.id === article.feedId ? { ...f, hiddenFromHome: true } : f));
+    showToast(t('home.siteHiddenToast', { name: article.feedName }), 'success', {
+      label: t('common.undo'),
+      onPress: () => {
+        FeedService.setHiddenFromHome(article.feedId, false).catch(() => {});
+        setFeeds(prev => prev.map(f => f.id === article.feedId ? { ...f, hiddenFromHome: false } : f));
+      },
+    });
+  }, [showToast, t]);
 
   // スワイプで記事を非表示にする（完全除外だが復元可能）。Undoトースト＋「表示」トグルの二重で戻せる。
   // DB反映は即時、一覧からの除外（再レンダリング）は閉じアニメ完了後に遅延してカクつきを防ぐ。
@@ -1009,6 +1011,7 @@ export default function HomeScreen() {
         onLongPress={handleLongPressArticle}
         onHide={handleHideArticle}
         onRestore={handleRestoreArticle}
+        onFavorite={handleFavoriteArticle}
         swipeableRef={getSwipeableRef(item.id)}
         getIsSwipeOpen={getIsArticleSwipeOpen}
         onSwipeableWillOpen={handleArticleSwipeWillOpen}
@@ -1026,7 +1029,7 @@ export default function HomeScreen() {
         {row}
       </View>
     );
-  }, [handlePressArticle, handleLongPressArticle, handleHideArticle, handleRestoreArticle, getSwipeableRef, getIsArticleSwipeOpen, handleArticleSwipeWillOpen, handleArticleSwipeWillClose, getHighlightAnim, blockedKeywordIds, hiddenArticleIds, showBlockedKeywords, layoutMode]);
+  }, [handlePressArticle, handleLongPressArticle, handleHideArticle, handleRestoreArticle, handleFavoriteArticle, getSwipeableRef, getIsArticleSwipeOpen, handleArticleSwipeWillOpen, handleArticleSwipeWillClose, getHighlightAnim, blockedKeywordIds, hiddenArticleIds, showBlockedKeywords, layoutMode]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
@@ -1204,6 +1207,24 @@ export default function HomeScreen() {
         onSkip={tourIsReplay ? handleSkipTour : undefined}
       />
 
+      {/* 記事の長押しメニュー（この記事/このサイトを非表示） */}
+      <ArticleActionSheet
+        visible={actionSheetArticle !== null}
+        title={actionSheetArticle?.title ?? ''}
+        feedName={actionSheetArticle?.feedName ?? ''}
+        onClose={() => setActionSheetArticle(null)}
+        onHideArticle={() => {
+          const a = actionSheetArticle;
+          setActionSheetArticle(null);
+          if (a) handleHideArticle(a);
+        }}
+        onHideSite={() => {
+          const a = actionSheetArticle;
+          setActionSheetArticle(null);
+          if (a) handleHideSite(a);
+        }}
+      />
+
       {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}
       <Modal visible={waitingArticles} animationType="fade" onRequestClose={() => {}}>
         <View style={[styles.waitingOverlay, { backgroundColor }]}>
@@ -1344,13 +1365,18 @@ const styles = StyleSheet.create({
   readContainer: {
     opacity: 0.6,
   },
+  // スワイプアクションの領域幅（＝スワイプで開く幅）。左右そろえて 80。
   hideAction: {
-    justifyContent: 'center',
-    alignItems: 'flex-end',
+    width: 80,
+    alignItems: 'stretch',
   },
-  hideActionButton: {
-    width: 72,
-    height: '100%',
+  favAction: {
+    width: 80,
+    alignItems: 'stretch',
+  },
+  // RectButton は親を埋めるので flex（高さ）＋ 親の alignItems:stretch（幅）でOK。
+  actionButton: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
