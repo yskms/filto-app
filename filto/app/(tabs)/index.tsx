@@ -44,6 +44,7 @@ import { useTranslation } from '@/providers/language';
 import { LoadingView } from '@/components/LoadingView';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Reanimated from 'react-native-reanimated';
 import { useToast } from '@/providers/toast';
 import { ArticleActionSheet } from '@/components/ArticleActionSheet';
@@ -106,9 +107,11 @@ const ArticleItem = React.memo<{
   });
 
   // 右スワイプで「非表示 / 表示に戻す」。非表示は完全除外だが is_hidden で残し復元可能。
+  // Swipeable のアクション内は RNGH のタッチャブルを使う（左アクションでプレーンな
+  // TouchableOpacity がタップを取りこぼすため、左右そろえて GHTouchableOpacity にする）。
   const renderRightActions = () => (
     <Reanimated.View style={styles.hideAction}>
-      <TouchableOpacity
+      <GHTouchableOpacity
         style={[styles.hideActionButton, { backgroundColor: hideActionBg }]}
         onPress={() => {
           swipeableRef.current?.close();
@@ -118,14 +121,14 @@ const ArticleItem = React.memo<{
         activeOpacity={0.8}
       >
         <Ionicons name={isHidden ? 'eye-outline' : 'eye-off-outline'} size={22} color="#fff" />
-      </TouchableOpacity>
+      </GHTouchableOpacity>
     </Reanimated.View>
   );
 
   // 左スワイプ（逆スワイプ）でお気に入りをトグル。
   const renderLeftActions = () => (
     <Reanimated.View style={styles.favAction}>
-      <TouchableOpacity
+      <GHTouchableOpacity
         style={[styles.hideActionButton, { backgroundColor: '#f59e0b' }]}
         onPress={() => {
           swipeableRef.current?.close();
@@ -134,7 +137,7 @@ const ArticleItem = React.memo<{
         activeOpacity={0.8}
       >
         <Ionicons name={article.isStarred ? 'star' : 'star-outline'} size={22} color="#fff" />
-      </TouchableOpacity>
+      </GHTouchableOpacity>
     </Reanimated.View>
   );
 
