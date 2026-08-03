@@ -46,6 +46,7 @@ import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated from 'react-native-reanimated';
 import { useToast } from '@/providers/toast';
+import { ArticleActionSheet } from '@/components/ArticleActionSheet';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
@@ -77,6 +78,7 @@ const ArticleItem = React.memo<{
   onLongPress: (article: Article) => void;
   onHide: (article: Article) => void;
   onRestore: (article: Article) => void;
+  onFavorite: (article: Article) => void;
   swipeableRef: React.RefObject<SwipeableMethods | null>;
   getIsSwipeOpen: (id: string) => boolean;
   onSwipeableWillOpen: (id: string) => void;
@@ -85,7 +87,7 @@ const ArticleItem = React.memo<{
   isBlocked?: boolean;
   isHidden?: boolean;
   large?: boolean;
-}>(({ article, onPress, onLongPress, onHide, onRestore, swipeableRef, getIsSwipeOpen, onSwipeableWillOpen, onSwipeableWillClose, highlightAnim, isBlocked = false, isHidden = false, large = false }) => {
+}>(({ article, onPress, onLongPress, onHide, onRestore, onFavorite, swipeableRef, getIsSwipeOpen, onSwipeableWillOpen, onSwipeableWillClose, highlightAnim, isBlocked = false, isHidden = false, large = false }) => {
   const { t } = useTranslation();
   const timeAgo = getTimeAgo(article.publishedAt, t('home.justNow'));
 
@@ -103,7 +105,7 @@ const ArticleItem = React.memo<{
     outputRange: [bgColor, highlightColor],
   });
 
-  // スワイプで「非表示 / 表示に戻す」。非表示は完全除外だが is_hidden で残し復元可能。
+  // 右スワイプで「非表示 / 表示に戻す」。非表示は完全除外だが is_hidden で残し復元可能。
   const renderRightActions = () => (
     <Reanimated.View style={styles.hideAction}>
       <TouchableOpacity
@@ -120,12 +122,31 @@ const ArticleItem = React.memo<{
     </Reanimated.View>
   );
 
+  // 左スワイプ（逆スワイプ）でお気に入りをトグル。
+  const renderLeftActions = () => (
+    <Reanimated.View style={styles.favAction}>
+      <TouchableOpacity
+        style={[styles.hideActionButton, { backgroundColor: '#f59e0b' }]}
+        onPress={() => {
+          swipeableRef.current?.close();
+          onFavorite(article);
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name={article.isStarred ? 'star' : 'star-outline'} size={22} color="#fff" />
+      </TouchableOpacity>
+    </Reanimated.View>
+  );
+
   return (
     <Swipeable
       ref={swipeableRef}
       renderRightActions={renderRightActions}
+      renderLeftActions={renderLeftActions}
       rightThreshold={40}
+      leftThreshold={40}
       overshootRight={false}
+      overshootLeft={false}
       onSwipeableWillOpen={() => onSwipeableWillOpen(article.id)}
       onSwipeableWillClose={() => onSwipeableWillClose(article.id)}
     >
@@ -293,6 +314,8 @@ export default function HomeScreen() {
   // 手動で非表示にした記事ID。ホーム一覧から除外し、「表示」トグルで淡色表示→復元できる。
   const [hiddenArticleIds, setHiddenArticleIds] = React.useState<Set<string>>(new Set());
   const [hiddenInViewCount, setHiddenInViewCount] = React.useState(0);
+  // 長押しで開くコンテキストメニュー対象の記事（null で閉）
+  const [actionSheetArticle, setActionSheetArticle] = React.useState<Article | null>(null);
   // ブロック記事・非表示記事を（淡色で）表示するかどうか（統合トグル）
   const [showBlockedKeywords, setShowBlockedKeywords] = React.useState(false);
   const [blockedKeywordIds, setBlockedKeywordIds] = React.useState<Set<string>>(new Set());
@@ -907,7 +930,7 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const handleLongPressArticle = React.useCallback(async (article: Article) => {
+  const handleFavoriteArticle = React.useCallback(async (article: Article) => {
     try {
       // 現在の状態を取得（追加か削除か）
       const isAdding = !article.isStarred;
@@ -963,14 +986,36 @@ export default function HomeScreen() {
         ]).start();
       }
       
-      // ローカルの状態も更新
-      setArticles(prev => 
-        prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
-      );
+      // 状態更新（＝行の再レンダリング）は閉じアニメ完了後に遅延して引っ掛かりを防ぐ。
+      // ハイライトアニメは Animated 値なので即時でも再レンダリングを起こさない。
+      setTimeout(() => {
+        setArticles(prev =>
+          prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
+        );
+      }, 260);
     } catch (_) {
       ErrorHandler.showDatabaseError(t, t('home.favoriteError'));
     }
   }, []);
+
+  // 長押しでコンテキストメニュー（この記事/このサイトを非表示）を開く
+  const handleLongPressArticle = React.useCallback((article: Article) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActionSheetArticle(article);
+  }, []);
+
+  // このサイト（フィード）ごとホームで非表示にする。Undoトースト＋フィード画面で復元可能。
+  const handleHideSite = React.useCallback((article: Article) => {
+    FeedService.setHiddenFromHome(article.feedId, true).catch(() => {});
+    setFeeds(prev => prev.map(f => f.id === article.feedId ? { ...f, hiddenFromHome: true } : f));
+    showToast(t('home.siteHiddenToast', { name: article.feedName }), 'success', {
+      label: t('common.undo'),
+      onPress: () => {
+        FeedService.setHiddenFromHome(article.feedId, false).catch(() => {});
+        setFeeds(prev => prev.map(f => f.id === article.feedId ? { ...f, hiddenFromHome: false } : f));
+      },
+    });
+  }, [showToast, t]);
 
   // スワイプで記事を非表示にする（完全除外だが復元可能）。Undoトースト＋「表示」トグルの二重で戻せる。
   // DB反映は即時、一覧からの除外（再レンダリング）は閉じアニメ完了後に遅延してカクつきを防ぐ。
@@ -1009,6 +1054,7 @@ export default function HomeScreen() {
         onLongPress={handleLongPressArticle}
         onHide={handleHideArticle}
         onRestore={handleRestoreArticle}
+        onFavorite={handleFavoriteArticle}
         swipeableRef={getSwipeableRef(item.id)}
         getIsSwipeOpen={getIsArticleSwipeOpen}
         onSwipeableWillOpen={handleArticleSwipeWillOpen}
@@ -1026,7 +1072,7 @@ export default function HomeScreen() {
         {row}
       </View>
     );
-  }, [handlePressArticle, handleLongPressArticle, handleHideArticle, handleRestoreArticle, getSwipeableRef, getIsArticleSwipeOpen, handleArticleSwipeWillOpen, handleArticleSwipeWillClose, getHighlightAnim, blockedKeywordIds, hiddenArticleIds, showBlockedKeywords, layoutMode]);
+  }, [handlePressArticle, handleLongPressArticle, handleHideArticle, handleRestoreArticle, handleFavoriteArticle, getSwipeableRef, getIsArticleSwipeOpen, handleArticleSwipeWillOpen, handleArticleSwipeWillClose, getHighlightAnim, blockedKeywordIds, hiddenArticleIds, showBlockedKeywords, layoutMode]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
@@ -1204,6 +1250,24 @@ export default function HomeScreen() {
         onSkip={tourIsReplay ? handleSkipTour : undefined}
       />
 
+      {/* 記事の長押しメニュー（この記事/このサイトを非表示） */}
+      <ArticleActionSheet
+        visible={actionSheetArticle !== null}
+        title={actionSheetArticle?.title ?? ''}
+        feedName={actionSheetArticle?.feedName ?? ''}
+        onClose={() => setActionSheetArticle(null)}
+        onHideArticle={() => {
+          const a = actionSheetArticle;
+          setActionSheetArticle(null);
+          if (a) handleHideArticle(a);
+        }}
+        onHideSite={() => {
+          const a = actionSheetArticle;
+          setActionSheetArticle(null);
+          if (a) handleHideSite(a);
+        }}
+      />
+
       {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}
       <Modal visible={waitingArticles} animationType="fade" onRequestClose={() => {}}>
         <View style={[styles.waitingOverlay, { backgroundColor }]}>
@@ -1347,6 +1411,10 @@ const styles = StyleSheet.create({
   hideAction: {
     justifyContent: 'center',
     alignItems: 'flex-end',
+  },
+  favAction: {
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   hideActionButton: {
     width: 72,
