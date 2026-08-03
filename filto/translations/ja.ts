@@ -85,6 +85,7 @@ export const ja = {
       filteredAndHidden: '除外 {{filtered}}件・非表示 {{hidden}}件',
       hiddenAndFilteredShown: '隠れている記事を表示中',
       articleHiddenToast: '記事を非表示にしました',
+      articleShownToast: '記事を再表示しました',
       show: '表示',
       hide: '隠す',
       feedsSelected: '{{count}}件のフィード',

@@ -85,6 +85,7 @@ export const en = {
     filteredAndHidden: '{{filtered}} filtered, {{hidden}} hidden',
     hiddenAndFilteredShown: 'Showing hidden articles too',
     articleHiddenToast: 'Article hidden',
+    articleShownToast: 'Article restored',
     show: 'Show',
     hide: 'Hide',
     feedsSelected: '{{count}} feeds',
