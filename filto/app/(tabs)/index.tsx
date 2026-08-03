@@ -986,23 +986,23 @@ export default function HomeScreen() {
         ]).start();
       }
       
-      // 状態更新（＝行の再レンダリング）は閉じアニメ完了後に遅延して引っ掛かりを防ぐ。
-      // ハイライトアニメは Animated 値なので即時でも再レンダリングを起こさない。
-      setTimeout(() => {
-        setArticles(prev =>
-          prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
-        );
-      }, 260);
+      // ローカルの状態も更新（お気に入りは該当1行のみ再描画のため即時でよい。
+      // 遅延させると DB との toggle がずれて解除できなくなる）。
+      setArticles(prev =>
+        prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
+      );
     } catch (_) {
       ErrorHandler.showDatabaseError(t, t('home.favoriteError'));
     }
   }, []);
 
-  // 長押しでコンテキストメニュー（この記事/このサイトを非表示）を開く
+  // 長押しでコンテキストメニュー（この記事/このサイトを非表示）を開く。
+  // 別の行のスワイプが開いていたら閉じる。
   const handleLongPressArticle = React.useCallback((article: Article) => {
+    closeOpenSwipe();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActionSheetArticle(article);
-  }, []);
+  }, [closeOpenSwipe]);
 
   // このサイト（フィード）ごとホームで非表示にする。Undoトースト＋フィード画面で復元可能。
   const handleHideSite = React.useCallback((article: Article) => {
