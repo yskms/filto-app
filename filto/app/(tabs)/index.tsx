@@ -1016,7 +1016,7 @@ export default function HomeScreen() {
         onSwipeableWillClose={handleArticleSwipeWillClose}
         highlightAnim={getHighlightAnim(item.id)}
         isBlocked={blockedKeywordIds.has(item.id)}
-        isHidden={hiddenArticleIds.has(item.id)}
+        isHidden={hiddenArticleIds.has(item.id) && showBlockedKeywords}
         large={layoutMode === 'large'}
       />
     );
@@ -1027,7 +1027,7 @@ export default function HomeScreen() {
         {row}
       </View>
     );
-  }, [handlePressArticle, handleLongPressArticle, handleHideArticle, handleRestoreArticle, getSwipeableRef, getIsArticleSwipeOpen, handleArticleSwipeWillOpen, handleArticleSwipeWillClose, getHighlightAnim, blockedKeywordIds, hiddenArticleIds, layoutMode]);
+  }, [handlePressArticle, handleLongPressArticle, handleHideArticle, handleRestoreArticle, getSwipeableRef, getIsArticleSwipeOpen, handleArticleSwipeWillOpen, handleArticleSwipeWillClose, getHighlightAnim, blockedKeywordIds, hiddenArticleIds, showBlockedKeywords, layoutMode]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
