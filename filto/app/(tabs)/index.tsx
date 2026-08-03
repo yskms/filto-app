@@ -1359,15 +1359,17 @@ const styles = StyleSheet.create({
   },
   hideAction: {
     justifyContent: 'center',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    width: 80,
   },
   favAction: {
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    width: 80,
   },
   hideActionButton: {
-    width: 72,
-    height: '100%',
+    flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
