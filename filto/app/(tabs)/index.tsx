@@ -131,6 +131,9 @@ const ArticleItem = React.memo<{
     >
     <TouchableOpacity
       activeOpacity={0.7}
+      // 不透明な背景を敷く。既読/淡色行は opacity 0.6 のため、これが無いと
+      // スワイプを閉じる際に裏のグレー領域（非表示アクション）が透けて見えてしまう。
+      style={{ backgroundColor: bgColor }}
       onPress={() => {
         // スワイプが開いていればタップで閉じる（記事は開かない）
         if (getIsSwipeOpen(article.id) && swipeableRef.current) {
@@ -145,7 +148,7 @@ const ArticleItem = React.memo<{
         style={[
           styles.articleContainer,
           { backgroundColor: animatedBg, borderBottomColor: borderColor },
-          (article.isRead || isBlocked || isHidden) && styles.readContainer,
+          (article.isRead || isBlocked) && styles.readContainer,
         ]}
       >
         <View style={large ? styles.articleContentLarge : styles.articleContent}>
@@ -164,24 +167,20 @@ const ArticleItem = React.memo<{
           <View style={large ? styles.textContainerLarge : styles.textContainer}>
             <View style={styles.titleRow}>
               <Text
-                style={[styles.title, { color: textColor }, (article.isRead || isBlocked || isHidden) && { color: subtextColor, fontWeight: '400' }]}
+                style={[styles.title, { color: textColor }, (article.isRead || isBlocked) && { color: subtextColor, fontWeight: '400' }]}
                 numberOfLines={large ? 3 : 2}
               >
                 {article.title}
               </Text>
+              {isHidden && (
+                <Ionicons name="eye-off" size={14} color={subtextColor} style={{ marginTop: 2, marginLeft: 4 }} />
+              )}
               {article.isStarred && (
-                <Ionicons name="star" size={14} color="#f59e0b" style={{ marginTop: 2 }} />
+                <Ionicons name="star" size={14} color="#f59e0b" style={{ marginTop: 2, marginLeft: 4 }} />
               )}
             </View>
             <View style={styles.metaContainer}>
-              {isHidden && (
-                <>
-                  <Ionicons name="eye-off" size={11} color={subtextColor} style={{ marginRight: 3 }} />
-                  <Text style={[styles.metaText, { color: subtextColor }]}>{t('home.hiddenLabel')}</Text>
-                  <Text style={[styles.separator, { color: subtextColor }]}>/</Text>
-                </>
-              )}
-              {isBlocked && !isHidden && (
+              {isBlocked && (
                 <>
                   <Ionicons name="funnel" size={11} color={subtextColor} style={{ marginRight: 3 }} />
                   <Text style={[styles.metaText, { color: subtextColor }]}>{t('home.filteredLabel')}</Text>
