@@ -930,71 +930,20 @@ export default function HomeScreen() {
     }
   }, []);
 
+  // 左スワイプでお気に入りをトグル。スワイプ自体がフィードバックになるため、
+  // 長押し時代の派手なハイライトアニメ（useNativeDriver:false）は使わない
+  // （同じ行での2回目の操作を妨げていたため）。DBと状態を一括でトグルするだけ。
   const handleFavoriteArticle = React.useCallback(async (article: Article) => {
     try {
-      // 現在の状態を取得（追加か削除か）
-      const isAdding = !article.isStarred;
-      
-      // お気に入りを切り替え
-      await ArticleRepository.toggleStarred(article.id);
-      
-      // ハプティックフィードバック（軽い振動）
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      // ハイライトアニメーション
-      const anim = getHighlightAnim(article.id);
-      
-      if (isAdding) {
-        // 追加時: 素早く2回光る（パパッと）
-        Animated.sequence([
-          // 1回目
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 100,
-            useNativeDriver: false,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 100,
-            useNativeDriver: false,
-          }),
-          // 2回目
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 100,
-            useNativeDriver: false,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 150,
-            useNativeDriver: false,
-          }),
-        ]).start();
-      } else {
-        // 削除時: 1回光る
-        Animated.sequence([
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: false,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: false,
-          }),
-        ]).start();
-      }
-      
-      // ローカルの状態も更新（お気に入りは該当1行のみ再描画のため即時でよい。
-      // 遅延させると DB との toggle がずれて解除できなくなる）。
+      await ArticleRepository.toggleStarred(article.id);
       setArticles(prev =>
         prev.map(a => a.id === article.id ? { ...a, isStarred: !a.isStarred } : a)
       );
     } catch (_) {
       ErrorHandler.showDatabaseError(t, t('home.favoriteError'));
     }
-  }, []);
+  }, [t]);
 
   // 長押しでコンテキストメニュー（この記事/このサイトを非表示）を開く。
   // 別の行のスワイプが開いていたら閉じる。
