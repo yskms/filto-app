@@ -2,6 +2,13 @@
  * 英語翻訳ファイル
  */
 export const en = {
+  // First launch
+  firstRun: {
+    title: 'Welcome to Filto',
+    caption: "Swipe or long-press to hide articles and sites you're not interested in. Grow a feed of only what you want to read.",
+    preparing: 'Preparing your articles...',
+    ready: 'Ready!',
+  },
   // Common
   common: {
     cancel: 'Cancel',

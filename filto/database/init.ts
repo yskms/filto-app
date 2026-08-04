@@ -256,6 +256,10 @@ export async function resetAllData(): Promise<void> {
  */
 export async function resetFeedsAndFilters(): Promise<void> {
   deleteAllFromTables(['articles', 'feeds', 'filters']);
+  // 次回（初回設定やり直し＝FirstRunScreen）でデフォルトフィードを再投入できるよう、
+  // seed 済み・オンボ完了フラグを消す。これが無いと seedDefaultFeeds がスキップして
+  // フィードが空のままになる。
+  await AsyncStorage.multiRemove([SEED_KEY, FILTER_SEED_KEY, ONBOARDING_KEY]);
 }
 
 /**
