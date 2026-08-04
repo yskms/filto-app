@@ -2,6 +2,13 @@
  * 日本語翻訳ファイル
  */
 export const ja = {
+    // 初回起動
+    firstRun: {
+      title: '読みたいものだけ、残そう。',
+      caption: '興味のない記事やサイトは、スワイプや長押しで簡単に非表示にできます。',
+      preparing: '記事を準備しています...',
+      ready: '準備ができました',
+    },
     // 共通
     common: {
       cancel: 'キャンセル',
@@ -267,6 +274,12 @@ export const ja = {
       deleteInProgress: '削除中...',
       deleteComplete: '{{count}}件の記事を削除しました',
       deleteError: '記事の削除に失敗しました',
+      sectionReset: '初期化',
+      resetFeeds: 'フィードをデフォルトに戻す',
+      resetFeedsHint: '現在のフィードを削除して、デフォルトのフィードを入れ直します。フィルタや表示設定は残ります。',
+      confirmResetFeeds: '現在のフィードを削除して、デフォルトのフィードに戻します。フィルタや表示設定は残ります。\nよろしいですか?',
+      resetFeedsConfirm: '実行',
+      resetFeedsComplete: 'フィードをデフォルトに戻しました。',
       resetAllData: 'すべてのデータをリセット',
       confirmResetAll: 'すべてのフィード、記事、フィルタ、設定を削除しますか?\nこの操作は取り消せません。',
       resetInProgress: 'リセット中...',

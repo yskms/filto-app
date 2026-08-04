@@ -10,7 +10,7 @@ import { LanguageProvider } from '@/providers/language';
 import { ToastProvider } from '@/providers/toast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase, isOnboardingComplete } from '@/database/init';
-import OnboardingScreen from '@/components/OnboardingScreen';
+import FirstRunScreen from '@/components/FirstRunScreen';
 import { subscribeRestartOnboarding } from '@/utils/onboarding';
 // import 時にバックグラウンドタスクが定義される（グローバルスコープ登録のため）
 import { BackgroundSync } from '@/services/BackgroundSync';
@@ -78,7 +78,7 @@ export default function RootLayout() {
         <ToastProvider>
           {onboardingDone
             ? <RootNavigation />
-            : <OnboardingScreen onComplete={() => setOnboardingDone(true)} />}
+            : <FirstRunScreen onComplete={() => setOnboardingDone(true)} />}
         </ToastProvider>
       </LanguageProvider>
     </AppThemeProvider>

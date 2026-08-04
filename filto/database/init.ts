@@ -4,6 +4,7 @@ import * as Localization from 'expo-localization';
 
 import { getDefaultFeedsFlat } from '@/constants/defaultFeeds';
 import { StorageKeys, STORAGE_KEY_PREFIX } from '@/constants/storageKeys';
+import { getFaviconUrl } from '@/utils/feedUrl';
 
 const SEED_KEY = StorageKeys.defaultFeedsSeeded;
 const FILTER_SEED_KEY = StorageKeys.defaultFiltersSeeded;
@@ -256,6 +257,23 @@ export async function resetAllData(): Promise<void> {
  */
 export async function resetFeedsAndFilters(): Promise<void> {
   deleteAllFromTables(['articles', 'feeds', 'filters']);
+  // 次回（初回設定やり直し＝FirstRunScreen）でデフォルトフィードを再投入できるよう、
+  // seed 済み・オンボ完了フラグを消す。これが無いと seedDefaultFeeds がスキップして
+  // フィードが空のままになる。
+  await AsyncStorage.multiRemove([SEED_KEY, FILTER_SEED_KEY, ONBOARDING_KEY]);
+}
+
+/**
+ * フィードだけをデフォルトに戻す（フィルタ・表示設定は残す）。
+ * 現在のフィード（と記事）を削除し、デフォルトフィードを再投入する。
+ * オンボは完了済みのままなので FirstRunScreen は出ない。取得は呼び出し側で行う。
+ * @param lang 投入する言語（アプリの言語設定を渡す）
+ */
+export async function resetFeedsToDefault(lang?: 'ja' | 'en'): Promise<void> {
+  deleteAllFromTables(['articles', 'feeds']);
+  // SEED_KEY を消して seedDefaultFeeds を再実行可能にする（FILTER/ONBOARDING は保持）。
+  await AsyncStorage.removeItem(SEED_KEY);
+  await seedDefaultFeeds(lang);
 }
 
 /**
@@ -313,21 +331,25 @@ export async function seedFiltersFromTopics(keywords: string[]): Promise<void> {
 }
 
 /**
- * デフォルトフィードを初回起動時のみ登録する（スキップ時・既存ユーザー用）
+ * デフォルトフィードを初回起動時のみ登録する。
+ * @param lang 投入する言語。未指定ならデバイスのロケールから判定（アプリの言語設定を
+ *   反映させたい場合は呼び出し側から渡すこと）。
  */
-export async function seedDefaultFeeds(): Promise<void> {
+export async function seedDefaultFeeds(lang?: 'ja' | 'en'): Promise<void> {
   const seeded = await AsyncStorage.getItem(SEED_KEY);
   if (seeded) return;
 
-  const feeds = getDefaultFeedsFlat(isJapaneseLocale() ? 'ja' : 'en');
+  const resolvedLang = lang ?? (isJapaneseLocale() ? 'ja' : 'en');
+  const feeds = getDefaultFeedsFlat(resolvedLang);
   const database = openDatabase();
   const createdAt = Math.floor(Date.now() / 1000);
 
   database.withTransactionSync(() => {
     feeds.forEach((feed, index) => {
+      // 旧オンボードと同様に Google ファビコンURLを付与する（null だと新聞プレースホルダになる）
       database.runSync(
         'INSERT OR IGNORE INTO feeds (id, title, url, icon_url, order_no, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [feed.id, feed.title, feed.url, null, index + 1, createdAt]
+        [feed.id, feed.title, feed.url, getFaviconUrl(feed.url) || null, index + 1, createdAt]
       );
     });
   });

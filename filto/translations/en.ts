@@ -2,6 +2,13 @@
  * 英語翻訳ファイル
  */
 export const en = {
+  // First launch
+  firstRun: {
+    title: 'Less noise. More reading.',
+    caption: "Hide articles and sites you don't want to see with a swipe or a long press.",
+    preparing: 'Preparing your articles...',
+    ready: 'Ready!',
+  },
   // Common
   common: {
     cancel: 'Cancel',
@@ -267,6 +274,12 @@ export const en = {
     deleteInProgress: 'Deleting...',
     deleteComplete: 'Deleted {{count}} articles',
     deleteError: 'Failed to delete articles',
+    sectionReset: 'Reset',
+    resetFeeds: 'Restore default feeds',
+    resetFeedsHint: 'Delete your current feeds and restore the default set. Your filters and display settings are kept.',
+    confirmResetFeeds: 'Delete your current feeds and restore the defaults. Your filters and display settings are kept.\nContinue?',
+    resetFeedsConfirm: 'Reset',
+    resetFeedsComplete: 'Default feeds restored.',
     resetAllData: 'Reset All Data',
     confirmResetAll: 'Delete all feeds, articles, filters, and settings?\nThis action cannot be undone.',
     resetInProgress: 'Resetting...',

@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
-import { resetAllData } from '@/database/init';
+import { resetAllData, resetFeedsToDefault } from '@/database/init';
 import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
 import { BackgroundSync } from '@/services/BackgroundSync';
@@ -30,7 +30,7 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { Toggle } from '@/components/Toggle';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { useTranslation } from '@/providers/language';
+import { useTranslation, useLanguage } from '@/providers/language';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 
@@ -251,6 +251,7 @@ const ManualDeleteModal: React.FC<{
 export default function DataManagementScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const arrowColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
   const [articleRetentionDays, setArticleRetentionDays] = useState(30);
@@ -578,6 +579,36 @@ export default function DataManagementScreen() {
     }
   };
 
+  // フィードだけをデフォルトに戻す（フィルタ・表示設定は残す）。その場で再seed＋取得し、
+  // オンボGIFは出さない。フィルタの全削除はフィルタ画面で行えるため対象外。
+  const handleResetFeeds = () => {
+    Alert.alert(
+      t('dataManagement.resetFeeds'),
+      t('dataManagement.confirmResetFeeds'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('dataManagement.resetFeedsConfirm'),
+          style: 'destructive',
+          onPress: async () => {
+            setIsResetting(true);
+            try {
+              SyncService.cancelOngoing();
+              await resetFeedsToDefault(language === 'ja' ? 'ja' : 'en');
+              // 新しいデフォルトフィードの記事を取得（明示操作なので WiFi 限定は無視）
+              await SyncService.refresh({ ignoreWifiOnly: true });
+              Alert.alert(t('common.done'), t('dataManagement.resetFeedsComplete'));
+            } catch (_) {
+              Alert.alert(t('common.error'), t('dataManagement.resetError'));
+            } finally {
+              setIsResetting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleResetAllData = () => {
     Alert.alert(
       t('dataManagement.resetAllData'),
@@ -698,6 +729,13 @@ export default function DataManagementScreen() {
         <SettingSection title={t('dataManagement.sectionMinRefresh')}>
           <Dropdown label={t('dataManagement.minRefreshThrottle')} value={getMinRefreshLabel()} onPress={() => setMinRefreshDropdownVisible(true)} />
           <ThemedText style={styles.sectionHint}>{t('dataManagement.minRefreshHint')}</ThemedText>
+        </SettingSection>
+
+        <SettingSection title={t('dataManagement.sectionReset')}>
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleResetFeeds} activeOpacity={0.7} disabled={isResetting}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.resetFeeds')}</ThemedText>
+          </TouchableOpacity>
+          <ThemedText style={styles.sectionHint}>{t('dataManagement.resetFeedsHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.opmlImportExport')}>

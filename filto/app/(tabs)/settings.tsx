@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,11 +7,6 @@ import type { ComponentProps } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
-import { restartOnboarding } from '@/utils/onboarding';
-import { resetFeedsAndFilters } from '@/database/init';
-import { SyncService } from '@/services/SyncService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StorageKeys } from '@/constants/storageKeys';
 
 interface MenuItem {
   id: string;
@@ -75,7 +70,6 @@ export default function SettingsScreen() {
     // 一般設定グループ（使い方・表示方針の選び直し）
     { id: 'global_allow_keywords', title: t('settings.globalAllowKeywords'), ionIcon: 'list-outline' },
     { id: 'display_behavior', title: t('settings.displayBehavior'), ionIcon: 'eye-outline' },
-    { id: 'replay_tour', title: t('settings.replayTour'), ionIcon: 'play-circle-outline' },
     // データ・システムグループ（区切りで分ける）
     { id: 'data_management', title: t('settings.dataManagement'), ionIcon: 'server-outline', sectionBreak: true },
     { id: 'pro', title: 'Pro', ionIcon: 'star-outline', disabled: true },
@@ -92,27 +86,6 @@ export default function SettingsScreen() {
         break;
       case 'data_management':
         router.push('/data_management');
-        break;
-      case 'replay_tour':
-        Alert.alert(
-          t('settings.replayTourConfirmTitle'),
-          t('settings.replayTourConfirmMessage'),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: t('settings.replayTourConfirmButton'),
-              style: 'destructive',
-              onPress: async () => {
-                // 実行中の同期を止めてから消す（削除済みフィードへの記事書き込みを防ぐ）
-                SyncService.cancelOngoing();
-                await resetFeedsAndFilters();
-                // 再生ツアーであることを記録（ホームのツアーでスキップボタンを出すため）
-                await AsyncStorage.setItem(StorageKeys.tourIsReplay, '1');
-                restartOnboarding();
-              },
-            },
-          ]
-        );
         break;
       case 'pro':
         // 無効化されているので何もしない
