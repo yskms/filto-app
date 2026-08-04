@@ -169,6 +169,8 @@ export const en = {
     sortTitleDesc: 'Title (Z-A)',
     sortUrlAsc: 'URL (A-Z)',
     sortUrlDesc: 'URL (Z-A)',
+    sortReadDesc: 'Read count (Most first)',
+    sortReadAsc: 'Read count (Least first)',
     manageFeeds: 'Manage Feeds',
     urlRequired: 'Please enter URL',
     invalidUrl: 'Please enter a valid URL',

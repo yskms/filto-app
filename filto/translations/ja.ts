@@ -169,6 +169,8 @@ export const ja = {
       sortTitleDesc: 'タイトル (Z-A)',
       sortUrlAsc: 'URL (昇順)',
       sortUrlDesc: 'URL (降順)',
+      sortReadDesc: '既読数 (多い順)',
+      sortReadAsc: '既読数 (少ない順)',
       manageFeeds: 'フィードを管理',
       urlRequired: 'URLを入力してください',
       invalidUrl: '有効なURLを入力してください',
