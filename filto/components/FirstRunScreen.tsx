@@ -27,8 +27,8 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
   const { language } = useLanguage();
   // 言語に合わせて GIF を出し分ける（require は静的パスが必要なので三項で選ぶ）。
   const gifSource = language === 'ja'
-    ? require('../assets/onboarding-hide.gif')
-    : require('../assets/onboarding-hide-en.gif');
+    ? require('../assets/onboarding-hide.webp')
+    : require('../assets/onboarding-hide-en.webp');
 
   useEffect(() => {
     let cancelled = false;
