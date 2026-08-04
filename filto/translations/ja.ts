@@ -278,7 +278,7 @@ export const ja = {
       resetFeeds: 'フィードをデフォルトに戻す',
       resetFeedsHint: '現在のフィードを削除して、デフォルトのフィードを入れ直します。フィルタや表示設定は残ります。',
       confirmResetFeeds: '現在のフィードを削除して、デフォルトのフィードに戻します。フィルタや表示設定は残ります。\nよろしいですか?',
-      resetFeedsConfirm: '戻す',
+      resetFeedsConfirm: '実行',
       resetFeedsComplete: 'フィードをデフォルトに戻しました。',
       resetAllData: 'すべてのデータをリセット',
       confirmResetAll: 'すべてのフィード、記事、フィルタ、設定を削除しますか?\nこの操作は取り消せません。',

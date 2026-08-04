@@ -278,7 +278,7 @@ export const en = {
     resetFeeds: 'Restore default feeds',
     resetFeedsHint: 'Delete your current feeds and restore the default set. Your filters and display settings are kept.',
     confirmResetFeeds: 'Delete your current feeds and restore the defaults. Your filters and display settings are kept.\nContinue?',
-    resetFeedsConfirm: 'Restore',
+    resetFeedsConfirm: 'Reset',
     resetFeedsComplete: 'Default feeds restored.',
     resetAllData: 'Reset All Data',
     confirmResetAll: 'Delete all feeds, articles, filters, and settings?\nThis action cannot be undone.',

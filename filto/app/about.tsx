@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -44,7 +45,7 @@ export default function AboutScreen() {
         <AboutHeader onPressBack={() => router.back()} />
         <View style={[styles.content, { backgroundColor }]}>
           <ThemedText style={styles.appName}>Filto</ThemedText>
-          <ThemedText style={styles.version}>{t('settings.version')} 1.0.0</ThemedText>
+          <ThemedText style={styles.version}>{t('settings.version')} {Constants.expoConfig?.version ?? ''}</ThemedText>
           <ThemedText style={styles.description}>
             {t('about.description')}
           </ThemedText>
