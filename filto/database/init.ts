@@ -318,13 +318,16 @@ export async function seedFiltersFromTopics(keywords: string[]): Promise<void> {
 }
 
 /**
- * デフォルトフィードを初回起動時のみ登録する（スキップ時・既存ユーザー用）
+ * デフォルトフィードを初回起動時のみ登録する。
+ * @param lang 投入する言語。未指定ならデバイスのロケールから判定（アプリの言語設定を
+ *   反映させたい場合は呼び出し側から渡すこと）。
  */
-export async function seedDefaultFeeds(): Promise<void> {
+export async function seedDefaultFeeds(lang?: 'ja' | 'en'): Promise<void> {
   const seeded = await AsyncStorage.getItem(SEED_KEY);
   if (seeded) return;
 
-  const feeds = getDefaultFeedsFlat(isJapaneseLocale() ? 'ja' : 'en');
+  const resolvedLang = lang ?? (isJapaneseLocale() ? 'ja' : 'en');
+  const feeds = getDefaultFeedsFlat(resolvedLang);
   const database = openDatabase();
   const createdAt = Math.floor(Date.now() / 1000);
 

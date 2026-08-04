@@ -9,7 +9,7 @@ import { SyncService } from '@/services/SyncService';
 import { StorageKeys } from '@/constants/storageKeys';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { useTranslation } from '@/providers/language';
+import { useTranslation, useLanguage } from '@/providers/language';
 
 /**
  * 初回起動画面。選択式オンボーディング＋コーチツアーは廃止し、
@@ -24,13 +24,15 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#f5f5f7', dark: '#1c1d1f' }, 'background');
   const { t } = useTranslation();
+  const { language } = useLanguage();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         // デフォルトフィードを投入（初期フィルタは入れない）。冪等。
-        await seedDefaultFeeds();
+        // デバイスロケールではなくアプリの言語設定に合わせる。
+        await seedDefaultFeeds(language === 'ja' ? 'ja' : 'en');
         await AsyncStorage.setItem(StorageKeys.onboardingCompleted, 'true');
         // 記事を取得（オフライン等で失敗しても先へ進める）。
         try {
@@ -46,6 +48,8 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
     return () => {
       cancelled = true;
     };
+    // マウント時の言語で1回だけ実行する（言語変更で再seedさせない）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 「準備ができました」を少し見せてからホームへ遷移する。
