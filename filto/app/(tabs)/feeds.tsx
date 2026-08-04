@@ -206,12 +206,10 @@ const FeedItem = React.memo(function FeedItem({
   } = colors;
   const { t } = useTranslation();
 
-  // 既読シグナルの見た目。多くのフィードが未読になりがちなので「全く読んでいない」は
-  // 警告色（赤）ではなく落ち着いたグレーにして、緑（よく読む）を主役にする。
+  // 既読シグナルの見た目。緑（よく読む）を主役にし、「全く読んでいない」は警告色（赤）
+  // ではなく落ち着いたグレーにして情報として添える程度にする。
   const signalView = signal === 'often'
     ? { color: '#2e7d5b', bg: 'rgba(52,199,89,0.16)', icon: 'flame' as const, label: t('feeds.signalOften') }
-    : signal === 'rarely'
-    ? { color: '#b7791f', bg: 'rgba(245,158,11,0.16)', icon: 'trending-down' as const, label: t('feeds.signalRarely') }
     : signal === 'never'
     ? { color: subtextColor, bg: 'rgba(128,128,128,0.14)', icon: 'remove-circle-outline' as const, label: t('feeds.signalNever') }
     : null;
@@ -440,16 +438,16 @@ export default function FeedsScreen() {
     try {
       const feedList = await FeedService.listWithSort(currentSort);
       setFeeds(feedList);
-      // 既読シグナル（よく読む/あまり読まない/全く読んでいない）を算出。
-      // 全体の既読数がまだ少ないうち（初回DL直後など）は傾向が出ないので一切出さない。
+      // 既読シグナルを算出。「よく読む」は読めばすぐ出すが、「全く読んでいない」は
+      // 全体の既読数がまだ少ないうち（初回DL直後など）は大半が未読で無意味なので出さない。
       const stats = await ArticleService.getReadStatsByFeed();
       const totalRead = [...stats.values()].reduce((sum, s) => sum + s.read, 0);
+      const showNever = totalRead >= MIN_TOTAL_READ_FOR_SIGNALS;
       const map = new Map<string, FeedReadSignal>();
-      if (totalRead >= MIN_TOTAL_READ_FOR_SIGNALS) {
-        for (const feed of feedList) {
-          const s = stats.get(feed.id);
-          map.set(feed.id, feedReadSignal(s?.total ?? 0, s?.read ?? 0));
-        }
+      for (const feed of feedList) {
+        const s = stats.get(feed.id);
+        const sig = feedReadSignal(s?.total ?? 0, s?.read ?? 0);
+        map.set(feed.id, sig === 'never' && !showNever ? null : sig);
       }
       setSignals(map);
     } catch (_) {
