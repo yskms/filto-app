@@ -264,6 +264,19 @@ export async function resetFeedsAndFilters(): Promise<void> {
 }
 
 /**
+ * フィードだけをデフォルトに戻す（フィルタ・表示設定は残す）。
+ * 現在のフィード（と記事）を削除し、デフォルトフィードを再投入する。
+ * オンボは完了済みのままなので FirstRunScreen は出ない。取得は呼び出し側で行う。
+ * @param lang 投入する言語（アプリの言語設定を渡す）
+ */
+export async function resetFeedsToDefault(lang?: 'ja' | 'en'): Promise<void> {
+  deleteAllFromTables(['articles', 'feeds']);
+  // SEED_KEY を消して seedDefaultFeeds を再実行可能にする（FILTER/ONBOARDING は保持）。
+  await AsyncStorage.removeItem(SEED_KEY);
+  await seedDefaultFeeds(lang);
+}
+
+/**
  * オンボーディング完了済みかどうかを判定する（既存ユーザーも含む）
  */
 export async function isOnboardingComplete(): Promise<boolean> {
