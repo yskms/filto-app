@@ -19,6 +19,8 @@ import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { useToast } from '@/providers/toast';
+import { ArticleService } from '@/services/ArticleService';
+import { FeedReadSignal, feedReadSignal } from '@/utils/feedReadSignal';
 
 // 選択モード: なし / 複数削除 / 複数非表示
 type SelectionMode = 'none' | 'delete' | 'hide';
@@ -163,6 +165,7 @@ type FeedItemColors = {
 type FeedItemProps = {
   feed: Feed;
   colors: FeedItemColors;
+  signal: FeedReadSignal;
   isSelectionMode: boolean;
   isSelected: boolean;
   getIsSwipeOpen: () => boolean;
@@ -180,6 +183,7 @@ type FeedItemProps = {
 const FeedItem = React.memo(function FeedItem({
   feed,
   colors,
+  signal,
   isSelectionMode,
   isSelected,
   getIsSwipeOpen,
@@ -200,6 +204,16 @@ const FeedItem = React.memo(function FeedItem({
     selectedBgColor,
     iconPlaceholderBg,
   } = colors;
+  const { t } = useTranslation();
+
+  // 既読シグナルの見た目（緑=よく読む / 琥珀=あまり読まない / 赤系=全く読んでいない）
+  const signalView = signal === 'often'
+    ? { color: '#2e7d5b', bg: 'rgba(52,199,89,0.16)', icon: 'flame' as const, label: t('feeds.signalOften') }
+    : signal === 'rarely'
+    ? { color: '#b7791f', bg: 'rgba(245,158,11,0.16)', icon: 'trending-down' as const, label: t('feeds.signalRarely') }
+    : signal === 'never'
+    ? { color: '#c0392b', bg: 'rgba(192,57,43,0.14)', icon: 'remove-circle-outline' as const, label: t('feeds.signalNever') }
+    : null;
 
   // スワイプは「非表示/表示」の切り替え（非破壊）。削除は編集画面・複数削除モードに集約した。
   const renderRightActions = () => {
@@ -249,6 +263,12 @@ const FeedItem = React.memo(function FeedItem({
         <View style={styles.feedTextContainer}>
           <Text style={[styles.feedTitle, { color: textColor }]}>{feed.title}</Text>
           <Text style={[styles.feedUrl, { color: subtextColor }]}>{feed.url}</Text>
+          {signalView && (
+            <View style={[styles.signalBadge, { backgroundColor: signalView.bg }]}>
+              <Ionicons name={signalView.icon} size={11} color={signalView.color} />
+              <Text style={[styles.signalText, { color: signalView.color }]}>{signalView.label}</Text>
+            </View>
+          )}
         </View>
       </View>
       {feed.hiddenFromHome && !isSelectionMode && (
@@ -283,6 +303,7 @@ const FeedItem = React.memo(function FeedItem({
 }, (prev, next) =>
   prev.feed === next.feed &&
   prev.colors === next.colors &&
+  prev.signal === next.signal &&
   prev.isSelectionMode === next.isSelectionMode &&
   prev.isSelected === next.isSelected
 );
@@ -292,6 +313,7 @@ export default function FeedsScreen() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [feeds, setFeeds] = useState<Feed[]>([]);
+  const [signals, setSignals] = useState<Map<string, FeedReadSignal>>(new Map());
   const [mode, setMode] = useState<SelectionMode>('none');
   const isSelectionMode = mode !== 'none';
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -417,6 +439,14 @@ export default function FeedsScreen() {
     try {
       const feedList = await FeedService.listWithSort(currentSort);
       setFeeds(feedList);
+      // 既読シグナル（よく読む/あまり読まない/全く読んでいない）を算出
+      const stats = await ArticleService.getReadStatsByFeed();
+      const map = new Map<string, FeedReadSignal>();
+      for (const feed of feedList) {
+        const s = stats.get(feed.id);
+        map.set(feed.id, feedReadSignal(s?.total ?? 0, s?.read ?? 0));
+      }
+      setSignals(map);
     } catch (_) {
       ErrorHandler.showLoadError(t);
     }
@@ -652,6 +682,7 @@ export default function FeedsScreen() {
               <FeedItem
                 feed={item}
                 colors={feedItemColors}
+                signal={signals.get(item.id) ?? null}
                 isSelectionMode={isSelectionMode}
                 isSelected={selectedIds.has(item.id)}
                 getIsSwipeOpen={() => openSwipeIdRef.current === item.id}
@@ -782,6 +813,20 @@ const styles = StyleSheet.create({
   },
   feedContentHidden: {
     opacity: 0.45,
+  },
+  signalBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  signalText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   hiddenIndicator: {
     marginLeft: 12,
