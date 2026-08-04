@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
-import { resetAllData } from '@/database/init';
+import { resetAllData, resetFeedsAndFilters } from '@/database/init';
 import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
 import { BackgroundSync } from '@/services/BackgroundSync';
@@ -578,6 +578,34 @@ export default function DataManagementScreen() {
     }
   };
 
+  // フィード・フィルタを初期状態（デフォルト）に戻す。表示設定などは残すスコープ付きリセット。
+  // 完了後は初回フロー（FirstRunScreen）が走り、デフォルトフィードを再投入する。
+  const handleResetFeedsAndFilters = () => {
+    Alert.alert(
+      t('dataManagement.resetFeeds'),
+      t('dataManagement.confirmResetFeeds'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('dataManagement.resetFeedsConfirm'),
+          style: 'destructive',
+          onPress: async () => {
+            setIsResetting(true);
+            try {
+              SyncService.cancelOngoing();
+              await resetFeedsAndFilters();
+              restartOnboarding();
+            } catch (_) {
+              Alert.alert(t('common.error'), t('dataManagement.resetError'));
+            } finally {
+              setIsResetting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleResetAllData = () => {
     Alert.alert(
       t('dataManagement.resetAllData'),
@@ -735,6 +763,9 @@ export default function DataManagementScreen() {
 
 
         <SettingSection title="">
+          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleResetFeedsAndFilters} activeOpacity={0.7} disabled={isResetting}>
+            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.resetFeeds')}</ThemedText>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.resetRow} onPress={handleResetAllData} activeOpacity={0.7} disabled={isResetting}>
             <ThemedText style={styles.resetText}>{t('dataManagement.resetAllData')}</ThemedText>
           </TouchableOpacity>
