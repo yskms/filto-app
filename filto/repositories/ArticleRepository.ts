@@ -203,6 +203,22 @@ export const ArticleRepository = {
   },
 
   /**
+   * フィード毎の既読統計（保持期間内の記事に対する総数・既読数）を取得する。
+   * 「よく読む / あまり読まない / 全く読んでいない」の判定に使う。
+   */
+  async getReadStatsByFeed(): Promise<Map<string, { total: number; read: number }>> {
+    const db = openDatabase();
+    const rows = db.getAllSync<{ feed_id: string; total: number; read: number }>(
+      'SELECT feed_id, COUNT(*) as total, SUM(is_read) as read FROM articles GROUP BY feed_id'
+    );
+    const map = new Map<string, { total: number; read: number }>();
+    for (const r of rows) {
+      map.set(r.feed_id, { total: r.total, read: r.read ?? 0 });
+    }
+    return map;
+  },
+
+  /**
    * お気に入りを切り替える
    */
   async toggleStarred(id: string): Promise<void> {

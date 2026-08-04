@@ -17,7 +17,9 @@ export type FeedSortType =
   | 'title_asc'
   | 'title_desc'
   | 'url_asc'
-  | 'url_desc';
+  | 'url_desc'
+  | 'read_desc'
+  | 'read_asc';
 
 interface FeedSortModalProps {
   visible: boolean;
@@ -40,6 +42,8 @@ export const FeedSortModal: React.FC<FeedSortModalProps> = ({
   const sortOptions: { type: FeedSortType; label: string }[] = [
     { type: 'created_at_desc', label: t('feeds.sortCreatedDesc') },
     { type: 'created_at_asc', label: t('feeds.sortCreatedAsc') },
+    { type: 'read_desc', label: t('feeds.sortReadDesc') },
+    { type: 'read_asc', label: t('feeds.sortReadAsc') },
     { type: 'title_asc', label: t('feeds.sortTitleAsc') },
     { type: 'title_desc', label: t('feeds.sortTitleDesc') },
     { type: 'url_asc', label: t('feeds.sortUrlAsc') },

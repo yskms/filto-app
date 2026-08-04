@@ -166,6 +166,13 @@ export const FeedRepository = {
       case 'url_desc':
         orderBy = 'url DESC';
         break;
+      // 既読数（フィード毎の既読記事数）で並べ替え。相関サブクエリで集計する。
+      case 'read_desc':
+        orderBy = '(SELECT COALESCE(SUM(is_read), 0) FROM articles WHERE articles.feed_id = feeds.id) DESC, created_at DESC';
+        break;
+      case 'read_asc':
+        orderBy = '(SELECT COALESCE(SUM(is_read), 0) FROM articles WHERE articles.feed_id = feeds.id) ASC, created_at DESC';
+        break;
     }
 
     const rows = db.getAllSync<{

@@ -76,4 +76,11 @@ export const ArticleService = {
   async getHiddenIds(): Promise<string[]> {
     return await ArticleRepository.getHiddenIds();
   },
+
+  /**
+   * フィード毎の既読統計を取得する（整理のシグナル用）
+   */
+  async getReadStatsByFeed(): Promise<Map<string, { total: number; read: number }>> {
+    return await ArticleRepository.getReadStatsByFeed();
+  },
 };
