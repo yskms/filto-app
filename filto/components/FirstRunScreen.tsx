@@ -25,6 +25,10 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
   const cardBg = useThemeColor({ light: '#f5f5f7', dark: '#1c1d1f' }, 'background');
   const { t } = useTranslation();
   const { language } = useLanguage();
+  // 言語に合わせて GIF を出し分ける（require は静的パスが必要なので三項で選ぶ）。
+  const gifSource = language === 'ja'
+    ? require('../assets/onboarding-hide.gif')
+    : require('../assets/onboarding-hide-en.gif');
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +69,7 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
         <ThemedText style={styles.title}>{t('firstRun.title')}</ThemedText>
         <View style={[styles.card, { backgroundColor: cardBg }]}>
           <Image
-            source={require('../assets/onboarding-hide.gif')}
+            source={gifSource}
             style={styles.gif}
             contentFit="contain"
             autoplay
