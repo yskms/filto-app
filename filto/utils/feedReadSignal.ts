@@ -10,8 +10,9 @@ const RARELY_RATIO = 0.2; // これ未満なら「あまり読まない」
 const MIN_SAMPLE = 5; // フィード単位で判定するのに必要な最低記事数（少数で赤にしない）
 
 // 全体の既読数がこれ未満のうちは、まだ傾向が出ないのでシグナルを一切出さない。
-// 初回DL直後は全フィードが未読で「全く読んでいない」（赤）になり驚かせるため。
-export const MIN_TOTAL_READ_FOR_SIGNALS = 10;
+// デフォルトフィード数（数十）に対して少なすぎると大半が未読判定になるため、
+// ある程度読んで傾向が出てから出す。閾値は調整可能。
+export const MIN_TOTAL_READ_FOR_SIGNALS = 25;
 
 export function feedReadSignal(total: number, read: number): FeedReadSignal {
   if (total < MIN_SAMPLE) return null; // 記事が少なすぎて判断材料にならない

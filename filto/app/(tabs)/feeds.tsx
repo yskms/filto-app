@@ -206,13 +206,14 @@ const FeedItem = React.memo(function FeedItem({
   } = colors;
   const { t } = useTranslation();
 
-  // 既読シグナルの見た目（緑=よく読む / 琥珀=あまり読まない / 赤系=全く読んでいない）
+  // 既読シグナルの見た目。多くのフィードが未読になりがちなので「全く読んでいない」は
+  // 警告色（赤）ではなく落ち着いたグレーにして、緑（よく読む）を主役にする。
   const signalView = signal === 'often'
     ? { color: '#2e7d5b', bg: 'rgba(52,199,89,0.16)', icon: 'flame' as const, label: t('feeds.signalOften') }
     : signal === 'rarely'
     ? { color: '#b7791f', bg: 'rgba(245,158,11,0.16)', icon: 'trending-down' as const, label: t('feeds.signalRarely') }
     : signal === 'never'
-    ? { color: '#c0392b', bg: 'rgba(192,57,43,0.14)', icon: 'remove-circle-outline' as const, label: t('feeds.signalNever') }
+    ? { color: subtextColor, bg: 'rgba(128,128,128,0.14)', icon: 'remove-circle-outline' as const, label: t('feeds.signalNever') }
     : null;
 
   // スワイプは「非表示/表示」の切り替え（非破壊）。削除は編集画面・複数削除モードに集約した。
