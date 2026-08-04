@@ -4,6 +4,7 @@ import * as Localization from 'expo-localization';
 
 import { getDefaultFeedsFlat } from '@/constants/defaultFeeds';
 import { StorageKeys, STORAGE_KEY_PREFIX } from '@/constants/storageKeys';
+import { getFaviconUrl } from '@/utils/feedUrl';
 
 const SEED_KEY = StorageKeys.defaultFeedsSeeded;
 const FILTER_SEED_KEY = StorageKeys.defaultFiltersSeeded;
@@ -329,9 +330,10 @@ export async function seedDefaultFeeds(): Promise<void> {
 
   database.withTransactionSync(() => {
     feeds.forEach((feed, index) => {
+      // 旧オンボードと同様に Google ファビコンURLを付与する（null だと新聞プレースホルダになる）
       database.runSync(
         'INSERT OR IGNORE INTO feeds (id, title, url, icon_url, order_no, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [feed.id, feed.title, feed.url, null, index + 1, createdAt]
+        [feed.id, feed.title, feed.url, getFaviconUrl(feed.url) || null, index + 1, createdAt]
       );
     });
   });
