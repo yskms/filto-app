@@ -4,8 +4,8 @@
 export const en = {
   // First launch
   firstRun: {
-    title: "See what you want.\nHide what you don't.",
-    caption: "Swipe or long-press to hide articles and sites you're not interested in. Grow a feed of only what you want to read.",
+    title: 'Less noise. More reading.',
+    caption: "Hide articles and sites you don't want to see with a swipe or a long press.",
     preparing: 'Preparing your articles...',
     ready: 'Ready!',
   },
