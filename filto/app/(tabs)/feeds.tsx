@@ -20,7 +20,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { useToast } from '@/providers/toast';
 import { ArticleService } from '@/services/ArticleService';
-import { FeedReadSignal, feedReadSignal } from '@/utils/feedReadSignal';
+import { FeedReadSignal, feedReadSignal, MIN_TOTAL_READ_FOR_SIGNALS } from '@/utils/feedReadSignal';
 
 // 選択モード: なし / 複数削除 / 複数非表示
 type SelectionMode = 'none' | 'delete' | 'hide';
@@ -439,12 +439,16 @@ export default function FeedsScreen() {
     try {
       const feedList = await FeedService.listWithSort(currentSort);
       setFeeds(feedList);
-      // 既読シグナル（よく読む/あまり読まない/全く読んでいない）を算出
+      // 既読シグナル（よく読む/あまり読まない/全く読んでいない）を算出。
+      // 全体の既読数がまだ少ないうち（初回DL直後など）は傾向が出ないので一切出さない。
       const stats = await ArticleService.getReadStatsByFeed();
+      const totalRead = [...stats.values()].reduce((sum, s) => sum + s.read, 0);
       const map = new Map<string, FeedReadSignal>();
-      for (const feed of feedList) {
-        const s = stats.get(feed.id);
-        map.set(feed.id, feedReadSignal(s?.total ?? 0, s?.read ?? 0));
+      if (totalRead >= MIN_TOTAL_READ_FOR_SIGNALS) {
+        for (const feed of feedList) {
+          const s = stats.get(feed.id);
+          map.set(feed.id, feedReadSignal(s?.total ?? 0, s?.read ?? 0));
+        }
       }
       setSignals(map);
     } catch (_) {
