@@ -1,0 +1,5 @@
+# ストア素材: gif/png は管理する。重い生の画面収録(mp4/mov)は管理しない。
+*.mp4
+*.mov
+Mov/
+.DS_Store
