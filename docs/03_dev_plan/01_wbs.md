@@ -587,6 +587,46 @@
 
 #### 残タスク（次期以降）
 - [ ] 記事一覧の並び順ルールで多様性を改善（1媒体1件まで／同一媒体を連続させない）
+  - ※ v1.3.0 で**棚上げ**（アプリが順序を決めるのは思想に合わないため）。下記 v1.3.0 参照
+
+---
+
+### v1.3.0（iOS / Android 審査通過・リリース済み 2026-08-06）
+
+> 方針転換: v1.2.0 で検討した「並び順による多様性」は棚上げ（`diversifyByFeed` は `feature/diversify-feed-order` に保存・未マージ）。代わりに **「引き算で育てる」整理UX**（表示/非表示の 0/1 のみ、ランキングには踏み込まない）へ舵を切った版。
+
+#### マージ済み（整理UX 一式 ①〜④）
+- [x] ① フィードのホーム非表示（ミュート）: `feeds.hidden_from_home`。フィード画面はスワイプ=非表示トグル・複数非表示モード・すべて選択
+- [x] フィルタ画面にも一括選択＋最適化（メモ化・色ハイスト・ref管理）を横展開
+- [x] ② 記事スワイプで非表示: `articles.is_hidden`（完全除外だが復元可能）。Undoトースト＋既存フィルタバーに統合した「除外N件・非表示M件[表示]」で復元
+- [x] ③ 記事の長押しメニュー（この記事/このサイトを非表示、`ArticleActionSheet`）＋お気に入りを左スワイプへ移設
+- [x] ④ フィード既読シグナル（🟢よく読む=既読数10以上 / ⚪全く読んでいない=淡いグレー）＋「既読数」並び替え（相関サブ `SUM(is_read)`）
+
+#### マージ済み（その他）
+- [x] 条件付きGET（ETag/Last-Modified）で通信量削減
+- [x] ホーム未更新バグ修正（`SyncService.onSyncComplete` でホーム自動再読込）
+- [x] オンボード刷新: 選択式＋コーチツアーを廃し、デフォルト自動投入＋「非表示にできる」GIF 1枚（`FirstRunScreen`）。seed は必ず残す
+- [x] 「初回設定やり直す」を廃止→データ管理に「フィードをデフォルトに戻す」（フィルタ・表示設定は残す）
+- [x] About のバージョンを `expo-constants` で動的表示（以後ズレない）
+- [x] オンボードGIF→アニメWebP軽量化（同梱 約6.1MB→2.6MB、320px＋フレーム間引き＋lossy）
+
+#### ビルド・提出
+- [x] `eas build --platform all --profile production --auto-submit`（appVersionSource: remote・autoIncrement）
+- [x] iOS build 16 → auto-submit → 審査**通過・公開**
+- [x] Android: 初回 `SERVER_ERROR`（ワーカーOOM/ネットワークの一時障害）で失敗 → **再ビルドで通過**（versionCode 16）→ auto-submit → 審査**通過・公開**
+- [x] リリースノート（日英、`docs/05_store/release_notes_v1.3.0.md`）
+
+#### 学び
+- Android `SERVER_ERROR "We've lost connection to the worker"` はコードでなくEASインフラの一時障害。iOSが同コードで成功していれば**再実行で通ることが多い**
+- デフォルトフィードの seed は **デバイスロケールでなくアプリの言語設定**で（英語設定で英語フィードが入らない不具合の原因）
+- seed 時に `icon_url` は `getFaviconUrl` で付ける（null だと全て新聞プレースホルダになる）
+- Swipeable のアクション内ボタンは **RNGH の RectButton/Touchable** を使う（react-native の TouchableOpacity は左アクションでタップを取りこぼす）。アクション幅80はコンテナ側に指定（dpなので端末差なし）
+- スワイプ後の状態更新は閉じアニメ後に遅延＋**明示的目標値**で更新（遅延とDBのトグルずれ防止）。`ToastContext` は `useMemo` 必須（consumer全体の再描画防止）
+- GIF は寸法縮小＋フレーム間引き＋lossy WebP で大幅減。expo-image はアニメWebP対応
+
+#### 残タスク（次期以降）
+- [ ] ⑤ 整理提案モーダル（「整理しますか？[あとで][見る]」＝押し付けない・数件だけ提案）
+- [ ] R8/ProGuard 有効化（`expo-build-properties`）＋実機で全機能テスト（minify のクラッシュ検証）。Play の推奨対応、1.3.1以降
 
 ---
 
