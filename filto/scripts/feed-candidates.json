@@ -2258,5 +2258,17 @@
     "url": "https://www.newsweekjapan.jp/story.rss",
     "exclude": true,
     "excludeReason": "RSS無し(404)"
+  },
+  {
+    "lang": "ja",
+    "category": "garden",
+    "title": "LOVEGREEN",
+    "url": "https://lovegreen.net/feed/"
+  },
+  {
+    "lang": "ja",
+    "category": "garden",
+    "title": "ガーデンストーリー",
+    "url": "https://gardenstory.jp/feed"
   }
 ]

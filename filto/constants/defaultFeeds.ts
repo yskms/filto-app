@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 74件 / EN 63件
+// 収録数: JA 76件 / EN 63件
 // ⚠️ このファイルは生成物。直接編集しない。追加/除外の手順は scripts/README.md を参照。
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
@@ -162,6 +162,14 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_nekonavi", title: "ねこナビ", url: "https://nekonavi.jp/feed" },
       { id: "default_ja_catster", title: "Catster", url: "https://www.catster.com/feed/" },
       { id: "default_ja_lovemeow", title: "Love Meow", url: "https://www.lovemeow.com/feeds/feed.rss" },
+    ],
+  },
+  {
+    id: "garden",
+    label: "ガーデニング・植物",
+    feeds: [
+      { id: "default_ja_lovegreen", title: "LOVEGREEN", url: "https://lovegreen.net/feed/" },
+      { id: "default_ja_gardenstory", title: "ガーデンストーリー", url: "https://gardenstory.jp/feed" },
     ],
   },
   {
