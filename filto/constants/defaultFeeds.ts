@@ -1,6 +1,7 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 72件 / EN 68件
+// 収録数: JA 74件 / EN 63件
+// ⚠️ このファイルは生成物。直接編集しない。追加/除外の手順は scripts/README.md を参照。
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
@@ -17,6 +18,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_dailyshincho", title: "デイリー新潮", url: "https://www.dailyshincho.jp/feed/" },
       { id: "default_ja_livedoor", title: "ライブドアニュース", url: "https://news.livedoor.com/topics/rss/top.xml" },
       { id: "default_ja_gendai", title: "現代ビジネス", url: "https://gendai.media/list/feed/rss" },
+      { id: "default_ja_bbci", title: "BBC News 日本語", url: "https://feeds.bbci.co.uk/japanese/rss.xml" },
     ],
   },
   {
@@ -60,6 +62,9 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_zenn", title: "Zenn", url: "https://zenn.dev/feed" },
       { id: "default_ja_infoq", title: "InfoQ Japan", url: "https://feed.infoq.com/jp/" },
       { id: "default_ja_qiita", title: "Qiita", url: "https://qiita.com/popular-items/feed" },
+      { id: "default_ja_zenn2", title: "Zenn React", url: "https://zenn.dev/topics/react/feed" },
+      { id: "default_ja_zenn3", title: "Zenn TypeScript", url: "https://zenn.dev/topics/typescript/feed" },
+      { id: "default_ja_zenn4", title: "Zenn Python", url: "https://zenn.dev/topics/python/feed" },
     ],
   },
   {
@@ -75,7 +80,15 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     label: "アニメ・マンガ",
     feeds: [
       { id: "default_ja_magmix", title: "マグミクス", url: "https://magmix.jp/feed" },
-      { id: "default_ja_otakuma", title: "おたくま経済新聞", url: "https://otakei.otakuma.net/feed" },
+      { id: "default_ja_otakuma", title: "おたくま経済新聞", url: "https://otakuma.net/feed" },
+    ],
+  },
+  {
+    id: "art",
+    label: "アート・イラスト",
+    feeds: [
+      { id: "default_ja_artnewsjapan", title: "ARTnews JAPAN", url: "https://artnewsjapan.com/feed" },
+      { id: "default_ja_pixivision", title: "pixivision", url: "https://www.pixivision.net/ja/rss" },
     ],
   },
   {
@@ -97,6 +110,14 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_sportiva", title: "Sportiva", url: "https://news.yahoo.co.jp/rss/media/sportiva/all.xml" },
       { id: "default_ja_basketcount", title: "バスケットカウント", url: "https://basket-count.com/feed" },
       { id: "default_ja_theans", title: "THE ANSWER", url: "https://the-ans.jp/feed" },
+    ],
+  },
+  {
+    id: "outdoor",
+    label: "釣り・アウトドア",
+    feeds: [
+      { id: "default_ja_tsurinews", title: "TSURINEWS", url: "https://tsurinews.jp/feed/" },
+      { id: "default_ja_tsurihack", title: "TSURI HACK", url: "https://tsurihack.com/feed" },
     ],
   },
   {
@@ -132,6 +153,15 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_tabilabo", title: "TABI LABO", url: "https://tabi-labo.com/feed" },
       { id: "default_ja_rocketnews24", title: "ロケットニュース24", url: "https://rocketnews24.com/feed/" },
       { id: "default_ja_lmaga", title: "Lmaga.jp", url: "https://news.yahoo.co.jp/rss/media/lmaga/all.xml" },
+    ],
+  },
+  {
+    id: "pets",
+    label: "ペット・動物",
+    feeds: [
+      { id: "default_ja_nekonavi", title: "ねこナビ", url: "https://nekonavi.jp/feed" },
+      { id: "default_ja_catster", title: "Catster", url: "https://www.catster.com/feed/" },
+      { id: "default_ja_lovemeow", title: "Love Meow", url: "https://www.lovemeow.com/feeds/feed.rss" },
     ],
   },
   {

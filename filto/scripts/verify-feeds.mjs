@@ -152,6 +152,9 @@ async function fetchText(url) {
 }
 
 async function verify(feed) {
+  // 不採用フィード(exclude:true)は取得しない。理由(excludeReason)を保ったまま素通しする。
+  // → dead URL を毎回fetchする無駄を回避。復活確認したい時だけ exclude を外して再verifyする。
+  if (feed.exclude) return { ...feed, status: 'EXCLUDED' };
   const r = await fetchText(feed.url);
   if (!r.ok) return { ...feed, status: 'FAIL', reason: r.reason };
   let parsed;

@@ -534,7 +534,9 @@
     "withThumb": 20,
     "checked": 20,
     "ratio": "1.00",
-    "feedTitle": "New Scientist - Home"
+    "feedTitle": "New Scientist - Home",
+    "exclude": true,
+    "excludeReason": "取得エラー(HTTP 406)"
   },
   {
     "lang": "en",
@@ -1066,7 +1068,9 @@
     "withThumb": 20,
     "checked": 20,
     "ratio": "1.00",
-    "feedTitle": "clicccar.com"
+    "feedTitle": "clicccar.com",
+    "exclude": true,
+    "excludeReason": "更新停止"
   },
   {
     "lang": "ja",
@@ -1644,7 +1648,9 @@
     "withThumb": 20,
     "checked": 20,
     "ratio": "1.00",
-    "feedTitle": "美的.com"
+    "feedTitle": "美的.com",
+    "exclude": true,
+    "excludeReason": "取得エラー"
   },
   {
     "lang": "ja",
@@ -1681,7 +1687,9 @@
     "withThumb": 20,
     "checked": 20,
     "ratio": "1.00",
-    "feedTitle": "kufura"
+    "feedTitle": "kufura",
+    "exclude": true,
+    "excludeReason": "取得エラー"
   },
   {
     "lang": "ja",
@@ -1929,7 +1937,9 @@
     "withThumb": 10,
     "checked": 10,
     "ratio": "1.00",
-    "feedTitle": "RoomClip mag | 暮らしとインテリアのwebマガジン"
+    "feedTitle": "RoomClip mag | 暮らしとインテリアのwebマガジン",
+    "exclude": true,
+    "excludeReason": "更新停止"
   },
   {
     "lang": "ja",
@@ -2031,7 +2041,9 @@
     "withThumb": 20,
     "checked": 20,
     "ratio": "1.00",
-    "feedTitle": "ライフスタイルメディア『grape』"
+    "feedTitle": "ライフスタイルメディア『grape』",
+    "exclude": true,
+    "excludeReason": "更新が遅く埋もれる"
   },
   {
     "lang": "ja",
@@ -2044,7 +2056,9 @@
     "withThumb": 18,
     "checked": 20,
     "ratio": "0.90",
-    "feedTitle": "GetNavi web ゲットナビ"
+    "feedTitle": "GetNavi web ゲットナビ",
+    "exclude": true,
+    "excludeReason": "取得エラー"
   },
   {
     "lang": "ja",
@@ -2958,7 +2972,9 @@
     "withThumb": 10,
     "checked": 20,
     "ratio": "0.50",
-    "feedTitle": "マガジンワールド"
+    "feedTitle": "マガジンワールド",
+    "exclude": true,
+    "excludeReason": "中身がほぼ無い（画像・本文なし）"
   },
   {
     "lang": "ja",
@@ -3010,7 +3026,9 @@
     "withThumb": 20,
     "checked": 20,
     "ratio": "1.00",
-    "feedTitle": "Self"
+    "feedTitle": "Self",
+    "exclude": true,
+    "excludeReason": "更新停止"
   },
   {
     "lang": "en",
@@ -3075,7 +3093,9 @@
     "withThumb": 20,
     "checked": 20,
     "ratio": "1.00",
-    "feedTitle": "Healthline News RSS Feed"
+    "feedTitle": "Healthline News RSS Feed",
+    "exclude": true,
+    "excludeReason": "記事に個別の公開日が無く(lastBuildDateのみ)ホーム上位を占拠する"
   },
   {
     "lang": "ja",
@@ -3088,7 +3108,9 @@
     "withThumb": 3,
     "checked": 5,
     "ratio": "0.60",
-    "feedTitle": "Triathlon LUMINA.com"
+    "feedTitle": "Triathlon LUMINA.com",
+    "exclude": true,
+    "excludeReason": "中身がほぼ無い（画像・本文なし）"
   },
   {
     "lang": "ja",
@@ -3101,7 +3123,9 @@
     "withThumb": 10,
     "checked": 10,
     "ratio": "1.00",
-    "feedTitle": "VOKKA  – ヴォッカ –"
+    "feedTitle": "VOKKA  – ヴォッカ –",
+    "exclude": true,
+    "excludeReason": "中身がほぼ無い（画像・本文なし）"
   },
   {
     "lang": "en",
@@ -3166,7 +3190,9 @@
     "withThumb": 20,
     "checked": 20,
     "ratio": "1.00",
-    "feedTitle": "Romper"
+    "feedTitle": "Romper",
+    "exclude": true,
+    "excludeReason": "米国育児ニッチで関連薄・やや古い"
   },
   {
     "lang": "en",
@@ -3244,7 +3270,9 @@
     "withThumb": 10,
     "checked": 10,
     "ratio": "1.00",
-    "feedTitle": "Travel Blog -"
+    "feedTitle": "Travel Blog -",
+    "exclude": true,
+    "excludeReason": "更新が遅く埋もれる"
   },
   {
     "lang": "en",
@@ -3302,7 +3330,7 @@
     "lang": "ja",
     "category": "anime",
     "title": "おたくま経済新聞",
-    "url": "https://otakei.otakuma.net/feed",
+    "url": "https://otakuma.net/feed",
     "status": "OK",
     "kind": "rss2",
     "items": 10,
@@ -3403,5 +3431,535 @@
     "checked": 20,
     "ratio": "1.00",
     "feedTitle": "朝時間.jp"
+  },
+  {
+    "lang": "ja",
+    "category": "dev",
+    "title": "Zenn React",
+    "url": "https://zenn.dev/topics/react/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 20,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "Zenn React"
+  },
+  {
+    "lang": "ja",
+    "category": "dev",
+    "title": "Zenn TypeScript",
+    "url": "https://zenn.dev/topics/typescript/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 20,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "Zenn TypeScript"
+  },
+  {
+    "lang": "ja",
+    "category": "dev",
+    "title": "Zenn Python",
+    "url": "https://zenn.dev/topics/python/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 20,
+    "withThumb": 19,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "Zenn Python"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "BBC News 日本語",
+    "url": "https://feeds.bbci.co.uk/japanese/rss.xml",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 38,
+    "withThumb": 38,
+    "checked": 38,
+    "ratio": "1.00",
+    "feedTitle": "BBC News 日本語"
+  },
+  {
+    "lang": "ja",
+    "category": "art",
+    "title": "ARTnews JAPAN",
+    "url": "https://artnewsjapan.com/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "ARTnews JAPAN"
+  },
+  {
+    "lang": "ja",
+    "category": "art",
+    "title": "pixivision",
+    "url": "https://www.pixivision.net/ja/rss",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 20,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "pixivision"
+  },
+  {
+    "lang": "ja",
+    "category": "outdoor",
+    "title": "TSURINEWS",
+    "url": "https://tsurinews.jp/feed/",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "TSURINEWS"
+  },
+  {
+    "lang": "ja",
+    "category": "outdoor",
+    "title": "TSURI HACK",
+    "url": "https://tsurihack.com/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 5,
+    "withThumb": 5,
+    "checked": 5,
+    "ratio": "1.00",
+    "feedTitle": "TSURI HACK"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "ねこナビ",
+    "url": "https://nekonavi.jp/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "ねこナビ"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "Catster",
+    "url": "https://www.catster.com/feed/",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "Catster"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "Love Meow",
+    "url": "https://www.lovemeow.com/feeds/feed.rss",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 30,
+    "withThumb": 30,
+    "checked": 30,
+    "ratio": "1.00",
+    "feedTitle": "Love Meow"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "フェリシモ猫部",
+    "url": "https://www.nekobu.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "ねこちゃんホンポ",
+    "url": "https://nekochan.jp/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し/ブロック(404/403)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "猫ジャーナル(necojournal)",
+    "url": "https://necojournal.com/feed",
+    "exclude": true,
+    "excludeReason": "更新停止(約4ヶ月)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "ねこわら",
+    "url": "https://nekowara.com/feed",
+    "exclude": true,
+    "excludeReason": "更新停止(1年以上)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "sippo(朝日)",
+    "url": "https://sippo.asahi.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "ペトこと(PETOKOTO)",
+    "url": "https://petokoto.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "PECO",
+    "url": "https://peco-japan.com/feed",
+    "exclude": true,
+    "excludeReason": "フィードに記事なし",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "cat-press",
+    "url": "https://cat-press.com/feed",
+    "exclude": true,
+    "excludeReason": "取得エラー(500)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "いぬなび",
+    "url": "https://inunavi.com/feed",
+    "exclude": true,
+    "excludeReason": "取得エラー(接続不可)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "わんちゃんホンポ",
+    "url": "https://wanchan.jp/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "PETPEDIA",
+    "url": "https://petpedia.net/feed",
+    "exclude": true,
+    "excludeReason": "更新停止(約2年半)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "みんなのペットライフ",
+    "url": "https://minnanopetlife.com/feed",
+    "exclude": true,
+    "excludeReason": "取得エラー(接続不可)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "mofmo",
+    "url": "https://mofmo.jp/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "pets",
+    "title": "nekomemo",
+    "url": "https://nekomemo.com/feed",
+    "exclude": true,
+    "excludeReason": "別サイト(猫専門でない)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "pets",
+    "title": "The Dodo",
+    "url": "https://www.thedodo.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(記事0)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "pets",
+    "title": "iHeartDogs",
+    "url": "https://iheartdogs.com/feed",
+    "exclude": true,
+    "excludeReason": "要リダイレクト(実機取得失敗/末尾スラッシュ必須)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "pets",
+    "title": "Katzenworld",
+    "url": "https://katzenworld.co.uk/feed",
+    "exclude": true,
+    "excludeReason": "更新遅い(約2ヶ月)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "pets",
+    "title": "PetMD",
+    "url": "https://www.petmd.com/rss.xml",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "outdoor",
+    "title": "ルアマガ+",
+    "url": "https://www.lure-mag.com/feed",
+    "exclude": true,
+    "excludeReason": "接続不可",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "outdoor",
+    "title": "ANGLERS",
+    "url": "https://anglers.jp/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "outdoor",
+    "title": "釣りビジョン",
+    "url": "https://www.fishing-v.jp/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "outdoor",
+    "title": "ルアーニュース",
+    "url": "https://lure-news.jp/feed",
+    "exclude": true,
+    "excludeReason": "接続不可",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "outdoor",
+    "title": "釣りメディアGyoGyo",
+    "url": "https://gyogyo.club/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "anime",
+    "title": "Anime News Network",
+    "url": "https://www.animenewsnetwork.com/all/rss.xml",
+    "exclude": true,
+    "excludeReason": "画像なし",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "ねとらぼ(旧URL)",
+    "url": "https://rss.itmedia.co.jp/rss/2.0/nlab.xml",
+    "exclude": true,
+    "excludeReason": "記事0(不正URL)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "映画.com アニメ",
+    "url": "https://anime.eiga.com/rss/news/",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "WebNewtype",
+    "url": "https://webnewtype.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "アキバ総研",
+    "url": "https://akiba-souken.com/rss/anime/",
+    "exclude": true,
+    "excludeReason": "接続不可",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "anime",
+    "title": "Crunchyroll News",
+    "url": "https://www.crunchyroll.com/news/rss",
+    "exclude": true,
+    "excludeReason": "取得エラー(403)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "ORICON アニメ",
+    "url": "https://www.oricon.co.jp/rss/news/anime.xml",
+    "exclude": true,
+    "excludeReason": "RSS無し(410)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "anime",
+    "title": "電撃オンライン",
+    "url": "https://dengekionline.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "art",
+    "title": "美術手帖",
+    "url": "https://bijutsutecho.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "art",
+    "title": "Tokyo Art Beat",
+    "url": "https://www.tokyoartbeat.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "ヨガジャーナルonline",
+    "url": "https://yogajournal.jp/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "YOGA HACK",
+    "url": "https://www.yoga-hack.com/feed",
+    "exclude": true,
+    "excludeReason": "接続不可",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "DoYouYoga",
+    "url": "https://www.doyouyoga.com/feed/",
+    "exclude": true,
+    "excludeReason": "接続不可",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Yoga International",
+    "url": "https://yogainternational.com/feed",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "en",
+    "category": "fitness",
+    "title": "Yoga Journal(EN)",
+    "url": "https://www.yogajournal.com/feed/",
+    "exclude": true,
+    "excludeReason": "要リダイレクト(?scope=anon)/JAはMELOS等で代替",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "fitness",
+    "title": "筋トレキャンプ",
+    "url": "https://kintorecamp.com/feed",
+    "exclude": true,
+    "excludeReason": "記事0",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Google News(キーワード)",
+    "url": "https://news.google.com/rss/search",
+    "exclude": true,
+    "excludeReason": "画像なし",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "AFPBB",
+    "url": "https://www.afpbb.com/rdf/rss/all",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "CNN.co.jp",
+    "url": "https://www.cnn.co.jp/rss/news.rdf",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Newsweek Japan",
+    "url": "https://www.newsweekjapan.jp/story.rss",
+    "exclude": true,
+    "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
   }
 ]
