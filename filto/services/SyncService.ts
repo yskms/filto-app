@@ -10,7 +10,7 @@ import * as Network from 'expo-network';
  * フィード取得の同時実行数。直列だとネットワーク待ちがフィード数ぶん積み上がるため
  * 並列で取る。増やすほど速いが、回線・相手サーバへの負荷とメモリが増えるので上限を設ける。
  */
-const FETCH_CONCURRENCY = 6;
+const FETCH_CONCURRENCY = 10;
 
 /**
  * WiFi以外の接続（モバイル回線など）かどうか。
@@ -181,19 +181,15 @@ export const SyncService = {
               continue;
             }
 
-            // 保存前の記事数を取得
-            const beforeCount = (await ArticleService.getArticles(feed.id)).length;
-
-            // 保存（重複チェックは ArticleService 内で実施）
-            await ArticleService.saveArticles(feed.id, feed.title, result.articles);
+            // 保存（重複は INSERT OR IGNORE が弾き、実際の新規挿入件数が返る）。
+            // 以前は保存前後で全記事を2回ロードして差分を数えていたが、
+            // insertMany の戻り値で正確に分かるため撤廃（フィードあたり全件ロード3回→0回）。
+            const inserted = await ArticleService.saveArticles(feed.id, feed.title, result.articles);
 
             // 次回の条件付きGET用にバリデータを保存（無ければ null で上書き）
             await FeedService.setFetchState(feed.id, result.etag, result.lastModified);
 
-            // 保存後の記事数を取得
-            const afterCount = (await ArticleService.getArticles(feed.id)).length;
-
-            newArticles += afterCount - beforeCount;
+            newArticles += inserted;
             fetched++;
           } catch (_) {
             // フィード単位のエラーは握りつぶして継続
