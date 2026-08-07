@@ -3961,5 +3961,31 @@
     "exclude": true,
     "excludeReason": "RSS無し(404)",
     "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "garden",
+    "title": "LOVEGREEN",
+    "url": "https://lovegreen.net/feed/",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "LOVEGREEN"
+  },
+  {
+    "lang": "ja",
+    "category": "garden",
+    "title": "ガーデンストーリー",
+    "url": "https://gardenstory.jp/feed",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 10,
+    "withThumb": 10,
+    "checked": 10,
+    "ratio": "1.00",
+    "feedTitle": "ガーデンストーリー"
   }
 ]
