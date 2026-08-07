@@ -8,11 +8,11 @@
 import { readFileSync, writeFileSync } from 'fs';
 
 const CAT_ORDER = {
-  ja: ['news', 'tech', 'business', 'science', 'dev', 'game', 'anime', 'entertainment', 'sports', 'fitness', 'fashion', 'lifestyle', 'kids', 'food', 'auto', 'travel'],
+  ja: ['news', 'tech', 'business', 'science', 'dev', 'game', 'anime', 'art', 'entertainment', 'sports', 'outdoor', 'fitness', 'fashion', 'lifestyle', 'pets', 'kids', 'food', 'auto', 'travel'],
   en: ['world', 'tech', 'business', 'science', 'game', 'entertainment', 'sports', 'fitness', 'design', 'fashion', 'food', 'kids', 'auto', 'travel', 'culture'],
 };
 const LABELS = {
-  ja: { news: 'ニュース', tech: 'テクノロジー', business: 'ビジネス・マネー', science: 'サイエンス', dev: '開発・プログラミング', game: 'ゲーム', anime: 'アニメ・マンガ', entertainment: 'エンタメ・音楽', sports: 'スポーツ', fitness: 'フィットネス・健康', fashion: 'ファッション・美容', lifestyle: 'ライフスタイル', kids: '子育て・育児', food: 'グルメ・料理', auto: '自動車', travel: '旅行' },
+  ja: { news: 'ニュース', tech: 'テクノロジー', business: 'ビジネス・マネー', science: 'サイエンス', dev: '開発・プログラミング', game: 'ゲーム', anime: 'アニメ・マンガ', art: 'アート・イラスト', entertainment: 'エンタメ・音楽', sports: 'スポーツ', outdoor: '釣り・アウトドア', fitness: 'フィットネス・健康', fashion: 'ファッション・美容', lifestyle: 'ライフスタイル', pets: 'ペット・動物', kids: '子育て・育児', food: 'グルメ・料理', auto: '自動車', travel: '旅行' },
   en: { world: 'World News', tech: 'Technology', business: 'Business', science: 'Science', game: 'Gaming', entertainment: 'Entertainment', sports: 'Sports', fitness: 'Fitness & Health', design: 'Design', fashion: 'Fashion & Beauty', food: 'Food', kids: 'Parenting', auto: 'Auto', travel: 'Travel', culture: 'Culture' },
 };
 const GENERIC = new Set(['www', 'feeds', 'feed', 'rss', 'news', 'assets', 'wor', 'co', 'com', 'net', 'org', 'jp', 'uk', 'io', 'go', 'tokyo', 'media', 'or', 'ne', 'nikkeibp', 'content', 'public', 'hpplus', 'shogakukan', 'benesse', 'kusuguru', 'magazine']);
@@ -35,7 +35,10 @@ function slug(url) {
 const results = JSON.parse(readFileSync(new URL('./verify-results.json', import.meta.url)));
 // status==='OK'(取得+サムネあり) を基本採用。force:true は方針の例外として明示的に採用する
 // （例: Qiita はRSSにサムネを埋めないが、利用者要望によりfaviconフォールバックで収録）。
-const ok = results.filter((r) => r.status === 'OK' || r.force);
+// exclude:true は「採用しないフィード」（取得エラー・更新停止・画像なし・中身なし・重複・ニッチ等）。
+// 検証の成否に関わらず生成から除外する。理由は各エントリの excludeReason に記録（scripts/feed-candidates.json）。
+// これにより「調べたが不採用」の判断が恒久化され、再調査を防ぐ。
+const ok = results.filter((r) => (r.status === 'OK' || r.force) && !r.exclude);
 const seen = new Set();
 const feeds = ok.filter((r) => (seen.has(r.url) ? false : seen.add(r.url)));
 
@@ -64,6 +67,7 @@ const enN = feeds.filter((f) => f.lang === 'en').length;
 const content = `// 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
 // 収録数: JA ${jaN}件 / EN ${enN}件
+// ⚠️ このファイルは生成物。直接編集しない。追加/除外の手順は scripts/README.md を参照。
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
 export type DefaultFeedItem = { id: string; title: string; url: string };
