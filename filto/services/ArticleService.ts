@@ -28,8 +28,8 @@ export const ArticleService = {
     feedId: string,
     feedName: string,
     articles: Article[]
-  ): Promise<void> {
-    if (articles.length === 0) return;
+  ): Promise<number> {
+    if (articles.length === 0) return 0;
 
     // feedId と feedName を設定
     const articlesWithFeed = articles.map((article) => ({
@@ -38,21 +38,10 @@ export const ArticleService = {
       feedName,
     }));
 
-    // 既存記事を取得（重複チェック用）
-    const existingArticles = await ArticleRepository.listByFeed(feedId);
-    const existingLinks = new Set(existingArticles.map((a) => a.link));
-
-    // 重複を除外
-    const newArticles = articlesWithFeed.filter(
-      (article) => !existingLinks.has(article.link)
-    );
-
-    if (newArticles.length === 0) {
-      return;
-    }
-
-    // 保存
-    await ArticleRepository.insertMany(newArticles);
+    // 重複は UNIQUE(feed_id, link) により INSERT OR IGNORE が弾く。
+    // insertMany は実際に挿入された件数を返すため、事前の重複チェック
+    //（全記事のロード）は不要。新規挿入件数をそのまま返す。
+    return ArticleRepository.insertMany(articlesWithFeed);
   },
 
   /**
