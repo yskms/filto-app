@@ -11,6 +11,7 @@ import { ToastProvider } from '@/providers/toast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase, isOnboardingComplete } from '@/database/init';
 import FirstRunScreen from '@/components/FirstRunScreen';
+import InitErrorScreen from '@/components/InitErrorScreen';
 import { subscribeRestartOnboarding } from '@/utils/onboarding';
 // import 時にバックグラウンドタスクが定義される（グローバルスコープ登録のため）
 import { BackgroundSync } from '@/services/BackgroundSync';
@@ -47,14 +48,33 @@ function RootNavigation() {
 export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(false);
+  const [initError, setInitError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+    setDbReady(false);
+    setInitError(false);
     initDatabase()
       .then(isOnboardingComplete)
-      .then(setOnboardingDone)
-      .catch(() => setOnboardingDone(true))
-      .finally(() => setDbReady(true));
-  }, []);
+      .then((done) => {
+        if (cancelled) return;
+        setOnboardingDone(done);
+        setDbReady(true);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        // 初期化失敗を握り潰さない。以前は onboardingDone=true にして seed を飛ばし、
+        // 記事も設定も無い"壊れて見える"状態でホームを開いていた（新規インストールで発生）。
+        // 明示的にエラー画面を出して再試行させる（多くは一時的失敗で再試行/再起動で回復）。
+        console.warn('initDatabase failed', e);
+        setInitError(true);
+        setDbReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [retryCount]);
 
   // 保存済みの設定に合わせてバックグラウンド更新の登録状態を揃える（既定オン）
   useEffect(() => {
@@ -76,9 +96,11 @@ export default function RootLayout() {
     <AppThemeProvider>
       <LanguageProvider>
         <ToastProvider>
-          {onboardingDone
-            ? <RootNavigation />
-            : <FirstRunScreen onComplete={() => setOnboardingDone(true)} />}
+          {initError
+            ? <InitErrorScreen onRetry={() => setRetryCount((n) => n + 1)} />
+            : onboardingDone
+              ? <RootNavigation />
+              : <FirstRunScreen onComplete={() => setOnboardingDone(true)} />}
         </ToastProvider>
       </LanguageProvider>
     </AppThemeProvider>

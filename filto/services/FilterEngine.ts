@@ -22,7 +22,10 @@ export const FilterEngine = {
     if (globalAllowKeywords.length > 0) {
       const text = `${article.title} ${article.summary || ''}`.toLowerCase();
       for (const keyword of globalAllowKeywords) {
-        if (text.includes(keyword.toLowerCase())) {
+        // 空文字は includes('') が常に true になり全記事を無条件許可＝フィルタ全無効化に
+        // なってしまうため除外する（不正なバックアップ復元などで混入し得る保険）。
+        const kw = keyword.trim().toLowerCase();
+        if (kw && text.includes(kw)) {
           return false; // 無条件で許可
         }
       }
@@ -30,9 +33,13 @@ export const FilterEngine = {
 
     // Step 2: 通常フィルタ評価
     for (const filter of filters) {
+      // 空の block_keyword は includes('') が常に true になり全記事をブロックしてしまう。
+      // UIは空を弾くが、バックアップ復元など未検証の入力経路の保険としてここでも弾く。
+      if (!filter.block_keyword || !filter.block_keyword.trim()) continue;
+
       // 対象テキストを取得
       const targetText = this.getTargetText(article, filter);
-      
+
       // ブロックキーワードチェック
       if (targetText.includes(filter.block_keyword.toLowerCase())) {
         // 許可キーワードチェック
