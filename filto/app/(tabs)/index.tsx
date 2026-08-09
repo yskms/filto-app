@@ -1130,6 +1130,10 @@ export default function HomeScreen() {
             // 先頭付近にいるとき（10px以内）だけ新着に追従して先頭へ寄せる
             maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 10 }}
             onScroll={handleScroll}
+            // 縦スクロールを始めたら、開いていた横スワイプ（お気に入り/非表示）を閉じる。
+            // onScroll ではなく onScrollBeginDrag を使い、指での操作開始時だけ閉じる
+            // （更新後の先頭スクロール等プログラム的なスクロールでは閉じない）。
+            onScrollBeginDrag={() => closeOpenSwipe()}
             scrollEventThrottle={16}
             onContentSizeChange={(_, h) => setListContentH(h)}
             refreshControl={
