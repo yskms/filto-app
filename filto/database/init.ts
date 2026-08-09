@@ -65,6 +65,10 @@ function ensureColumn(
   columnDef: string
 ): void {
   const columns = database.getAllSync<{ name: string }>(`PRAGMA table_info(${table})`);
+  // テーブル自体が存在しないと PRAGMA table_info は空を返す。そのまま ALTER すると
+  // 「no such table」で例外になり初期化ごと落ちるため、ここで抜ける
+  // （対象テーブルは後段の CREATE TABLE IF NOT EXISTS で作られる）。
+  if (columns.length === 0) return;
   const exists = columns.some((c) => c.name === columnName);
   if (!exists) {
     database.execSync(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`);
@@ -124,11 +128,6 @@ export async function initDatabase(): Promise<void> {
   // ホームで非表示（ミュート）用の列。削除せずにホーム一覧から外すための非破壊フラグ。
   ensureColumn(database, 'feeds', 'hidden_from_home', 'hidden_from_home INTEGER NOT NULL DEFAULT 0');
 
-  // 記事の手動非表示（スワイプで非表示）。ホーム一覧からは除外するが is_hidden で残し、
-  // 「表示」トグルで淡色表示→スワイプで復元できる（完全に消さない）。
-  ensureColumn(database, 'articles', 'is_hidden', 'is_hidden INTEGER NOT NULL DEFAULT 0');
-  database.execSync('CREATE INDEX IF NOT EXISTS idx_articles_is_hidden ON articles(is_hidden)');
-
   // articles テーブル作成
   database.execSync(`
     CREATE TABLE IF NOT EXISTS articles (
@@ -164,6 +163,13 @@ export async function initDatabase(): Promise<void> {
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_articles_is_starred ON articles(is_starred);
   `);
+
+  // 記事の手動非表示（スワイプで非表示）。ホーム一覧からは除外するが is_hidden で残し、
+  // 「表示」トグルで淡色表示→スワイプで復元できる（完全に消さない）。
+  // ※ articles テーブル作成後に実行すること（新規インストールでは作成前だと
+  //   ALTER/CREATE INDEX が「no such table」で失敗し、初期化ごと落ちる）。
+  ensureColumn(database, 'articles', 'is_hidden', 'is_hidden INTEGER NOT NULL DEFAULT 0');
+  database.execSync('CREATE INDEX IF NOT EXISTS idx_articles_is_hidden ON articles(is_hidden)');
 
   // global_allow_keywords テーブル作成
   database.execSync(`
