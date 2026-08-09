@@ -112,7 +112,8 @@ export async function initDatabase(): Promise<void> {
       url TEXT NOT NULL UNIQUE,
       icon_url TEXT,
       order_no INTEGER NOT NULL,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      hidden_from_home INTEGER NOT NULL DEFAULT 0
     );
   `);
 
@@ -142,6 +143,7 @@ export async function initDatabase(): Promise<void> {
       fetched_at    INTEGER NOT NULL,
       is_read       INTEGER NOT NULL DEFAULT 0,
       is_starred    INTEGER NOT NULL DEFAULT 0,
+      is_hidden     INTEGER NOT NULL DEFAULT 0,
 
       UNIQUE(feed_id, link),
       FOREIGN KEY(feed_id) REFERENCES feeds(id) ON DELETE CASCADE

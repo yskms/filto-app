@@ -392,6 +392,9 @@ export const ja = {
       operationFailed: '操作に失敗しました',
       tryAgain: 'もう一度お試しください',
       loadFailed: 'データの読み込みに失敗しました',
+      initFailedTitle: '起動の準備に失敗しました',
+      initFailedBody: 'データの初期化に失敗しました。「再試行」を押すか、アプリを再起動してください。',
+      retry: '再試行',
     },
   } as const;
   

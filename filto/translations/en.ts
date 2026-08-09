@@ -392,5 +392,8 @@ export const en = {
     operationFailed: 'Operation failed',
     tryAgain: 'Please try again',
     loadFailed: 'Failed to load data',
+    initFailedTitle: 'Failed to start the app',
+    initFailedBody: 'Could not initialize data. Tap Retry, or restart the app.',
+    retry: 'Retry',
   },
 } as const;

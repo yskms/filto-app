@@ -216,7 +216,9 @@ async function restoreInto(data: BackupData): Promise<BackupApplyResult> {
     )
   );
   for (const filter of data.filters) {
-    if (!filter || typeof filter.block_keyword !== 'string') continue;
+    // block_keyword が空だと FilterEngine が全記事をブロックしてしまうため、
+    // 未検証入力（改変/破損バックアップ）の空文字はここで弾く。
+    if (!filter || typeof filter.block_keyword !== 'string' || !filter.block_keyword.trim()) continue;
     const normalized: BackupFilter = {
       block_keyword: filter.block_keyword,
       allow_keyword: filter.allow_keyword ?? null,
