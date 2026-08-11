@@ -49,6 +49,8 @@ export const ja = {
       selectFeed: '表示フィード選択',
       noArticles: '記事がありません',
       noArticlesHint: 'フィードを追加して更新してください',
+      searchPlaceholder: 'タイトル・本文で絞り込み',
+      noSearchResults: '一致する記事がありません',
       justNow: 'たった今',
       scrollToTop: '一番上に戻る',
       pullToRefresh: '引っ張って更新',

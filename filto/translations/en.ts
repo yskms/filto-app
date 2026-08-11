@@ -49,6 +49,8 @@ export const en = {
     selectFeed: 'Select Feeds to Show',
     noArticles: 'No articles',
     noArticlesHint: 'Add feeds and refresh',
+    searchPlaceholder: 'Filter by title or text',
+    noSearchResults: 'No matching articles',
     justNow: 'Just now',
     scrollToTop: 'Scroll to top',
     pullToRefresh: 'Pull to refresh',
