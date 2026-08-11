@@ -17,8 +17,10 @@ const OFTEN_RATIO = 0.5; // 記事が少ないフィードは既読率で拾う�
 const MIN_SAMPLE = 5; // 「全く読んでいない」判定に必要な最低記事数（少数で決めつけない）
 
 // 「全く読んでいない」は全体の既読数がこれ未満のうちは出さない（呼び出し側で適用）。
-// デフォルトが数十フィードあり、少し読んだだけでは大半が未読になるため。要調整。
-export const MIN_TOTAL_READ_FOR_SIGNALS = 100;
+// デフォルトが数十フィードあり、少し読んだだけでは大半が未読になるため。
+// ※ 100 だと記事が多く未読を読み飛ばしがちなユーザーは既読が溜まらずシグナルが出ない、
+//    という実利用の指摘を受け 30 に引き下げ（早めに判断材料が出るように）。
+export const MIN_TOTAL_READ_FOR_SIGNALS = 30;
 
 export function feedReadSignal(total: number, read: number): FeedReadSignal {
   if (total <= 0) return null;
