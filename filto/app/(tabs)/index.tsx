@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  TextInput,
   TouchableOpacity,
   RefreshControl,
   Linking,
@@ -231,19 +232,22 @@ const ArticleItem = React.memo<{
 const HomeHeader: React.FC<{
   feedName: string;
   showStarredOnly: boolean;
+  searchOpen: boolean;
   layoutMode: LayoutMode;
   onPressFeedSelect: () => void;
   onPressStarFilter: () => void;
+  onPressSearch: () => void;
   onPressLayoutToggle: () => void;
   onPressRefresh: () => void;
   feedSelectorRef: React.RefObject<View | null>;
   refreshRef: React.RefObject<View | null>;
   starFilterRef: React.RefObject<View | null>;
   layoutToggleRef: React.RefObject<View | null>;
-}> = ({ feedName, showStarredOnly, layoutMode, onPressFeedSelect, onPressStarFilter, onPressLayoutToggle, onPressRefresh, feedSelectorRef, refreshRef, starFilterRef, layoutToggleRef }) => {
+}> = ({ feedName, showStarredOnly, searchOpen, layoutMode, onPressFeedSelect, onPressStarFilter, onPressSearch, onPressLayoutToggle, onPressRefresh, feedSelectorRef, refreshRef, starFilterRef, layoutToggleRef }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({}, 'icon');
+  const tintColor = useThemeColor({}, 'tint');
   const starBtnBg = useThemeColor({ light: '#f5f5f5', dark: '#2a2b2c' }, 'background');
   const starBtnActiveBg = useThemeColor({ light: '#fff3cd', dark: '#3a3520' }, 'background');
 
@@ -261,6 +265,18 @@ const HomeHeader: React.FC<{
         </TouchableOpacity>
 
         <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={onPressSearch}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={searchOpen ? 'search' : 'search-outline'}
+              size={22}
+              color={searchOpen ? tintColor : iconColor}
+            />
+          </TouchableOpacity>
+
           <TouchableOpacity
             ref={layoutToggleRef}
             style={styles.refreshButton}
@@ -322,6 +338,9 @@ export default function HomeScreen() {
   // ブロック記事・非表示記事を（淡色で）表示するかどうか（統合トグル）
   const [showBlockedKeywords, setShowBlockedKeywords] = React.useState(false);
   const [blockedKeywordIds, setBlockedKeywordIds] = React.useState<Set<string>>(new Set());
+  // ホーム内検索（一時的な絞り込み。恒久フィルタ block/allow とは別物）。
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   // Display & Behavior（既読表示など）
   const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
@@ -1035,6 +1054,9 @@ export default function HomeScreen() {
   const emptyIconColor = useThemeColor({}, 'tabIconDefault');
 
   const filterBarBg = useThemeColor({ light: '#f0f4ff', dark: '#1a1f2e' }, 'background');
+  const searchBarBg = useThemeColor({ light: '#f0f0f0', dark: '#1c1d1f' }, 'background');
+  const searchTextColor = useThemeColor({}, 'text');
+  const searchIconColor = useThemeColor({}, 'icon');
   const filterBarText = useThemeColor({ light: '#4a6fa5', dark: '#7aa2d4' }, 'text');
   const scrollbarColor = useThemeColor({ light: 'rgba(0,0,0,0.25)', dark: 'rgba(255,255,255,0.3)' }, 'text');
 
@@ -1053,8 +1075,26 @@ export default function HomeScreen() {
 
   // 初回ツアー表示中はダミー記事＋サンプルのフィルタ件数を表示する
   // （実記事が届いても差し替えず、ツアー終了後に通常表示へ）
+  const handleToggleSearch = React.useCallback(() => {
+    setSearchOpen(prev => {
+      if (prev) setSearchQuery(''); // 閉じるときはクエリをクリアして元の一覧に戻す
+      return !prev;
+    });
+  }, []);
+
   const showTutorialDemo = tutorialVisible || tutorialPending;
-  const displayArticles = showTutorialDemo ? dummyArticles : filteredArticles;
+  // 検索絞り込み（一時的・見えている集合を細くするだけ）。filteredArticles は
+  // フィード選択・フィルタ評価・非表示/既読の表示制御まで適用済みなので、その後段に軽く掛ける。
+  // → 「非表示を表示中」なら淡色の一致記事もそのまま出る（見えているものを絞る、で一貫）。
+  const searchedArticles = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return filteredArticles;
+    return filteredArticles.filter(
+      a => a.title.toLowerCase().includes(q) || (a.summary ? a.summary.toLowerCase().includes(q) : false)
+    );
+  }, [filteredArticles, searchQuery]);
+  const searchActive = searchOpen && searchQuery.trim().length > 0;
+  const displayArticles = showTutorialDemo ? dummyArticles : searchedArticles;
   const displayBlockedCount = showTutorialDemo ? 8 : blockedByFilters;
   const displayHiddenCount = showTutorialDemo ? 0 : hiddenInViewCount;
   const revealBarVisible = displayBlockedCount > 0 || displayHiddenCount > 0;
@@ -1072,9 +1112,11 @@ export default function HomeScreen() {
       <HomeHeader
         feedName={selectedFeedName}
         showStarredOnly={showStarredOnly}
+        searchOpen={searchOpen}
         layoutMode={layoutMode}
         onPressFeedSelect={handleFeedSelect}
         onPressStarFilter={handleToggleStarFilter}
+        onPressSearch={handleToggleSearch}
         onPressLayoutToggle={handleToggleLayout}
         onPressRefresh={handleRefresh}
         feedSelectorRef={feedSelectorRef}
@@ -1082,6 +1124,28 @@ export default function HomeScreen() {
         starFilterRef={starFilterRef}
         layoutToggleRef={layoutToggleRef}
       />
+
+      {searchOpen && (
+        <View style={[styles.searchBar, { backgroundColor: searchBarBg }]}>
+          <Ionicons name="search" size={18} color={searchIconColor} />
+          <TextInput
+            style={[styles.searchInput, { color: searchTextColor }]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder={t('home.searchPlaceholder')}
+            placeholderTextColor={searchIconColor}
+            autoFocus
+            returnKeyType="search"
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={8} activeOpacity={0.7}>
+              <Ionicons name="close-circle" size={18} color={searchIconColor} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {revealBarVisible && (
         <TouchableOpacity
@@ -1142,9 +1206,9 @@ export default function HomeScreen() {
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="newspaper-outline" size={64} color={emptyIconColor} style={styles.emptyIcon} />
-                <ThemedText style={styles.emptyMessage}>{t('home.noArticles')}</ThemedText>
-                <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>
+                <Ionicons name={searchActive ? 'search-outline' : 'newspaper-outline'} size={64} color={emptyIconColor} style={styles.emptyIcon} />
+                <ThemedText style={styles.emptyMessage}>{searchActive ? t('home.noSearchResults') : t('home.noArticles')}</ThemedText>
+                {!searchActive && <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>}
               </View>
             }
           />
@@ -1299,6 +1363,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 6,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 12,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    padding: 0,
   },
   filterBarIcon: {
     marginRight: 6,
