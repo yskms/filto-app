@@ -193,6 +193,16 @@ export const ArticleRepository = {
     db.runSync('UPDATE articles SET is_hidden = ? WHERE id = ?', [hidden ? 1 : 0, id]);
   },
 
+  /** 指定フィードで手動非表示にした記事の累計件数（サイト非表示の提案トリガー用）。 */
+  async countHiddenByFeed(feedId: string): Promise<number> {
+    const db = openDatabase();
+    const row = db.getFirstSync<{ c: number }>(
+      'SELECT COUNT(*) as c FROM articles WHERE feed_id = ? AND is_hidden = 1',
+      [feedId]
+    );
+    return row?.c ?? 0;
+  },
+
   /**
    * 非表示中の記事IDを取得する（ホームでの除外・復元判定に使う）。
    */

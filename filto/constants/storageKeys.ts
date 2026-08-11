@@ -17,6 +17,8 @@ export const StorageKeys = {
   defaultFeedsSeeded: '@filto/defaultFeedsSeeded',
   defaultFiltersSeeded: '@filto/defaultFiltersSeeded',
   onboardingCompleted: '@filto/onboardingCompleted',
+  // サイト非表示の提案を「あとで」で断ったフィードと時刻のマップ（JSON）。一定期間は再提案しない。
+  siteSuggestDismissed: '@filto/siteSuggestDismissed',
   // オンボーディング完了直後に立て、タブ側の初回取得（ブートストラップ）で消費する一時フラグ
   pendingInitialFetch: '@filto/pendingInitialFetch',
 

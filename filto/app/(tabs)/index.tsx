@@ -49,6 +49,8 @@ import { RectButton } from 'react-native-gesture-handler';
 import Reanimated from 'react-native-reanimated';
 import { useToast } from '@/providers/toast';
 import { ArticleActionSheet } from '@/components/ArticleActionSheet';
+import SiteHideSuggestModal from '@/components/SiteHideSuggestModal';
+import { SITE_SUGGEST_CONSECUTIVE, SITE_SUGGEST_CUMULATIVE, isSiteSuggestSuppressed, dismissSiteSuggest } from '@/utils/siteSuggest';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
@@ -335,6 +337,10 @@ export default function HomeScreen() {
   const [hiddenInViewCount, setHiddenInViewCount] = React.useState(0);
   // 長押しで開くコンテキストメニュー対象の記事（null で閉）
   const [actionSheetArticle, setActionSheetArticle] = React.useState<Article | null>(null);
+  // サイト非表示の提案モーダル対象フィード（null で閉）。
+  const [siteSuggestFeed, setSiteSuggestFeed] = React.useState<Feed | null>(null);
+  // 同一サイトを連続で非表示にした回数（提案トリガー用。セッション内メモリで十分）。
+  const consecutiveHideRef = React.useRef<{ feedId: string | null; count: number }>({ feedId: null, count: 0 });
   // ブロック記事・非表示記事を（淡色で）表示するかどうか（統合トグル）
   const [showBlockedKeywords, setShowBlockedKeywords] = React.useState(false);
   const [blockedKeywordIds, setBlockedKeywordIds] = React.useState<Set<string>>(new Set());
@@ -981,17 +987,21 @@ export default function HomeScreen() {
   }, [closeOpenSwipe]);
 
   // このサイト（フィード）ごとホームで非表示にする。Undoトースト＋フィード画面で復元可能。
-  const handleHideSite = React.useCallback((article: Article) => {
-    FeedService.setHiddenFromHome(article.feedId, true).catch(() => {});
-    setFeeds(prev => prev.map(f => f.id === article.feedId ? { ...f, hiddenFromHome: true } : f));
-    showToast(t('home.siteHiddenToast', { name: article.feedName }), 'success', {
+  const hideFeedFromHome = React.useCallback((feedId: string, feedName: string) => {
+    FeedService.setHiddenFromHome(feedId, true).catch(() => {});
+    setFeeds(prev => prev.map(f => f.id === feedId ? { ...f, hiddenFromHome: true } : f));
+    showToast(t('home.siteHiddenToast', { name: feedName }), 'success', {
       label: t('common.undo'),
       onPress: () => {
-        FeedService.setHiddenFromHome(article.feedId, false).catch(() => {});
-        setFeeds(prev => prev.map(f => f.id === article.feedId ? { ...f, hiddenFromHome: false } : f));
+        FeedService.setHiddenFromHome(feedId, false).catch(() => {});
+        setFeeds(prev => prev.map(f => f.id === feedId ? { ...f, hiddenFromHome: false } : f));
       },
     });
   }, [showToast, t]);
+
+  const handleHideSite = React.useCallback((article: Article) => {
+    hideFeedFromHome(article.feedId, article.feedName);
+  }, [hideFeedFromHome]);
 
   // スワイプで記事を非表示にする（完全除外だが復元可能）。Undoトースト＋「表示」トグルの二重で戻せる。
   // DB反映は即時、一覧からの除外（再レンダリング）は閉じアニメ完了後に遅延してカクつきを防ぐ。
@@ -1008,13 +1018,51 @@ export default function HomeScreen() {
     else update();
   }, []);
 
+  // 同じサイトの記事を続けて（連続3件）または累計（5件）で非表示にしたら、
+  // サイトごと非表示を提案する。押し付けない: 提案だけで勝手には消さない。
+  const maybeSuggestSiteHide = React.useCallback(async (article: Article) => {
+    const feed = feeds.find(f => f.id === article.feedId);
+    if (!feed || feed.hiddenFromHome) return; // 既に非表示のサイトは対象外
+
+    // 同一サイト連続カウント（別サイトを非表示にしたら 1 にリセット）
+    const cur = consecutiveHideRef.current;
+    const nextCount = cur.feedId === article.feedId ? cur.count + 1 : 1;
+    consecutiveHideRef.current = { feedId: article.feedId, count: nextCount };
+
+    let hit = nextCount >= SITE_SUGGEST_CONSECUTIVE;
+    if (!hit) {
+      const cumulative = await ArticleRepository.countHiddenByFeed(article.feedId);
+      hit = cumulative >= SITE_SUGGEST_CUMULATIVE;
+    }
+    if (!hit) return;
+    if (await isSiteSuggestSuppressed(article.feedId)) return; // 最近断られたサイトは出さない
+    setSiteSuggestFeed(feed);
+  }, [feeds]);
+
   const handleHideArticle = React.useCallback((article: Article) => {
     applyArticleHidden(article.id, true, true);
     showToast(t('home.articleHiddenToast'), 'success', {
       label: t('common.undo'),
       onPress: () => applyArticleHidden(article.id, false, false),
     });
-  }, [applyArticleHidden, showToast, t]);
+    maybeSuggestSiteHide(article).catch(() => {});
+  }, [applyArticleHidden, showToast, t, maybeSuggestSiteHide]);
+
+  // 提案モーダルで「このサイトを非表示にする」
+  const handleSuggestHideConfirm = React.useCallback(() => {
+    const feed = siteSuggestFeed;
+    setSiteSuggestFeed(null);
+    consecutiveHideRef.current = { feedId: null, count: 0 };
+    if (feed) hideFeedFromHome(feed.id, feed.title);
+  }, [siteSuggestFeed, hideFeedFromHome]);
+
+  // 提案モーダルで「あとで」（しばらく再提案しない）
+  const handleSuggestDismiss = React.useCallback(() => {
+    const feed = siteSuggestFeed;
+    setSiteSuggestFeed(null);
+    consecutiveHideRef.current = { feedId: null, count: 0 };
+    if (feed) dismissSiteSuggest(feed.id).catch(() => {});
+  }, [siteSuggestFeed]);
 
   // 「表示」トグルで淡色表示中の非表示記事を、スワイプで元に戻す（復元にもトーストを出す）
   const handleRestoreArticle = React.useCallback((article: Article) => {
@@ -1291,6 +1339,14 @@ export default function HomeScreen() {
           setActionSheetArticle(null);
           if (a) handleHideSite(a);
         }}
+      />
+
+      {/* 同じサイトの記事を続けて非表示にしたときの「サイトごと非表示にしませんか？」提案 */}
+      <SiteHideSuggestModal
+        visible={siteSuggestFeed !== null}
+        feedName={siteSuggestFeed?.title ?? ''}
+        onHide={handleSuggestHideConfirm}
+        onDismiss={handleSuggestDismiss}
       />
 
       {/* ツアーが一周して戻ってきたとき、取得完了まで全面スピナー（タブ遷移もブロック） */}
