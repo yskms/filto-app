@@ -78,6 +78,7 @@ FEATURES
 · Subscribe to any RSS / Atom sources in one place
 · Hide feeds from your home list (without deleting)
 · Prioritize must-see topics
+· Filter the home list by title or text
 · Save favorite articles
 · "Read often" badge and sort feeds by read count
 · Switch feed layouts
@@ -101,9 +102,3 @@ An RSS reader where you decide what you read, not an algorithm. Mute topics with
 ## Keywords (App Store / 100 chars)
 
 rss,reader,news,feed,filter,mute,block,keyword,topics,privacy,algorithm,curated,local,personalized
-
----
-
-## Note (candidate for next update)
-
-- Home search (filter by title/text) ships in **v1.3.3** — add then. e.g. (Features) "· Filter the home list by title or text".
