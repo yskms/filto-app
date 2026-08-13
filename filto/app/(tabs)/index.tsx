@@ -76,6 +76,10 @@ const getTimeAgo = (publishedAt: string, justNow: string): string => {
 // ホームの記事レイアウト（コンパクト＝小サムネ／ラージ＝全幅大画像）
 type LayoutMode = 'compact' | 'large';
 
+// 横スワイプが発火するのに必要な横移動量(px)。RNGH 既定は 10。
+// 片手操作で縦スクロールが横スワイプに化けにくくするため大きめにしている（実機で微調整可）。
+const SWIPE_ACTIVATE_OFFSET = 30;
+
 const ArticleItem = React.memo<{
   article: Article;
   onPress: (article: Article) => void;
@@ -151,6 +155,10 @@ const ArticleItem = React.memo<{
       renderLeftActions={renderLeftActions}
       rightThreshold={40}
       leftThreshold={40}
+      // 横スワイプの発火に必要な横移動量（既定10）。片手操作で縦スクロールが横スワイプに
+      // 化けやすいので大きめにして鈍感にする（＝内部 activeOffsetX の閾値。値は実機で微調整可）。
+      dragOffsetFromLeftEdge={SWIPE_ACTIVATE_OFFSET}
+      dragOffsetFromRightEdge={SWIPE_ACTIVATE_OFFSET}
       overshootRight={false}
       overshootLeft={false}
       onSwipeableWillOpen={() => onSwipeableWillOpen(article.id)}
