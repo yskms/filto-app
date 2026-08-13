@@ -689,6 +689,11 @@
 - [ ] 提案のグローバル ON/OFF 設定（提案機能を増やすタイミングで、`areSuggestionsEnabled()` 共有ヘルパー経由に）
 - [ ] （任意）ホーム大リストの FlatList チューニング（`getItemLayout` 等）。リリースビルドで実測して必要なら
 
+#### リリース後 OTA（審査なし・EAS Update 初運用）
+- [x] 横スワイプの発火閾値 **10→30**（片手操作で縦スクロールが横スワイプに化けるのを軽減。`ReanimatedSwipeable` の `dragOffsetFromLeftEdge/RightEdge`＝内部 `activeOffsetX`。実機で 20→25→30 と調整）
+- [x] これを **初の `eas update`（OTA）で配信**。version は据え置き（1.3.3のまま＝`runtimeVersion` 一致でストア版1.3.3ユーザーに到達）。次回起動で裏DL→その次の起動で反映、実機で確認済み
+- 学び: `eas update` は既定で web も書き出すため `expo-sqlite/web/worker.ts` の `wa-sqlite.wasm` 未解決で export 失敗 → **`--platform android` と `--platform ios` を個別**に打って回避（実ユーザーはネイティブなので影響なし）
+
 ---
 
 ## 将来対応検討
