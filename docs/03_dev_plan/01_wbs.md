@@ -630,6 +630,67 @@
 
 ---
 
+### v1.3.1（EAS Update導入・フィード拡充・高速化 / iOS公開→P0発覚で1.3.2に置換）
+
+#### マージ済み
+- [x] **EAS Update(OTA)導入**（`expo-updates`、`runtimeVersion=appVersion`、production channel）。JSのみの修正を審査なしで配信可能に。有効化には expo-updates を埋め込んだビルドの提出が必要、以降 `eas update --branch production`
+- [x] デフォルトフィード拡充: JA 63→76。新カテゴリ **アート・イラスト / 釣り・アウトドア / ペット・動物 / ガーデニング・植物**、Zennトピック(react/ts/python)、BBC News日本語、おたくまURL修正
+- [x] フィード台帳の整理: `scripts/feed-candidates.json` に不採用フィードを `exclude`＋`excludeReason` で恒久記録（再調査防止）、`verify-feeds.mjs` は exclude を取得スキップ、運用手順 `scripts/README.md`。`defaultFeeds.ts` は生成物（直接編集不可）
+- [x] 記事取得の高速化: 保存時の全記事3回ロード撤廃（`INSERT OR IGNORE`＋`insertMany` 戻り値に一本化）、`FETCH_CONCURRENCY` 6→10
+
+#### ビルド・提出／結果
+- [x] iOS buildNumber17 公開（自動リリース）／Android versionCode17 は審査中に破棄
+- ⚠️ 直後に**P0（新規インストールでDB初期化落ち）が発覚** → 1.3.2 で修正・置換（下記）
+
+---
+
+### v1.3.2（緊急修正: 新規インストールでアプリが起動しない致命バグ / iOS・Android 公開済み）
+
+#### P0 バグ
+- `database/init.ts` で **articles テーブル作成の前**に `is_hidden` の `ALTER`/`CREATE INDEX` を実行 → 新規インストール（articles未作成）は `no such table: articles` で `initDatabase` が例外 → seedスキップ → **空の壊れた状態**でホームが開く
+- v1.3.0（整理UX②）から混入。**開発/更新では既存DBに表があり再現せず、新規インストールだけで発症**したため見逃し。公開中の1.3.0・iOS公開の1.3.1 とも新規インストール全滅（更新ユーザーは無影響・自己回復不可）
+
+#### 修正・配布
+- [x] `ALTER`/`INDEX` を `CREATE TABLE` の後へ移動 ＋ `ensureColumn` にテーブル非存在ガード。sqlite3 で旧失敗/新成功を実証
+- [x] 配布はOTA不可（1.3.0はexpo-updates未搭載、1.3.1は初回起動で埋め込みbundleが先に落ちる）→ **新規ストアビルド必須**。壊れた新規ユーザーも 1.3.2 更新で自動復旧（初期化やり直し＋初回seed）
+- [x] iOS buildNumber18（1.3.1公開済のため優先審査申請）／Android versionCode18（審査中1.3.1を破棄して置換）。両OS公開済み
+
+#### 学び（重要）
+- **新規インストール経路は dev/更新では隠れる**。まっさらDBに対する初期化の回帰検出が必要 → 1.3.3 で `scripts/check-db-init-order.mjs` を追加
+- `ensureColumn`/`CREATE INDEX` は必ず対象テーブルの `CREATE TABLE` の**後**に置く
+
+---
+
+### v1.3.3（整理UX完走・ホーム検索・起動堅牢化 / iOS・Android 審査通過・公開 2026-08-13）
+
+#### マージ済み（機能）
+- [x] **ホーム検索**: タイトル/本文で「今見えている一覧」を絞り込み（`filteredArticles` 後段の `useMemo`・軽量、非表示表示中は淡色一致も出る）。恒久フィルタとは別物の一時検索
+- [x] **⑤ サイト非表示の提案【整理UX完了】**: 同一サイトの記事を連続3件 or 累計5件 非表示にしたらブロッキングモーダルで「このサイトごと非表示に?」を提案、「あとで」で7日抑制（`utils/siteSuggest.ts`、`SiteHideSuggestModal`）。定期モーダルでなく**行動連動の文脈版**
+- [x] スクロール開始で開いた横スワイプを自動クローズ（`onScrollBeginDrag`）
+- [x] 既読シグナルの全体ゲート **100→30**（読み飛ばしがちでも早めに判断材料が出る）
+
+#### マージ済み（起動堅牢化 / P0再発防止）
+- [x] `_layout` の init 失敗握り潰しを廃止 → `InitErrorScreen`＋再試行（`onboardingDone=true` にしない）
+- [x] `FilterEngine`/`BackupService` で空 `block_keyword`・空グローバル許可を弾く（空フィルタで全記事消失/全無効化を防止）
+- [x] `is_hidden`/`hidden_from_home` を `CREATE TABLE` 直書き（`ensureColumn` 依存を減らす保険）
+- [x] **`scripts/check-db-init-order.mjs`（`npm run check:db-init`）**で新規インストールのDB初期化順序退行を静的検出（旧v1.3.0で違反検出を実証）
+
+#### ビルド・提出
+- [x] iOS buildNumber19 / Android versionCode19、auto-submit。両OS審査通過・公開
+- [x] 全JS変更（OTA可能だが新規インストール向けにフルビルド選択）
+
+#### 運用・学び
+- **main マージ前は敵対的セルフレビューを徹底**（P0漏れの反省）
+- ストア説明文を全面改訂（「読みながらフィードを育てる」路線）＋検索追記。GitHub/ストア/アプリでキャラクターが一致
+- **整理UXロードマップ ①〜⑤ 完走**（①フィードミュート ②記事スワイプ非表示 ③長押しメニュー＋お気に入り左スワイプ ④既読シグナル＋既読数ソート ⑤サイト非表示の提案）
+
+#### 残タスク（次期以降）
+- [ ] R8/ProGuard 有効化（`expo-build-properties`）＋実機で全機能テスト（minify のクラッシュ検証）
+- [ ] 提案のグローバル ON/OFF 設定（提案機能を増やすタイミングで、`areSuggestionsEnabled()` 共有ヘルパー経由に）
+- [ ] （任意）ホーム大リストの FlatList チューニング（`getItemLayout` 等）。リリースビルドで実測して必要なら
+
+---
+
 ## 将来対応検討
 
 ### バックグラウンド定期更新 → v1.1.8 で実装済み
