@@ -100,6 +100,9 @@ function itemThumb(obj, kind) {
     if (mt) { let u = getText(mt); if (!u && typeof mt === 'object') u = getText(mt['@_url']); if (u) return u; }
     const mc = obj['media:content'];
     if (mc) { const arr = ensureArray(mc); for (const c of arr) { let u = getText(c); if (!u && typeof c === 'object') u = getText(c['@_url']); if (u) return u; } }
+    // はてブ系: content:encoded の先頭imgはファビコンなので、本来のOGP画像を先に拾う（RssServiceと同順）
+    const hatena = getText(obj['hatena:imageurl']);
+    if (hatena) return hatena;
     let t = extractImageUrl(getText(obj['content:encoded']));
     if (t) return t;
     t = extractImageUrl(getText(obj['description']));

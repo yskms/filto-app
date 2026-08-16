@@ -1235,10 +1235,15 @@
   {
     "lang": "ja",
     "category": "dev",
-    "title": "はてブ テクノロジー",
+    "title": "はてなブックマーク - 人気エントリー - テクノロジー",
     "url": "https://b.hatena.ne.jp/hotentry/it.rss",
-    "status": "FAIL",
-    "reason": "parse error"
+    "status": "OK",
+    "kind": "rdf",
+    "items": 30,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "はてなブックマーク - 人気エントリー - テクノロジー"
   },
   {
     "lang": "ja",
