@@ -8,6 +8,7 @@
 
 - `utils/feedAutodiscovery.ts`（`extractFeedLinks`）/ `services/RssService.ts`（`fetchMetaOrBody`）/ `services/FeedService.ts`（`discoverFeedUrl` / `detectRssUrl`）/ `components/FeedCandidateModal.tsx` / `app/feed_add.tsx` に実装。
 - `detectRssUrl` のフォールバックは `Promise.all` で全プローブの完了を待ってから `commonPaths` 添字最小を採用する実装（§6の「並列・最初に成功したものを採用」を、優先順位の正確さを優先する形で実現。個別5秒タイムアウトのため実質的な全体待ち時間もおよそ5秒に収まる）。
+- **フォールバックはサイト直下（トップページ）らしいURL、つまり `pathname` が `/` のときだけ実行する**（`isSiteRootUrl`）。commonPaths は常にドメイン直下の絶対パスに解決されるため、記事など深いURLで実行すると「入力とは無関係にドメイン直下にたまたま存在するフィード」を正解として誤答しうる。実機で発覚（`https://note.com/{user}/n/{記事id}` を貼ると、著者のフィードではなく `https://note.com/rss` というサイト全体のフィードが返った）。深いURLでAutodiscoveryが0件のときは、素直に「見つかりませんでした」を返す（§7の0件パス）。
 - 複数候補UIは新規に `FeedCandidateModal` を作成（`FeedSelectModal` はホーム絞り込み用でAPIが合わないため流用せず）。コメントフィードは一覧末尾かつバッジ表示で区別。
 - README.md の「通信」記述を更新済み。
 

@@ -8,6 +8,20 @@ import { extractFeedLinks, FeedCandidate } from '@/utils/feedAutodiscovery';
 const PROBE_TIMEOUT_MS = 5_000;
 
 /**
+ * ドメイン直下（トップページ）らしいURLかどうか。
+ * 既知パスの並列プローブは常にドメイン直下の絶対パスを試すため、この判定が
+ * true のときだけ意味を持つ（詳細は discoverFeedUrl 内コメント参照）。
+ */
+function isSiteRootUrl(url: string): boolean {
+  try {
+    const { pathname } = new URL(url);
+    return pathname === '' || pathname === '/';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * feed_add がURL入力から辿り着ける結果:
  * - feed:       入力URL自体がフィードだった（既存挙動）
  * - candidates: HTMLの<link>やフォールバックで見つかったフィード候補（1件以上）
@@ -197,10 +211,16 @@ export const FeedService = {
       return { kind: 'candidates', candidates: links };
     }
 
-    // フォールバック: <link>が無いサイト向けに既知パスを並列プローブ
-    const probed = await FeedService.detectRssUrl(res.finalUrl);
-    if (probed) {
-      return { kind: 'candidates', candidates: [{ url: probed, type: 'rss' }] };
+    // フォールバック: サイト直下（トップページ）らしいURLのときだけ既知パスを試す。
+    // commonPaths は常にドメイン直下の絶対パスに解決されるため、記事など深い
+    // URLで実行すると「入力とは無関係にドメイン直下にたまたま存在するフィード」
+    // を誤って正解として返しかねない（例: 個別記事URLを貼ったのに note.com/rss
+    // というサイト全体のフィードが返る）。見つからないなら素直に none にする。
+    if (isSiteRootUrl(res.finalUrl)) {
+      const probed = await FeedService.detectRssUrl(res.finalUrl);
+      if (probed) {
+        return { kind: 'candidates', candidates: [{ url: probed, type: 'rss' }] };
+      }
     }
 
     return { kind: 'none' };
