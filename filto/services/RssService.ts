@@ -197,7 +197,7 @@ const FEED_REQUEST_HEADERS = {
 
 export type FeedFetchResult =
   | { status: 'notModified' }
-  | { status: 'ok'; text: string; etag: string | null; lastModified: string | null };
+  | { status: 'ok'; text: string; etag: string | null; lastModified: string | null; finalUrl: string };
 
 type ConditionalValidators = { etag?: string | null; lastModified?: string | null };
 
@@ -267,17 +267,20 @@ async function fetchWithTimeout(
     // 次回の条件付きGET用にバリデータを控える（本文取得前に読む）
     const { etag, lastModified } = extractValidators(response);
 
+    // リダイレクト後の最終URL（相対href/自動検出の基準に使う）。未設定なら入力URL。
+    const finalUrl = response.url || url;
+
     const arrayBuffer = await response.arrayBuffer();
 
     // ArrayBufferが空の場合、text()メソッドで一度だけ再試行
     if (arrayBuffer.byteLength === 0) {
       const retry = await fetch(url, { signal: controller.signal, headers });
       const text = await retry.text();
-      return { status: 'ok', text, etag, lastModified };
+      return { status: 'ok', text, etag, lastModified, finalUrl: retry.url || finalUrl };
     }
 
     const text = decodeFeedBytes(arrayBuffer, url);
-    return { status: 'ok', text, etag, lastModified };
+    return { status: 'ok', text, etag, lastModified, finalUrl };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.toLowerCase().includes('aborted') || message.toLowerCase().includes('abort')) {
@@ -486,52 +489,103 @@ function generateThumbnailFromUrl(link: string): string | undefined {
   }
 }
 
+/**
+ * XML本文をフィード（RSS1.0/2.0/Atom）として解釈し title/icon を返す。
+ * フィード形でなければ null（=呼び出し側でHTML判定に回す）。
+ * フィード形だが title を取れない場合は throw（従来の fetchMeta と同じ挙動）。
+ */
+function parseFeedMeta(
+  xml: string,
+  url: string
+): { title: string; iconUrl?: string } | null {
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = parser.parse(xml) as Record<string, unknown>;
+  } catch {
+    // パース不能（HTML等）はフィードでない扱い
+    return null;
+  }
+
+  // RSS 1.0 (RDF)
+  const rdf = parsed['rdf:RDF'] as Record<string, unknown> | undefined;
+  if (rdf) {
+    const channel = rdf['channel'] as Record<string, unknown> | undefined;
+    if (channel) {
+      const title = getText(channel['title']);
+      const iconUrl = extractRss1IconUrl(channel, url);
+      if (!title) throw new Error('Failed to parse feed title (RSS 1.0)');
+      return { title, iconUrl };
+    }
+  }
+
+  // RSS 2.0
+  const rss = parsed['rss'] as Record<string, unknown> | undefined;
+  if (rss?.['channel']) {
+    const channel = rss['channel'] as Record<string, unknown>;
+    const title = getText(channel['title']);
+    const iconUrl = extractRss2IconUrl(channel, url);
+    if (!title) throw new Error('Failed to parse feed title (RSS 2.0)');
+    return { title, iconUrl };
+  }
+
+  // Atom
+  const feed = parsed['feed'] as Record<string, unknown> | undefined;
+  if (feed) {
+    const title = getText(feed['title']);
+    const iconUrl = extractAtomIconUrl(feed, url);
+    if (!title) throw new Error('Failed to parse feed title (Atom)');
+    return { title, iconUrl };
+  }
+
+  return null;
+}
+
 export const RssService = {
-  async fetchMeta(url: string): Promise<{ title: string; iconUrl?: string }> {
+  /**
+   * URLを取得し、フィードなら title/icon を、HTMLならその本文を返す。
+   * 自動検出（Autodiscovery）が同じURLを2度取らずに済むよう本文を渡す。
+   * ステップ1（既存フィードとして解釈できるか）の挙動は fetchMeta と完全一致。
+   */
+  async fetchMetaOrBody(
+    url: string,
+    timeoutMs: number = FETCH_TIMEOUT_MS
+  ): Promise<
+    | { kind: 'feed'; title: string; iconUrl?: string }
+    | { kind: 'html'; body: string; finalUrl: string }
+  > {
+    // fetchMeta 系は条件付きGETを使わない（毎回本文が必要）ため常に 'ok'
+    const result = await fetchWithTimeout(url, timeoutMs);
+    if (result.status !== 'ok') {
+      throw new Error('Unexpected 304 without conditional request');
+    }
+
+    // フィード形とみなせるなら title を返す（title欠落はフィードだが解釈失敗として throw）
+    const meta = parseFeedMeta(result.text, url);
+    if (meta) return { kind: 'feed', ...meta };
+
+    // フィードでない → HTMLか判定（Content-Typeに頼らず本文先頭で判定）
+    const head = result.text.slice(0, 1024).toLowerCase();
+    if (
+      head.includes('<!doctype html') ||
+      head.includes('<html') ||
+      head.includes('<head')
+    ) {
+      return { kind: 'html', body: result.text.slice(0, 200_000), finalUrl: result.finalUrl };
+    }
+
+    throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');
+  },
+
+  async fetchMeta(
+    url: string,
+    timeoutMs: number = FETCH_TIMEOUT_MS
+  ): Promise<{ title: string; iconUrl?: string }> {
     try {
-      // fetchMeta は条件付きGETを使わない（毎回本文が必要）ため常に 'ok'
-      const result = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
-      if (result.status !== 'ok') {
-        throw new Error('Unexpected 304 without conditional request');
+      const result = await this.fetchMetaOrBody(url, timeoutMs);
+      if (result.kind === 'html') {
+        throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');
       }
-      const xml = result.text;
-
-      const parsed = parser.parse(xml) as Record<string, unknown>;
-
-      // RSS 1.0 (RDF) チェック
-      const rdf = parsed['rdf:RDF'] as Record<string, unknown> | undefined;
-      if (rdf) {
-        const channel = rdf['channel'] as Record<string, unknown> | undefined;
-        if (channel) {
-          const title = getText(channel['title']);
-          const iconUrl = extractRss1IconUrl(channel, url);
-          if (!title) throw new Error('Failed to parse feed title (RSS 1.0)');
-          return { title, iconUrl };
-        }
-      }
-
-      // RSS 2.0 チェック
-      const rss = parsed['rss'] as Record<string, unknown> | undefined;
-      if (rss) {
-      }
-      if (rss?.['channel']) {
-        const channel = rss['channel'] as Record<string, unknown>;
-        const title = getText(channel['title']);
-        const iconUrl = extractRss2IconUrl(channel, url);
-        if (!title) throw new Error('Failed to parse feed title (RSS 2.0)');
-        return { title, iconUrl };
-      }
-
-      // Atom チェック
-      const feed = parsed['feed'] as Record<string, unknown> | undefined;
-      if (feed) {
-        const title = getText(feed['title']);
-        const iconUrl = extractAtomIconUrl(feed, url);
-        if (!title) throw new Error('Failed to parse feed title (Atom)');
-        return { title, iconUrl };
-      }
-
-      throw new Error('Unsupported feed format (not RSS 1.0, RSS 2.0 nor Atom)');
+      return { title: result.title, iconUrl: result.iconUrl };
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Failed to fetch feed: ${error.message}`);

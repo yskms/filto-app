@@ -2,6 +2,22 @@ import { FeedRepository } from '@/repositories/FeedRepository';
 import { Feed } from '@/types/Feed';
 import { RssService } from '@/services/RssService';
 import { FeedSortType } from '@/components/FeedSortModal';
+import { extractFeedLinks, FeedCandidate } from '@/utils/feedAutodiscovery';
+
+/** 自動検出の個別プローブのタイムアウト（フォールバックの並列総当たり用） */
+const PROBE_TIMEOUT_MS = 5_000;
+
+/**
+ * feed_add がURL入力から辿り着ける結果:
+ * - feed:       入力URL自体がフィードだった（既存挙動）
+ * - candidates: HTMLの<link>やフォールバックで見つかったフィード候補（1件以上）
+ * - none:       HTMLだがフィードを見つけられなかった
+ * ネットワーク/タイムアウトや「フィードでもHTMLでもない」入力は例外で通知する。
+ */
+export type FeedDiscoveryResult =
+  | { kind: 'feed'; title: string; iconUrl?: string }
+  | { kind: 'candidates'; candidates: FeedCandidate[] }
+  | { kind: 'none' };
 
 /**
  * 同じURLのフィードが既に登録されている場合に投げられる
@@ -161,12 +177,44 @@ export const FeedService = {
   },
 
   /**
-   * RSS URLを自動検出
-   * @param baseUrl ベースURL（例: https://example.com）
-   * @returns 検出されたRSS URL、見つからない場合はnull
+   * 入力URLからフィードを解決する（RSS Autodiscovery）。
+   *
+   * 1. 入力URL自体をフィードとして解釈できれば確定（既存挙動を維持）
+   * 2. HTMLなら <head> の <link rel="alternate"> から候補を抽出
+   * 3. 候補ゼロなら既知パスを並列プローブ（フォールバック）
+   *
+   * @throws ネットワーク/タイムアウト、または「フィードでもHTMLでもない」入力
+   */
+  async discoverFeedUrl(inputUrl: string): Promise<FeedDiscoveryResult> {
+    const res = await RssService.fetchMetaOrBody(inputUrl);
+    if (res.kind === 'feed') {
+      return { kind: 'feed', title: res.title, iconUrl: res.iconUrl };
+    }
+
+    // HTML → Autodiscovery（相対hrefの基準はリダイレクト後のfinalUrl）
+    const links = extractFeedLinks(res.body, res.finalUrl);
+    if (links.length > 0) {
+      return { kind: 'candidates', candidates: links };
+    }
+
+    // フォールバック: <link>が無いサイト向けに既知パスを並列プローブ
+    const probed = await FeedService.detectRssUrl(res.finalUrl);
+    if (probed) {
+      return { kind: 'candidates', candidates: [{ url: probed, type: 'rss' }] };
+    }
+
+    return { kind: 'none' };
+  },
+
+  /**
+   * 既知のRSSパスを並列プローブして最初に成功したURLを返す（フォールバック専用）。
+   * Autodiscoveryで見つかった場合は呼ばないこと（8本同時取得の瞬間負荷を避けるため）。
+   *
+   * @param baseUrl ベースURL（例: https://example.com/）
+   * @returns 検出されたRSS URL、見つからなければnull
    */
   async detectRssUrl(baseUrl: string): Promise<string | null> {
-    // 一般的なRSSパス（優先度順）
+    // 一般的なRSSパス（添字が小さいものを優先）
     const commonPaths = [
       '/feed',
       '/feed.xml',
@@ -178,19 +226,29 @@ export const FeedService = {
       '/feeds/posts/default',
     ];
 
-    for (const path of commonPaths) {
+    const urls = commonPaths.map((path) => {
       try {
-        const testUrl = new URL(path, baseUrl).href;
-        // RSSメタデータが取得できるか確認
-        await RssService.fetchMeta(testUrl);
-        return testUrl;
-      } catch (_) {
-        // 失敗したら次を試す
-        continue;
+        return new URL(path, baseUrl).href;
+      } catch {
+        return null;
       }
-    }
+    });
 
-    return null;
+    // 並列に投げ、成功したパスの添字を集める（各5秒で打ち切り）
+    const hits = await Promise.all(
+      urls.map(async (u, i) => {
+        if (!u) return -1;
+        try {
+          await RssService.fetchMeta(u, PROBE_TIMEOUT_MS);
+          return i;
+        } catch {
+          return -1;
+        }
+      })
+    );
+
+    const found = hits.filter((i) => i >= 0).sort((a, b) => a - b);
+    return found.length > 0 ? urls[found[0]] : null;
   },
 };
 
