@@ -3,6 +3,7 @@ import * as Encoding from 'encoding-japanese';
 
 import { Article } from '@/types/Article';
 import { getFaviconUrl } from '@/utils/feedUrl';
+import { XML_ENTITY_PROCESSING } from '@/constants/xmlEntityOptions';
 
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_ARTICLES = 50;
@@ -10,7 +11,8 @@ const MAX_ARTICLES = 50;
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
-  processEntities: true,  // 数値文字参照（&#x306F;など）を自動デコード
+  // 数値文字参照/HTMLエンティティを展開。エンティティ多数のフィード対策で展開上限を明示調整。
+  processEntities: XML_ENTITY_PROCESSING,
   htmlEntities: true,     // HTMLエンティティ（&lt;など）も自動デコード
 });
 

@@ -9,7 +9,17 @@ const CONCURRENCY = 8;
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
-  processEntities: true,
+  // ※ constants/xmlEntityOptions.ts の XML_ENTITY_PROCESSING と同値に保つこと
+  //   （node スクリプトから TS を直接 import できないため複製）。
+  //   エンティティ多数の候補フィードを誤って FAIL 判定しないよう展開上限を調整。
+  processEntities: {
+    enabled: true,
+    maxTotalExpansions: 100000,
+    maxExpandedLength: 1000000,
+    maxExpansionDepth: 10,
+    maxEntityCount: 100,
+    maxEntitySize: 10000,
+  },
   htmlEntities: true,
 });
 

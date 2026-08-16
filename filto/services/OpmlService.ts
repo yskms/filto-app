@@ -5,6 +5,7 @@ import { FeedService } from '@/services/FeedService';
 import { getFaviconUrl, isValidFeedUrl } from '@/utils/feedUrl';
 import { writeAndShare } from '@/utils/exportFile';
 import { Feed } from '@/types/Feed';
+import { XML_ENTITY_PROCESSING } from '@/constants/xmlEntityOptions';
 
 /**
  * OpmlService
@@ -14,7 +15,8 @@ import { Feed } from '@/types/Feed';
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
-  processEntities: true,
+  // エンティティ多数の OPML でパース失敗しないよう展開上限を明示（RssServiceと共有）。
+  processEntities: XML_ENTITY_PROCESSING,
   htmlEntities: true,
 });
 
