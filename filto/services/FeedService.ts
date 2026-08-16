@@ -22,6 +22,24 @@ function isSiteRootUrl(url: string): boolean {
 }
 
 /**
+ * 深い記事URL（例: note.com/{user}/n/{記事id}）から、最初のパスセグメントだけ
+ * 残した「セクション/ユーザーのトップページ」らしいURLを作る。
+ * パスが推測ではなく実在ページの<link>宣言を読みに行くだけなので、
+ * ドメイン直下の既知パス総当たり（isSiteRootUrl の対象）とは安全性の性質が異なる。
+ * セグメントが1つ以下（既にトップページに近い）なら試す意味がないため null。
+ */
+function sectionRootUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const segments = u.pathname.split('/').filter(Boolean);
+    if (segments.length <= 1) return null;
+    return `${u.origin}/${segments[0]}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * feed_add がURL入力から辿り着ける結果:
  * - feed:       入力URL自体がフィードだった（既存挙動）
  * - candidates: HTMLの<link>やフォールバックで見つかったフィード候補（1件以上）
@@ -195,7 +213,8 @@ export const FeedService = {
    *
    * 1. 入力URL自体をフィードとして解釈できれば確定（既存挙動を維持）
    * 2. HTMLなら <head> の <link rel="alternate"> から候補を抽出
-   * 3. 候補ゼロなら既知パスを並列プローブ（フォールバック）
+   * 3. 候補ゼロ・深いURLなら、セクション/ユーザーのトップページで再度2を試す
+   * 4. それでも候補ゼロ・サイト直下URLなら既知パスを並列プローブ（フォールバック）
    *
    * @throws ネットワーク/タイムアウト、または「フィードでもHTMLでもない」入力
    */
@@ -209,6 +228,32 @@ export const FeedService = {
     const links = extractFeedLinks(res.body, res.finalUrl);
     if (links.length > 0) {
       return { kind: 'candidates', candidates: links };
+    }
+
+    // 記事ページ等の深いURLで<link>が無い場合、セクション/ユーザーのトップ
+    // ページ（最初のパスセグメントだけ残したURL）で改めてAutodiscoveryを試す。
+    // 例: note.com/{user}/n/{記事id} → note.com/{user}。あくまで実在ページが
+    // <link>で宣言したフィードを読むだけで、URLパスを推測するわけではない
+    // （常にドメイン直下の絶対パスへ解決される既知パスプローブとは安全性の性質が別物）。
+    const sectionRoot = sectionRootUrl(res.finalUrl);
+    if (sectionRoot) {
+      try {
+        // 元URL取得(最大10秒)にこれが直列で乗るため、既定の10秒だと最悪20秒待たせる。
+        // 「念のための2回目の試行」としてフォールバックプローブと同じ5秒に短縮する。
+        const sectionRes = await RssService.fetchMetaOrBody(sectionRoot, PROBE_TIMEOUT_MS);
+        if (sectionRes.kind === 'feed') {
+          return {
+            kind: 'candidates',
+            candidates: [{ url: sectionRoot, type: 'rss', title: sectionRes.title }],
+          };
+        }
+        const sectionLinks = extractFeedLinks(sectionRes.body, sectionRes.finalUrl);
+        if (sectionLinks.length > 0) {
+          return { kind: 'candidates', candidates: sectionLinks };
+        }
+      } catch {
+        // セクショントップの取得に失敗しても、以降のフォールバックへ進む
+      }
     }
 
     // フォールバック: サイト直下（トップページ）らしいURLのときだけ既知パスを試す。
