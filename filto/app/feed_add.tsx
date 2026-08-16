@@ -18,6 +18,8 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { FeedService, DuplicateFeedUrlError } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
+import { FeedCandidate } from '@/utils/feedAutodiscovery';
+import { FeedCandidateModal } from '@/components/FeedCandidateModal';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -35,6 +37,10 @@ export default function FeedAddScreen() {
   const [isLoadingMeta, setIsLoadingMeta] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [fetchSuccess, setFetchSuccess] = useState(false);
+  // 自動検出: 複数候補の選択モーダルと、検出したURLの明示通知
+  const [candidates, setCandidates] = useState<FeedCandidate[]>([]);
+  const [candidateModalVisible, setCandidateModalVisible] = useState(false);
+  const [detectedNotice, setDetectedNotice] = useState<string | null>(null);
   const urlInputRef = useRef<TextInput>(null);
 
   const backgroundColor = useThemeColor({}, 'background');
@@ -151,6 +157,7 @@ export default function FeedAddScreen() {
       setUrlError(null);
     }
     setFetchSuccess(false);
+    setDetectedNotice(null);
   };
 
   // クリップボードから貼り付け。空白のみの場合は貼り付けない（入力済みURLを消さないため）
@@ -175,7 +182,29 @@ export default function FeedAddScreen() {
     [t]
   );
 
-  // フィード情報を取得
+  // 検出したフィードURLで確定する（自動検出の1件自動採用・候補選択の共通処理）。
+  // 重複チェックとメタ取得まで行い、名前/アイコン/成功状態を更新する。
+  // 失敗（重複以外）は呼び出し側の catch に委ねる。
+  const applyCandidate = useCallback(
+    async (candidateUrl: string, announce: boolean) => {
+      setUrl(candidateUrl);
+      const existing = await FeedService.findByUrl(candidateUrl);
+      if (existing) {
+        setFetchSuccess(false);
+        setDetectedNotice(null);
+        setUrlError(duplicateMessage(existing.title));
+        return;
+      }
+      const meta = await RssService.fetchMeta(candidateUrl);
+      if (meta.title) setName(meta.title);
+      if (meta.iconUrl) setIconUrl(meta.iconUrl);
+      setFetchSuccess(true);
+      if (announce) setDetectedNotice(candidateUrl);
+    },
+    [duplicateMessage]
+  );
+
+  // フィード情報を取得（URLがフィードでなければ自動検出にフォールバック）
   const handleFetchMeta = async () => {
     const validation = validateUrl(url);
     if (!validation.valid) {
@@ -185,6 +214,7 @@ export default function FeedAddScreen() {
 
     setIsLoadingMeta(true);
     setUrlError(null);
+    setDetectedNotice(null);
 
     try {
       // 通信する前に登録済みかどうかを確認する
@@ -195,17 +225,43 @@ export default function FeedAddScreen() {
         return;
       }
 
-      const meta = await RssService.fetchMeta(url.trim());
-      
-      if (meta.title) {
-        setName(meta.title);
-      }
+      const result = await FeedService.discoverFeedUrl(url.trim());
 
-      if (meta.iconUrl) {
-        setIconUrl(meta.iconUrl);
+      if (result.kind === 'feed') {
+        // 入力URL自体がフィード（従来挙動）
+        if (result.title) setName(result.title);
+        if (result.iconUrl) setIconUrl(result.iconUrl);
+        setFetchSuccess(true);
+      } else if (result.kind === 'candidates') {
+        if (result.candidates.length === 1) {
+          // 1件だけ見つかった → 自動採用（検出したURLを明示する）
+          await applyCandidate(result.candidates[0].url, true);
+        } else {
+          // 複数 → 選択モーダル
+          setCandidates(result.candidates);
+          setCandidateModalVisible(true);
+        }
+      } else {
+        // HTMLだがフィードを見つけられなかった
+        setFetchSuccess(false);
+        setUrlError(t('feeds.autoDetectFailed'));
       }
+    } catch (_) {
+      setFetchSuccess(false);
+      setUrlError(t('feeds.metaFetchFailed'));
+    } finally {
+      setIsLoadingMeta(false);
+    }
+  };
 
-      setFetchSuccess(true);
+  // 候補モーダルでフィードを選んだとき
+  const handleSelectCandidate = async (candidate: FeedCandidate) => {
+    setCandidateModalVisible(false);
+    setIsLoadingMeta(true);
+    setUrlError(null);
+    setDetectedNotice(null);
+    try {
+      await applyCandidate(candidate.url, true);
     } catch (_) {
       setFetchSuccess(false);
       setUrlError(t('feeds.metaFetchFailed'));
@@ -298,6 +354,14 @@ export default function FeedAddScreen() {
               {urlError && (
                 <ThemedText style={[styles.errorText, { color: dangerColor }]}>{urlError}</ThemedText>
               )}
+              {detectedNotice && !urlError && (
+                <View style={styles.detectedNotice}>
+                  <Ionicons name="checkmark-circle" size={16} color={tintColor} />
+                  <ThemedText style={[styles.detectedText, { color: tintColor }]} numberOfLines={2}>
+                    {t('feeds.feedFound')}: {detectedNotice}
+                  </ThemedText>
+                </View>
+              )}
             </View>
 
             {/* Paste Button */}
@@ -373,6 +437,13 @@ export default function FeedAddScreen() {
           startAtLast={tutorialStartAtLast}
           onBackBeforeFirst={handleTutorialBack}
         />
+
+        <FeedCandidateModal
+          visible={candidateModalVisible}
+          candidates={candidates}
+          onSelect={handleSelectCandidate}
+          onClose={() => setCandidateModalVisible(false)}
+        />
       </SafeAreaView>
     </>
   );
@@ -441,6 +512,16 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 14,
     marginTop: 4,
+  },
+  detectedNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginTop: 6,
+  },
+  detectedText: {
+    flex: 1,
+    fontSize: 13,
   },
   hint: {
     fontSize: 14,

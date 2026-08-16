@@ -76,7 +76,7 @@ Filto（フィルト）は、好きな情報源だけを集めて、不要な話
 - **言語**: TypeScript
 - **ローカルDB**: SQLite
 - **アーキテクチャ**: UI / Service / Repository
-- **通信**: RSS取得のみ（クラウド依存なし）
+- **通信**: RSS取得のみ（クラウド依存なし）。フィード追加時、入力URLがフィードでなければユーザー操作時に限りHTMLを1回取得し、`<link rel="alternate">`（RSS Autodiscovery）からフィードURLを検出する
 
 開発方針・命名規則・ドキュメント構成は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
