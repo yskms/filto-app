@@ -602,16 +602,23 @@ export const RssService = {
             }
           }
           
+          // はてなブックマーク系(b.hatena)の記事本来のOGP画像。content:encoded の先頭 <img> は
+          // はてなの64pxファビコンのため、それより先に拾わないと小さいファビコンになってしまう。
+          if (!thumbnailUrl) {
+            const hatenaImg = getText(obj['hatena:imageurl']);
+            if (hatenaImg) thumbnailUrl = hatenaImg;
+          }
+
           // content:encoded 内の画像を確認
           if (!thumbnailUrl && content) {
             thumbnailUrl = extractImageUrl(content);
           }
-          
+
           // description 内の画像を確認
           if (!thumbnailUrl && summary) {
             thumbnailUrl = extractImageUrl(summary);
           }
-          
+
           // サイト固有のサムネイル生成を試みる
           if (!thumbnailUrl) {
             thumbnailUrl = generateThumbnailFromUrl(link);
