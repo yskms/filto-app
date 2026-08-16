@@ -270,7 +270,7 @@ const HomeHeader: React.FC<{
           onPress={onPressFeedSelect}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.feedName}>{feedName}</ThemedText>
+          <ThemedText style={styles.feedName} numberOfLines={2}>{feedName}</ThemedText>
           <Ionicons name="chevron-down" size={16} color={iconColor} />
         </TouchableOpacity>
 
@@ -1393,6 +1393,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginRight: 8,
+    flexShrink: 1, // 長いフィード名は省略表示にして右のヘッダーボタンに被らせない
   },
   dropdownIcon: {
     fontSize: 14,
@@ -1401,6 +1402,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0, // ボタン群は縮めない（フィード名側だけを省略させる）
   },
   starButton: {
     width: 36,
