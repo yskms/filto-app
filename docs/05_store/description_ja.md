@@ -94,7 +94,7 @@ RSS,ニュース,フィード,リーダー,フィルター,ブログ,情報収�
 
 | フィールド | 値 | 必須 | 備考 |
 |---|---|---|---|
-| バージョン | 1.3.3 | ✓ | app.json と合わせる |
+| バージョン | 1.3.4 | ✓ | app.json と合わせる |
 | 著作権 | 2026 yskms | ✓ | © 不要。本名にする場合は変更 |
 | サポートURL | https://yskms.github.io/filto-app/ | ✓ | GitHub Pages トップ |
 | プライバシーポリシーURL | https://yskms.github.io/filto-app/privacy-policy | ✓ | サポートURLとは別フィールド |
