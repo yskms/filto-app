@@ -722,6 +722,9 @@
 #### ビルド・提出
 - [x] iOS buildNumber20 / Android versionCode20、`eas build` → `eas submit`（Androidは `releaseStatus: draft` のため一度DRAFTで提出）。両OS審査通過・公開
 
+#### リリース後 OTA
+- [x] **OTA③（2026-08-20）**: ダークモードでボタン文字が読めなくなる不具合を修正。`tint` 色がダークモードで `#fff` になる一方、`SiteHideSuggestModal`（サイト非表示提案の確定ボタン）と `InitErrorScreen`（DB初期化失敗時の再試行ボタン）の文字色が固定 `#fff` だったため、白背景に白文字で視認不能になっていた。ユーザー実機のスクショで発覚。他画面（`filter_edit.tsx` 等）と同じ「文字色を `light:#fff` / `dark:#151718` で動的に切り替える」パターンに合わせて修正し、既存パターンとの一貫性を確認（`/code-review` による敵対的セルフレビューで、最初の修正案＝新色 `#2f81f7` を追加する方式は既存パターンとの不一致とコントラスト不足を指摘され、既存パターンへの合わせ込みに変更）。version据え置き（1.3.4のまま）。Android update group `ac164957-979e-4188-a0aa-8b49c284e090` / iOS update group `594a9b94-dda4-4d3d-8ecf-843a2875da02`（Runtime 1.3.4）
+
 ---
 
 ## 既知の不具合
