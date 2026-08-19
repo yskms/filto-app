@@ -24,6 +24,7 @@ export default function SiteHideSuggestModal({
   const textColor = useThemeColor({}, 'text');
   const subtextColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
+  const buttonTextColor = useThemeColor({ light: '#fff', dark: '#151718' }, 'text');
   const { t } = useTranslation();
 
   return (
@@ -44,7 +45,9 @@ export default function SiteHideSuggestModal({
             activeOpacity={0.8}
             accessibilityRole="button"
           >
-            <ThemedText style={styles.primaryText}>{t('home.suggestHideSiteConfirm')}</ThemedText>
+            <ThemedText style={[styles.primaryText, { color: buttonTextColor }]}>
+              {t('home.suggestHideSiteConfirm')}
+            </ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryBtn} onPress={onDismiss} activeOpacity={0.7}>
             <ThemedText style={[styles.secondaryText, { color: subtextColor }]}>

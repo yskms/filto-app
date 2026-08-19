@@ -18,6 +18,7 @@ export default function InitErrorScreen({ onRetry }: { onRetry: () => void }) {
   const textColor = useThemeColor({}, 'text');
   const subtextColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
+  const buttonTextColor = useThemeColor({ light: '#fff', dark: '#151718' }, 'text');
   const { t } = useTranslation();
 
   return (
@@ -35,7 +36,9 @@ export default function InitErrorScreen({ onRetry }: { onRetry: () => void }) {
           onPress={onRetry}
           accessibilityRole="button"
         >
-          <ThemedText style={styles.buttonText}>{t('errors.retry')}</ThemedText>
+          <ThemedText style={[styles.buttonText, { color: buttonTextColor }]}>
+            {t('errors.retry')}
+          </ThemedText>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
