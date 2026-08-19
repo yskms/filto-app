@@ -693,6 +693,34 @@
 - [x] 横スワイプの発火閾値 **10→30**（片手操作で縦スクロールが横スワイプに化けるのを軽減。`ReanimatedSwipeable` の `dragOffsetFromLeftEdge/RightEdge`＝内部 `activeOffsetX`。実機で 20→25→30 と調整）
 - [x] これを **初の `eas update`（OTA）で配信**。version は据え置き（1.3.3のまま＝`runtimeVersion` 一致でストア版1.3.3ユーザーに到達）。次回起動で裏DL→その次の起動で反映、実機で確認済み
 - 学び: `eas update` は既定で web も書き出すため `expo-sqlite/web/worker.ts` の `wa-sqlite.wasm` 未解決で export 失敗 → **`--platform android` と `--platform ios` を個別**に打って回避（実ユーザーはネイティブなので影響なし）
+- [x] OTA②: fast-xml-parser のエンティティ展開上限バグ修正＋長いフィード名のヘッダー被り修正＋はてブ記事画像（`hatena:imageurl`優先）＋はてブをデフォルトdevカテゴリに追加
+
+---
+
+### v1.3.4（フィードURL自動検出 / iOS・Android 審査通過・公開 2026-08-19）
+
+#### マージ済み（機能）
+- [x] **フィードURL自動検出（RSS Autodiscovery）**: `feed_add` でサイトのトップページURL等を貼ると、入力URLがフィードとして解釈できない場合に `<head>` の `<link rel="alternate" type="application/rss+xml|atom+xml">` を読んでフィードURLを解決。設計: `docs/04_detail_design/services/FeedAutodiscovery.md`
+  - `utils/feedAutodiscovery.ts`（`extractFeedLinks`）: `<base href>` 優先の相対URL解決、WordPress等のコメントフィードを判別（末尾に回す＋UIでバッジ表示）
+  - `RssService.fetchMetaOrBody`: 既存 `fetchMeta` を壊さない薄いラッパ化。フィードでなければHTML本文（先頭200KB）を返し、同じURLの二重取得を回避
+  - `FeedService.discoverFeedUrl`: 入力URL→Autodiscovery→**セクション/ユーザーのトップページで再Autodiscovery**→サイト直下URL限定の既知パス並列プローブ、の順で解決
+  - `FeedCandidateModal`: 複数候補時の選択UI（コメントフィードはバッジで区別）
+  - 候補1件のときは自動採用し「フィードを見つけました: URL」を必ず明示（黙って書き換えない）
+
+#### 実機の敵対的セルフレビューで発見・修正した不具合（2周実施）
+- [x] **深い記事URLでの誤検出**: `https://note.com/{user}/n/{記事id}` のような記事URLで見つからなかった場合、既知パス総当たりフォールバックが常にドメイン直下の絶対パスに解決される仕様のため、記事とは無関係な `https://note.com/rss`（サイト全体のフィード）を「見つけました」と誤答していた。`isSiteRootUrl()` でフォールバックの発火をサイト直下URL限定に制限し、深いURLでは素直に「見つかりませんでした」を返すよう修正
+- [x] ユーザー要望で **`sectionRootUrl()`** を追加: 記事URLの最初のパスセグメントだけ残した「著者/セクションのトップページ」で再度Autodiscoveryを試す（パスの推測ではなく実在ページの`<link>`宣言を読むだけなので安全性の性質が異なる）。note.com・Qiitaの複数URLで安定動作を実データ確認
+- [x] **セクショントップ再取得のタイムアウト**: 既定10秒のままだと元URL取得と直列で最悪20秒待たせる状態を実測で発見（Qiitaでサーバー応答が遅いタイミングに再現）→ フォールバックプローブと同じ5秒に短縮、最悪15秒に
+
+#### プライバシーポリシー更新
+- [x] `docs/privacy-policy.md`「4. 外部通信について」に自動検出の通信（ユーザー操作時のみ・巡回なし）を追記。GitHub Pages（`main`:`/docs` legacy build）は push で自動反映、追加操作不要
+
+#### 配信方式の判断
+- **OTAではなく通常の審査ルートを選択**: 新UI（`FeedCandidateModal`）を伴う実質的な新機能であり、これまでのOTA①②（スワイプ閾値調整・パーサ修正）とは異なりExpo/AppleのOTAポリシー（アプリの主目的を変えない範囲のJS更新）の想定範囲を超えると判断
+- README.md の「通信」記述も更新（GitHub限定・審査とは無関係だが開発者向けの正確性のため）。ストア説明文（`description_ja/en.md`）は技術的な通信の主張を含まないため変更不要と判断
+
+#### ビルド・提出
+- [x] iOS buildNumber20 / Android versionCode20、`eas build` → `eas submit`（Androidは `releaseStatus: draft` のため一度DRAFTで提出）。両OS審査通過・公開
 
 ---
 
