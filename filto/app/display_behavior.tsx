@@ -15,6 +15,9 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 // 既読表示モード
 export type ReadDisplayMode = 'dim' | 'hide';
 
+// 広告の設置位置
+export type AdPosition = 'top' | 'bottom';
+
 // 設定のストレージキー
 
 const DisplayBehaviorHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
@@ -114,7 +117,9 @@ export default function DisplayBehaviorScreen() {
   const { t } = useTranslation();
   
   const [readDisplay, setReadDisplay] = useState<ReadDisplayMode>('dim');
+  const [adPosition, setAdPosition] = useState<AdPosition>('bottom');
   const [readDisplayModalVisible, setReadDisplayModalVisible] = useState(false);
+  const [adPositionModalVisible, setAdPositionModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
@@ -122,6 +127,8 @@ export default function DisplayBehaviorScreen() {
     try {
       const savedRead = await AsyncStorage.getItem(StorageKeys.readDisplay);
       if (savedRead === 'dim' || savedRead === 'hide') setReadDisplay(savedRead);
+      const savedAdPosition = await AsyncStorage.getItem(StorageKeys.adPosition);
+      if (savedAdPosition === 'top' || savedAdPosition === 'bottom') setAdPosition(savedAdPosition);
     } catch (_) {
     }
   }, []);
@@ -132,6 +139,15 @@ export default function DisplayBehaviorScreen() {
     try {
       setReadDisplay(mode);
       await AsyncStorage.setItem(StorageKeys.readDisplay, mode);
+    } catch (_) {
+      Alert.alert(t('common.error'), t('displayBehavior.saveError'));
+    }
+  };
+
+  const handleAdPosition = async (position: AdPosition) => {
+    try {
+      setAdPosition(position);
+      await AsyncStorage.setItem(StorageKeys.adPosition, position);
     } catch (_) {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -159,6 +175,11 @@ export default function DisplayBehaviorScreen() {
     { value: 'hide' as const, label: t('displayBehavior.readDisplayHide') },
   ];
 
+  const AD_POSITION_OPTIONS = [
+    { value: 'bottom' as const, label: t('displayBehavior.adPositionBottom') },
+    { value: 'top' as const, label: t('displayBehavior.adPositionTop') },
+  ];
+
   const THEME_OPTIONS = [
     { value: 'light', label: t('displayBehavior.themeLight') },
     { value: 'dark', label: t('displayBehavior.themeDark') },
@@ -171,6 +192,7 @@ export default function DisplayBehaviorScreen() {
   ];
 
   const getReadDisplayLabel = () => READ_DISPLAY_OPTIONS.find((o) => o.value === readDisplay)?.label ?? t('displayBehavior.readDisplayDim');
+  const getAdPositionLabel = () => AD_POSITION_OPTIONS.find((o) => o.value === adPosition)?.label ?? t('displayBehavior.adPositionBottom');
   const getThemeLabel = () => THEME_OPTIONS.find((o) => o.value === themePreference)?.label ?? t('displayBehavior.themeSystem');
   const getLanguageLabel = () => LANGUAGE_OPTIONS.find((o) => o.value === language)?.label ?? t('displayBehavior.languageJa');
 
@@ -185,6 +207,14 @@ export default function DisplayBehaviorScreen() {
             label={t('displayBehavior.readDisplayMode')} 
             value={getReadDisplayLabel()} 
             onPress={() => setReadDisplayModalVisible(true)} 
+          />
+        </SettingSection>
+
+        <SettingSection title={t('displayBehavior.adPosition')}>
+          <Dropdown
+            label={t('displayBehavior.adPosition')}
+            value={getAdPositionLabel()}
+            onPress={() => setAdPositionModalVisible(true)}
           />
         </SettingSection>
 
@@ -213,6 +243,16 @@ export default function DisplayBehaviorScreen() {
         selectedValue={readDisplay}
         onSelect={(value) => handleReadDisplay(value as ReadDisplayMode)}
         onClose={() => setReadDisplayModalVisible(false)}
+      />
+
+      {/* 広告位置モーダル */}
+      <DropdownModal
+        visible={adPositionModalVisible}
+        title={t('displayBehavior.adPosition')}
+        options={AD_POSITION_OPTIONS}
+        selectedValue={adPosition}
+        onSelect={(value) => handleAdPosition(value as AdPosition)}
+        onClose={() => setAdPositionModalVisible(false)}
       />
 
       {/* テーマモーダル */}

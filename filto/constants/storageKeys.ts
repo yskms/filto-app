@@ -37,6 +37,7 @@ export const StorageKeys = {
   readDisplay: '@filto/display_behavior/readDisplay',
   theme: '@filto/display_behavior/theme',
   layoutMode: '@filto/display_behavior/layoutMode',
+  adPosition: '@filto/display_behavior/adPosition',
 
   // ホーム
   feedSort: '@filto/home/feedSort',

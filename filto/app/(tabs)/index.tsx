@@ -36,7 +36,7 @@ import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService'
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
-import type { ReadDisplayMode } from '../display_behavior';
+import type { ReadDisplayMode, AdPosition } from '../display_behavior';
 import { Ionicons } from '@expo/vector-icons';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { ThemedText } from '@/components/themed-text';
@@ -51,6 +51,7 @@ import { useToast } from '@/providers/toast';
 import { ArticleActionSheet } from '@/components/ArticleActionSheet';
 import SiteHideSuggestModal from '@/components/SiteHideSuggestModal';
 import { SITE_SUGGEST_CONSECUTIVE, SITE_SUGGEST_CUMULATIVE, isSiteSuggestSuppressed, dismissSiteSuggest } from '@/utils/siteSuggest';
+import { AdBanner } from '@/components/AdBanner';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
@@ -359,6 +360,7 @@ export default function HomeScreen() {
   // Display & Behavior（既読表示など）
   const [readDisplay, setReadDisplay] = React.useState<ReadDisplayMode>('dim');
   const [layoutMode, setLayoutMode] = React.useState<LayoutMode>('compact');
+  const [adPosition, setAdPosition] = React.useState<AdPosition>('bottom');
 
   // 起動時自動同期の実行済みフラグ
   const [hasAutoSynced, setHasAutoSynced] = React.useState(false);
@@ -533,6 +535,15 @@ export default function HomeScreen() {
       .then(saved => { if (saved === 'compact' || saved === 'large') setLayoutMode(saved); })
       .catch(() => {});
   }, []);
+
+  // 広告の設置位置（Display & Behavior側で変更されうるため、画面フォーカス時に読み直す）
+  useFocusEffect(
+    React.useCallback(() => {
+      AsyncStorage.getItem(StorageKeys.adPosition)
+        .then(saved => { if (saved === 'top' || saved === 'bottom') setAdPosition(saved); })
+        .catch(() => {});
+    }, [])
+  );
 
   // 記事レイアウトを切替・永続化する
   const handleToggleLayout = React.useCallback(() => {
@@ -1181,6 +1192,8 @@ export default function HomeScreen() {
         layoutToggleRef={layoutToggleRef}
       />
 
+      {adPosition === 'top' && <AdBanner />}
+
       {searchOpen && (
         <View style={[styles.searchBar, { backgroundColor: searchBarBg }]}>
           <Ionicons name="search" size={18} color={searchIconColor} />
@@ -1309,6 +1322,8 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       )}
+
+      {adPosition === 'bottom' && <AdBanner />}
 
       {/* フィード選択モーダル */}
       <FeedSelectModal

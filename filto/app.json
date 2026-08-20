@@ -46,7 +46,16 @@
       "expo-sqlite",
       "expo-localization",
       "./plugins/withAndroidSplashIconBackground",
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "delayAppMeasurementInit": true
+        }
+      ],
+      "./plugins/withRemoveAdIdPermission"
     ],
     "experiments": {
       "typedRoutes": true,
