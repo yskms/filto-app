@@ -1,8 +1,9 @@
 import { GlobalAllowKeywordRepository } from '@/repositories/GlobalAllowKeywordRepository';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
+import { ProService } from '@/services/ProService';
 
-// Pro版制限
-const FREE_LIMIT = 3;
+// Pro版制限。設計: docs/01_requirements/01_monetization_plan.md §5.1
+export const FREE_LIMIT = 2;
 
 /**
  * GlobalAllowKeywordService
@@ -38,11 +39,10 @@ export const GlobalAllowKeywordService = {
     if (!isPro) {
       const count = await GlobalAllowKeywordRepository.count();
       if (count >= FREE_LIMIT) {
-        return { 
-          success: false, 
-          message: `無料版は${FREE_LIMIT}件までです。Pro版にアップグレードしてください。`,
-          requiresPro: true 
-        };
+        // message はここでは組み立てない。固定の日本語文字列を返すと呼び出し側の
+        // `result.message || t(...)` が常にこちらを選び、多言語対応の文言が
+        // 到達不能になるため（呼び出し側でi18nメッセージを組み立てさせる）。
+        return { success: false, requiresPro: true };
       }
     }
 
@@ -70,10 +70,10 @@ export const GlobalAllowKeywordService = {
   },
 
   /**
-   * Pro版かどうか（現在は常に無料版）
+   * Pro版かどうか
    */
   async isPro(): Promise<boolean> {
-    return false;
+    return ProService.isPro();
   },
 
   /**

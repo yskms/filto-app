@@ -16,7 +16,7 @@ import { Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
-import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
+import { GlobalAllowKeywordService, FREE_LIMIT } from '@/services/GlobalAllowKeywordService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -130,7 +130,7 @@ export default function GlobalAllowKeywordsScreen() {
         showToast(t('common.added'), 'success');
       } else {
         if (result.requiresPro) {
-          Alert.alert(t('common.confirm'), result.message || t('globalAllowKeywords.freeLimitReached', { limit: 3 }));
+          Alert.alert(t('common.confirm'), result.message || t('globalAllowKeywords.freeLimitReached', { limit: FREE_LIMIT }));
         } else {
           Alert.alert(t('common.error'), result.message || t('globalAllowKeywords.addError'));
         }
@@ -215,7 +215,7 @@ export default function GlobalAllowKeywordsScreen() {
             </ThemedText>
             {remainingCount !== null && remainingCount === 0 && (
               <ThemedText style={styles.limitText}>
-                {t('globalAllowKeywords.freeLimitReached', { limit: 3 })}
+                {t('globalAllowKeywords.freeLimitReached', { limit: FREE_LIMIT })}
               </ThemedText>
             )}
           </View>

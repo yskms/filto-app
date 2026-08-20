@@ -13,7 +13,7 @@ import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { FilterService, Filter } from '@/services/FilterService';
+import { FilterService, Filter, FREE_LIMIT } from '@/services/FilterService';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
@@ -219,10 +219,16 @@ export default function FilterEditScreen() {
         updated_at: now,
       };
 
-      await FilterService.save(filterData);
+      const result = await FilterService.save(filterData);
 
-      showToast(t('common.saved'), 'success');
-      router.back();
+      if (result.success) {
+        showToast(t('common.saved'), 'success');
+        router.back();
+      } else if (result.requiresPro) {
+        Alert.alert(t('common.confirm'), result.message || t('filters.freeLimitReached', { limit: FREE_LIMIT }));
+      } else {
+        Alert.alert(t('common.error'), result.message || t('filters.saveError'));
+      }
     } catch (_) {
       Alert.alert(t('common.error'), t('filters.saveError'));
     } finally {

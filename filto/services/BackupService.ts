@@ -119,6 +119,8 @@ export interface BackupApplyResult {
   articlesSkipped: number;
   /** 無料版の上限に達して復元できなかった許可キーワードの件数 */
   keywordsSkipped: number;
+  /** 無料版の上限に達して復元できなかったフィルタの件数 */
+  filtersSkipped: number;
 }
 
 /** 現在のDBの中身をバックアップ形式にまとめる */
@@ -171,6 +173,7 @@ async function collectBackupData(includeAllArticles: boolean): Promise<BackupDat
 async function restoreInto(data: BackupData): Promise<BackupApplyResult> {
   let feedsAdded = 0;
   let filtersAdded = 0;
+  let filtersSkipped = 0;
   let keywordsAdded = 0;
   let keywordsSkipped = 0;
   let feedsSkipped = 0;
@@ -229,9 +232,14 @@ async function restoreInto(data: BackupData): Promise<BackupApplyResult> {
     if (existingSigs.has(sig)) continue;
     try {
       const now = Math.floor(Date.now() / 1000);
-      await FilterService.save({ ...normalized, created_at: now, updated_at: now } as Filter);
-      existingSigs.add(sig);
-      filtersAdded++;
+      const result = await FilterService.save({ ...normalized, created_at: now, updated_at: now } as Filter);
+      if (result.success) {
+        existingSigs.add(sig);
+        filtersAdded++;
+      } else if (result.requiresPro) {
+        // 上限に達して復元できなかった。黙って捨てるとデータが消えたように見えるため件数を伝える
+        filtersSkipped++;
+      }
     } catch (_) {}
   }
 
@@ -321,6 +329,7 @@ async function restoreInto(data: BackupData): Promise<BackupApplyResult> {
     feedsSkipped,
     articlesSkipped,
     keywordsSkipped,
+    filtersSkipped,
   };
 }
 

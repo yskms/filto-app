@@ -145,6 +145,7 @@ export const ja = {
       sortBlockKeywordDesc: 'ブロックキーワード (Z-A)',
       saveError: 'フィルタの保存に失敗しました',
       deleteError: 'フィルタの削除に失敗しました',
+      freeLimitReached: '無料版は{{limit}}件までです。Pro版で無制限に追加できます。',
       blockKeywordRequired: 'ブロックキーワードを入力してください',
       atLeastOneTarget: 'タイトルまたは概要の少なくとも1つを対象にしてください',
       allowKeywordHint: '非表示対象であっても、ここの文字が含まれていれば表示します。',
@@ -347,6 +348,7 @@ export const ja = {
       backupRestoreFeedsSkipped: 'フィード{{count}}件は取り込めませんでした。',
       backupRestoreArticlesSkipped: '記事{{count}}件は取り込めませんでした。',
       backupRestoreKeywordsSkipped: '許可キーワード{{count}}件は上限のため追加できませんでした。',
+      backupRestoreFiltersSkipped: 'フィルタ{{count}}件は上限のため追加できませんでした。',
       backupRestoreError: '復元に失敗しました。',
     },
   

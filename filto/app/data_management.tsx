@@ -435,6 +435,9 @@ export default function DataManagementScreen() {
         result.keywordsSkipped > 0
           ? t('dataManagement.backupRestoreKeywordsSkipped', { count: result.keywordsSkipped })
           : '',
+        result.filtersSkipped > 0
+          ? t('dataManagement.backupRestoreFiltersSkipped', { count: result.filtersSkipped })
+          : '',
       ].filter(Boolean);
 
       Alert.alert(
