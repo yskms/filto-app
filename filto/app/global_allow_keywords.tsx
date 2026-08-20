@@ -128,12 +128,14 @@ export default function GlobalAllowKeywordsScreen() {
         inputRef.current?.blur();
         await loadKeywords();
         showToast(t('common.added'), 'success');
+      } else if (result.requiresPro) {
+        Alert.alert(t('common.confirm'), t('globalAllowKeywords.freeLimitReached', { limit: FREE_LIMIT }));
+      } else if (result.reason === 'duplicate') {
+        Alert.alert(t('common.error'), t('globalAllowKeywords.alreadyExists'));
       } else {
-        if (result.requiresPro) {
-          Alert.alert(t('common.confirm'), result.message || t('globalAllowKeywords.freeLimitReached', { limit: FREE_LIMIT }));
-        } else {
-          Alert.alert(t('common.error'), result.message || t('globalAllowKeywords.addError'));
-        }
+        // reason === 'empty'（通常はここに来る前に上で弾いている）/ 'dbError' / 未指定は
+        // まとめて汎用エラーにする
+        Alert.alert(t('common.error'), t('globalAllowKeywords.addError'));
       }
     } finally {
       setIsAdding(false);

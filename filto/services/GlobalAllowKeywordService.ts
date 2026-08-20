@@ -19,31 +19,37 @@ export const GlobalAllowKeywordService = {
 
   /**
    * キーワードを追加
-   * @returns { success: boolean, message?: string, id?: number }
+   * メッセージ文言はここでは組み立てない（固定文字列だと呼び出し側の多言語対応が
+   * 到達不能になるため）。reason/requiresProを見て呼び出し側でt()を選ばせる。
+   * @param options.bypassLimit 無料版上限チェックをスキップする（バックアップの安全
+   *   ロールバックで、ユーザー自身の既存データを書き戻すときにのみ使う）
+   * @returns { success: boolean, id?: number, requiresPro?: boolean, reason?: 'empty' | 'duplicate' | 'dbError' }
    */
-  async create(keyword: string): Promise<{ success: boolean; message?: string; id?: number; requiresPro?: boolean }> {
+  async create(
+    keyword: string,
+    options?: { bypassLimit?: boolean }
+  ): Promise<{
+    success: boolean;
+    id?: number;
+    requiresPro?: boolean;
+    reason?: 'empty' | 'duplicate' | 'dbError';
+  }> {
     // 入力チェック
     const trimmed = keyword.trim();
     if (!trimmed) {
-      return { success: false, message: 'キーワードを入力してください' };
+      return { success: false, reason: 'empty' };
     }
 
     // 重複チェック
     const exists = await GlobalAllowKeywordRepository.exists(trimmed);
     if (exists) {
-      return { success: false, message: 'このキーワードは既に登録されています' };
+      return { success: false, reason: 'duplicate' };
     }
 
     // Pro版チェック
-    const isPro = await this.isPro();
-    if (!isPro) {
-      const count = await GlobalAllowKeywordRepository.count();
-      if (count >= FREE_LIMIT) {
-        // message はここでは組み立てない。固定の日本語文字列を返すと呼び出し側の
-        // `result.message || t(...)` が常にこちらを選び、多言語対応の文言が
-        // 到達不能になるため（呼び出し側でi18nメッセージを組み立てさせる）。
-        return { success: false, requiresPro: true };
-      }
+    const allowed = await ProService.checkLimit(() => GlobalAllowKeywordRepository.count(), FREE_LIMIT, options);
+    if (!allowed) {
+      return { success: false, requiresPro: true };
     }
 
     // 追加実行
@@ -51,7 +57,7 @@ export const GlobalAllowKeywordService = {
       const id = await GlobalAllowKeywordRepository.create(trimmed);
       return { success: true, id };
     } catch (error) {
-      return { success: false, message: '登録に失敗しました' };
+      return { success: false, reason: 'dbError' };
     }
   },
 
