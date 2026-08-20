@@ -82,9 +82,12 @@ export default function RootLayout() {
     BackgroundSync.syncRegistration();
   }, []);
 
-  // 広告SDKの初期化（web版はadInit.tsのno-opフォールバックが解決される）
+  // 広告SDKの初期化。EEA/UKユーザーへの同意フォーム表示を含むため、なるべく早い
+  // タイミングで開始する（圏外のユーザーには何も表示されない）。
+  // 内部で失敗を握って false を返すので、ここでの reject はない。
+  // web版は adInit.ts の no-op フォールバックが解決される
   useEffect(() => {
-    initAds().catch(() => {});
+    initAds();
   }, []);
 
   // 設定・データ管理からの「初回ガイドをやり直す」でオンボーディングを再表示する

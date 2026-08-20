@@ -5,4 +5,10 @@
  * （adInit.native.ts）で実体を分離し、_layout.tsx自身がネイティブ専用パッケージを
  * 直接importしなくて済むようにする。
  */
-export async function initAds(): Promise<void> {}
+export function initAds(): Promise<boolean> {
+  return Promise.resolve(false);
+}
+
+export function canShowAds(): Promise<boolean> {
+  return Promise.resolve(false);
+}
