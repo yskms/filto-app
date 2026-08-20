@@ -18,19 +18,26 @@ export const GlobalAllowKeywordService = {
 
   /**
    * キーワードを追加
-   * @returns { success: boolean, message?: string, id?: number }
+   * メッセージ文言はここでは組み立てない（固定文字列だと呼び出し側の多言語対応が
+   * 到達不能になるため）。reason/requiresProを見て呼び出し側でt()を選ばせる。
+   * @returns { success: boolean, id?: number, requiresPro?: boolean, reason?: 'empty' | 'duplicate' | 'dbError' }
    */
-  async create(keyword: string): Promise<{ success: boolean; message?: string; id?: number; requiresPro?: boolean }> {
+  async create(keyword: string): Promise<{
+    success: boolean;
+    id?: number;
+    requiresPro?: boolean;
+    reason?: 'empty' | 'duplicate' | 'dbError';
+  }> {
     // 入力チェック
     const trimmed = keyword.trim();
     if (!trimmed) {
-      return { success: false, message: 'キーワードを入力してください' };
+      return { success: false, reason: 'empty' };
     }
 
     // 重複チェック
     const exists = await GlobalAllowKeywordRepository.exists(trimmed);
     if (exists) {
-      return { success: false, message: 'このキーワードは既に登録されています' };
+      return { success: false, reason: 'duplicate' };
     }
 
     // Pro版チェック
@@ -38,11 +45,7 @@ export const GlobalAllowKeywordService = {
     if (!isPro) {
       const count = await GlobalAllowKeywordRepository.count();
       if (count >= FREE_LIMIT) {
-        return { 
-          success: false, 
-          message: `無料版は${FREE_LIMIT}件までです。Pro版にアップグレードしてください。`,
-          requiresPro: true 
-        };
+        return { success: false, requiresPro: true };
       }
     }
 
@@ -51,7 +54,7 @@ export const GlobalAllowKeywordService = {
       const id = await GlobalAllowKeywordRepository.create(trimmed);
       return { success: true, id };
     } catch (error) {
-      return { success: false, message: '登録に失敗しました' };
+      return { success: false, reason: 'dbError' };
     }
   },
 
