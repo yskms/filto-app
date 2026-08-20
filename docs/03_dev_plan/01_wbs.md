@@ -724,6 +724,7 @@
 
 #### リリース後 OTA
 - [x] **OTA③（2026-08-20）**: ダークモードでボタン文字が読めなくなる不具合を修正。`tint` 色がダークモードで `#fff` になる一方、`SiteHideSuggestModal`（サイト非表示提案の確定ボタン）と `InitErrorScreen`（DB初期化失敗時の再試行ボタン）の文字色が固定 `#fff` だったため、白背景に白文字で視認不能になっていた。ユーザー実機のスクショで発覚。他画面（`filter_edit.tsx` 等）と同じ「文字色を `light:#fff` / `dark:#151718` で動的に切り替える」パターンに合わせて修正し、既存パターンとの一貫性を確認（`/code-review` による敵対的セルフレビューで、最初の修正案＝新色 `#2f81f7` を追加する方式は既存パターンとの不一致とコントラスト不足を指摘され、既存パターンへの合わせ込みに変更）。version据え置き（1.3.4のまま）。Android update group `ac164957-979e-4188-a0aa-8b49c284e090` / iOS update group `594a9b94-dda4-4d3d-8ecf-843a2875da02`（Runtime 1.3.4）
+- [x] **OTA④（2026-08-20）**: `GlobalAllowKeywordService.create()` が上限到達・重複・DB失敗時に固定の日本語メッセージを返しており、呼び出し側の `result.message || t(...)` が常に日本語側を選ぶため、英語ロケールでも日本語のまま表示されるバグを修正（Filtoの主軸は英語圏のため実害あり）。`reason`/`requiresPro` の判別だけを返し、表示文言は呼び出し側の `t()` に一本化（既存の翻訳キーのみ使用）。Pro版件数上限の本実装（`feature/pro-plan-limits`、別途進行中）とは切り離した独立修正。`/code-review` によるセルフレビューは指摘なし。OTA③（ダークモード修正）がgit push未実施のままローカルで先にeas update済みだったため、今回の配信に相乗りする形で結果的に重複配信となったが実害なし。version据え置き（1.3.4のまま）。Android update group `17b5a5e6-d174-41b1-9744-907e8fe763f3` / iOS update group `0ad69b24-9bf4-4021-a350-e94af279e08a`（Runtime 1.3.4）
 
 ---
 
