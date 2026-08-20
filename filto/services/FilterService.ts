@@ -45,23 +45,25 @@ export const FilterService = {
 
   /**
    * フィルタを保存（新規作成 or 更新）
-   * @returns { success: boolean, message?: string, requiresPro?: boolean }
+   * @param options.bypassLimit 無料版上限チェックをスキップする（バックアップの安全
+   *   ロールバックで、ユーザー自身の既存データを書き戻すときにのみ使う）
+   * @returns { success: boolean, requiresPro?: boolean }
    */
-  async save(filter: Filter): Promise<{ success: boolean; message?: string; requiresPro?: boolean }> {
+  async save(
+    filter: Filter,
+    options?: { bypassLimit?: boolean }
+  ): Promise<{ success: boolean; requiresPro?: boolean }> {
     const now = Math.floor(Date.now() / 1000);
 
     if (filter.id === undefined) {
       // 新規作成: 上限は新規作成時のみチェックする。既存フィルタの編集は対象外
       // （遡って何かを制限しない方針。docs/01_requirements/01_monetization_plan.md §5.2）
-      const isPro = await ProService.isPro();
-      if (!isPro) {
-        const count = await FilterRepository.count();
-        if (count >= FREE_LIMIT) {
-          // message はここでは組み立てない。固定の日本語文字列を返すと呼び出し側の
-          // `result.message || t(...)` が常にこちらを選び、多言語対応の文言が
-          // 到達不能になるため（呼び出し側でi18nメッセージを組み立てさせる）。
-          return { success: false, requiresPro: true };
-        }
+      const allowed = await ProService.checkLimit(() => FilterRepository.count(), FREE_LIMIT, options);
+      if (!allowed) {
+        // message はここでは組み立てない。固定の日本語文字列を返すと呼び出し側の
+        // `result.message || t(...)` が常にこちらを選び、多言語対応の文言が
+        // 到達不能になるため（呼び出し側でi18nメッセージを組み立てさせる）。
+        return { success: false, requiresPro: true };
       }
 
       const newFilter: Omit<Filter, 'id'> = {

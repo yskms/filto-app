@@ -169,8 +169,15 @@ async function collectBackupData(includeAllArticles: boolean): Promise<BackupDat
 /**
  * バックアップの内容を既存データにマージする（既存は消さない）。
  * 重複するフィード / フィルタ / 許可キーワード / 記事はスキップする。
+ *
+ * @param bypassLimits 無料版のフィルタ/許可キーワード件数上限チェックをスキップする。
+ *   置き換え復元が失敗したときの安全ロールバック（消す前に控えたユーザー自身の
+ *   既存データを書き戻すだけ）でのみtrueにする。新規に増える内容ではないため、
+ *   遡って制限しない方針の一部（docs/01_requirements/01_monetization_plan.md §5.2）。
+ *   これが無いと、上限新設前から上限を超える件数を持っていたユーザーの
+ *   ロールバック時にデータが失われてしまう。
  */
-async function restoreInto(data: BackupData): Promise<BackupApplyResult> {
+async function restoreInto(data: BackupData, bypassLimits = false): Promise<BackupApplyResult> {
   let feedsAdded = 0;
   let filtersAdded = 0;
   let filtersSkipped = 0;
@@ -232,7 +239,10 @@ async function restoreInto(data: BackupData): Promise<BackupApplyResult> {
     if (existingSigs.has(sig)) continue;
     try {
       const now = Math.floor(Date.now() / 1000);
-      const result = await FilterService.save({ ...normalized, created_at: now, updated_at: now } as Filter);
+      const result = await FilterService.save(
+        { ...normalized, created_at: now, updated_at: now } as Filter,
+        { bypassLimit: bypassLimits }
+      );
       if (result.success) {
         existingSigs.add(sig);
         filtersAdded++;
@@ -249,7 +259,7 @@ async function restoreInto(data: BackupData): Promise<BackupApplyResult> {
   for (const keyword of data.globalAllowKeywords) {
     if (typeof keyword !== 'string' || existingKw.has(keyword)) continue;
     try {
-      const result = await GlobalAllowKeywordService.create(keyword);
+      const result = await GlobalAllowKeywordService.create(keyword, { bypassLimit: bypassLimits });
       if (result.success) {
         existingKw.add(keyword);
         keywordsAdded++;
@@ -430,10 +440,12 @@ export const BackupService = {
     try {
       return await restoreInto(normalized);
     } catch (error) {
-      // 全消去はコミット済み。ここで書き戻さないとユーザーのデータが消えたままになる
+      // 全消去はコミット済み。ここで書き戻さないとユーザーのデータが消えたままになる。
+      // bypassLimits=true: これはユーザー自身が元々持っていたデータの書き戻しであり、
+      // 新規に増える内容ではないため、無料版上限チェックでスキップされてはならない
       try {
         clearUserDataTables();
-        await restoreInto(snapshot);
+        await restoreInto(snapshot, true);
       } catch (_) {}
       throw error;
     }

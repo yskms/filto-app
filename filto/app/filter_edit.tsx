@@ -225,9 +225,9 @@ export default function FilterEditScreen() {
         showToast(t('common.saved'), 'success');
         router.back();
       } else if (result.requiresPro) {
-        Alert.alert(t('common.confirm'), result.message || t('filters.freeLimitReached', { limit: FREE_LIMIT }));
+        Alert.alert(t('common.confirm'), t('filters.freeLimitReached', { limit: FREE_LIMIT }));
       } else {
-        Alert.alert(t('common.error'), result.message || t('filters.saveError'));
+        Alert.alert(t('common.error'), t('filters.saveError'));
       }
     } catch (_) {
       Alert.alert(t('common.error'), t('filters.saveError'));
