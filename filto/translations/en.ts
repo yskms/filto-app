@@ -350,8 +350,8 @@ export const en = {
     backupRestoreUnsupported: 'This backup was created with a newer version. Please update the app.',
     backupRestoreFeedsSkipped: '{{count}} feed(s) could not be imported.',
     backupRestoreArticlesSkipped: '{{count}} article(s) could not be imported.',
-    backupRestoreKeywordsSkipped: '{{count}} allow keyword(s) could not be added due to the limit.',
-    backupRestoreFiltersSkipped: '{{count}} filter(s) could not be added due to the limit.',
+    backupRestoreKeywordsSkipped: '{{count}} allow keyword(s) exceed the free version limit and were not added. Upgrade to Pro and re-import the same backup to add the rest.',
+    backupRestoreFiltersSkipped: '{{count}} filter(s) exceed the free version limit and were not added. Upgrade to Pro and re-import the same backup to add the rest.',
     backupRestoreError: 'Failed to restore.',
   },
 
