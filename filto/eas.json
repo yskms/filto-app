@@ -13,6 +13,13 @@
       "distribution": "internal",
       "channel": "preview"
     },
+    "preview-aab": {
+      "distribution": "internal",
+      "channel": "preview",
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "channel": "production"
