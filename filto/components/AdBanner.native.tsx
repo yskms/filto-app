@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { AD_UNIT_ID } from '@/constants/adConfig';
 import { ProService } from '@/services/ProService';
+import { onProStatusChange } from '@/services/purchases';
 import { canShowAds } from '@/services/adInit';
 
 /**
@@ -14,20 +15,23 @@ import { canShowAds } from '@/services/adInit';
  * 設計: docs/01_requirements/01_monetization_plan.md §4
  */
 export const AdBanner: React.FC = () => {
-  const [visible, setVisible] = useState<boolean | null>(null);
+  const [isPro, setIsPro] = useState<boolean | null>(null);
+  const [adsAllowed, setAdsAllowed] = useState<boolean | null>(null);
 
-  // 画面フォーカスのたびに評価し直す。Pro購入直後にアプリを再起動しなくても
-  // バナーが消えるようにするため（マウント時1回だけだと再起動まで残ってしまう）
+  // 画面フォーカスのたびに評価し直す（同意状況は変化しうるため）
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       Promise.all([ProService.isPro(), canShowAds()])
-        .then(([isPro, adsAllowed]) => {
-          if (!cancelled) setVisible(!isPro && adsAllowed);
+        .then(([pro, allowed]) => {
+          if (!cancelled) {
+            setIsPro(pro);
+            setAdsAllowed(allowed);
+          }
         })
         .catch(() => {
           // 判定できないときは出さない（安全側に倒す）
-          if (!cancelled) setVisible(false);
+          if (!cancelled) setAdsAllowed(false);
         });
       return () => {
         cancelled = true;
@@ -35,8 +39,15 @@ export const AdBanner: React.FC = () => {
     }, [])
   );
 
+  // 購入・復元・失効でPro状態が変わったら即座に反映する（双方向）。
+  // フォーカス時の再評価だけだと、購入画面をモーダルで開いている間（Homeが
+  // フォーカスを失わない）は購入直後もバナーが消えないため、これを別途購読する
+  useEffect(() => {
+    return onProStatusChange(setIsPro);
+  }, []);
+
   // 判定前(null)・Pro版・同意なしでは出さない
-  if (visible !== true) return null;
+  if (isPro !== false || adsAllowed !== true) return null;
 
   return (
     <View style={styles.container}>

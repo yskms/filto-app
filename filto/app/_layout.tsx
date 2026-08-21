@@ -16,6 +16,7 @@ import { subscribeRestartOnboarding } from '@/utils/onboarding';
 // import 時にバックグラウンドタスクが定義される（グローバルスコープ登録のため）
 import { BackgroundSync } from '@/services/BackgroundSync';
 import { initAds } from '@/services/adInit';
+import { initPurchases } from '@/services/purchases';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -88,6 +89,11 @@ export default function RootLayout() {
   // web版は adInit.ts の no-op フォールバックが解決される
   useEffect(() => {
     initAds();
+  }, []);
+
+  // 課金SDK(RevenueCat)の初期化。web版は purchases.ts の no-op フォールバックが解決される
+  useEffect(() => {
+    initPurchases();
   }, []);
 
   // 設定・データ管理からの「初回ガイドをやり直す」でオンボーディングを再表示する
