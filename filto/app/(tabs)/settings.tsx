@@ -72,7 +72,7 @@ export default function SettingsScreen() {
     { id: 'display_behavior', title: t('settings.displayBehavior'), ionIcon: 'eye-outline' },
     // データ・システムグループ（区切りで分ける）
     { id: 'data_management', title: t('settings.dataManagement'), ionIcon: 'server-outline', sectionBreak: true },
-    { id: 'pro', title: 'Pro', ionIcon: 'star-outline', disabled: true },
+    { id: 'pro', title: 'Filto Pro', ionIcon: 'star-outline' },
     { id: 'about', title: t('settings.about'), ionIcon: 'information-circle-outline' },
   ];
 
@@ -88,7 +88,7 @@ export default function SettingsScreen() {
         router.push('/data_management');
         break;
       case 'pro':
-        // 無効化されているので何もしない
+        router.push('/pro');
         break;
       case 'about':
         router.push('/about');

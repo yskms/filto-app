@@ -397,7 +397,29 @@ export const ja = {
       termsOfService: '利用規約',
       contact: 'お問い合わせ',
     },
-  
+
+    // Pro画面
+    pro: {
+      title: 'Filto Pro',
+      viewProButton: 'Proを見る',
+      subtitle: '広告を消して、フィルタも許可キーワードも無制限に',
+      featureAds: '広告を非表示にする',
+      featureFilters: 'フィルタ数の上限を解除（無料版は10件まで）',
+      featureAllowKeywords: '許可キーワード数の上限を解除（無料版は2件まで）',
+      priceSuffix: ' / 月',
+      subscribeButton: '購入する',
+      restoreButton: '購入を復元',
+      alreadyProTitle: 'Proをご利用中です',
+      alreadyProDescription: 'いつもFiltoをご利用いただきありがとうございます。サブスクリプションの管理・解約は、お使いのストア（App Store / Google Play）の設定から行えます。',
+      priceLoadError: '価格情報を取得できませんでした',
+      retry: '再試行',
+      purchaseSuccess: 'Proへようこそ！',
+      purchaseError: '購入に失敗しました',
+      restoreSuccess: '購入を復元しました',
+      restoreNotFound: '有効な購入が見つかりませんでした',
+      restoreError: '復元に失敗しました',
+    },
+
     // エラーメッセージ
     errors: {
       databaseError: 'データベースエラーが発生しました',

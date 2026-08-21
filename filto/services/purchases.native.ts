@@ -1,11 +1,16 @@
 import { Platform } from 'react-native';
-import Purchases, { LOG_LEVEL, CustomerInfo } from 'react-native-purchases';
+import Purchases, { LOG_LEVEL, CustomerInfo, PURCHASES_ERROR_CODE } from 'react-native-purchases';
 import { REVENUECAT_API_KEYS, ENTITLEMENT_ID } from '@/constants/purchasesConfig';
+import type { PurchaseResult } from '@/services/purchasesTypes';
 
 let configured = false;
-// 直近に判明しているPro状態。configure前・失敗時・初回問い合わせ完了前はfalse
+// 直近に判明しているPro状態。configure前・失敗時はfalse
 // （安全側＝無料版として扱う。上限チェックや広告表示の判定はこれをそのまま使う）
 let cachedIsPro = false;
+// 初回のgetCustomerInfo()問い合わせ。getIsPro()はこれの完了を待ってから
+// cachedIsProを返すことで、起動直後にPro済みユーザーが一瞬無料版と誤判定
+// されるのを防ぐ（一度解決した後は待つコストはほぼ無い）
+let initialFetchPromise: Promise<void> | null = null;
 const listeners = new Set<(isPro: boolean) => void>();
 
 function hasEntitlement(info: CustomerInfo): boolean {
@@ -32,7 +37,7 @@ function ensureConfigured(): void {
     Purchases.configure({ apiKey });
     configured = true;
     Purchases.addCustomerInfoUpdateListener(updateCache);
-    Purchases.getCustomerInfo().then(updateCache).catch(() => {});
+    initialFetchPromise = Purchases.getCustomerInfo().then(updateCache).catch(() => {});
   } catch {
     // ネイティブモジュール未リンク等。configured を立てないので次回再試行する
   }
@@ -43,12 +48,14 @@ export async function initPurchases(): Promise<void> {
 }
 
 /**
- * 現在Pro版かどうか。直近にリスナー/初回問い合わせで判明している状態を返す
- * （呼び出しのたびにネイティブブリッジへ問い合わせない。フィルタ作成のような
- * 頻繁な呼び出しでも遅延を持ち込まないため）
+ * 現在Pro版かどうか。初回問い合わせが完了するまで待ってから、直近にリスナー/
+ * 問い合わせで判明している状態を返す（起動直後の一瞬だけ無料版と誤判定される
+ * 競合状態を防ぐ）。2回目以降は既に解決済みのPromiseを待つだけなので、
+ * 呼び出しのたびにネイティブブリッジへ問い合わせるコストは発生しない。
  */
 export async function getIsPro(): Promise<boolean> {
   ensureConfigured();
+  if (initialFetchPromise) await initialFetchPromise;
   return cachedIsPro;
 }
 
@@ -62,4 +69,56 @@ export function onProStatusChange(cb: (isPro: boolean) => void): () => void {
   return () => {
     listeners.delete(cb);
   };
+}
+
+/** 月額プランのローカライズ済み価格文字列（例: "$0.99"/"¥100"）。取得できなければnull */
+export async function getMonthlyPriceString(): Promise<string | null> {
+  ensureConfigured();
+  try {
+    const offerings = await Purchases.getOfferings();
+    return offerings.current?.monthly?.product.priceString ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** 月額プランを購入する。ユーザーがキャンセルした場合もエラーではなくcancelled:trueで返す */
+export async function purchaseMonthly(): Promise<PurchaseResult> {
+  ensureConfigured();
+  try {
+    const offerings = await Purchases.getOfferings();
+    const pkg = offerings.current?.monthly;
+    if (!pkg) {
+      return { success: false, cancelled: false, errorMessage: 'offering not available' };
+    }
+    const result = await Purchases.purchasePackage(pkg);
+    updateCache(result.customerInfo);
+    return { success: true };
+  } catch (error) {
+    const code = (error as { code?: string })?.code;
+    if (code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+      return { success: false, cancelled: true };
+    }
+    return {
+      success: false,
+      cancelled: false,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/** 購入を復元する（機種変更・再インストール後など） */
+export async function restorePurchases(): Promise<PurchaseResult> {
+  ensureConfigured();
+  try {
+    const info = await Purchases.restorePurchases();
+    updateCache(info);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      cancelled: false,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    };
+  }
 }

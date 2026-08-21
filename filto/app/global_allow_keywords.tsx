@@ -129,7 +129,14 @@ export default function GlobalAllowKeywordsScreen() {
         await loadKeywords();
         showToast(t('common.added'), 'success');
       } else if (result.requiresPro) {
-        Alert.alert(t('common.confirm'), t('globalAllowKeywords.freeLimitReached', { limit: FREE_LIMIT }));
+        Alert.alert(
+          t('common.confirm'),
+          t('globalAllowKeywords.freeLimitReached', { limit: FREE_LIMIT }),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('pro.viewProButton'), onPress: () => router.push('/pro') },
+          ]
+        );
       } else if (result.reason === 'duplicate') {
         Alert.alert(t('common.error'), t('globalAllowKeywords.alreadyExists'));
       } else {

@@ -225,7 +225,14 @@ export default function FilterEditScreen() {
         showToast(t('common.saved'), 'success');
         router.back();
       } else if (result.requiresPro) {
-        Alert.alert(t('common.confirm'), t('filters.freeLimitReached', { limit: FREE_LIMIT }));
+        Alert.alert(
+          t('common.confirm'),
+          t('filters.freeLimitReached', { limit: FREE_LIMIT }),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('pro.viewProButton'), onPress: () => router.push('/pro') },
+          ]
+        );
       } else {
         Alert.alert(t('common.error'), t('filters.saveError'));
       }

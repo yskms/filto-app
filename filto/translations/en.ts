@@ -398,6 +398,28 @@ export const en = {
     contact: 'Contact',
   },
 
+  // Pro screen
+  pro: {
+    title: 'Filto Pro',
+    viewProButton: 'View Pro',
+    subtitle: 'Remove ads and unlock unlimited filters and allow keywords',
+    featureAds: 'Remove ads',
+    featureFilters: 'Unlimited filters (free version is limited to 10)',
+    featureAllowKeywords: 'Unlimited allow keywords (free version is limited to 2)',
+    priceSuffix: ' / month',
+    subscribeButton: 'Subscribe',
+    restoreButton: 'Restore purchases',
+    alreadyProTitle: "You're on Pro",
+    alreadyProDescription: 'Thank you for using Filto. You can manage or cancel your subscription from your store settings (App Store / Google Play).',
+    priceLoadError: 'Could not load pricing information',
+    retry: 'Retry',
+    purchaseSuccess: 'Welcome to Pro!',
+    purchaseError: 'Purchase failed',
+    restoreSuccess: 'Purchase restored',
+    restoreNotFound: 'No valid purchase was found',
+    restoreError: 'Restore failed',
+  },
+
   // Error messages
   errors: {
     databaseError: 'Database error occurred',
