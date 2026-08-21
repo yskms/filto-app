@@ -1,14 +1,17 @@
 /**
  * RevenueCatの設定値。
  *
- * TODO: 本番リリース前に、実際のApp Store Connect/Play Console商品と紐付けた
- * プラットフォーム別の公開APIキーに差し替える。現在はRevenueCatが自動生成した
- * テスト用キー（`test_`接頭辞）を両OS共通で使っている。
+ * iOS: RevenueCatダッシュボードで「iOS App」を追加して発行された実際の公開APIキー
+ *      （`appl_`接頭辞）。App Store Connect側の商品作成後、紐付けを確認すること。
+ * Android: TODO: 「Android App」をRevenueCatダッシュボードに追加して発行された
+ *      実際のキー（`goog_`接頭辞）に差し替える。それまではプロジェクト共通の
+ *      テスト用キー（`test_`接頭辞）を暫定使用（Play Console側で課金権限を
+ *      検出させるためのビルド用途のみ、実際の購入テストはこのキーでは通らない）。
  *
  * 設計: docs/01_requirements/01_monetization_plan.md
  */
 export const REVENUECAT_API_KEYS = {
-  ios: 'test_kCHgxZNVCPBjlFaOITqgTDtTVpg',
+  ios: 'appl_IOKDuodHERMMkAWKSFmafmiYXaH',
   android: 'test_kCHgxZNVCPBjlFaOITqgTDtTVpg',
 };
 
