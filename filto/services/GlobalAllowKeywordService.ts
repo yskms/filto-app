@@ -2,7 +2,7 @@ import { GlobalAllowKeywordRepository } from '@/repositories/GlobalAllowKeywordR
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
 import { ProService } from '@/services/ProService';
 
-// Pro版制限。設計: docs/01_requirements/01_monetization_plan.md §5.1
+// Pro版制限（無料版の上限）
 export const FREE_LIMIT = 2;
 
 /**

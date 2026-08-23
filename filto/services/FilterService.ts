@@ -2,7 +2,7 @@ import { FilterRepository } from '@/repositories/FilterRepository';
 import { FilterSortType } from '@/components/FilterSortModal';
 import { ProService } from '@/services/ProService';
 
-// Pro版制限。設計: docs/01_requirements/01_monetization_plan.md §5.1
+// Pro版制限（無料版の上限）
 export const FREE_LIMIT = 10;
 
 // Filter型定義
@@ -57,7 +57,7 @@ export const FilterService = {
 
     if (filter.id === undefined) {
       // 新規作成: 上限は新規作成時のみチェックする。既存フィルタの編集は対象外
-      // （遡って何かを制限しない方針。docs/01_requirements/01_monetization_plan.md §5.2）
+      // （遡って何かを制限しない方針）
       const allowed = await ProService.checkLimit(() => FilterRepository.count(), FREE_LIMIT, options);
       if (!allowed) {
         // message はここでは組み立てない。固定の日本語文字列を返すと呼び出し側の

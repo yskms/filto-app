@@ -173,7 +173,7 @@ async function collectBackupData(includeAllArticles: boolean): Promise<BackupDat
  * @param bypassLimits 無料版のフィルタ/許可キーワード件数上限チェックをスキップする。
  *   置き換え復元が失敗したときの安全ロールバック（消す前に控えたユーザー自身の
  *   既存データを書き戻すだけ）でのみtrueにする。新規に増える内容ではないため、
- *   遡って制限しない方針の一部（docs/01_requirements/01_monetization_plan.md §5.2）。
+ *   遡って制限しない方針の一部。
  *   これが無いと、上限新設前から上限を超える件数を持っていたユーザーの
  *   ロールバック時にデータが失われてしまう。
  */
