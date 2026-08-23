@@ -145,6 +145,7 @@ export const en = {
     sortBlockKeywordDesc: 'Block Keyword (Z-A)',
     saveError: 'Failed to save filter',
     deleteError: 'Failed to delete filter',
+    freeLimitReached: 'Free version is limited to {{limit}}. Upgrade to Pro for unlimited.',
     blockKeywordRequired: 'Please enter block keyword',
     atLeastOneTarget: 'Please select at least one target (title or description)',
     allowKeywordHint: 'Keeps an article visible when it contains this text, even if it would otherwise be hidden.',
@@ -346,7 +347,8 @@ export const en = {
     backupRestoreUnsupported: 'This backup was created with a newer version. Please update the app.',
     backupRestoreFeedsSkipped: '{{count}} feed(s) could not be imported.',
     backupRestoreArticlesSkipped: '{{count}} article(s) could not be imported.',
-    backupRestoreKeywordsSkipped: '{{count}} allow keyword(s) could not be added due to the limit.',
+    backupRestoreKeywordsSkipped: '{{count}} allow keyword(s) exceed the free version limit and were not added. Upgrade to Pro and re-import the same backup to add the rest.',
+    backupRestoreFiltersSkipped: '{{count}} filter(s) exceed the free version limit and were not added. Upgrade to Pro and re-import the same backup to add the rest.',
     backupRestoreError: 'Failed to restore.',
   },
 

@@ -1,8 +1,9 @@
 import { GlobalAllowKeywordRepository } from '@/repositories/GlobalAllowKeywordRepository';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
+import { ProService } from '@/services/ProService';
 
-// Pro版制限
-const FREE_LIMIT = 3;
+// Pro版制限。設計: docs/01_requirements/01_monetization_plan.md §5.1
+export const FREE_LIMIT = 2;
 
 /**
  * GlobalAllowKeywordService
@@ -20,9 +21,14 @@ export const GlobalAllowKeywordService = {
    * キーワードを追加
    * メッセージ文言はここでは組み立てない（固定文字列だと呼び出し側の多言語対応が
    * 到達不能になるため）。reason/requiresProを見て呼び出し側でt()を選ばせる。
+   * @param options.bypassLimit 無料版上限チェックをスキップする（バックアップの安全
+   *   ロールバックで、ユーザー自身の既存データを書き戻すときにのみ使う）
    * @returns { success: boolean, id?: number, requiresPro?: boolean, reason?: 'empty' | 'duplicate' | 'dbError' }
    */
-  async create(keyword: string): Promise<{
+  async create(
+    keyword: string,
+    options?: { bypassLimit?: boolean }
+  ): Promise<{
     success: boolean;
     id?: number;
     requiresPro?: boolean;
@@ -41,12 +47,9 @@ export const GlobalAllowKeywordService = {
     }
 
     // Pro版チェック
-    const isPro = await this.isPro();
-    if (!isPro) {
-      const count = await GlobalAllowKeywordRepository.count();
-      if (count >= FREE_LIMIT) {
-        return { success: false, requiresPro: true };
-      }
+    const allowed = await ProService.checkLimit(() => GlobalAllowKeywordRepository.count(), FREE_LIMIT, options);
+    if (!allowed) {
+      return { success: false, requiresPro: true };
     }
 
     // 追加実行
@@ -73,10 +76,10 @@ export const GlobalAllowKeywordService = {
   },
 
   /**
-   * Pro版かどうか（現在は常に無料版）
+   * Pro版かどうか
    */
   async isPro(): Promise<boolean> {
-    return false;
+    return ProService.isPro();
   },
 
   /**
