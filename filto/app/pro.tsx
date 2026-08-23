@@ -9,7 +9,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
 import { useToast } from '@/providers/toast';
 import { ProService } from '@/services/ProService';
-import { getMonthlyPriceString, purchaseMonthly, restorePurchases } from '@/services/purchases';
+import { getMonthlyPriceString, getLastPriceFetchDebugInfo, purchaseMonthly, restorePurchases } from '@/services/purchases';
 
 const ProHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -148,6 +148,10 @@ export default function ProScreen() {
               ) : priceString === null ? (
                 <View style={styles.centerBlock}>
                   <ThemedText style={[styles.errorText, { color: subColor }]}>{t('pro.priceLoadError')}</ThemedText>
+                  {/* 一時的な調査用表示。原因判明後に削除する */}
+                  <ThemedText style={[styles.errorText, { color: subColor, fontSize: 11 }]}>
+                    debug: {getLastPriceFetchDebugInfo() ?? '(no debug info)'}
+                  </ThemedText>
                   <TouchableOpacity onPress={() => load()} activeOpacity={0.7}>
                     <ThemedText style={[styles.retryText, { color: tintColor }]}>{t('pro.retry')}</ThemedText>
                   </TouchableOpacity>

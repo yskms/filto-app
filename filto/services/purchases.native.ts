@@ -71,13 +71,26 @@ export function onProStatusChange(cb: (isPro: boolean) => void): () => void {
   };
 }
 
+let lastPriceDebug: string | null = null;
+
+/** 価格取得失敗時の原因調査用（一時的な診断用途）。取得できていれば直近の詳細を返す */
+export function getLastPriceFetchDebugInfo(): string | null {
+  return lastPriceDebug;
+}
+
 /** 月額プランのローカライズ済み価格文字列（例: "$0.99"/"¥100"）。取得できなければnull */
 export async function getMonthlyPriceString(): Promise<string | null> {
   ensureConfigured();
   try {
     const offerings = await Purchases.getOfferings();
-    return offerings.current?.monthly?.product.priceString ?? null;
-  } catch {
+    const monthly = offerings.current?.monthly;
+    if (!monthly) {
+      lastPriceDebug = `current=${offerings.current?.identifier ?? 'null'} all=[${Object.keys(offerings.all).join(',')}]`;
+      return null;
+    }
+    return monthly.product.priceString;
+  } catch (error) {
+    lastPriceDebug = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     return null;
   }
 }

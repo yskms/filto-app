@@ -20,6 +20,10 @@ export async function getMonthlyPriceString(): Promise<string | null> {
   return null;
 }
 
+export function getLastPriceFetchDebugInfo(): string | null {
+  return null;
+}
+
 export async function purchaseMonthly(): Promise<PurchaseResult> {
   return { success: false, cancelled: false, errorMessage: 'Not supported on this platform' };
 }
