@@ -70,6 +70,14 @@ As you read and remove what you don't need, your feed naturally becomes quieter 
 
 ---
 
+ADS, BUT NO TRACKING
+
+The free version shows ads, but never personalized ones based on your interests, and we never track your activity across other apps or sites.
+
+Want ads gone entirely? Filto Pro removes them.
+
+---
+
 FEATURES
 
 · Hide unwanted topics with block keywords
