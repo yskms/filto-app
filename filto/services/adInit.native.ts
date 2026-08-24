@@ -26,10 +26,13 @@ import MobileAds, { MaxAdContentRating, AdsConsent } from 'react-native-google-m
 
 /** 初期化は一度だけ行い、結果（広告を表示してよいか）を共有する */
 let adsReadyPromise: Promise<boolean> | null = null;
+// 同意設定の再表示（撤回・変更）導線が必要か（EEA/UK/スイス等、対象地域のユーザーのみtrue）
+let privacyOptionsRequired = false;
 
 async function setupAds(): Promise<boolean> {
   // 同意情報の更新＋必要なら同意フォーム表示（圏外なら何も出ない）
   const consentInfo = await AdsConsent.gatherConsent();
+  privacyOptionsRequired = consentInfo.privacyOptionsRequirementStatus === 'REQUIRED';
 
   // 同意が得られていない場合は広告をリクエストしない
   if (!consentInfo.canRequestAds) return false;
@@ -54,4 +57,19 @@ export function initAds(): Promise<boolean> {
 /** 広告を表示してよいか（初期化がまだなら開始して待つ） */
 export function canShowAds(): Promise<boolean> {
   return initAds();
+}
+
+/**
+ * 設定画面に「同意設定」の導線を出すべきか（EEA/UK/スイス等の対象地域のユーザーのみ）。
+ * AdMobの「広告ユニットの導入」機能を有効にする場合、ユーザーがいつでも同意を
+ * 撤回・変更できる導線（取り消しリンク）の設置がGoogle側の要件になっている。
+ */
+export async function isAdPrivacyOptionsRequired(): Promise<boolean> {
+  await initAds().catch(() => false);
+  return privacyOptionsRequired;
+}
+
+/** 同意設定（撤回・変更）フォームを表示する */
+export async function showAdPrivacyOptions(): Promise<void> {
+  await AdsConsent.showPrivacyOptionsForm();
 }

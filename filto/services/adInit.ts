@@ -12,3 +12,11 @@ export function initAds(): Promise<boolean> {
 export function canShowAds(): Promise<boolean> {
   return Promise.resolve(false);
 }
+
+export function isAdPrivacyOptionsRequired(): Promise<boolean> {
+  return Promise.resolve(false);
+}
+
+export function showAdPrivacyOptions(): Promise<void> {
+  return Promise.resolve();
+}

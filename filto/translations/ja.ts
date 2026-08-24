@@ -237,6 +237,7 @@ export const ja = {
       displayBehavior: '表示',
       dataManagement: 'データ管理',
       globalAllowKeywords: 'グローバル許可キーワード',
+      adPrivacyOptions: '広告の同意設定',
       replayTour: '初回設定をやり直す',
       replayTourConfirmTitle: '初回設定をやり直す',
       replayTourConfirmMessage: '現在のフィード・フィルタと取得済み記事（お気に入り含む）を削除して、最初から選び直します。表示などの設定は保持されます。',

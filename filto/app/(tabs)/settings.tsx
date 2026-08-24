@@ -7,6 +7,7 @@ import type { ComponentProps } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from '@/providers/language';
+import { isAdPrivacyOptionsRequired, showAdPrivacyOptions } from '@/services/adInit';
 
 interface MenuItem {
   id: string;
@@ -65,6 +66,18 @@ export default function SettingsScreen() {
   const router = useRouter();
   const backgroundColor = useThemeColor({}, 'background');
   const { t } = useTranslation();
+  // EEA/UK/スイス等、AdMobの同意設定の再表示（取り消しリンク）が必要な地域のユーザーのみ表示する
+  const [showAdPrivacyRow, setShowAdPrivacyRow] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    isAdPrivacyOptionsRequired().then((required) => {
+      if (!cancelled) setShowAdPrivacyRow(required);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const menuItems: MenuItem[] = [
     // 一般設定グループ（使い方・表示方針の選び直し）
@@ -73,6 +86,9 @@ export default function SettingsScreen() {
     // データ・システムグループ（区切りで分ける）
     { id: 'data_management', title: t('settings.dataManagement'), ionIcon: 'server-outline', sectionBreak: true },
     { id: 'pro', title: 'Filto Pro', ionIcon: 'star-outline' },
+    ...(showAdPrivacyRow
+      ? [{ id: 'ad_privacy_options', title: t('settings.adPrivacyOptions'), ionIcon: 'shield-checkmark-outline' as const }]
+      : []),
     { id: 'about', title: t('settings.about'), ionIcon: 'information-circle-outline' },
   ];
 
@@ -89,6 +105,9 @@ export default function SettingsScreen() {
         break;
       case 'pro':
         router.push('/pro');
+        break;
+      case 'ad_privacy_options':
+        showAdPrivacyOptions();
         break;
       case 'about':
         router.push('/about');

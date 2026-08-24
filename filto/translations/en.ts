@@ -237,6 +237,7 @@ export const en = {
     displayBehavior: 'Display',
     dataManagement: 'Data Management',
     globalAllowKeywords: 'Global Allow Keywords',
+    adPrivacyOptions: 'Ad Consent Settings',
     replayTour: 'Restart initial setup',
     replayTourConfirmTitle: 'Restart initial setup',
     replayTourConfirmMessage: 'This deletes your current feeds, filters, and fetched articles (including favorites), then lets you set them up again. Your display settings are kept.',
