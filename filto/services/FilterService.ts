@@ -45,8 +45,9 @@ export const FilterService = {
 
   /**
    * フィルタを保存（新規作成 or 更新）
-   * @param options.bypassLimit 無料版上限チェックをスキップする（バックアップの安全
-   *   ロールバックで、ユーザー自身の既存データを書き戻すときにのみ使う）
+   * @param options.bypassLimit 新規作成時の無料版上限チェックをスキップする
+   *   （バックアップの安全ロールバックで、ユーザー自身の既存データを書き戻すときに
+   *   のみ使う）。更新時の上限超過チェック（isOverLimit）には適用されない
    * @returns { success: boolean, requiresPro?: boolean }
    */
   async save(
@@ -73,7 +74,15 @@ export const FilterService = {
       };
       await FilterRepository.create(newFilter);
     } else {
-      // 更新
+      // 更新: 既存件数が無料版の上限を超えている間は編集もブロックする。
+      // 編集を無制限に許すと、超過分を保持したまま編集し続けられてしまい
+      // 上限が実質意味を持たなくなるため。削除は常に許可する（ここは通らない）。
+      // 上限以下に戻れば通常通り編集できる
+      const overLimit = await ProService.isOverLimit(() => FilterRepository.count(), FREE_LIMIT);
+      if (overLimit) {
+        return { success: false, requiresPro: true };
+      }
+
       const updatedFilter: Filter = {
         ...filter,
         updated_at: now,

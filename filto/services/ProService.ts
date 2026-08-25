@@ -26,4 +26,16 @@ export const ProService = {
     const count = await countFn();
     return count < limit;
   },
+
+  /**
+   * 既存件数が無料版の上限を超えているか（編集してよいかの判定に使う）。
+   * 上限を超えた状態は削除しない限り残るが、編集まで無制限に許すと上限が
+   * 実質無意味になるため、超過中は編集をブロックする。削除は常に許可する
+   * （このメソッドは呼ばない）。上限ちょうど・以下なら編集は許可する。
+   */
+  async isOverLimit(countFn: () => Promise<number>, limit: number): Promise<boolean> {
+    if (await this.isPro()) return false;
+    const count = await countFn();
+    return count > limit;
+  },
 };
