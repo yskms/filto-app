@@ -158,6 +158,11 @@ export async function initDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at);
   `);
 
+  // listAll/listByFeedの ORDER BY fetched_at DESC, published_at DESC を複合インデックスで支える
+  database.execSync(`
+    CREATE INDEX IF NOT EXISTS idx_articles_fetched_at_published_at ON articles(fetched_at DESC, published_at DESC);
+  `);
+
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_articles_is_read ON articles(is_read);
   `);

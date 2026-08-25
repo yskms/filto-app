@@ -56,6 +56,10 @@ import { diversifyByFeed } from '@/utils/diversifyByFeed';
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
 const SCROLL_TOP_THRESHOLD = 250; // この位置を超えたら「トップへ戻る」ボタンを表示
+// diversifyByFeedを適用する先頭件数。記事保持期間を無制限にしているユーザーは
+// 件数が数千〜数万になりうり、全件に適用するとO(n^2)がJSスレッドを詰まらせる。
+// 多様性が体感できるのは実質スクロール直後の上位だけなので、そこだけに絞る
+const DIVERSIFY_WINDOW_SIZE = 300;
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string, justNow: string): string => {
@@ -837,8 +841,12 @@ export default function HomeScreen() {
     }
 
     // 同じフィードの新着が連続して上位を占有しないよう並びを補正する
-    // （新着順=fetched_at DESC はできるだけ保ったまま、隣接する同一フィードだけを避ける）
-    setFilteredArticles(diversifyByFeed(displayed));
+    // （新着順=fetched_at DESC はできるだけ保ったまま、隣接する同一フィードだけを避ける）。
+    // 先頭 DIVERSIFY_WINDOW_SIZE 件だけに限定し、それ以降は並び替えない
+    // （件数が多いユーザーでの負荷対策。深い履歴の多様性は体感上重要でない）
+    const head = displayed.slice(0, DIVERSIFY_WINDOW_SIZE);
+    const tail = displayed.slice(DIVERSIFY_WINDOW_SIZE);
+    setFilteredArticles([...diversifyByFeed(head), ...tail]);
   }, [articles, feeds, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords, hiddenArticleIds]);
 
   const runRefresh = React.useCallback(async () => {
