@@ -51,6 +51,7 @@ import { useToast } from '@/providers/toast';
 import { ArticleActionSheet } from '@/components/ArticleActionSheet';
 import SiteHideSuggestModal from '@/components/SiteHideSuggestModal';
 import { SITE_SUGGEST_CONSECUTIVE, SITE_SUGGEST_CUMULATIVE, isSiteSuggestSuppressed, dismissSiteSuggest } from '@/utils/siteSuggest';
+import { diversifyByFeed } from '@/utils/diversifyByFeed';
 import { AdBanner } from '@/components/AdBanner';
 
 const ACCENT = '#0a7ea4';
@@ -846,7 +847,9 @@ export default function HomeScreen() {
       displayed = displayed.filter(a => !a.isRead);
     }
 
-    setFilteredArticles(displayed);
+    // 同じフィードの新着が連続して上位を占有しないよう並びを補正する
+    // （新着順=fetched_at DESC はできるだけ保ったまま、隣接する同一フィードだけを避ける）
+    setFilteredArticles(diversifyByFeed(displayed));
   }, [articles, feeds, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords, hiddenArticleIds]);
 
   const runRefresh = React.useCallback(async () => {
