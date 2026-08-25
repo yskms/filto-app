@@ -20,7 +20,12 @@ function isoStringToUnixSecondsOrNull(isoString: string): number | null {
  */
 export const ArticleRepository = {
   /**
-   * 全記事を取得（published_at DESC）
+   * 全記事を取得（fetched_at DESC。同時刻内はpublished_at DESCで補助）
+   *
+   * published_at単独だと、更新頻度の低いフィードの記事はFiltoが今取得した
+   * ばかりでも公開時刻が古いために埋もれてしまう（実機で発覚）。
+   * fetched_atを主軸にすることで「今回のフィードで新しく取得したか」を
+   * 優先し、どのフィードの新着も公平にホーム上位へ出す。
    */
   async listAll(): Promise<Article[]> {
     const db = openDatabase();
@@ -52,7 +57,7 @@ export const ArticleRepository = {
           is_read,
           is_starred
         FROM articles
-        ORDER BY published_at DESC
+        ORDER BY fetched_at DESC, published_at DESC
       `
     );
 
@@ -71,7 +76,7 @@ export const ArticleRepository = {
   },
 
   /**
-   * 指定フィードの記事を取得（published_at DESC）
+   * 指定フィードの記事を取得（fetched_at DESC。同時刻内はpublished_at DESCで補助）
    */
   async listByFeed(feedId: string): Promise<Article[]> {
     const db = openDatabase();
@@ -104,7 +109,7 @@ export const ArticleRepository = {
           is_starred
         FROM articles
         WHERE feed_id = ?
-        ORDER BY published_at DESC
+        ORDER BY fetched_at DESC, published_at DESC
       `,
       [feedId]
     );
@@ -126,13 +131,17 @@ export const ArticleRepository = {
   /**
    * 記事を一括挿入（トランザクション）
    * NOTE: INSERT OR IGNOREで重複を自動的にスキップ
+   * @param fetchedAt 挿入時刻（未指定なら呼び出し時点の現在時刻）。
+   *   同期処理からは、同期開始時点の共通の時刻を渡すこと。フィードごとに
+   *   Date.now() を取ると、たまたま取得が遅く終わったフィード（内容の新しさとは
+   *   無関係、ネットワーク応答タイミング次第）が丸ごと新着順の最上位を占有して
+   *   しまう不具合になるため（実機で発覚）
    * @returns 実際に挿入された件数（重複でスキップされた分は含まない）
    */
-  async insertMany(articles: Article[]): Promise<number> {
+  async insertMany(articles: Article[], fetchedAt: number = Math.floor(Date.now() / 1000)): Promise<number> {
     if (articles.length === 0) return 0;
 
     const db = openDatabase();
-    const fetchedAt = Math.floor(Date.now() / 1000);
     let inserted = 0;
 
     db.withTransactionSync(() => {

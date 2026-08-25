@@ -146,6 +146,11 @@ export const SyncService = {
     const gen = this.generation; // この同期の世代を記録（リセットで変わったら中断）
     let fetched = 0;
     let newArticles = 0;
+    // この同期回で保存する全記事に共通の取得時刻。フィードごとにDate.now()を
+    // 取ると、たまたま取得が遅く終わったフィード（内容の新しさとは無関係、
+    // ネットワーク応答タイミング次第）が新着順の最上位を丸ごと占有してしまうため、
+    // 同期開始時点の1つの時刻に揃える（実機で発覚）
+    const syncFetchedAt = Math.floor(Date.now() / 1000);
 
     try {
       // 全フィード取得
@@ -184,7 +189,7 @@ export const SyncService = {
             // 保存（重複は INSERT OR IGNORE が弾き、実際の新規挿入件数が返る）。
             // 以前は保存前後で全記事を2回ロードして差分を数えていたが、
             // insertMany の戻り値で正確に分かるため撤廃（フィードあたり全件ロード3回→0回）。
-            const inserted = await ArticleService.saveArticles(feed.id, feed.title, result.articles);
+            const inserted = await ArticleService.saveArticles(feed.id, feed.title, result.articles, syncFetchedAt);
 
             // 次回の条件付きGET用にバリデータを保存（無ければ null で上書き）
             await FeedService.setFetchState(feed.id, result.etag, result.lastModified);

@@ -23,11 +23,14 @@ export const ArticleService = {
    * @param feedId フィードID
    * @param feedName フィード名
    * @param articles 保存する記事リスト
+   * @param fetchedAt 挿入時刻（未指定なら現在時刻）。複数フィードを同期する側は、
+   *   フィードごとにバラバラの時刻にならないよう、同期開始時点の共通の時刻を渡すこと
    */
   async saveArticles(
     feedId: string,
     feedName: string,
-    articles: Article[]
+    articles: Article[],
+    fetchedAt?: number
   ): Promise<number> {
     if (articles.length === 0) return 0;
 
@@ -41,7 +44,7 @@ export const ArticleService = {
     // 重複は UNIQUE(feed_id, link) により INSERT OR IGNORE が弾く。
     // insertMany は実際に挿入された件数を返すため、事前の重複チェック
     //（全記事のロード）は不要。新規挿入件数をそのまま返す。
-    return ArticleRepository.insertMany(articlesWithFeed);
+    return ArticleRepository.insertMany(articlesWithFeed, fetchedAt);
   },
 
   /**
