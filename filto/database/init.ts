@@ -189,6 +189,25 @@ function migrateOneStep(database: SQLite.SQLiteDatabase, from: number): boolean 
     // 確実に消えるよう明示する（残ると挿入のたびに無駄なコストになる）。
     database.execSync('DROP INDEX IF EXISTS idx_articles_fetched_at_published_at');
     database.execSync('DROP TABLE IF EXISTS articles');
+
+    // 記事を捨てたので、条件付きGET（ETag / Last-Modified）の状態も一緒に捨てる。
+    //
+    // これを怠ると、内容が変わっていないフィードは移行直後の同期で 304 を返し、
+    // 記事が一件も戻ってこない。しかも後日そのフィードの内容が変わった瞬間に、
+    // バックログが丸ごと「新規」として挿入され、一度に最上位を占有する。
+    // 実機で発生: 移行後の初回取得が 1,143件（本来は約3,850件）にとどまり、
+    // 数分後の更新で1フィードの過去記事が大量に積み上がった。
+    //
+    // feeds テーブルや etag 列がまだ無い状態（新規インストール・旧バージョンからの
+    // 移行）でも失敗しないよう、存在する列だけを対象にする。
+    const feedColumns = database.getAllSync<{ name: string }>('PRAGMA table_info(feeds)');
+    const clearable = ['etag', 'last_modified'].filter((column) =>
+      feedColumns.some((c) => c.name === column)
+    );
+    if (clearable.length > 0) {
+      database.execSync(`UPDATE feeds SET ${clearable.map((c) => `${c} = NULL`).join(', ')}`);
+    }
+
     return hadArticles;
   }
   // 想定外のバージョンで黙って先に進むと、スキーマと実装がずれたまま動いてしまう
@@ -241,6 +260,17 @@ export async function initDatabase(): Promise<void> {
   // スキーマ移行はテーブル作成より前。articles を作り直す移行があるため、
   // DROP → この後の CREATE TABLE IF NOT EXISTS で新しい定義が入る順序にする。
   // 移行のコミット直後にプロセスが落ちても、次回起動の CREATE TABLE で復旧する。
+  // ===== 一時的な検証用スイッチ（マージ前に削除する） =====
+  // true にすると起動のたびに user_version を 0 に戻し、移行を何度でも再現できる。
+  // 移行は本来1端末につき1回しか起きないため、これが無いと再テストのたびに
+  // アプリの再インストールが必要になる。
+  const FORCE_REPLAY_MIGRATION = false;
+  if (__DEV__ && FORCE_REPLAY_MIGRATION) {
+    database.execSync('PRAGMA user_version = 0');
+    console.log('[filto-debug] user_version を 0 に戻しました（移行の再実行）');
+  }
+  // ===== ここまで =====
+
   const articlesDiscarded = applyMigrations(database);
 
   // ===== 一時的な診断ログ（実機確認用・マージ前に削除する） =====
