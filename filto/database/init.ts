@@ -103,22 +103,25 @@ export function openDatabase(forceNew: boolean = false): SQLite.SQLiteDatabase {
  * 後から増やした列が存在しない。PRAGMA table_info で有無を確認し、
  * 無いときだけ ALTER TABLE ADD COLUMN する。
  * @param columnDef 例: 'etag TEXT'（列名＋型。DEFAULT を付けても良い）
+ * @returns 実際に列を追加したか（既にあった／テーブルが無い場合は false）
  */
 function ensureColumn(
   database: SQLite.SQLiteDatabase,
   table: string,
   columnName: string,
   columnDef: string
-): void {
+): boolean {
   const columns = database.getAllSync<{ name: string }>(`PRAGMA table_info(${table})`);
   // テーブル自体が存在しないと PRAGMA table_info は空を返す。そのまま ALTER すると
   // 「no such table」で例外になり初期化ごと落ちるため、ここで抜ける
   // （対象テーブルは後段の CREATE TABLE IF NOT EXISTS で作られる）。
-  if (columns.length === 0) return;
+  if (columns.length === 0) return false;
   const exists = columns.some((c) => c.name === columnName);
   if (!exists) {
     database.execSync(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`);
+    return true;
   }
+  return false;
 }
 
 /** "1.4.0" 形式のバージョンを数値で比較する。a < b なら負、等しければ0、a > b なら正 */
@@ -141,17 +144,21 @@ function compareVersions(a: string, b: string): number {
  * 新しくなっても、この値は古いままになる。
  */
 function isMigrationAllowed(): boolean {
+  // 開発中（Metro から読み込んだバンドル）は常に許可する。実機で移行を確認するため。
+  //
+  // ※ 当初は `!Updates.isEnabled` で開発環境を判定していたが、**開発ビルドでも
+  //   Updates.isEnabled は true** だった（実機のログで確認）。そのため
+  //   runtimeVersion が 1.3.5 の開発ビルドでは移行が永久にスキップされ、
+  //   検証しているつもりで検証できていなかった。判定には __DEV__ を使うこと。
+  if (__DEV__) return true;
   try {
-    // 開発ビルド / Expo Go では expo-updates が無効。実機で移行を確認したいので許可する
-    if (!Updates.isEnabled) return true;
     const running = Updates.runtimeVersion;
     if (!running) return false;
     return compareVersions(running, MIGRATION_MIN_APP_VERSION) >= 0;
   } catch (_) {
-    // expo-updates を参照できない環境（Expo Go など）。ガードの判定ができないだけで
-    // データ処理の失敗ではないため、開発環境と同じく許可する方に倒す。
-    // 製品ビルドでは expo-updates は必ず利用でき、ここには来ない。
-    return true;
+    // expo-updates を参照できない環境。ガードの判定ができない以上、
+    // 破壊的な処理は行わない方に倒す（下記フォールバックが受け止める）。
+    return false;
   }
 }
 
@@ -236,6 +243,21 @@ export async function initDatabase(): Promise<void> {
   // 移行のコミット直後にプロセスが落ちても、次回起動の CREATE TABLE で復旧する。
   const articlesDiscarded = applyMigrations(database);
 
+  // ===== 一時的な診断ログ（実機確認用・マージ前に削除する） =====
+  console.log(
+    '[filto-debug] migration',
+    JSON.stringify({
+      allowed: isMigrationAllowed(),
+      dev: __DEV__,
+      updatesEnabled: Updates.isEnabled,
+      runtimeVersion: Updates.runtimeVersion,
+      userVersion:
+        database.getFirstSync<{ user_version: number }>('PRAGMA user_version')?.user_version ?? null,
+      articlesDiscarded,
+    })
+  );
+  // ===== ここまで =====
+
   // filters テーブル作成
   database.execSync(`
     CREATE TABLE IF NOT EXISTS filters (
@@ -290,9 +312,15 @@ export async function initDatabase(): Promise<void> {
   // display_order を参照するクエリが「no such column」で全滅しないようにする保険。
   // 通常は移行で作り直した直後なので何もしない。
   // 保険が働いた場合、既存記事はすべて未採番（＝一時的に非表示）になり、
-  // 次の同期で公開日時の降順に採番されて出てくる。
+  // 次の同期で公開日時の降順に採番されて出てくる。そのため移行と同じく
+  // 取得のやり直しが必要になる（下記 pendingInitialFetch）。
   // ※ display_order を参照するインデックスより前に実行すること。
-  ensureColumn(database, 'articles', 'display_order', 'display_order INTEGER');
+  const displayOrderAdded = ensureColumn(
+    database,
+    'articles',
+    'display_order',
+    'display_order INTEGER'
+  );
 
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_articles_feed_id ON articles(feed_id);
@@ -350,15 +378,18 @@ export async function initDatabase(): Promise<void> {
   // 有効化後は孤児が新たに生まれないため、以降このDELETEは0件で終わる。
   database.execSync('DELETE FROM articles WHERE feed_id NOT IN (SELECT id FROM feeds)');
 
-  // 移行で記事を捨てた場合は、ホームの初回取得フラグを立てて取り直させる。
+  // 既存の記事が「表示できない状態」になった場合は、ホームの初回取得フラグを
+  // 立てて取り直させる。該当するのは次の2つ。
+  //   - 移行で記事を捨てた（articlesDiscarded）
+  //   - 移行が実行されず、保険で列だけ足した（displayOrderAdded）＝全件が未採番
   // Filto は「起動のたびに同期」をしないため、これが無いとアップデート直後に
   // 記事0件のホームが出て、手動更新するかバックグラウンド更新（最短30分・iOSでは
   // 発火保証なし）を待つまで空のままになる。
-  // ※ 新規インストールでは立てない（オンボーディング側が取得するため）。
+  // ※ 新規インストールではどちらも false になる（オンボーディング側が取得するため）。
   // ※ ここで AsyncStorage が失敗すると initDatabase が失敗するが、呼び出し側は
   //   直後に isOnboardingComplete()（同じく AsyncStorage）を呼ぶため、
   //   新しい失敗経路が増えるわけではない。
-  if (articlesDiscarded) {
+  if (articlesDiscarded || displayOrderAdded) {
     await AsyncStorage.setItem(StorageKeys.pendingInitialFetch, '1');
   }
 }

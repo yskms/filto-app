@@ -113,6 +113,21 @@ export const ArticleRepository = {
       `
     );
 
+    // ===== 一時的な診断ログ（実機確認用・マージ前に削除する） =====
+    // 採番済みの件数と、未採番として隠れている件数。上位5件の display_order と媒体名も出す
+    console.log(
+      '[filto-debug] listAll',
+      JSON.stringify({
+        numbered: rows.length,
+        unnumbered:
+          db.getFirstSync<{ c: number }>(
+            'SELECT COUNT(*) AS c FROM articles WHERE display_order IS NULL'
+          )?.c ?? 0,
+        top5: rows.slice(0, 5).map((r) => `${r.display_order}:${r.feed_name}`),
+      })
+    );
+    // ===== ここまで =====
+
     return rows.map(rowToArticle);
   },
 
@@ -298,6 +313,10 @@ export const ArticleRepository = {
       }
       numbered = total;
     });
+
+    // ===== 一時的な診断ログ（実機確認用・マージ前に削除する） =====
+    console.log('[filto-debug] assignDisplayOrders', JSON.stringify({ numbered, discarded }));
+    // ===== ここまで =====
 
     return { numbered, discarded };
   },
