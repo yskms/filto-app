@@ -3,6 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
 import { SyncService } from '@/services/SyncService';
+import { ensureDatabaseInitialized } from '@/database/init';
 
 /**
  * BackgroundSync
@@ -29,6 +30,14 @@ const MINIMUM_INTERVAL_MINUTES = 30;
 // アプリ起動時にこのモジュールが import されることで登録される。
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   try {
+    // headless ランタイムでは UI 側（_layout.tsx）の初期化を経ていないため、
+    // ここでもDBを初期化する。これが無いと、スキーマ移行前のDBに新しいSQLを
+    // 投げることになり、バックグラウンド更新だけが黙って失敗し続ける。
+    // 移行の適用可否はトランザクション内で判定するため、UI 側と同時に呼ばれても
+    // 二重適用にならない。
+    // ensure 版を使うのは、UI と同じランタイムで動く場合に接続の作り直しと
+    // DDL の再実行を30分ごとに繰り返さないため。
+    await ensureDatabaseInitialized();
     await SyncService.refresh();
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (_) {
