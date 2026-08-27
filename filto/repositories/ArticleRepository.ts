@@ -315,7 +315,26 @@ export const ArticleRepository = {
     });
 
     // ===== 一時的な診断ログ（実機確認用・マージ前に削除する） =====
-    console.log('[filto-debug] assignDisplayOrders', JSON.stringify({ numbered, discarded }));
+    // 記事を1件も持っていないフィードが分かるようにする。304 で取得できていない
+    // フィードが残っていれば、そのサイトが後日まとめて最上位に積み上がる
+    const feedStats = db.getFirstSync<{ total: number; withArticles: number }>(
+      `SELECT
+         (SELECT COUNT(*) FROM feeds) AS total,
+         (SELECT COUNT(DISTINCT feed_id) FROM articles) AS withArticles`
+    );
+    const emptyFeeds = db.getAllSync<{ title: string }>(
+      'SELECT title FROM feeds WHERE id NOT IN (SELECT DISTINCT feed_id FROM articles) LIMIT 15'
+    );
+    console.log(
+      '[filto-debug] assignDisplayOrders',
+      JSON.stringify({
+        numbered,
+        discarded,
+        feeds: feedStats?.total ?? 0,
+        feedsWithArticles: feedStats?.withArticles ?? 0,
+        emptyFeeds: emptyFeeds.map((f) => f.title),
+      })
+    );
     // ===== ここまで =====
 
     return { numbered, discarded };

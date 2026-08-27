@@ -251,9 +251,39 @@ function applyMigrations(database: SQLite.SQLiteDatabase): boolean {
 }
 
 /**
- * データベースを初期化（テーブル作成・インデックス作成）
+ * 直前の initDatabase の完了（成功・失敗を問わず）。同時実行の直列化に使う。
+ *
+ * initDatabase は openDatabase(true) で接続を作り直す。並行して呼ばれると
+ * 後発が先発の使っている接続を閉じてしまい、先発の execSync が
+ * 「NativeDatabase.execSync has been rejected → NullPointerException」で落ちる。
+ *
+ * expo-sqlite は同じパスの接続を**ネイティブ側で参照カウント付きで共有する**
+ * （NativeDatabase の Constructor に "Try to find opened database for fast refresh"
+ * とある）。closeSync は参照カウントが0になった時点で共有接続を閉じるため、
+ * もう一方が持っている JS オブジェクトの isClosed は立たないまま ref だけが
+ * 無効になり、閉鎖チェックをすり抜けて NPE になる。
+ *
+ * 呼び出し元は _layout.tsx（起動時・再試行時）と BackgroundSync（headless）の2つ。
  */
-export async function initDatabase(): Promise<void> {
+let initChain: Promise<void> = Promise.resolve();
+
+/**
+ * データベースを初期化（テーブル作成・インデックス作成）。
+ * 同時に呼ばれても直列に実行される。
+ */
+export function initDatabase(): Promise<void> {
+  // 前回が失敗していても必ず実行する（_layout.tsx の「再試行」を殺さないため、
+  // 成功・失敗どちらのハンドラでも走らせる）
+  const result = initChain.then(runInitDatabase, runInitDatabase);
+  // 失敗が後続の呼び出しを止めないよう、握り潰した版を待ち合わせに使う
+  initChain = result.then(
+    () => undefined,
+    () => undefined
+  );
+  return result;
+}
+
+async function runInitDatabase(): Promise<void> {
   // 新しいDBインスタンスを強制的に作成
   const database = openDatabase(true);
 
