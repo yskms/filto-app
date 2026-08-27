@@ -5,6 +5,7 @@ import { ArticleRepository } from '@/repositories/ArticleRepository';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
 import * as Network from 'expo-network';
+import { SyncLock } from '@/utils/syncLock';
 
 /**
  * フィード取得の同時実行数。直列だとネットワーク待ちがフィード数ぶん積み上がるため
@@ -29,8 +30,16 @@ function isNonWifiConnection(networkState: Network.NetworkState): boolean {
  * RSSフィードの同期処理を担当
  */
 export const SyncService = {
-  /** 同期実行中フラグ（多重実行防止） */
-  isRefreshing: false,
+  /**
+   * 同期実行中かどうか（UIの「更新中です」表示用）。
+   *
+   * 多重実行の防止そのものは SyncLock が行う。以前はここに代入する可変フラグを
+   * 置いていたが、cancelOngoing() が「まだ動いているのに false にする」ため
+   * 実態とずれていた。ロックから導出することで、状態がひとつしか無くなる。
+   */
+  get isRefreshing(): boolean {
+    return SyncLock.holder() === 'sync';
+  },
 
   /** 同期の世代カウンタ。データリセット等で増やすと実行中の refresh が中断される */
   generation: 0,
@@ -62,12 +71,36 @@ export const SyncService = {
   },
 
   /**
-   * 実行中の同期をキャンセルする（データリセット時などに呼ぶ）。
+   * 実行中の同期にキャンセルを要求する。
    * 世代を進めることで、ループ中の refresh が次の保存前に中断する。
+   *
+   * これは要求を出すだけで、**進行中の処理の終了は待たない**。
+   * DBを作り替える操作（復元・リセット）は、この後に runExclusive() を通して
+   * 実際の終了を待つこと。
    */
   cancelOngoing(): void {
     this.generation++;
-    this.isRefreshing = false;
+  },
+
+  /**
+   * 進行中の同期を止め、その終了を待ってから fn を実行する。
+   * バックアップ復元・データリセットのように「DBを作り替える処理」で使う。
+   *
+   * fn の実行中は新しい同期が開始できない（refresh() がロックを取れずに即座に諦める）。
+   * cancelOngoing() と acquireExclusive() の間に await を挟まないこと ―― 挟むと
+   * その隙に新しい同期が始まりうる。
+   *
+   * @throws SyncLockTimeoutError 進行中の同期が制限時間内に終わらなかった場合。
+   *   排他できないまま実行するとデータを壊すため、中止する方に倒す。
+   */
+  async runExclusive<T>(fn: () => Promise<T>): Promise<T> {
+    this.cancelOngoing();
+    const release = await SyncLock.acquireExclusive();
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
   },
 
   /**
@@ -112,7 +145,8 @@ export const SyncService = {
    * 全フィードを同期
    * @param options.ignoreWifiOnly 「WiFi接続時のみ取得」設定を無視する（手動更新など明示操作で使う）
    * @returns 取得成功フィード数と新規記事数。オフライン時は offline: true、
-   *          WiFi限定設定でモバイル回線のためスキップした場合は skippedNotWifi: true
+   *          WiFi限定設定でモバイル回線のためスキップした場合は skippedNotWifi: true、
+   *          他の同期や復元・リセットが実行中で開始できなかった場合は busy: true
    */
   async refresh(options?: { ignoreWifiOnly?: boolean }): Promise<{
     fetched: number;
@@ -120,6 +154,7 @@ export const SyncService = {
     deleted?: number;
     offline?: boolean;
     skippedNotWifi?: boolean;
+    busy?: boolean;
   }> {
     // ネットワーク接続チェック
     // isConnected / isInternetReachable は boolean | null のため、
@@ -137,12 +172,14 @@ export const SyncService = {
       }
     }
 
-    // 多重実行防止
-    if (this.isRefreshing) {
-      return { fetched: 0, newArticles: 0 };
+    // 多重実行の防止と、復元・リセットとの相互排他。
+    // 取れなければ待たずに諦める（待ち行列を持たない）。バックグラウンド同期が
+    // 1回飛んでも次の発火で取り直せば足りる。
+    const release = SyncLock.tryAcquireForSync();
+    if (!release) {
+      return { fetched: 0, newArticles: 0, busy: true };
     }
 
-    this.isRefreshing = true;
     const gen = this.generation; // この同期の世代を記録（リセットで変わったら中断）
     let fetched = 0;
     let newArticles = 0;
@@ -208,16 +245,26 @@ export const SyncService = {
       if (this.generation === gen) {
         // 最終同期時刻を保存
         await AsyncStorage.setItem(StorageKeys.lastSyncTime, Date.now().toString());
-        // 古い記事を自動削除
+
+        // 古い記事を自動削除（fetched_at 基準）。今回挿入した記事の fetched_at は
+        // 同期開始時刻なので、保持日数が1日以上である限りここでは消えない。
         const deletedCount = await this.deleteOldArticlesAuto();
-        // 完了を通知（購読中のホーム等がDBを読み直す）
+
+        // 表示順を確定する。削除がすべて終わったあとのDBから MAX を読むため、
+        // 保持期間削除より後に置く。
+        //
+        // 失敗したら握り潰さずに throw させる。記事は未採番のまま残り、次回の
+        // 採番処理の対象になる。ここで「同期完了」を通知してしまうと、ホームが
+        // 未採番の記事を表示できないまま「更新した（けど何も増えない）」状態になる。
+        await ArticleRepository.assignDisplayOrders();
+
+        // 採番が終わってから完了を通知する（購読中のホーム等がDBを読み直す）
         this._emitSyncComplete({ newArticles });
         return { fetched, newArticles, deleted: deletedCount };
       }
       return { fetched, newArticles };
     } finally {
-      // 自分が現在の世代のときだけフラグを下ろす（キャンセル後に始まった新しい同期を壊さない）
-      if (this.generation === gen) this.isRefreshing = false;
+      release();
     }
   },
 

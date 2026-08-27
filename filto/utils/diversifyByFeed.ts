@@ -1,9 +1,15 @@
 /**
  * 記事一覧の多様性を上げる並び替え。
  *
- * 記事は呼び出し時点で新着順（fetched_at DESC）に並んでいるが、同じ配信元が
- * 新着を連発すると一覧の上位をその媒体だけで占有してしまう。この関数は
- * 「直近window件と同じ媒体を避ける」ことを制約に、新着順をできるだけ保ったまま
+ * 呼ばれるのは同期の採番処理（ArticleRepository.assignDisplayOrders）だけで、
+ * 表示のたびには走らない。ここで決まった並びがそのまま display_order になり、
+ * 以後は変わらない。
+ * ※ 表示時に呼び出さないこと。以前はホームの effect 内で毎回実行しており、
+ *   記事をタップするたびに数百ms固まり、読んでいる最中に並びが変わっていた。
+ *
+ * 入力は公開日時の降順（published_at DESC, id DESC）に並んでいる前提。同じ配信元が
+ * 新着を連発すると一覧の上位をその媒体だけで占有してしまうため、この関数は
+ * 「直近window件と同じ媒体を避ける」ことを制約に、元の並びをできるだけ保ったまま
  * 並べ替える貪欲法。
  *
  * アルゴリズム:
@@ -24,8 +30,9 @@
  *     多少偏るのは許容する、という設計意図に合う）。
  *   - feedId が 1 種類しかない場合や 1 件以下の場合は入力の並びをそのまま返す。
  *
- * 計算量は最悪 O(n^2 * window)。記事数は多くても数百件・windowは小さい定数のため
- * 実用上問題ない。
+ * 計算量は最悪 O(n^2 * window)。呼び出し側（assignDisplayOrders）が
+ * MAX_UNNUMBERED_ARTICLES=5000 で入力件数を抑えている。Node での実測では
+ * 3,850件で2ms（分散）〜61ms（1フィードが8割）、10,000件で12ms〜410ms。
  */
 export function diversifyByFeed<T extends { feedId: string }>(articles: T[], window = 2): T[] {
   if (articles.length <= 1) return articles.slice();

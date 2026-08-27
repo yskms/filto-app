@@ -51,15 +51,10 @@ import { useToast } from '@/providers/toast';
 import { ArticleActionSheet } from '@/components/ArticleActionSheet';
 import SiteHideSuggestModal from '@/components/SiteHideSuggestModal';
 import { SITE_SUGGEST_CONSECUTIVE, SITE_SUGGEST_CUMULATIVE, isSiteSuggestSuppressed, dismissSiteSuggest } from '@/utils/siteSuggest';
-import { diversifyByFeed } from '@/utils/diversifyByFeed';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
 const SCROLL_TOP_THRESHOLD = 250; // この位置を超えたら「トップへ戻る」ボタンを表示
-// diversifyByFeedを適用する先頭件数。記事保持期間を無制限にしているユーザーは
-// 件数が数千〜数万になりうり、全件に適用するとO(n^2)がJSスレッドを詰まらせる。
-// 多様性が体感できるのは実質スクロール直後の上位だけなので、そこだけに絞る
-const DIVERSIFY_WINDOW_SIZE = 300;
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string, justNow: string): string => {
@@ -840,13 +835,12 @@ export default function HomeScreen() {
       displayed = displayed.filter(a => !a.isRead);
     }
 
-    // 同じフィードの新着が連続して上位を占有しないよう並びを補正する
-    // （新着順=fetched_at DESC はできるだけ保ったまま、隣接する同一フィードだけを避ける）。
-    // 先頭 DIVERSIFY_WINDOW_SIZE 件だけに限定し、それ以降は並び替えない
-    // （件数が多いユーザーでの負荷対策。深い履歴の多様性は体感上重要でない）
-    const head = displayed.slice(0, DIVERSIFY_WINDOW_SIZE);
-    const tail = displayed.slice(DIVERSIFY_WINDOW_SIZE);
-    setFilteredArticles([...diversifyByFeed(head), ...tail]);
+    // 並び順は display_order としてDBに確定済み（listAll がその順で返す）。
+    // ここで並べ替えてはいけない。以前は表示のたびに多様性補正をかけており、
+    // 記事をタップするたびに数百ms固まり、読んでいる最中に並びが変わっていた。
+    // 多様性の補正は同期時の採番処理（ArticleRepository.assignDisplayOrders）で
+    // 一度だけ行う。
+    setFilteredArticles(displayed);
   }, [articles, feeds, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords, hiddenArticleIds]);
 
   const runRefresh = React.useCallback(async () => {
@@ -858,6 +852,13 @@ export default function HomeScreen() {
 
       if (result.offline) {
         Alert.alert(t('common.error'), t('home.offlineError'));
+        return;
+      }
+
+      // 別の同期、またはバックアップ復元・リセットが実行中で開始できなかった。
+      // 黙って何も起きないと「更新できない」と誤解されるため伝える
+      if (result.busy) {
+        Alert.alert(t('home.refreshInProgressTitle'), t('home.refreshInProgressMessage'));
         return;
       }
 

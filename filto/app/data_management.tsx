@@ -415,10 +415,8 @@ export default function DataManagementScreen() {
   const applyBackup = async (data: BackupData, mode: BackupImportMode) => {
     try {
       setIsBackupBusy(true);
-      // 置き換えは全データを消す。進行中の同期が消した直後のフィードに記事を書き戻すのを防ぐ
-      if (mode === 'replace') {
-        SyncService.cancelOngoing();
-      }
+      // 進行中の同期の停止と待機は BackupService.applyBackup の中で行う
+      //（モードによらず排他する。マージでも同期と復元が同じ articles を触るため）
       const result = await BackupService.applyBackup(data, mode);
 
       // 黙って捨てると「消えた」と誤解されるものだけ補足する
@@ -596,8 +594,13 @@ export default function DataManagementScreen() {
           onPress: async () => {
             setIsResetting(true);
             try {
-              SyncService.cancelOngoing();
-              await resetFeedsToDefault(language === 'ja' ? 'ja' : 'en');
+              // 進行中の同期を止め、その終了を待ってから消す
+              //（古いフィードへの記事書き込みを防ぐ）。
+              // 再取得はロックを解放してから行う ―― リセット本体と同じロックの中で
+              // refresh() を呼ぶと、自分自身のロックに阻まれて0件で返ってしまう
+              await SyncService.runExclusive(async () => {
+                await resetFeedsToDefault(language === 'ja' ? 'ja' : 'en');
+              });
               // 新しいデフォルトフィードの記事を取得（明示操作なので WiFi 限定は無視）
               await SyncService.refresh({ ignoreWifiOnly: true });
               Alert.alert(t('common.done'), t('dataManagement.resetFeedsComplete'));
@@ -624,9 +627,11 @@ export default function DataManagementScreen() {
           onPress: async () => {
             setIsResetting(true);
             try {
-              // 実行中の同期を止めてから消す（古いフィードへの記事書き込みを防ぐ）
-              SyncService.cancelOngoing();
-              await resetAllData();
+              // 実行中の同期を止め、その終了を待ってから消す
+              //（古いフィードへの記事書き込みを防ぐ）
+              await SyncService.runExclusive(async () => {
+                await resetAllData();
+              });
               Alert.alert(
                 t('common.done'),
                 t('dataManagement.resetComplete') + '\n' + t('dataManagement.replayTourPrompt'),
