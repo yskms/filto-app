@@ -195,8 +195,9 @@ function migrateOneStep(database: SQLite.SQLiteDatabase, from: number): boolean 
     // これを怠ると、内容が変わっていないフィードは移行直後の同期で 304 を返し、
     // 記事が一件も戻ってこない。しかも後日そのフィードの内容が変わった瞬間に、
     // バックログが丸ごと「新規」として挿入され、一度に最上位を占有する。
-    // 実機で発生: 移行後の初回取得が 1,143件（本来は約3,850件）にとどまり、
-    // 数分後の更新で1フィードの過去記事が大量に積み上がった。
+    // 実機で発生: 移行後の初回取得が 1,143件にとどまり（77フィード中いくつかが
+    // 記事0件のまま）、数分後の更新で1フィードの過去記事が大量に積み上がった。
+    // この行を足したあとは 1,757件・77フィードすべてが記事を持つ状態になった。
     //
     // feeds テーブルや etag 列がまだ無い状態（新規インストール・旧バージョンからの
     // 移行）でも失敗しないよう、存在する列だけを対象にする。
@@ -218,10 +219,13 @@ function migrateOneStep(database: SQLite.SQLiteDatabase, from: number): boolean 
  * スキーマ移行を適用する。CREATE TABLE より前に呼ぶこと
  * （articles を DROP したあと、後段の CREATE TABLE IF NOT EXISTS が新しい定義で作り直す）。
  *
- * initDatabase() は多重実行の防止機構を持たず、UI とバックグラウンドタスクの
- * 両方から呼ばれうる。そのため user_version の読み取りを**トランザクションの中**で
- * 行い、SQLite の書き込みロックによって後発が先発のコミット結果を見るようにする。
- * トランザクション外で読んでから入ると、両方が 0 を見て二重適用しうる。
+ * user_version の読み取りは**トランザクションの中**で行い、SQLite の書き込みロックに
+ * よって後発が先発のコミット結果を見るようにする。トランザクション外で読んでから
+ * 入ると、両方が 0 を見て二重適用しうる。
+ *
+ * 同一ランタイム内の initDatabase() は直列化してあるが（下記 initChain）、
+ * バックグラウンド同期が別ランタイムで動く場合はそのフラグが共有されないため、
+ * この SQLite 側の防御が最後の砦になる。
  *
  * @returns 既存の記事データを捨てたか。true なら呼び出し側が取得のやり直しを促す。
  */
@@ -290,33 +294,7 @@ async function runInitDatabase(): Promise<void> {
   // スキーマ移行はテーブル作成より前。articles を作り直す移行があるため、
   // DROP → この後の CREATE TABLE IF NOT EXISTS で新しい定義が入る順序にする。
   // 移行のコミット直後にプロセスが落ちても、次回起動の CREATE TABLE で復旧する。
-  // ===== 一時的な検証用スイッチ（マージ前に削除する） =====
-  // true にすると起動のたびに user_version を 0 に戻し、移行を何度でも再現できる。
-  // 移行は本来1端末につき1回しか起きないため、これが無いと再テストのたびに
-  // アプリの再インストールが必要になる。
-  const FORCE_REPLAY_MIGRATION = false;
-  if (__DEV__ && FORCE_REPLAY_MIGRATION) {
-    database.execSync('PRAGMA user_version = 0');
-    console.log('[filto-debug] user_version を 0 に戻しました（移行の再実行）');
-  }
-  // ===== ここまで =====
-
   const articlesDiscarded = applyMigrations(database);
-
-  // ===== 一時的な診断ログ（実機確認用・マージ前に削除する） =====
-  console.log(
-    '[filto-debug] migration',
-    JSON.stringify({
-      allowed: isMigrationAllowed(),
-      dev: __DEV__,
-      updatesEnabled: Updates.isEnabled,
-      runtimeVersion: Updates.runtimeVersion,
-      userVersion:
-        database.getFirstSync<{ user_version: number }>('PRAGMA user_version')?.user_version ?? null,
-      articlesDiscarded,
-    })
-  );
-  // ===== ここまで =====
 
   // filters テーブル作成
   database.execSync(`

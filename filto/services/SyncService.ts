@@ -256,14 +256,6 @@ export const SyncService = {
         // 失敗したら握り潰さずに throw させる。記事は未採番のまま残り、次回の
         // 採番処理の対象になる。ここで「同期完了」を通知してしまうと、ホームが
         // 未採番の記事を表示できないまま「更新した（けど何も増えない）」状態になる。
-        // ===== 一時的な診断ログ（実機確認用・マージ前に削除する） =====
-        // fetched が feeds より少なければ、取得に失敗した／304を返したフィードがある
-        console.log(
-          '[filto-debug] refresh',
-          JSON.stringify({ feeds: feeds.length, fetched, newArticles })
-        );
-        // ===== ここまで =====
-
         await ArticleRepository.assignDisplayOrders();
 
         // 採番が終わってから完了を通知する（購読中のホーム等がDBを読み直す）
