@@ -32,6 +32,7 @@ export const ja = {
       sort: '並び替え',
       refresh: '更新',
       pasteFromClipboard: 'クリップボードから貼り付け',
+      paste: '貼り付け',
     },
   
     // タブバー

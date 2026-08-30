@@ -32,6 +32,7 @@ export const en = {
     sort: 'Sort',
     refresh: 'Refresh',
     pasteFromClipboard: 'Paste from clipboard',
+    paste: 'Paste',
   },
 
   // Tab bar
