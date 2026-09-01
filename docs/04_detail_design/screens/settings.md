@@ -68,8 +68,7 @@ Settings
 - **遷移先**: Data Management画面（`/data_management`）
 - **状態**: 有効
 - **含まれる項目**:
-  - 記事保持期間（7日/30日/90日/無制限）
-  - 手動削除オプション
+  - 記事保持期間（90日/180日/無制限）
   - WiFi時のみ取得
   - 最低更新間隔
   - （将来）OPML Import/Export

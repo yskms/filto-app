@@ -52,7 +52,7 @@ flowchart TB
 - **FeedAdd**：RSSフィード追加/編集
 - **Settings**：設定
 - **Display & Behavior**：表示・挙動（既読表示/テーマ/言語/起動時更新）
-- **Data Management**：データ管理（保持期間/手動削除/WiFi取得/更新間隔等）
+- **Data Management**：データ管理（保持期間/WiFi取得/更新間隔等）
 - **About**：バージョン・アプリ情報
 - **Global Allow Keywords**：グローバル許可キーワード管理
 
@@ -169,7 +169,7 @@ flowchart TB
 
 ### 💾 Data Management
 
-- **記事保持期間**（7日/30日/90日/無制限）、**手動削除オプション**、**WiFi時のみ取得**、**最低更新間隔**、（将来）OPML Import/Export・バックアップ/復元
+- **記事保持期間**（90日/180日/無制限）、**WiFi時のみ取得**、**最低更新間隔**、OPML Import/Export・バックアップ/復元
 - **←** → Settings
 
 ### ℹ About

@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Alert,
@@ -15,7 +14,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
 import { Ionicons } from '@expo/vector-icons';
-import { ArticleRepository } from '@/repositories/ArticleRepository';
+import {
+  ARTICLE_RETENTION_OPTIONS,
+  DEFAULT_ARTICLE_RETENTION_DAYS,
+  normalizeArticleRetentionDays,
+} from '@/constants/articleRetention';
 import { resetAllData, resetFeedsToDefault } from '@/database/init';
 import { restartOnboarding } from '@/utils/onboarding';
 import { SyncService } from '@/services/SyncService';
@@ -34,8 +37,6 @@ import { useTranslation, useLanguage } from '@/providers/language';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 
-const RETENTION_OPTIONS = [7, 30, 90, 0];
-const MANUAL_DELETE_OPTIONS = [-1, 1, 3, 7, 14];
 const MIN_REFRESH_OPTIONS = [0, 1, 3, 5, 10];
 
 const DataManagementHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
@@ -138,139 +139,18 @@ const DropdownModal: React.FC<{
   );
 };
 
-const ManualDeleteModal: React.FC<{
-  visible: boolean;
-  selectedDays: number;
-  includeStarred: boolean;
-  stats: { total: number; unread: number; read: number; starred: number } | null;
-  onChangeDays: (days: number) => void;
-  onChangeIncludeStarred: (value: boolean) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
-}> = ({
-  visible,
-  selectedDays,
-  includeStarred,
-  stats,
-  onChangeDays,
-  onChangeIncludeStarred,
-  onConfirm,
-  onCancel,
-}) => {
-  const hasTarget = stats && stats.total > 0;
-  const hasStarredAvailable = stats && stats.starred > 0;
-  const backgroundColor = useThemeColor({}, 'background');
-  const tintColor = useThemeColor({}, 'tint');
-  const { t } = useTranslation();
-  const manualDeleteOptions = MANUAL_DELETE_OPTIONS.map((value) => ({
-    value,
-    label:
-      value === -1
-        ? t('dataManagement.manualDeleteAll')
-        : t('dataManagement.manualDeleteOlderThan', { days: value }),
-  }));
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={styles.modalBackdrop}>
-        <View style={[styles.modalContent, { backgroundColor }]}>
-          <ThemedText style={styles.modalTitle}>{t('dataManagement.manualDeleteTitle')}</ThemedText>
-          <View style={styles.modalBody}>
-            <ThemedText style={styles.modalLabel}>{t('dataManagement.manualDeleteSelectPeriod')}</ThemedText>
-            <ScrollView style={styles.radioScrollView} showsVerticalScrollIndicator={false}>
-              {manualDeleteOptions.map((opt) => (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={styles.radioItem}
-                  onPress={() => onChangeDays(opt.value)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.radio, selectedDays === opt.value && { borderColor: tintColor }]}>
-                    {selectedDays === opt.value && <View style={[styles.radioDot, { backgroundColor: tintColor }]} />}
-                  </View>
-                  <ThemedText style={styles.radioLabel}>{opt.label}</ThemedText>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <View style={styles.divider} />
-            {stats && (
-              <View style={styles.statsSection}>
-                <ThemedText style={styles.modalLabel}>{t('dataManagement.manualDeleteTargets')}</ThemedText>
-                {hasTarget ? (
-                  <View style={styles.statsContainer}>
-                    <ThemedText style={styles.modalInfo}>- {t('dataManagement.manualDeleteUnread', { count: stats.unread })}</ThemedText>
-                    <ThemedText style={styles.modalInfo}>- {t('dataManagement.manualDeleteRead', { count: stats.read })}</ThemedText>
-                    {stats.starred > 0 && (
-                      <ThemedText style={styles.modalInfo}>- {t('dataManagement.manualDeleteStarred', { count: stats.starred })}</ThemedText>
-                    )}
-                  </View>
-                ) : (
-                  <ThemedText style={styles.modalInfo}>{t('dataManagement.manualDeleteNoTargets')}</ThemedText>
-                )}
-                <TouchableOpacity
-                  style={[styles.checkboxRow, !hasStarredAvailable && styles.checkboxRowDisabled]}
-                  onPress={() => hasStarredAvailable && onChangeIncludeStarred(!includeStarred)}
-                  activeOpacity={hasStarredAvailable ? 0.7 : 1}
-                  disabled={!hasStarredAvailable}
-                >
-                  <View style={[styles.checkbox, includeStarred && hasStarredAvailable && { backgroundColor: tintColor, borderColor: tintColor }, !hasStarredAvailable && styles.checkboxDisabled]}>
-                    {includeStarred && hasStarredAvailable && <Ionicons name="checkmark" size={14} color={backgroundColor} />}
-                  </View>
-                  <ThemedText
-                    style={[styles.checkboxLabel, !hasStarredAvailable && styles.checkboxLabelDisabled]}
-                  >
-                    {t('dataManagement.deleteStarredToo')}
-                  </ThemedText>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-          <View style={styles.modalButtons}>
-            <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]} onPress={onCancel} activeOpacity={0.7}>
-            <ThemedText style={styles.modalButtonTextCancel}>{t('common.cancel')}</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonConfirm]}
-              onPress={onConfirm}
-              activeOpacity={0.7}
-              disabled={!hasTarget}
-            >
-            <ThemedText
-              style={[styles.modalButtonTextConfirm, !hasTarget && styles.modalButtonTextDisabled]}
-            >
-              {t('common.delete')}
-            </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
 export default function DataManagementScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { language } = useLanguage();
   const arrowColor = useThemeColor({}, 'icon');
-  const tintColor = useThemeColor({}, 'tint');
-  const [articleRetentionDays, setArticleRetentionDays] = useState(30);
+  const [articleRetentionDays, setArticleRetentionDays] = useState(DEFAULT_ARTICLE_RETENTION_DAYS);
   const [deleteStarredInAuto, setDeleteStarredInAuto] = useState(false);
   const [wifiOnlyFetch, setWifiOnlyFetch] = useState(false);
   const [backgroundFetchEnabled, setBackgroundFetchEnabled] = useState(true);
   const [minRefreshInterval, setMinRefreshInterval] = useState(0);
   const [retentionDropdownVisible, setRetentionDropdownVisible] = useState(false);
   const [minRefreshDropdownVisible, setMinRefreshDropdownVisible] = useState(false);
-  const [manualDeleteModalVisible, setManualDeleteModalVisible] = useState(false);
-  const [manualDeleteDays, setManualDeleteDays] = useState(-1);
-  const [manualDeleteIncludeStarred, setManualDeleteIncludeStarred] = useState(false);
-  const [manualDeleteStats, setManualDeleteStats] = useState<{
-    total: number;
-    unread: number;
-    read: number;
-    starred: number;
-  } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isOpmlBusy, setIsOpmlBusy] = useState(false);
   const [isBackupBusy, setIsBackupBusy] = useState(false);
@@ -287,7 +167,14 @@ export default function DataManagementScreen() {
         AsyncStorage.getItem(StorageKeys.minRefreshIntervalMinutes),
         BackgroundSync.isEnabled(),
       ]);
-      if (savedRetention !== null) setArticleRetentionDays(parseInt(savedRetention, 10));
+      // 廃止した短い保持期間（7日/30日）が残っている端末は、ここで既定値へ
+      // 引き上げて書き戻す。SyncService 側も同じ正規化を通すので、書き戻しに
+      // 失敗しても「表示と実際の削除がずれる」ことはない
+      const retentionDays = normalizeArticleRetentionDays(savedRetention);
+      setArticleRetentionDays(retentionDays);
+      if (savedRetention !== null && savedRetention !== retentionDays.toString()) {
+        AsyncStorage.setItem(StorageKeys.articleRetentionDays, retentionDays.toString()).catch(() => {});
+      }
       if (savedStarred !== null) setDeleteStarredInAuto(savedStarred === 'true');
       if (savedWifiOnly !== null) setWifiOnlyFetch(savedWifiOnly === 'true');
       if (savedMinRefresh !== null) setMinRefreshInterval(parseInt(savedMinRefresh, 10));
@@ -345,52 +232,6 @@ export default function DataManagementScreen() {
     } catch (_) {
       setBackgroundFetchEnabled(!next); // 失敗したらUIを戻す
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
-    }
-  };
-
-  const handleOpenManualDelete = async () => {
-    try {
-      const stats = await ArticleRepository.getOldArticlesStats(manualDeleteDays, manualDeleteIncludeStarred);
-      setManualDeleteStats(stats);
-      setManualDeleteModalVisible(true);
-    } catch (_) {
-      Alert.alert(t('common.error'), t('dataManagement.deleteError'));
-    }
-  };
-
-  const handleChangeManualDeleteDays = async (days: number) => {
-    setManualDeleteDays(days);
-    try {
-      const stats = await ArticleRepository.getOldArticlesStats(days, manualDeleteIncludeStarred);
-      setManualDeleteStats(stats);
-    } catch (_) {}
-  };
-
-  const handleChangeManualDeleteIncludeStarred = async (value: boolean) => {
-    setManualDeleteIncludeStarred(value);
-    try {
-      const stats = await ArticleRepository.getOldArticlesStats(manualDeleteDays, value);
-      setManualDeleteStats(stats);
-    } catch (_) {}
-  };
-
-  const handleConfirmManualDelete = async () => {
-    if (!manualDeleteStats || manualDeleteStats.total === 0) {
-      setManualDeleteModalVisible(false);
-      return;
-    }
-    try {
-      setIsDeleting(true);
-      setManualDeleteModalVisible(false);
-      const deletedCount = await ArticleRepository.deleteOldArticles(manualDeleteDays, manualDeleteIncludeStarred);
-      Alert.alert(t('common.done'), t('dataManagement.deleteComplete', { count: deletedCount }));
-      setManualDeleteDays(-1);
-      setManualDeleteIncludeStarred(false);
-      setManualDeleteStats(null);
-    } catch (_) {
-      Alert.alert(t('common.error'), t('dataManagement.deleteError'));
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -651,18 +492,17 @@ export default function DataManagementScreen() {
     );
   };
 
-  const handleCancelManualDelete = () => {
-    setManualDeleteModalVisible(false);
-    setManualDeleteDays(-1);
-    setManualDeleteIncludeStarred(false);
-  };
-
-  const retentionOptions = RETENTION_OPTIONS.map((value) => ({
+  const retentionOptions = ARTICLE_RETENTION_OPTIONS.map((value) => ({
     value,
     label: value === 0 ? t('dataManagement.unlimited') : t('dataManagement.days', { count: value }),
   }));
+  // 選択肢に無い日数が保存されていても、SyncService は保存値どおりに削除する。
+  // 既定値を固定で出すと「表示より短い期間で消える」ズレになるため、その日数をそのまま出す
   const getRetentionLabel = () =>
-    retentionOptions.find((o) => o.value === articleRetentionDays)?.label ?? t('dataManagement.days', { count: 30 });
+    retentionOptions.find((o) => o.value === articleRetentionDays)?.label ??
+    (articleRetentionDays > 0
+      ? t('dataManagement.days', { count: articleRetentionDays })
+      : t('dataManagement.unlimited'));
 
   const minRefreshOptions = MIN_REFRESH_OPTIONS.map((value) => ({
     value,
@@ -681,9 +521,6 @@ export default function DataManagementScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <DataManagementHeader onPressBack={() => router.back()} />
 
-      {isDeleting && (
-        <LoadingOverlay message={t('dataManagement.deleteInProgress')} />
-      )}
       {isResetting && (
         <LoadingOverlay message={t('dataManagement.resetInProgress')} />
       )}
@@ -707,13 +544,6 @@ export default function DataManagementScreen() {
             onToggle={handleToggleDeleteStarredInAuto}
             label={t('dataManagement.deleteStarredToo')}
           />
-        </SettingSection>
-
-        <SettingSection title={t('dataManagement.manualDeleteSection')}>
-          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleOpenManualDelete} activeOpacity={0.7}>
-            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.manualDeleteNow')}</ThemedText>
-            <Ionicons name="chevron-forward" size={20} color={arrowColor} />
-          </TouchableOpacity>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionBackgroundFetch')}>
@@ -740,20 +570,20 @@ export default function DataManagementScreen() {
         </SettingSection>
 
         <SettingSection title={t('dataManagement.sectionReset')}>
-          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleResetFeeds} activeOpacity={0.7} disabled={isResetting}>
-            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.resetFeeds')}</ThemedText>
+          <TouchableOpacity style={styles.linkRow} onPress={handleResetFeeds} activeOpacity={0.7} disabled={isResetting}>
+            <ThemedText style={styles.linkRowText}>{t('dataManagement.resetFeeds')}</ThemedText>
           </TouchableOpacity>
           <ThemedText style={styles.sectionHint}>{t('dataManagement.resetFeedsHint')}</ThemedText>
         </SettingSection>
 
         <SettingSection title={t('dataManagement.opmlImportExport')}>
-          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleExportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
-            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlExport')}</ThemedText>
+          <TouchableOpacity style={styles.linkRow} onPress={handleExportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
+            <ThemedText style={styles.linkRowText}>{t('dataManagement.opmlExport')}</ThemedText>
             <Ionicons name="share-outline" size={20} color={arrowColor} />
           </TouchableOpacity>
           <View style={styles.rowDivider} />
-          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleImportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
-            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.opmlImport')}</ThemedText>
+          <TouchableOpacity style={styles.linkRow} onPress={handleImportOpml} activeOpacity={0.7} disabled={isOpmlBusy}>
+            <ThemedText style={styles.linkRowText}>{t('dataManagement.opmlImport')}</ThemedText>
             <Ionicons name="download-outline" size={20} color={arrowColor} />
           </TouchableOpacity>
           <ThemedText style={styles.sectionHint}>{t('dataManagement.opmlHint')}</ThemedText>
@@ -767,13 +597,13 @@ export default function DataManagementScreen() {
             disabled={isBackupBusy}
           />
           <View style={styles.rowDivider} />
-          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleExportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
-            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupExport')}</ThemedText>
+          <TouchableOpacity style={styles.linkRow} onPress={handleExportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
+            <ThemedText style={styles.linkRowText}>{t('dataManagement.backupExport')}</ThemedText>
             <Ionicons name="share-outline" size={20} color={arrowColor} />
           </TouchableOpacity>
           <View style={styles.rowDivider} />
-          <TouchableOpacity style={styles.manualDeleteRow} onPress={handleImportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
-            <ThemedText style={styles.manualDeleteText}>{t('dataManagement.backupRestore')}</ThemedText>
+          <TouchableOpacity style={styles.linkRow} onPress={handleImportBackup} activeOpacity={0.7} disabled={isBackupBusy}>
+            <ThemedText style={styles.linkRowText}>{t('dataManagement.backupRestore')}</ThemedText>
             <Ionicons name="download-outline" size={20} color={arrowColor} />
           </TouchableOpacity>
           <ThemedText style={styles.backupHint}>{t('dataManagement.backupHint')}</ThemedText>
@@ -804,17 +634,6 @@ export default function DataManagementScreen() {
         onSelect={handleChangeMinRefreshInterval}
         onClose={() => setMinRefreshDropdownVisible(false)}
       />
-
-      <ManualDeleteModal
-        visible={manualDeleteModalVisible}
-        selectedDays={manualDeleteDays}
-        includeStarred={manualDeleteIncludeStarred}
-        stats={manualDeleteStats}
-        onChangeDays={handleChangeManualDeleteDays}
-        onChangeIncludeStarred={handleChangeManualDeleteIncludeStarred}
-        onConfirm={handleConfirmManualDelete}
-        onCancel={handleCancelManualDelete}
-      />
     </SafeAreaView>
   );
 }
@@ -835,7 +654,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 40,
   },
-  backIcon: { fontSize: 24 },
   headerTitle: { fontSize: 18, fontWeight: '600' },
   headerRight: { width: 24 },
   content: { flex: 1 },
@@ -863,10 +681,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dropdownValue: { fontSize: 16 },
-  dropdownIcon: { fontSize: 12 },
-  manualDeleteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
-  manualDeleteText: { fontSize: 16 },
-  arrow: { fontSize: 20 },
+  /** タップで実行する行（初期化 / OPML / バックアップ） */
+  linkRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
+  linkRowText: { fontSize: 16 },
   rowDivider: { height: 1, marginVertical: 4 },
   backupHint: { fontSize: 12, lineHeight: 17, marginTop: 12, opacity: 0.7 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
@@ -882,58 +699,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   dropdownOptionText: { fontSize: 16 },
-  dropdownOptionCheck: { fontSize: 18, fontWeight: '600' },
-  modalContent: {
-    borderRadius: 16,
-    padding: 24,
-    width: '90%',
-    maxWidth: 400,
-    height: '70%',
-  },
-  modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16, textAlign: 'center' },
-  modalBody: { flex: 1 },
-  modalLabel: { fontSize: 14, fontWeight: '600', marginBottom: 12 },
-  radioScrollView: { maxHeight: 180, marginBottom: 8 },
-  radioItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-  radio: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioSelected: {},
-  radioDot: { width: 12, height: 12, borderRadius: 6 },
-  radioLabel: { fontSize: 14 },
-  divider: { height: 1, marginVertical: 12 },
-  statsSection: {},
-  statsContainer: { marginBottom: 8 },
-  modalInfo: { fontSize: 14, marginBottom: 4, paddingLeft: 8 },
-  checkboxRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  checkboxRowDisabled: { opacity: 0.5 },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {},
-  checkboxDisabled: {},
-  checkmark: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  checkboxLabel: { fontSize: 14 },
-  checkboxLabelDisabled: { opacity: 0.5 },
-  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  modalButtonCancel: {},
-  modalButtonConfirm: {},
-  modalButtonTextCancel: { fontSize: 16, fontWeight: '500' },
-  modalButtonTextConfirm: { fontSize: 16, fontWeight: '600' },
-  modalButtonTextDisabled: { opacity: 0.5 },
   resetRow: { paddingVertical: 4, alignItems: 'center' },
   resetText: { fontSize: 16, color: '#d32f2f' },
 });
