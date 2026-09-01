@@ -725,6 +725,107 @@
 #### リリース後 OTA
 - [x] **OTA③（2026-08-20）**: ダークモードでボタン文字が読めなくなる不具合を修正。`tint` 色がダークモードで `#fff` になる一方、`SiteHideSuggestModal`（サイト非表示提案の確定ボタン）と `InitErrorScreen`（DB初期化失敗時の再試行ボタン）の文字色が固定 `#fff` だったため、白背景に白文字で視認不能になっていた。ユーザー実機のスクショで発覚。他画面（`filter_edit.tsx` 等）と同じ「文字色を `light:#fff` / `dark:#151718` で動的に切り替える」パターンに合わせて修正し、既存パターンとの一貫性を確認（`/code-review` による敵対的セルフレビューで、最初の修正案＝新色 `#2f81f7` を追加する方式は既存パターンとの不一致とコントラスト不足を指摘され、既存パターンへの合わせ込みに変更）。version据え置き（1.3.4のまま）。Android update group `ac164957-979e-4188-a0aa-8b49c284e090` / iOS update group `594a9b94-dda4-4d3d-8ecf-843a2875da02`（Runtime 1.3.4）
 - [x] **OTA④（2026-08-20）**: `GlobalAllowKeywordService.create()` が上限到達・重複・DB失敗時に固定の日本語メッセージを返しており、呼び出し側の `result.message || t(...)` が常に日本語側を選ぶため、英語ロケールでも日本語のまま表示されるバグを修正（Filtoの主軸は英語圏のため実害あり）。`reason`/`requiresPro` の判別だけを返し、表示文言は呼び出し側の `t()` に一本化（既存の翻訳キーのみ使用）。Pro版件数上限の本実装（`feature/pro-plan-limits`、別途進行中）とは切り離した独立修正。`/code-review` によるセルフレビューは指摘なし。OTA③（ダークモード修正）がgit push未実施のままローカルで先にeas update済みだったため、今回の配信に相乗りする形で結果的に重複配信となったが実害なし。version据え置き（1.3.4のまま）。Android update group `17b5a5e6-d174-41b1-9744-907e8fe763f3` / iOS update group `0ad69b24-9bf4-4021-a350-e94af279e08a`（Runtime 1.3.4）
+- [x] **OTA⑤（2026-08-24）**: 無料版の件数上限を先行導入（フィルタ10件・グローバル許可キーワード2件、`FilterService`/`GlobalAllowKeywordService`）。有料化（`feature/pro-plan-limits`）本体より先に、Play/App Storeでの新規流入が上限なしのまま定着するのを防ぐ目的。Pro導線はグレーアウトのまま（購入経路は未実装）。上限超過時の編集ブロックは`hotfix/freeze-over-limit-filter-edit`として別途用意したが、main非マージのPro購入経路が無い状態で編集を永久ロックするリスクを踏まえ**見送り**（削除は常時可能な現状のまま）。version据え置き（1.3.4のまま）。Android update group `819e4891-84a3-4bf5-9a36-8ebecab3b0cd` / iOS update group `c6817d94-810a-4c04-a272-44ede7e2cb90`（Runtime 1.3.4）
+- [x] **OTA⑥（2026-08-27・v1.4.0で置き換え済み）**: ホーム記事の並び順を `fetched_at`（同期時刻）基準＋`diversifyByFeed`の多様性補正に変更。更新頻度の低いサイトの記事が`published_at`の古さで永久に埋もれる問題への1回目の対処として配信。翌日の敵対的セルフレビューで「インデックス欠落」「多様性補正のO(n²)が表示のたびに走る」の2件を追加修正（同日中に再配信）。**この方式は後日、表示時再計算・端末時計依存という設計上の限界が判明し、v1.4.0の`display_order`方式に全面置き換え**（詳細は下記v1.4.0、設計の経緯は`docs/04_detail_design/services/ArticleDisplayOrder.md`）。Android update group `dbc17bd5-bd90-4828-8c40-3f6a2e6ae3e1` / iOS update group `5216b02d-7a7e-4eed-954f-6fc346663d85`（Runtime 1.3.4）
+
+---
+
+### v1.4.0（ホーム記事の並び順を再設計 / iOS審査提出済み・Android未着手 2026-08-28）
+
+> 3回目の設計。1回目（OTA⑥、上記）・2回目（未マージで破棄）はいずれもレビューで重大な欠陥が見つかり取り下げた。
+> 今回は実装前に**9回のレビュー**を行い第10版に至ってから着手。設計の全経緯・却下案・実測根拠は
+> `docs/04_detail_design/services/ArticleDisplayOrder.md`に集約（本WBSでは要点のみ記載）。
+
+#### 背景
+- 更新頻度の低いサイトの記事が、公開日時の古さのために一覧下位に埋もれてほぼ表示されない問題
+- OTA⑥（`fetched_at`基準）は「表示のたびに並べ替えを再計算する」「端末時計に並び順が依存する」という構造上の限界があり、根治には保存時に順序を確定させる設計が必要と判断
+
+#### 設計（`display_order`方式）
+- [x] `articles.display_order`（NULL許容）を追加。一覧は`ORDER BY display_order DESC, id DESC`のみ、表示時の並べ替えを全廃
+- [x] 同期は未採番（NULL）で挿入 → 全フィード保存後、単一トランザクションで「上限超過分の削除→選定→多様性補正→採番」を実行してから同期完了を通知
+- [x] `fetched_at`は保持期間の判定専用に一本化（並び順には使わない）
+- [x] 同期とバックアップ復元・データリセットの相互排他（`utils/syncLock.ts`）。復元は進行中の同期をキャンセルし終了を待ってから開始
+- [x] バックアップに`displayOrder`を追加。復元は絶対値を使わず、相対順を保って現在の最大値の上に振り直す
+- [x] `articles`テーブルのみを対象にした破壊的移行（`PRAGMA user_version`）。フィード・フィルタ・許可キーワード・オンボーディング状態には触れない。ネイティブ版1.4.0未満ではOTA誤配信ガードで移行をスキップ
+- [x] 前提条件: 既存ユーザーの記事・既読・お気に入りは失われることをユーザー合意済み（リリース直後でユーザーがほぼいないため。破壊的変更を許容）
+
+#### 実機検証で発見・修正した不具合（3件、いずれもmainマージ前に対処）
+- [x] 移行の環境判定に`!Updates.isEnabled`を使っていたが、**開発ビルドでも`Updates.isEnabled`はtrue**だったため、開発ビルドでは移行が永久にスキップされ「検証しているつもりで検証できていなかった」。`__DEV__`判定に修正
+- [x] 移行が`articles`を捨てても`feeds.etag`/`last_modified`（条件付きGET）を残していたため、移行直後の同期で内容が変わっていないフィードが304を返し記事が戻らず、後日その内容が変わった瞬間にバックログが一括で最上位に積み上がる不具合。実機で発生確認（1,143件→修正後1,757件・取り残しフィード0）。移行時に`etag`/`last_modified`もNULLにクリアして解消
+- [x] `initDatabase()`は多重実行の防止機構を持たず`openDatabase(true)`で毎回接続を作り直すため、UIとバックグラウンドタスクから同時に呼ばれると**expo-sqliteのネイティブ接続共有**により後発が先発の接続を閉じてしまい、`NullPointerException`で初期化が失敗。実機で`initDatabase failed`を確認。呼び出しをPromiseチェーンで直列化して解消
+
+#### マージ
+- [x] `feature/article-display-order` → `main`（コミット`fff9ec3`、通常マージ・コンフリクトなし）。OTA⑥（`fetched_at`＋`diversifyByFeed`によるホーム表示時補正）は本設計により完全に置き換え
+
+#### ビルド・提出（iOS）
+- [x] `app.json`のversionを1.4.0に更新（`appVersionSource: remote`のためbuildNumberはEAS側が22→23に自動採番、marketing versionはapp.jsonから反映されることを確認）
+- [x] iOS本番ビルド（build 23）→ TestFlightへ提出・実機で移行/採番/多様性補正/リセット/バックアップ復元を確認
+- [x] App Store Connectで1.3.5の未提出ドラフトを1.4.0に書き換えて提出（下記「学び」参照）。マーケティングURL登録（`https://yskms.github.io/filto-app/`、AdMobのiOSアプリ確認が今回の目的）・リリースノート（日英）・サインイン不要設定を確認のうえ審査提出
+- [x] リリースノート作成（日英、`docs/05_store/release_notes_v1.4.0.md`）。データリセットの告知文は掲載を見送り（ユーザー数がまだ少ないタイミングでの判断）
+- [ ] 審査結果待ち
+- [ ] Android版のビルド・提出（未着手）
+
+#### 学び
+- **`Updates.isEnabled`は開発ビルドでも`true`になる**。ネイティブビルドかOTA配信かを判定するには`__DEV__`を使う（`Updates.isEnabled`はexpo-updates機構自体の有効/無効であり、開発/本番の区別ではない）
+- 設計段階で「新規インストールと既存端末でスキーマを完全一致させるため」に破壊的移行（DROP+CREATE）を選んだが、実装後に実測すると**`ALTER TABLE`でも列の型・制約・外部キーは完全に同一**になることが判明（差は列の並び順のみで、`SELECT *`を使っていないため実害なし）。今回はユーザー合意済みのため破壊的移行を維持したが、次回同種の判断をする際は先に実測すべきだった
+- 初回取得件数「約3,850件（77フィード×上限50件）」は**上限の掛け算であって実測値ではなかった**。実際は1フィード平均23件・計1,757件。件数の少なさだけで異常と判断せず、「記事を持つフィードの数」で判定する
+- `appVersionSource: remote`のiOSビルドは、**buildNumberのみEAS側が遠隔管理**し、marketing version（`app.json`の`version`）は通常どおりローカルから反映される。両者の管理元が違うことを事前に把握していないと、バージョン整合性の確認で混乱する
+- App Store Connectは**未提出のドラフトバージョンが1つある間、新しいバージョンを追加できない**（「+」が出ない）。新規追加ではなく、既存ドラフトの「バージョン」欄を書き換えて対応する
+- ビルドクレジットは実行前に警告が出ても止まらない（今回93%消費の警告後もキュー投入は成功した）。無料枠には従量課金が無いため、上限到達後は月初リセットまで新規ビルド不可
+
+---
+
+### v1.5.0（マネタイズ導入: AdMob広告 + Filto Pro定期購読 / iOS・Android両OS審査提出済み 2026-09-01）
+
+> 設計の全体像は `docs/01_requirements/01_monetization_plan.md` に集約。本節はビルド・提出・実機検証の
+> 経緯のみ記載。
+
+#### 実装（`feature/pro-plan-limits`ブランチ、複数回の敵対的セルフレビューを経て集約）
+- [x] **無料版の件数上限**: フィルタ10件・グローバル許可キーワード2件。新規作成のみ制限し、既存データは遡って触らない方針（`ProService.checkLimit`）。上限は本体より先にOTA⑤で先行配信済み（上記v1.3.4節参照）
+- [x] **上限超過中の編集ブロック**: `ProService.isOverLimit`で、上限超過状態での既存フィルタ編集をブロック（削除は常時可能）。件数上限を新規作成だけでなく編集にも実効性を持たせる目的。グローバル許可キーワードは編集APIが無いため対象外
+- [x] **AdMobバナー広告**: 非パーソナライズ限定固定（切替設定なし）。`AdBanner.native.tsx`はPro状態と同意状況（`canShowAds()`）を独立に評価し、双方向の状態変化に追従。サイズは当初`LARGE_ANCHORED_ADAPTIVE_BANNER`だったが実機確認で縦に大きすぎたため`ANCHORED_ADAPTIVE_BANNER`（高さ約半分）に変更
+- [x] **UMP（EEA/UK/スイス向け同意取得）**: `AdsConsent.gatherConsent()`で同意状況を取得し、`canRequestAds`がfalseの間は広告を一切リクエストしない。「非パーソナライズなら同意不要」という当初の設計判断は誤りで、Googleの EU User Consent Policy（2024-01-16以降、認定CMP必須化）により訂正
+- [x] **AdMobの同意設定を後から変更できる導線**: 「広告ユニットの導入」機能を有効化する際にGoogle側から「取り消しリンクの設置」が要件として明示されたため追加。`isAdPrivacyOptionsRequired()`で対象地域のユーザーにのみ設定画面に表示
+- [x] **RevenueCat導入**: `ProService.isPro()`を実entitlement参照に接続。匿名App User IDのみ使用（アカウント機能なし）。Android/iOSそれぞれの本番APIキーに差し替え済み
+- [x] **Pro購入画面（`app/pro.tsx`）**: 価格表示・購読・復元。`getIsPro()`はSDK初期化直後の競合状態を避けるため初回`getCustomerInfo()`完了を待つ
+- [x] **`react-native-google-mobile-ads`を16.3.4に固定**: v16.4.0以降はKotlinメタデータ非互換でビルド失敗（`invertase/react-native-google-mobile-ads` issue #863、メンテナ推奨に従い固定）
+
+#### AdMobアカウント設定（Google側、コード外の作業）
+- [x] 当初`yskms.studio@gmail.com`でAdMob申請 → **「重複アカウント」エラーで拒否**。原因は同一電話番号を共有する別Googleアカウント（個人のブログ用に以前作成していた既存AdSense）との紐付け検出。既存AdSenseアカウントを活かす方針で**AdMobは個人用Googleアカウント（ブログのAdSenseと同一）に切り替え**
+- [x] **app-ads.txt検証で長期間ハマった**（Android・iOSとも数日単位）。原因は開発者ウェブサイトが`https://yskms.github.io/filto-app/`というGitHub Pagesの**プロジェクトサイト（サブディレクトリ）**であり、Googleのクローラーは**ドメインルート**を見に行くため。対応:
+  - ルートドメイン専用の別リポジトリ`yskms.github.io`を新設し、`https://yskms.github.io/app-ads.txt`を配信（既存の`filto-app`リポジトリの`docs/app-ads.txt`＝サブディレクトリ側と両方に設置し両対応）
+  - iOS側はさらに、App Store Connectの**マーケティングURLが空欄**だったことが別原因として判明。マーケティングURLは**審査を経て実際に公開されるまで反映されない**（プロモーション用テキストとは異なり即時反映ではない）ため、値の設定だけでは足りず、実際のバージョンリリースを経る必要があった
+  - Android承認 → iOS承認の順で解消。iOSはAdMobサポートへの問い合わせ（チケットID 1-6754000042049）も並行して行ったが、最終的にはマーケティングURLの反映を待つ形で自然解決
+- [x] GDPR同意メッセージを「プライバシーとメッセージ」で作成・公開（対象: EEA/UK/スイス、Android/iOS両アプリを追加）。「同意しない」ボタンが当初オフで「同意する」「オプションを管理」のみだったため、対等な選択肢として追加
+- [x] センシティブカテゴリのブロック設定（センセーショナルな内容・ソーシャルカジノゲーム・一攫千金・性関連2種をブロック。マッチングサービス・宗教・政治は収益優先で許可のまま）
+- [x] Android/iOSそれぞれで実際の広告ユニット（Home Banner）を作成し、App ID・広告ユニットIDをコードに反映（`check-ad-ids.mjs`でテストID残存なしを確認）
+
+#### 実機での購入フロー検証（Android、内部テストトラック経由）
+- [x] **EASの開発ビルド（サイドロード）ではGoogle Play課金が`DEVELOPER_ERROR`で失敗**することを確認。原因は署名の不一致（Play課金はPlay Store経由インストール・Play Console登録済み署名を要求）。`preview-aab`プロファイルでビルドし、Play Consoleの内部テストトラック経由でインストールし直して解決
+- [x] ライセンステスト（Play Console「設定」→「ライセンステスト」、内部テストとは別のアカウントレベル設定）にテスターのGoogleアカウントを追加後、「テストカード、常に承認」での購入を確認。テスト購読は5分ごとに自動更新される仕様（実際の課金は発生しない）
+- [x] 購入 → 広告非表示・上限解除、解約 → 広告再表示・新規上限復帰（既存データは保持されたまま）を実機で確認
+
+#### mainとのマージ（v1.4.0の`display_order`機能と統合）
+- [x] `feature/pro-plan-limits`は`main`から大きく分岐していたため（main側に18コミット、feature側に23コミット）、まず`main`を`feature/pro-plan-limits`へマージ。11ファイルで競合（`app.json`のバージョン文字列、ホーム画面の並び替えロジック新旧、Pro導線の有無、ドキュメント参照の有無など）。競合はいずれも「新旧の実装がバッティングしているだけ」で、実質的に不明瞭な判断は無かった
+- [x] マージ後・mainへの統合前セルフレビュー（5並列エージェント）で新規指摘4件、うち1件（`globalAllowKeywords.freeLimitReached`がマージで「Pro版で無制限に」の文言だけ脱落）を修正。他はAdMobコンセントTODOコメントの陳腐化（修正）、既存の低頻度UX rough edge（見送り）
+- [x] `app.json`のversionは両ブランチの最大（main:1.4.0 / feature:1.3.5）より高い**1.5.0**に決定
+
+#### 実機で発見した積み残し（提出直前に発見・OTAで対処）
+- [x] **Pro画面に一時デバッグ表示が残っていた**: RevenueCatの価格取得失敗調査のために追加した`debug: Error: ...`という生エラー表示を消し忘れたまま本番ビルド（24）をApp Store Connectにアップロード済みだった。実機のTestFlightスクリーンショットで発覚。JSのみの変更のため、**ビルドを作り直さずOTA（`eas update --branch production`, Runtime 1.5.0）で同じビルドに上書き配信**して解消。審査提出前にApple側へ反映済み
+- [x] iPhone SE等の狭い画面で`feed_edit.tsx`の貼り付け/コピーボタンのラベルが崩れる不具合もOTAで別途修正（v1.4.0向け、Runtime 1.4.0のみ配信。Android本番は当時1.3.4のままだったため配信対象外とし保留）
+
+#### ビルド・提出
+- [x] iOS: `eas build --profile production`（Build 24、Version 1.5.0）→ `eas submit`。App Store Connectでサブスクリプショングループ「Filto Pro」のローカライズ未設定エラー（グループ自体にも個別サブスクとは別の表示名が必要）、次いで個別サブスク「Filto Pro Monthly」自体を提出物に追加し忘れる、の2点でつまずいたが解消し審査提出完了
+- [x] Android: `eas build --profile production`（versionCode 23、Version 1.5.0）→ `eas submit`（`releaseStatus: draft`）。データセーフティ（既に内容は保存済み、本リリースに合わせて提出保留にしていたもの）とあわせて審査提出完了
+- [ ] 両OSとも審査結果待ち
+
+#### 学び
+- **GitHub Pagesのプロジェクトサイト（`username.github.io/repo/`）はapp-ads.txt検証で罠になる**。ドメインルート（`username.github.io/app-ads.txt`）とサブディレクトリ（`username.github.io/repo/app-ads.txt`）の両方に置くのが安全。ルート側は専用の`username.github.io`リポジトリが要る
+- **App Store Connectのマーケティングurlは即時反映されない**。サポートurlと違い、実際のバージョンリリースを経て初めて公開ページに反映される（プロモーション用テキストのみ例外で即時反映）
+- **Google Play課金はサイドロードでは動作しない**。開発ビルドでの実購入テストは不可能で、Play Store経由（最低でも内部テストトラック）のインストールが必須
+- **ライセンステストと内部テスト参加は別設定**。内部テストのテスターに入れただけでは実購入扱いのままで、アカウントレベルの「ライセンステスト」に別途追加が必要
+- **EASのビルド枠はAndroid/iOSそれぞれ独立して15件ずつ**（合計30件という表示に惑わされない）。片方だけ先に枯渇しうる
+- 一時的な調査用コード（デバッグ表示等）は、原因判明後すぐに消さないと**本番ビルドに紛れ込む**。今回は実機スクリーンショットでの発見が最後の砦になった
 
 ---
 
