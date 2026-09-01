@@ -4,6 +4,7 @@ import { FeedService } from '@/services/FeedService';
 import { FilterService, Filter } from '@/services/FilterService';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
+import { SyncService } from '@/services/SyncService';
 import { Article } from '@/types/Article';
 import { isValidFeedUrl } from '@/utils/feedUrl';
 import { writeAndShare, writeCacheFile, type ShareExportResult } from '@/utils/exportFile';
@@ -60,6 +61,17 @@ interface BackupArticle {
   summary?: string;
   thumbnailUrl?: string;
   publishedAt: string;
+  /**
+   * エクスポート時点のホーム表示順。**復元時に絶対値は使わない**。
+   * 復元対象どうしの相対順を知るための比較情報としてのみ読む。
+   *
+   * 絶対値を書き戻すと、現在のDBより大きい値を持つバックアップ（例: 現在1〜10,000、
+   * バックアップ50,000〜60,000）を復元したときに、以降の新着（10,001〜）が
+   * 永久に復元記事より下へ沈む。
+   *
+   * 省略可。この項目が無い古いバックアップは公開日時の降順で並べ直す。
+   */
+  displayOrder?: number;
   isRead: boolean;
   isStarred: boolean;
 }
@@ -159,11 +171,55 @@ async function collectBackupData(includeAllArticles: boolean): Promise<BackupDat
         summary: a.summary,
         thumbnailUrl: a.thumbnailUrl,
         publishedAt: a.publishedAt,
+        displayOrder: a.displayOrder,
         isRead: a.isRead,
         isStarred: a.isStarred,
       }];
     }),
   };
+}
+
+/**
+ * 復元対象を最終的な表示順に並べる。
+ *
+ * ここで並びを確定させ、insertMany には「配列の添字＝表示順」として渡す。
+ * 挿入の順番そのものに意味を持たせないことで、採番と挿入の責務を分ける。
+ *
+ * 手で編集されたバックアップや古い形式でも順序が一意に決まるよう、次の順に並べる。
+ *   1. displayOrder を持つ記事 … displayOrder の降順 → 同値はバックアップ内の出現順
+ *   2. その後ろに displayOrder を持たない記事 … publishedAt の降順 → 同値・解析不能は出現順
+ *
+ * 多様性補正（diversifyByFeed）はかけ直さない。当時すでに補正済みの並びであり、
+ * 再補正すると「当時の並びを再現する」という目的に反する。
+ */
+function sortForRestore(
+  items: { article: Article; displayOrder?: number; index: number }[]
+): Article[] {
+  const parseTime = (iso: string): number => {
+    const ms = Date.parse(iso);
+    // 解析できない日付は最後尾へ（NaN は比較が常に false になり並びが不定になるため潰す）
+    return Number.isNaN(ms) ? Number.NEGATIVE_INFINITY : ms;
+  };
+
+  return items
+    .slice()
+    .sort((a, b) => {
+      const aHas = typeof a.displayOrder === 'number' && Number.isFinite(a.displayOrder);
+      const bHas = typeof b.displayOrder === 'number' && Number.isFinite(b.displayOrder);
+      if (aHas !== bHas) return aHas ? -1 : 1; // 持っている方が先（＝上）
+      if (aHas && bHas && a.displayOrder !== b.displayOrder) {
+        return (b.displayOrder as number) - (a.displayOrder as number);
+      }
+      if (!aHas && !bHas) {
+        // 引き算にすると、両方が解析不能（-Infinity）のときに NaN になり
+        // 比較関数の戻り値として不正になる。大小比較で返す
+        const at = parseTime(a.article.publishedAt);
+        const bt = parseTime(b.article.publishedAt);
+        if (at !== bt) return bt > at ? 1 : -1;
+      }
+      return a.index - b.index; // 同値はバックアップ内の出現順で決着させる
+    })
+    .map((item) => item.article);
 }
 
 /**
@@ -280,7 +336,9 @@ async function restoreInto(data: BackupData, bypassLimits = false): Promise<Back
   // 重複判定はDBの UNIQUE(feed_id, link) と INSERT OR IGNORE に任せる。
   // 事前に既存記事を読み出すと、キーを作るためだけに全記事（本文込み）を
   // メモリに載せることになるため
-  const toInsert: Article[] = [];
+  // 並べ替えてから挿入するため、バックアップ内の出現順（index）も保持しておく。
+  // 出現順は displayOrder が重複・欠落しているバックアップの決着に使う
+  const candidates: { article: Article; displayOrder?: number; index: number }[] = [];
   const starTargets: { feedId: string; link: string }[] = [];
 
   for (const article of data.articles) {
@@ -309,22 +367,34 @@ async function restoreInto(data: BackupData, bypassLimits = false): Promise<Back
       starTargets.push({ feedId, link: article.link });
     }
 
-    toInsert.push({
-      id: '', // insertMany では使われない（id は AUTOINCREMENT）
-      feedId,
-      feedName: article.feedName,
-      title: article.title,
-      link: article.link,
-      summary: article.summary,
-      thumbnailUrl: article.thumbnailUrl,
-      publishedAt: article.publishedAt,
-      isRead: !!article.isRead,
-      isStarred: !!article.isStarred,
+    candidates.push({
+      index: candidates.length,
+      displayOrder: typeof article.displayOrder === 'number' ? article.displayOrder : undefined,
+      article: {
+        id: '', // insertMany では使われない（id は AUTOINCREMENT）
+        feedId,
+        feedName: article.feedName,
+        title: article.title,
+        link: article.link,
+        summary: article.summary,
+        thumbnailUrl: article.thumbnailUrl,
+        publishedAt: article.publishedAt,
+        isRead: !!article.isRead,
+        isStarred: !!article.isStarred,
+      },
     });
   }
 
+  // 表示順を先に確定させてから挿入する。insertMany は配列の添字で採番するため、
+  // 「どの順番で INSERT するか」と「どう採番するか」がここで分離される。
+  const toInsert = sortForRestore(candidates);
+
+  // 復元は insertMany の中で採番まで完結させる。未採番のまま残すと、次の同期の
+  // 採番処理が復元分を巻き取って並べ直してしまう。
   // 実際に入った件数（既存やファイル内の重複と衝突した分は除く）を受け取る
-  articlesAdded = await ArticleRepository.insertMany(toInsert);
+  articlesAdded = await ArticleRepository.insertMany(toInsert, undefined, {
+    assignDisplayOrder: true,
+  });
 
   // すでに端末にあった記事にお気に入りを立て直す。
   // 新規挿入分は is_starred = 1 で入っているため、この件数には数えられない
@@ -418,36 +488,50 @@ export const BackupService = {
    *
    * 置き換えは全消去のコミット後に復元が走るためアトミックではない。
    * そこで消す前に安全バックアップを取り、復元が例外で終わったら書き戻す。
+   *
+   * 復元中は同期を止める。SQLite が保証するのは「DBが壊れないこと」であって、
+   * 「同期で取得した記事と復元した記事のどちらが上に来るべきか」というアプリケーションの
+   * 意図までは保証しない。モードによらず（マージでも）排他する。
    */
   async applyBackup(data: Partial<BackupData>, mode: BackupImportMode): Promise<BackupApplyResult> {
     // pickBackupFile を経由せず呼ばれても、配列前提のループが落ちないようにする
     const normalized = normalize(data);
 
-    if (mode === 'merge') {
-      return restoreInto(normalized);
-    }
+    // 進行中の同期をキャンセルし、その終了を待ってから始める。
+    // 待っている間に新しい同期が開始されることも防がれる。
+    return SyncService.runExclusive(async () => {
+      // 復元開始時点の未採番記事をすべて捨てる。キャンセルした同期が書き込んだ
+      // 途中の記事が、復元後に採番されて混ざるのを防ぐ。
+      // 「どの同期が残したか」は追跡しない（未採番はまだ一度もホームに出ていないため
+      // 一律に捨ててよい）。置き換えでは直後の全消去でも消えるが、マージでは必要。
+      await ArticleRepository.deleteUnnumbered();
 
-    // 消える直前の中身を丸ごと控える（記事は全件）
-    const snapshot = await collectBackupData(true);
-    try {
-      // プロセスごと落ちると書き戻せない。手動で取り込めるようファイルにも残す
-      writeCacheFile(SAFETY_FILE_PREFIX, 'json', JSON.stringify(snapshot));
-    } catch (_) {}
+      if (mode === 'merge') {
+        return restoreInto(normalized);
+      }
 
-    // 表示設定など AsyncStorage のデータは消さない（バックアップにも含めていないため）
-    clearUserDataTables();
-
-    try {
-      return await restoreInto(normalized);
-    } catch (error) {
-      // 全消去はコミット済み。ここで書き戻さないとユーザーのデータが消えたままになる。
-      // bypassLimits=true: これはユーザー自身が元々持っていたデータの書き戻しであり、
-      // 新規に増える内容ではないため、無料版上限チェックでスキップされてはならない
+      // 消える直前の中身を丸ごと控える（記事は全件）
+      const snapshot = await collectBackupData(true);
       try {
-        clearUserDataTables();
-        await restoreInto(snapshot, true);
+        // プロセスごと落ちると書き戻せない。手動で取り込めるようファイルにも残す
+        writeCacheFile(SAFETY_FILE_PREFIX, 'json', JSON.stringify(snapshot));
       } catch (_) {}
-      throw error;
-    }
+
+      // 表示設定など AsyncStorage のデータは消さない（バックアップにも含めていないため）
+      clearUserDataTables();
+
+      try {
+        return await restoreInto(normalized);
+      } catch (error) {
+        // 全消去はコミット済み。ここで書き戻さないとユーザーのデータが消えたままになる。
+        // bypassLimits=true: これはユーザー自身が元々持っていたデータの書き戻しであり、
+        // 新規に増える内容ではないため、無料版上限チェックでスキップされてはならない
+        try {
+          clearUserDataTables();
+          await restoreInto(snapshot, true);
+        } catch (_) {}
+        throw error;
+      }
+    });
   },
 };

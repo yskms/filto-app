@@ -51,7 +51,6 @@ import { useToast } from '@/providers/toast';
 import { ArticleActionSheet } from '@/components/ArticleActionSheet';
 import SiteHideSuggestModal from '@/components/SiteHideSuggestModal';
 import { SITE_SUGGEST_CONSECUTIVE, SITE_SUGGEST_CUMULATIVE, isSiteSuggestSuppressed, dismissSiteSuggest } from '@/utils/siteSuggest';
-import { diversifyByFeed } from '@/utils/diversifyByFeed';
 import { AdBanner } from '@/components/AdBanner';
 
 const ACCENT = '#0a7ea4';
@@ -847,9 +846,12 @@ export default function HomeScreen() {
       displayed = displayed.filter(a => !a.isRead);
     }
 
-    // 同じフィードの新着が連続して上位を占有しないよう並びを補正する
-    // （新着順=fetched_at DESC はできるだけ保ったまま、隣接する同一フィードだけを避ける）
-    setFilteredArticles(diversifyByFeed(displayed));
+    // 並び順は display_order としてDBに確定済み（listAll がその順で返す）。
+    // ここで並べ替えてはいけない。以前は表示のたびに多様性補正をかけており、
+    // 記事をタップするたびに数百ms固まり、読んでいる最中に並びが変わっていた。
+    // 多様性の補正は同期時の採番処理（ArticleRepository.assignDisplayOrders）で
+    // 一度だけ行う。
+    setFilteredArticles(displayed);
   }, [articles, feeds, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords, hiddenArticleIds]);
 
   const runRefresh = React.useCallback(async () => {
@@ -861,6 +863,13 @@ export default function HomeScreen() {
 
       if (result.offline) {
         Alert.alert(t('common.error'), t('home.offlineError'));
+        return;
+      }
+
+      // 別の同期、またはバックアップ復元・リセットが実行中で開始できなかった。
+      // 黙って何も起きないと「更新できない」と誤解されるため伝える
+      if (result.busy) {
+        Alert.alert(t('home.refreshInProgressTitle'), t('home.refreshInProgressMessage'));
         return;
       }
 

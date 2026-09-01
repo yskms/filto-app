@@ -195,6 +195,8 @@ export default function FilterEditScreen() {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
+
     if (!blockKeyword.trim()) {
       Alert.alert(t('common.error'), t('filters.blockKeywordRequired'));
       return;

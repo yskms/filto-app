@@ -32,6 +32,7 @@ export const ja = {
       sort: '並び替え',
       refresh: '更新',
       pasteFromClipboard: 'クリップボードから貼り付け',
+      paste: '貼り付け',
     },
   
     // タブバー
@@ -364,7 +365,7 @@ export const ja = {
       remaining: '残り {{count}} 件',
       noKeywords: 'キーワードがありません',
       noKeywordsHint: '重要なキーワードを追加してください',
-      freeLimitReached: '無料版は{{limit}}件までです。Pro版で無制限に追加できます。',
+      freeLimitReached: '無料版は{{limit}}件までです。',
       alreadyExists: 'このキーワードは既に登録されています',
       inputRequired: 'キーワードを入力してください',
       addError: '登録に失敗しました',

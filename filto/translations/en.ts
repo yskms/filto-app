@@ -32,6 +32,7 @@ export const en = {
     sort: 'Sort',
     refresh: 'Refresh',
     pasteFromClipboard: 'Paste from clipboard',
+    paste: 'Paste',
   },
 
   // Tab bar
@@ -364,7 +365,7 @@ export const en = {
     remaining: '{{count}} remaining',
     noKeywords: 'No keywords',
     noKeywordsHint: 'Add important keywords',
-    freeLimitReached: 'Free version is limited to {{limit}}. Upgrade to Pro for unlimited.',
+    freeLimitReached: 'Free version is limited to {{limit}}.',
     alreadyExists: 'This keyword already exists',
     inputRequired: 'Please enter keyword',
     addError: 'Failed to add keyword',
