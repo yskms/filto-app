@@ -17,8 +17,8 @@ import MobileAds, { MaxAdContentRating, AdsConsent } from 'react-native-google-m
  * `gatherConsent()` はEEA/UK圏外のユーザーには何も表示せず、そのまま
  * canRequestAds=true を返すので、日本など他地域のUXには影響しない。
  *
- * TODO: 本番リリース前に、AdMobコンソールの「プライバシーとメッセージ」で
- * GDPRメッセージを作成・公開すること。未作成だと同意フォームが表示されず、
+ * AdMobコンソールの「プライバシーとメッセージ」でGDPRメッセージを作成・公開済み
+ * （Android/iOS両アプリを対象に含む）。未公開だと同意フォームが表示されず、
  * EEA/UKユーザーには広告が出ない（canRequestAds=false のまま）。
  *
  * 設計: docs/01_requirements/01_monetization_plan.md §4

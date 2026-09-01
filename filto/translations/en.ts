@@ -365,7 +365,7 @@ export const en = {
     remaining: '{{count}} remaining',
     noKeywords: 'No keywords',
     noKeywordsHint: 'Add important keywords',
-    freeLimitReached: 'Free version is limited to {{limit}}.',
+    freeLimitReached: 'Free version is limited to {{limit}}. Upgrade to Pro for unlimited.',
     alreadyExists: 'This keyword already exists',
     inputRequired: 'Please enter keyword',
     addError: 'Failed to add keyword',
