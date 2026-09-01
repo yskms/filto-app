@@ -4,6 +4,7 @@ import { ArticleService } from '@/services/ArticleService';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
+import { normalizeArticleRetentionDays } from '@/constants/articleRetention';
 import * as Network from 'expo-network';
 import { SyncLock } from '@/utils/syncLock';
 
@@ -274,10 +275,9 @@ export const SyncService = {
    */
   async deleteOldArticlesAuto(): Promise<number> {
     try {
-      // 設定から保持期間を取得
+      // 設定から保持期間を取得（未設定・廃止した短い値は既定値へ正規化する）
       const retentionDaysStr = await AsyncStorage.getItem(StorageKeys.articleRetentionDays);
-      const parsed = retentionDaysStr ? parseInt(retentionDaysStr, 10) : NaN;
-      const retentionDays = Number.isNaN(parsed) ? 30 : parsed; // デフォルト: 30日
+      const retentionDays = normalizeArticleRetentionDays(retentionDaysStr);
 
       // お気に入りも削除するかの設定を取得
       const deleteStarredStr = await AsyncStorage.getItem(StorageKeys.deleteStarredInAutoDelete);

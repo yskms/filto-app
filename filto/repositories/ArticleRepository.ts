@@ -440,39 +440,25 @@ export const ArticleRepository = {
   },
 
   /**
-   * 古い記事を削除
-   * @param days 保持日数（-1: 全削除, 0: 削除しない, 1以上: 指定日数より古い記事を削除）
+   * 保持期間を過ぎた古い記事を削除する（同期の最後に呼ばれる自動削除）。
+   *
+   * 判定は published_at ではなく fetched_at（この端末が最初に取得した時刻）。
+   * articles は UNIQUE(feed_id, link) の INSERT OR IGNORE で入るため、ここで
+   * 消した記事もフィードのRSSに残っていれば次の同期で未読として再挿入される。
+   * 保持期間を短くするほどこれが起きやすいので、選択肢は90日以上に限っている
+   * （constants/articleRetention.ts）。
+   *
+   * @param days 保持日数（0: 削除しない, 1以上: 指定日数より古い記事を削除）
    * @param includeStarred お気に入り記事も削除するか（デフォルト: false）
    * @returns 削除された記事数
    */
   async deleteOldArticles(days: number, includeStarred: boolean = false): Promise<number> {
-    const db = openDatabase();
-
-    // -1: 全て削除
-    if (days === -1) {
-      const beforeCount = db.getFirstSync<{ count: number }>(
-        'SELECT COUNT(*) as count FROM articles'
-      )?.count || 0;
-
-      if (includeStarred) {
-        db.runSync('DELETE FROM articles');
-      } else {
-        db.runSync('DELETE FROM articles WHERE is_starred = 0');
-      }
-
-      const afterCount = db.getFirstSync<{ count: number }>(
-        'SELECT COUNT(*) as count FROM articles'
-      )?.count || 0;
-
-      return beforeCount - afterCount;
-    }
-
     // 0: 無制限（削除しない）
-    if (days === 0) {
+    if (days <= 0) {
       return 0;
     }
 
-    // 1以上: 指定日数より古い記事を削除
+    const db = openDatabase();
     const cutoffTime = Math.floor(Date.now() / 1000) - (days * 24 * 60 * 60);
 
     let deleteQuery = 'DELETE FROM articles WHERE fetched_at < ?';
@@ -482,97 +468,5 @@ export const ArticleRepository = {
 
     const result = db.runSync(deleteQuery, [cutoffTime]);
     return result.changes;
-  },
-
-  /**
-   * 削除対象の記事を取得（プレビュー用）
-   * @param days 保持日数（-1: 全削除, 0: 削除しない, 1以上: 指定日数より古い記事）
-   * @param includeStarred お気に入り記事も含むか
-   * @returns 削除対象の記事統計
-   */
-  async getOldArticlesStats(days: number, includeStarred: boolean = false): Promise<{
-    total: number;
-    unread: number;
-    read: number;
-    starred: number;
-  }> {
-    const db = openDatabase();
-
-    // -1: 全削除の場合、全記事の統計を返す
-    if (days === -1) {
-      let whereClause = '';
-      if (!includeStarred) {
-        whereClause = 'WHERE is_starred = 0';
-      }
-
-      const stats = db.getFirstSync<{
-        total: number;
-        unread: number;
-        read: number;
-        starred: number;
-      }>(
-        `
-          SELECT
-            COUNT(*) as total,
-            SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread,
-            SUM(CASE WHEN is_read = 1 THEN 1 ELSE 0 END) as read,
-            SUM(CASE WHEN is_starred = 1 THEN 1 ELSE 0 END) as starred
-          FROM articles
-          ${whereClause}
-        `
-      );
-
-      // includeStarred=false の場合でも、存在するお気に入り件数を返す（チェックボックスの活性判定用）
-      if (!includeStarred) {
-        const starredCount = db.getFirstSync<{ count: number }>(
-          'SELECT COUNT(*) as count FROM articles WHERE is_starred = 1'
-        )?.count || 0;
-        return { ...(stats || { total: 0, unread: 0, read: 0, starred: 0 }), starred: starredCount };
-      }
-
-      return stats || { total: 0, unread: 0, read: 0, starred: 0 };
-    }
-
-    // 0: 無制限の場合、削除対象なし
-    if (days === 0) {
-      return { total: 0, unread: 0, read: 0, starred: 0 };
-    }
-
-    // 1以上: 指定日数より古い記事の統計
-    const cutoffTime = Math.floor(Date.now() / 1000) - (days * 24 * 60 * 60);
-
-    let whereClause = 'WHERE fetched_at < ?';
-    if (!includeStarred) {
-      whereClause += ' AND is_starred = 0';
-    }
-
-    const stats = db.getFirstSync<{
-      total: number;
-      unread: number;
-      read: number;
-      starred: number;
-    }>(
-      `
-        SELECT
-          COUNT(*) as total,
-          SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread,
-          SUM(CASE WHEN is_read = 1 THEN 1 ELSE 0 END) as read,
-          SUM(CASE WHEN is_starred = 1 THEN 1 ELSE 0 END) as starred
-        FROM articles
-        ${whereClause}
-      `,
-      [cutoffTime]
-    );
-
-    // includeStarred=false の場合でも、対象期間に存在するお気に入り件数を返す（チェックボックスの活性判定用）
-    if (!includeStarred) {
-      const starredCount = db.getFirstSync<{ count: number }>(
-        'SELECT COUNT(*) as count FROM articles WHERE fetched_at < ? AND is_starred = 1',
-        [cutoffTime]
-      )?.count || 0;
-      return { ...(stats || { total: 0, unread: 0, read: 0, starred: 0 }), starred: starredCount };
-    }
-
-    return stats || { total: 0, unread: 0, read: 0, starred: 0 };
   },
 };

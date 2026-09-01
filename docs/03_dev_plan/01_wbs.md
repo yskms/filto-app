@@ -829,6 +829,51 @@
 
 ---
 
+### v1.6.0（記事保持期間の見直しと手動削除の廃止 / 開発中）
+
+ブランチ: `feature/article-retention-simplify`
+
+#### 背景（着手前に判明した構造的な問題）
+記事は `UNIQUE(feed_id, link)` に対する `INSERT OR IGNORE` で保存され、保持期間の削除判定は
+`published_at` ではなく **`fetched_at`（この端末が最初に取得した時刻）**で行っている。
+このため保持期間で消した記事も、フィードのRSSにまだ載っていれば**次の同期で未読として
+再挿入される**。
+
+初回同期でRSSにぶら下がっていた古い記事が全部同じ `fetched_at` で入るため、更新の遅い
+フィードほど「保持期間を迎えて一斉に消え、次の同期で一斉に未読で戻る」が周期的に起きる。
+保持期間が短いほど踏みやすい。手動削除の「全て削除」も同じ理由で、消しても次の同期で
+戻ってくるため期待どおりに働いていなかった。
+
+#### 対応
+- [x] 保持期間の選択肢を **90日 / 180日 / 無制限** に変更（7日・30日を廃止）、既定値を30日→**90日**へ
+- [x] 選択肢・既定値・正規化を `constants/articleRetention.ts` に集約。画面と `SyncService` が
+      同じ AsyncStorage を読むため、既定値が2箇所にハードコードされていると
+      「表示より短い期間で消える」ズレが生まれる
+- [x] 保存済みの短い値（7 / 30）は `normalizeArticleRetentionDays()` で既定値へ引き上げる。
+      引き上げる方向なので記事が余分に消えることはない。画面側は読み込み時に書き戻し、
+      `SyncService` は読み取り時に正規化するため、片方が失敗してもズレない
+- [x] 選択肢に無い値が保存されていた場合に既定値のラベルを固定表示していたフォールバックを修正
+      （`minRefresh` 側は既に同じ対処が入っていた）
+- [x] **記事の手動削除を廃止**。セクション・`ManualDeleteModal`・関連state/ハンドラ・
+      `ArticleRepository.getOldArticlesStats()`・`deleteOldArticles()` の全削除(-1)分岐・
+      i18nキー16件（ja/en）を削除。`docs/02_basic_design/05_crud_matrix.md` の
+      「通常UIからの記事手動削除は想定しない」と実装が食い違っていた状態も解消
+- [x] 設計ドキュメント追随（`04_detail_design/screens/data_management.md`, `settings.md`,
+      `02_basic_design/01_screen_flow.md`, `02_wireframes.md`）
+- [ ] 実機確認（Pixel 9a）
+- [ ] mainマージ前の敵対的セルフレビュー
+- [ ] リリース方式の判断（JSのみの変更のためOTAでも配信可能だが、機能廃止のため
+      バージョンを上げてストアリリースするかは別途判断）
+
+#### 注意
+- `docs/cursor/screens/data_management_cursor.md` は当時の生成指示（"Create a settings screen"）の
+  凍結された記録のため更新対象外とした
+- i18nキーの一括削除で `filters.deleteError` / `feeds.deleteError` / `globalAllowKeywords.deleteError`
+  （同名キーの別ネームスペース）まで巻き込みかけた。キー名だけで機械的に消さず、対象ブロックに
+  スコープを絞ること
+
+---
+
 ## 既知の不具合
 
 ### fast-xml-parser のエンティティ展開上限でフィードが丸ごとパース失敗する（2026-08-15 検出 → 2026-08-16 修正・OTA②で配信済み）
