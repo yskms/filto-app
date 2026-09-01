@@ -16,7 +16,7 @@ export const ARTICLE_RETENTION_OPTIONS = [90, 180, 0];
 /**
  * 保存済みの保持期間を、現在の選択肢に沿った値へ正規化する。
  *
- * v1.6.0 で 7日・30日 を選択肢から外した。articles は `UNIQUE(feed_id, link)` の
+ * v1.5.1 で 7日・30日 を選択肢から外した。articles は `UNIQUE(feed_id, link)` の
  * INSERT OR IGNORE で入るため、保持期間で消した記事もフィードのRSSに残っていれば
  * 次の同期で**未読として再挿入される**。しかも削除判定は published_at ではなく
  * fetched_at なので、更新の遅いフィード（RSSに古い記事がぶら下がったまま）ほど
