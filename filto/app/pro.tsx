@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,6 +10,7 @@ import { useTranslation } from '@/providers/language';
 import { useToast } from '@/providers/toast';
 import { ProService } from '@/services/ProService';
 import { getMonthlyPriceString, purchaseMonthly, restorePurchases } from '@/services/purchases';
+import { TERMS_OF_USE_URL, PRIVACY_POLICY_URL } from '@/constants/legalUrls';
 
 const ProHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -118,13 +119,22 @@ export default function ProScreen() {
     }
   };
 
+  /** 外部ブラウザで開く。openURL は開けない場合に reject するため必ず捕まえる */
+  const openLink = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch (_) {
+      Alert.alert(t('common.error'), t('pro.linkOpenError'));
+    }
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <ProHeader onPressBack={() => router.back()} />
 
-        <View style={styles.content}>
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
           {isPro ? (
             <View style={styles.centerBlock}>
               <Ionicons name="star" size={48} color={tintColor} />
@@ -187,9 +197,34 @@ export default function ProScreen() {
                   <ThemedText style={[styles.restoreButtonText, { color: subColor }]}>{t('pro.restoreButton')}</ThemedText>
                 )}
               </TouchableOpacity>
+
+              {/* ガイドライン3.1.2: サブスクの条件とEULA/プライバシーポリシーへの
+                  機能するリンクは、ストアのメタデータだけでなくアプリ本体にも要る。
+                  価格は上の priceString（ストアからのローカライズ済みの値）が担うため、
+                  ここに金額を直書きしない ―― 通貨・地域ごとに嘘になる */}
+              <View style={styles.legalBlock}>
+                <ThemedText style={[styles.legalTitle, { color: subColor }]}>
+                  {t('pro.subscriptionTermsTitle')}
+                </ThemedText>
+                <ThemedText style={[styles.legalText, { color: subColor }]}>
+                  {t('pro.subscriptionTerms')}
+                </ThemedText>
+                <View style={styles.legalLinks}>
+                  <TouchableOpacity onPress={() => openLink(TERMS_OF_USE_URL)} activeOpacity={0.7}>
+                    <ThemedText style={[styles.legalLink, { color: tintColor }]}>
+                      {t('pro.termsOfUse')}
+                    </ThemedText>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => openLink(PRIVACY_POLICY_URL)} activeOpacity={0.7}>
+                    <ThemedText style={[styles.legalLink, { color: tintColor }]}>
+                      {t('pro.privacyPolicy')}
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </>
           )}
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </>
   );
@@ -222,6 +257,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  // flexGrow:1 が無いと centerBlock の flex:1 が効かず、Pro表示が中央に来ない
+  contentContainer: {
+    flexGrow: 1,
     padding: 24,
     alignItems: 'center',
   },
@@ -299,5 +338,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  legalBlock: {
+    width: '100%',
+    marginTop: 24,
+    gap: 8,
+  },
+  legalTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  legalText: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginTop: 4,
+  },
+  legalLink: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

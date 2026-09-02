@@ -99,6 +99,18 @@ FEATURES
 Shape your feed as you read.
 Your feed. Your rules.
 
+[About Filto Pro (subscription)]
+
+· Name: Filto Pro (monthly)
+· Length: 1 month, auto-renewing
+· Price: $0.99 / month (100 yen / month in Japan; other regions follow the price shown in the store)
+· Includes: removes ads, and unlocks the limits on filters and global allow keywords
+
+Your subscription renews automatically and is billed to your store account unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage or cancel it at any time in your App Store / Google Play account settings.
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://yskms.github.io/filto-app/privacy-policy
+
 ---
 
 ## iOS Promotional Text (170 chars)

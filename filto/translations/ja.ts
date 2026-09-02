@@ -404,6 +404,12 @@ export const ja = {
       restoreSuccess: '購入を復元しました',
       restoreNotFound: '有効な購入が見つかりませんでした',
       restoreError: '復元に失敗しました',
+      // ガイドライン3.1.2: サブスクリプションの条件と法務リンクをアプリ本体にも示す
+      subscriptionTermsTitle: 'サブスクリプションについて',
+      subscriptionTerms: 'Filto Proは1ヶ月ごとの自動更新サブスクリプションです。期間終了の24時間以上前に自動更新をオフにしない限り自動的に更新され、Apple ID / Googleアカウントに請求されます。購入後は、お使いのストアのアカウント設定からいつでも管理・解約できます。',
+      termsOfUse: '利用規約（EULA）',
+      privacyPolicy: 'プライバシーポリシー',
+      linkOpenError: 'リンクを開けませんでした',
     },
 
     // エラーメッセージ
