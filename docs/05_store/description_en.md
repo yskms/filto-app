@@ -99,17 +99,41 @@ FEATURES
 Shape your feed as you read.
 Your feed. Your rules.
 
+<!-- The [About Filto Pro] block below differs per store.
+     Guideline 2.3.10 forbids referencing other platforms (Google Play) in the App Store
+     description; v1.5.1(25) was rejected for the "App Store / Google Play" wording.
+     The Google Play version also does not need Apple's standard EULA. -->
+
+### App Store version
+
+```
 [About Filto Pro (subscription)]
 
 · Name: Filto Pro (monthly)
 · Length: 1 month, auto-renewing
-· Price: $0.99 / month (100 yen / month in Japan; other regions follow the price shown in the store)
+· Price: $0.99 / month
 · Includes: removes ads, and unlocks the limits on filters and global allow keywords
 
-Your subscription renews automatically and is billed to your store account unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage or cancel it at any time in your App Store / Google Play account settings.
+Your subscription renews automatically and is billed to your App Store account unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage or cancel it at any time in your App Store account settings.
 
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Privacy Policy: https://yskms.github.io/filto-app/privacy-policy
+```
+
+### Google Play version
+
+```
+[About Filto Pro (subscription)]
+
+· Name: Filto Pro (monthly)
+· Length: 1 month, auto-renewing
+· Price: $0.99 / month
+· Includes: removes ads, and unlocks the limits on filters and global allow keywords
+
+Your subscription renews automatically and is billed to your Google Play account unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage or cancel it at any time in your Google Play account settings.
+
+Privacy Policy: https://yskms.github.io/filto-app/privacy-policy
+```
 
 ---
 

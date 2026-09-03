@@ -396,7 +396,7 @@ export const ja = {
       subscribeButton: '購入する',
       restoreButton: '購入を復元',
       alreadyProTitle: 'Proをご利用中です',
-      alreadyProDescription: 'いつもFiltoをご利用いただきありがとうございます。サブスクリプションの管理・解約は、お使いのストア（App Store / Google Play）の設定から行えます。',
+      alreadyProDescription: 'いつもFiltoをご利用いただきありがとうございます。サブスクリプションの管理・解約は、{{store}}のアカウント設定から行えます。',
       priceLoadError: '価格情報を取得できませんでした',
       retry: '再試行',
       purchaseSuccess: 'Proへようこそ！',
@@ -406,7 +406,7 @@ export const ja = {
       restoreError: '復元に失敗しました',
       // ガイドライン3.1.2: サブスクリプションの条件と法務リンクをアプリ本体にも示す
       subscriptionTermsTitle: 'サブスクリプションについて',
-      subscriptionTerms: 'Filto Proは1ヶ月ごとの自動更新サブスクリプションです。期間終了の24時間以上前に自動更新をオフにしない限り自動的に更新され、Apple ID / Googleアカウントに請求されます。購入後は、お使いのストアのアカウント設定からいつでも管理・解約できます。',
+      subscriptionTerms: 'Filto Proは1ヶ月ごとの自動更新サブスクリプションです。期間終了の24時間以上前に自動更新をオフにしない限り自動的に更新され、{{store}}のアカウントに請求されます。購入後は、{{store}}のアカウント設定からいつでも管理・解約できます。',
       termsOfUse: '利用規約（EULA）',
       privacyPolicy: 'プライバシーポリシー',
       linkOpenError: 'リンクを開けませんでした',

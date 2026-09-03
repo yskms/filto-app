@@ -396,7 +396,7 @@ export const en = {
     subscribeButton: 'Subscribe',
     restoreButton: 'Restore purchases',
     alreadyProTitle: "You're on Pro",
-    alreadyProDescription: 'Thank you for using Filto. You can manage or cancel your subscription from your store settings (App Store / Google Play).',
+    alreadyProDescription: 'Thank you for using Filto. You can manage or cancel your subscription in your {{store}} account settings.',
     priceLoadError: 'Could not load pricing information',
     retry: 'Retry',
     purchaseSuccess: 'Welcome to Pro!',
@@ -406,7 +406,7 @@ export const en = {
     restoreError: 'Restore failed',
     // Guideline 3.1.2: subscription terms and legal links must also appear in the app itself
     subscriptionTermsTitle: 'About the subscription',
-    subscriptionTerms: 'Filto Pro is an auto-renewing monthly subscription. It renews automatically and is billed to your Apple ID / Google account unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage or cancel it at any time in your store account settings.',
+    subscriptionTerms: 'Filto Pro is an auto-renewing monthly subscription. It renews automatically and is billed to your {{store}} account unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage or cancel it at any time in your {{store}} account settings.',
     termsOfUse: 'Terms of Use (EULA)',
     privacyPolicy: 'Privacy Policy',
     linkOpenError: 'Could not open the link',

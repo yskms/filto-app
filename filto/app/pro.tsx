@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,6 +11,15 @@ import { useToast } from '@/providers/toast';
 import { ProService } from '@/services/ProService';
 import { getMonthlyPriceString, purchaseMonthly, restorePurchases } from '@/services/purchases';
 import { TERMS_OF_USE_URL, PRIVACY_POLICY_URL } from '@/constants/legalUrls';
+
+/**
+ * 配信元ストアの名前。
+ *
+ * ガイドライン2.3.10により、**App Storeの掲載物やアプリ内で他プラットフォームに言及できない**。
+ * v1.5.1(25) は説明文の「App Store / Google Play」という併記でリジェクトされた。
+ * 併記せず、動いている側のストア名だけを出す。
+ */
+const STORE_NAME = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
 
 const ProHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
@@ -140,7 +149,7 @@ export default function ProScreen() {
               <Ionicons name="star" size={48} color={tintColor} />
               <ThemedText style={styles.alreadyProTitle}>{t('pro.alreadyProTitle')}</ThemedText>
               <ThemedText style={[styles.alreadyProDescription, { color: subColor }]}>
-                {t('pro.alreadyProDescription')}
+                {t('pro.alreadyProDescription', { store: STORE_NAME })}
               </ThemedText>
             </View>
           ) : (
@@ -207,7 +216,7 @@ export default function ProScreen() {
                   {t('pro.subscriptionTermsTitle')}
                 </ThemedText>
                 <ThemedText style={[styles.legalText, { color: subColor }]}>
-                  {t('pro.subscriptionTerms')}
+                  {t('pro.subscriptionTerms', { store: STORE_NAME })}
                 </ThemedText>
                 <View style={styles.legalLinks}>
                   <TouchableOpacity onPress={() => openLink(TERMS_OF_USE_URL)} activeOpacity={0.7}>
