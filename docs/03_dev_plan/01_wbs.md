@@ -884,8 +884,36 @@ OTAで直す案も検討したが、`app.json` の `updates` に `fallbackToCach
 - [x] リリースノート `docs/05_store/release_notes_v1.5.1.md` を作成。**iOSとAndroidで文面が違う**
       ―― Androidは1.5.0が公開済みなので1.5.1分だけでよいが、iOSは1.5.0が一度もユーザーに
       届いていない（利用者は1.4.0）ため、1.5.0と1.5.1の両方を載せる必要がある
-- [x] 審査に再提出（2026-09-03）
+- [x] 審査に再提出（2026-09-03）→ **Build 25 は 2.3.10 でリジェクト**（下記）
+- [x] 2.3.10 を修正して **Build 26** を提出（2026-09-03）
 - [ ] iOS: 審査結果待ち
+
+#### リジェクト2回目: 2.3.10 他プラットフォームへの言及（Build 25）
+
+> Revise the app's description to remove Google Play references.
+
+**原因は v1.5.1 で追記した説明文のサブスクブロック。**「App Store / Google Play のアカウント設定から
+いつでも管理・解約できます」と**併記**したのが該当した。App Store の掲載物とアプリ内では、
+他プラットフォームに言及できない。
+
+両ストアで同じ説明文を使い回していたことが根本原因なので、**【Filto Pro】ブロックをストアごとに
+分離**した（`docs/05_store/description_ja.md` / `_en.md` に「App Store 用」「Google Play 用」を併記）。
+Google Play 用からは Apple 標準EULAへのリンクも外した（Play側には不要）。
+
+**アプリ内にも同じ問題があった**（Appleの指摘は説明文のみだったが、購入画面はレビュアーが
+必ず見るため同時に修正）:
+
+| 文言 | 出どころ |
+|---|---|
+| `pro.subscriptionTerms`「Apple ID / Googleアカウントに請求されます」 | v1.5.1 で追加した分 |
+| `pro.alreadyProDescription`「お使いのストア（App Store / Google Play）の設定から」 | **v1.5.0以前からあった既存の文言** |
+
+翻訳から店名を `{{store}}` に外出しし、`app/pro.tsx` の `STORE_NAME`（`Platform.OS` 分岐）で
+動作中のストア名だけを差し込む方式にした。iOSでは「App Store」しか表示されない。
+
+**学び**: ストア説明文とアプリ内文言を両ストアで共用すると、この条項を踏む。
+**「App Store / Google Play」のような併記を書かない**こと。管理・解約の案内は
+動作中のストア名だけを出す。
 
 #### つまずき: 提出物からアプリバージョンを削除すると「審査用に追加」が通らなくなる
 
