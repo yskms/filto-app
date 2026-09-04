@@ -885,8 +885,45 @@ OTAで直す案も検討したが、`app.json` の `updates` に `fallbackToCach
       ―― Androidは1.5.0が公開済みなので1.5.1分だけでよいが、iOSは1.5.0が一度もユーザーに
       届いていない（利用者は1.4.0）ため、1.5.0と1.5.1の両方を載せる必要がある
 - [x] 審査に再提出（2026-09-03）→ **Build 25 は 2.3.10 でリジェクト**（下記）
-- [x] 2.3.10 を修正して **Build 26** を提出（2026-09-03）
+- [x] 2.3.10 を修正して **Build 26** を提出（2026-09-03）→ **2.1(b) でリジェクト**（下記）
+- [ ] 有料アプリ契約に銀行口座を登録 → 契約が「有効」になるのを待つ
+- [ ] TestFlight（Build 26）でPro画面に**価格と購入ボタンが出ることを実機確認**してから再提出
 - [ ] iOS: 審査結果待ち
+
+#### リジェクト3回目: 2.1(b) App Completeness（Build 26）
+
+> The In-App Purchase products in the app exhibited one or more bugs (...) Specifically,
+> **App did not load in app purchases.**
+> (...) the Account Holder must also accept the **Paid Apps Agreement** (...)
+> Confirm you have a Paid Apps Agreement in effect.
+
+**根本原因: 有料アプリ契約（Paid Applications Agreement）が「ユーザ情報を保留中」だった。**
+理由は**銀行口座が未登録**（納税フォームのW-8BEN等は2026-04-12に提出済みで有効）。
+契約が有効でないと、**Sandboxを含めASCから商品情報を一切取得できない**。
+
+購入画面は `offerings.current?.monthly` が取れないと `getMonthlyPriceString()` が `null` を返し、
+「価格情報を取得できませんでした」＋再試行だけを表示して**購入ボタンを出さない**。
+レビュアーが踏んだのはこの状態。コードの不具合ではない。
+
+**これで辻褄が合うもの**:
+
+| 事実 | 理由 |
+|---|---|
+| iOSの価格取得が一度も成功しなかった | 有料アプリ契約が無効 |
+| RevenueCatが `CONFIGURATION_ERROR`「None of the products could be fetched from App Store Connect」 | 同上。RevenueCat側の設定ミスではなかった |
+| **Androidの購入テストは成功していた** | Google Playは完全に別系統 |
+| 無料アプリとしては問題なく配信できていた | **無料アプリ契約は有効**だった |
+
+**判断を誤っていた点**: セッション初期にTestFlight(Build 24)で
+`debug: Error: There is an issue with your configuration...RevenueCat...` が出ていたのを
+「デバッグ表示の消し忘れ」として**表示だけ削除し、価格取得が通るようになったかを確認しなかった**。
+「最初のサブスクはバージョンと一緒に提出すれば解決する」という仮説（ルール自体は実在する）で
+進めてしまい、未検証のまま審査に2回出した。
+
+**学び**: **課金は「提出すれば直るはず」で進めない。** 実機で価格と購入ボタンが出ることを
+確認してから提出する。また、**RevenueCatの `CONFIGURATION_ERROR` を見たら、まず
+ASCの「ビジネス → 契約 → 有料アプリ契約」が有効かを疑う**（銀行口座・納税フォームの
+どちらか一方でも欠けていると保留のままになる）。Androidが動いていてもiOSの判断材料にならない。
 
 #### リジェクト2回目: 2.3.10 他プラットフォームへの言及（Build 25）
 
