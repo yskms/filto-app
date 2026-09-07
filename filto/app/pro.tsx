@@ -21,6 +21,10 @@ import { TERMS_OF_USE_URL, PRIVACY_POLICY_URL } from '@/constants/legalUrls';
  */
 const STORE_NAME = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
 
+/** 価格取得の自動リトライ回数（初回を除く）と、その待ち時間（回を追うごとに伸ばす） */
+const PRICE_FETCH_RETRIES = 2;
+const PRICE_FETCH_RETRY_DELAY_MS = 1500;
+
 const ProHeader: React.FC<{ onPressBack: () => void }> = ({ onPressBack }) => {
   const borderColor = useThemeColor({}, 'tabIconDefault');
   const backgroundColor = useThemeColor({}, 'background');
@@ -74,9 +78,22 @@ export default function ProScreen() {
     const pro = await ProService.isPro();
     if (isCancelled?.()) return;
     setIsPro(pro);
-    if (!pro) {
+    if (pro) return;
+
+    // 価格が取れないと購入ボタンごと消える画面なので、一度の失敗で諦めない。
+    // ユーザーが再試行を押してくれる保証はなく、実際 v1.5.1(26) の審査では
+    // 取得に失敗した画面を見たレビュアーに 2.1(b) で弾かれている。
+    // （あの時の真因は有料アプリ契約の未有効化だったが、通信の一時的な失敗でも
+    //   同じ画面になる）
+    for (let attempt = 0; ; attempt++) {
       const price = await getMonthlyPriceString();
-      if (!isCancelled?.()) setPriceString(price);
+      if (isCancelled?.()) return;
+      if (price !== null || attempt >= PRICE_FETCH_RETRIES) {
+        setPriceString(price);
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, PRICE_FETCH_RETRY_DELAY_MS * (attempt + 1)));
+      if (isCancelled?.()) return;
     }
   }, []);
 
@@ -306,11 +323,18 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 32,
+    // ThemedText の既定スタイルが lineHeight:24 を当てているため、fontSize だけ
+    // 上書きすると 32px の文字が 24px の行に収まらず、はみ出した分が下の購入ボタンに
+    // 重なる（実機Androidで発生）。fontSize を変えたら lineHeight も必ず併せて指定する
+    lineHeight: 40,
     fontWeight: '700',
     marginBottom: 20,
   },
   priceSuffix: {
     fontSize: 16,
+    // 親（price）と同じ行高に揃える。入れ子の Text で行高が食い違うと、
+    // Android でベースラインがずれることがある
+    lineHeight: 40,
     fontWeight: '400',
   },
   subscribeButton: {
