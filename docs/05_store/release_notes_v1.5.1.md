@@ -49,12 +49,14 @@ App Store の「このバージョンの最新情報」／Google Play の「最�
 ・記事の保持期間の既定を90日に延ばしました。短い保持期間では、消えた記事が次の取得で未読として戻ってくることがあったためです
 ・保持期間の選択肢を90日 / 180日 / 無制限に整理しました（7日・30日をお使いの場合は90日に変更されます。記事が余分に消えることはありません）
 ・記事の手動削除を廃止しました。削除しても次の取得で戻ってくるため、期待どおりに動作していませんでした。不要な記事の整理は保持期間の設定をご利用ください
+・Filto Pro の画面で価格と購入ボタンが重なって表示される不具合を修正しました
 ```
 
 ### English
 
 ```
 • The default article retention period is now 90 days. With shorter periods, deleted articles could come back as unread on the next fetch
-• Retention options are now 90 days / 180 days / unlimited (if you had 7 or 30 days, it becomes 90 — no extra articles are deleted)
-• Removed manual article deletion. Deleted articles came back on the next fetch, so it never worked as expected — use the retention period setting instead
+• Retention options are now 90 / 180 days / unlimited (7 or 30 days becomes 90 — no extra articles are deleted)
+• Removed manual article deletion. Deleted articles came back on the next fetch, so it never worked as expected — use the retention setting instead
+• Fixed the price overlapping the purchase button on the Pro screen
 ```
