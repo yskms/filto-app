@@ -1,5 +1,5 @@
 ---
-title: "RevenueCat × App Store Connect × Google Play Console 連携でハマった4箇所"
+title: "RevenueCat × App Store Connect × Google Play Console 連携でハマった5箇所"
 emoji: "🔑"
 type: "tech"
 topics: ["revenuecat", "iap", "appstoreconnect", "googleplayconsole", "expo"]
@@ -78,6 +78,27 @@ A file name with any other prefix could be a private key for a different Apple s
 Entitlement（例: `pro`）に商品を紐付けても、既存のOffering内のPackageには自動で反映されない。
 
 Offeringを開いて「Edit」→ 各Package（例: `$rc_monthly`）の中を見ると、ストアごとに商品が個別に紐付いているのが分かる。新しく追加したストアの商品がここで **「No product」** のままになっていることがあるので、Entitlement側だけ確認して満足せず、Offering側の該当Package内も必ず確認する。
+
+## 5. iOSだけ商品が取れないときは、RevenueCatより先に「有料App契約」を疑う
+
+Androidは購入テストまで通っているのに、iOSだけRevenueCatが `CONFIGURATION_ERROR` を返し続けた。
+
+```
+There is an issue with your configuration.
+None of the products registered in the RevenueCat dashboard could be fetched from App Store Connect.
+```
+
+メッセージがRevenueCatダッシュボードを名指しするので、商品IDの綴り・Entitlement・Offeringの紐付け（上の3と4）を何度も見直したが、どれも正しかった。
+
+**犯人はApp Store Connectの「ビジネス → 契約」だった。** 有料App契約が **「ユーザ情報を保留中」** のままで、原因は銀行口座の未登録。納税フォームは提出済みで有効だったので、契約ページを開くまで気づかなかった。
+
+有料App契約が有効でないと、**Sandboxを含めてStoreKitが商品を一切返さない**。RevenueCatは正しく設定されていて、返ってこない商品を「返ってこない」と報告していただけだった。
+
+この構成が厄介なのは、**Androidが動いていることがiOSの判断材料にならない**点。Google Playの販売者設定とAppleの有料App契約は完全に別系統なので、「片方で購入できているから課金の設定は合っているはず」という推測が成り立たない。
+
+もうひとつ、**銀行口座を登録して契約が「有効」になっても、すぐには直らない**。手元では反映まで半日ほどかかった（2時間後の時点ではまだ取得できず）。設定を直した直後に確認して「まだ出ない＝別の原因だ」と判断しないほうがいい。
+
+なおこの状態は、審査では **Guideline 2.1(b) App Completeness「App did not load in app purchases」** として返ってくる。Appleの文面にも "the Account Holder must also accept the Paid Apps Agreement" と書かれているので、心当たりがなくても契約ページは見に行くべき。
 
 ## おわりに
 
