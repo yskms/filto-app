@@ -32,3 +32,6 @@ logs/
 
 # ===== Optional =====
 coverage/
+
+# ===== ローカル専用（Gitに載せない下書き・メモ） =====
+docs/_local/
