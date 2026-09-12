@@ -1,7 +1,7 @@
 {
   "name": "filto",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.5.1",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "check:db-init": "node scripts/check-db-init-order.mjs",
-    "check:ad-ids": "node scripts/check-ad-ids.mjs"
+    "check:ad-ids": "node scripts/check-ad-ids.mjs",
+    "check:version": "node scripts/check-version-consistency.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
