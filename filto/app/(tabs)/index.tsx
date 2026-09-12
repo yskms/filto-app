@@ -623,49 +623,6 @@ export default function HomeScreen() {
     }
   }, [getScopedArticlePage, t]);
 
-  const loadAllRemainingArticles = React.useCallback(async () => {
-    if (!articlePageCursorRef.current || loadingMoreRef.current) return;
-
-    const generation = articleLoadGenerationRef.current;
-    loadingMoreRef.current = true;
-    setIsLoadingMore(true);
-    try {
-      const additions: Article[] = [];
-      let cursor: ArticlePageCursor | null = articlePageCursorRef.current;
-      while (cursor) {
-        const page = await getScopedArticlePage(
-          ARTICLE_PAGE_SIZE,
-          cursor,
-          () => articleLoadGenerationRef.current !== generation
-        );
-        if (articleLoadGenerationRef.current !== generation) return;
-        additions.push(...page.articles);
-        cursor = page.nextCursor;
-      }
-
-      setArticles((current) => {
-        const existingIds = new Set(current.map((article) => article.id));
-        const uniqueAdditions = additions.filter((article) => !existingIds.has(article.id));
-        const next = uniqueAdditions.length > 0 ? [...current, ...uniqueAdditions] : current;
-        loadedArticleCountRef.current = next.length;
-        return next;
-      });
-      articlePageCursorRef.current = null;
-      setHasMoreArticles(false);
-    } catch {
-      if (articleLoadGenerationRef.current === generation) {
-        articlePageCursorRef.current = null;
-        setHasMoreArticles(false);
-        ErrorHandler.showLoadError(t);
-      }
-    } finally {
-      if (articleLoadGenerationRef.current === generation) {
-        loadingMoreRef.current = false;
-        setIsLoadingMore(false);
-      }
-    }
-  }, [getScopedArticlePage, t]);
-
   // 保存済みのフィード並び順を読み込む
   React.useEffect(() => {
     AsyncStorage.getItem(StorageKeys.feedSort)
@@ -1403,20 +1360,6 @@ export default function HomeScreen() {
     );
   }, [filteredArticles, searchQuery]);
   const searchActive = searchOpen && searchQuery.trim().length > 0;
-
-  // 除外記事表示は「現在ロード済みの記事だけ」では既存仕様と意味が変わる。
-  // キーワード判定をSQLへ移すと文字比較差が出るため、このモードは残りを読み切る。
-  React.useEffect(() => {
-    const needsCompleteList = showBlockedKeywords;
-    if (needsCompleteList && hasMoreArticles && !isLoadingMore) {
-      void loadAllRemainingArticles();
-    }
-  }, [
-    hasMoreArticles,
-    isLoadingMore,
-    loadAllRemainingArticles,
-    showBlockedKeywords,
-  ]);
 
   const displayArticles = showTutorialDemo ? dummyArticles : searchedArticles;
   const displayBlockedCount = showTutorialDemo ? 8 : blockedByFilters;
