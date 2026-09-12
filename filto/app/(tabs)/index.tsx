@@ -238,6 +238,7 @@ const ArticleItem = React.memo<{
     </Swipeable>
   );
 });
+ArticleItem.displayName = 'ArticleItem';
 
 // ヘッダーコンポーネント
 const HomeHeader: React.FC<{
@@ -877,6 +878,15 @@ export default function HomeScreen() {
       // データを再読み込み（RefreshControlが既にスピナーを出すので再マウントしない）
       await loadData(false);
 
+      // 明示的な手動更新にだけ結果を通知する。起動直後・バックグラウンド同期では
+      // ユーザー操作と無関係にトーストが出ないよう、完了イベント側では表示しない。
+      showToast(
+        result.newArticles > 0
+          ? t('home.newArticles', { count: result.newArticles })
+          : t('home.syncComplete'),
+        'success'
+      );
+
       // 手動更新は明示操作なので、取得完了後は必ず先頭まで戻す。
       // 先頭に記事が差し込まれた直後は maintainVisibleContentPosition が offset を
       // 補正するため、同フレームでスクロールすると途中で止まる。レイアウトが
@@ -891,7 +901,7 @@ export default function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [loadData, t]);
+  }, [loadData, showToast, t]);
 
   // 手動更新。「WiFi接続時のみ取得」がオンでモバイル回線のときは、
   // 通信量が発生する旨を確認してから取得する（判定に失敗したらそのまま取得）
