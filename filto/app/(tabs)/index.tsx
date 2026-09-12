@@ -30,7 +30,7 @@ import { FilterService, Filter } from '@/services/FilterService';
 import { FeedService } from '@/services/FeedService';
 import { ArticleService } from '@/services/ArticleService';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
-import type { ArticlePageCursor } from '@/repositories/ArticleRepository';
+import type { ArticlePageCursor, ArticlePageQuery } from '@/repositories/ArticleRepository';
 import { SyncService } from '@/services/SyncService';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
@@ -378,6 +378,8 @@ export default function HomeScreen() {
   const articleLoadGenerationRef = React.useRef(0);
   const loadingMoreRef = React.useRef(false);
   const loadedArticleCountRef = React.useRef(0);
+  const articlePageQueryRef = React.useRef<ArticlePageQuery>({});
+  const articleScopeInitializedRef = React.useRef(false);
 
   // 記事スワイプ: 一度に1行だけ開く。開いているIDは ref で管理し（再レンダリングを避ける）、
   // 各行の Swipeable ref は id ごとにキャッシュして安定参照にする（メモ化を効かせるため）。
@@ -506,7 +508,7 @@ export default function HomeScreen() {
       const [feedList, firstArticlePage, hiddenIds, filterList, globalAllowList, savedReadDisplay] =
         await Promise.all([
           FeedService.listWithSort(feedSort),
-          ArticleService.getArticlePage(ARTICLE_PAGE_SIZE),
+          ArticleService.getArticlePage(ARTICLE_PAGE_SIZE, undefined, articlePageQueryRef.current),
           ArticleService.getHiddenIds(),
           FilterService.list(),
           GlobalAllowKeywordService.list(),
@@ -524,7 +526,8 @@ export default function HomeScreen() {
         const remaining = targetCount - articleList.length;
         const page = await ArticleService.getArticlePage(
           Math.min(ARTICLE_PAGE_SIZE, remaining),
-          nextCursor
+          nextCursor,
+          articlePageQueryRef.current
         );
         if (articleLoadGenerationRef.current !== generation) return;
         articleList.push(...page.articles);
@@ -568,7 +571,11 @@ export default function HomeScreen() {
     loadingMoreRef.current = true;
     setIsLoadingMore(true);
     try {
-      const page = await ArticleService.getArticlePage(ARTICLE_PAGE_SIZE, cursor);
+      const page = await ArticleService.getArticlePage(
+        ARTICLE_PAGE_SIZE,
+        cursor,
+        articlePageQueryRef.current
+      );
       if (articleLoadGenerationRef.current !== generation) return;
 
       setArticles((current) => {
@@ -604,7 +611,11 @@ export default function HomeScreen() {
       const additions: Article[] = [];
       let cursor: ArticlePageCursor | null = articlePageCursorRef.current;
       while (cursor) {
-        const page = await ArticleService.getArticlePage(ARTICLE_PAGE_SIZE, cursor);
+        const page = await ArticleService.getArticlePage(
+          ARTICLE_PAGE_SIZE,
+          cursor,
+          articlePageQueryRef.current
+        );
         if (articleLoadGenerationRef.current !== generation) return;
         additions.push(...page.articles);
         cursor = page.nextCursor;
@@ -849,6 +860,21 @@ export default function HomeScreen() {
   // loadData の最新版を ref で保持（autoSync を1回だけ実行するため deps に入れない）
   const loadDataRef = React.useRef(loadData);
   React.useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
+
+  // DBで意味を変えずに絞れるフィード・お気に入りは、取得前に適用する。
+  // モード切替時はカーソルも先頭から作り直し、全記事をstateへ載せない。
+  React.useEffect(() => {
+    articlePageQueryRef.current = {
+      ...(selectedFeedIds !== null ? { feedIds: selectedFeedIds } : {}),
+      ...(showStarredOnly ? { starredOnly: true } : {}),
+    };
+    if (!articleScopeInitializedRef.current) {
+      articleScopeInitializedRef.current = true;
+      return;
+    }
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    void loadDataRef.current(true);
+  }, [selectedFeedIds, showStarredOnly]);
 
   // アプリがバックグラウンドから前面に戻ったら記事を読み直す。
   // useFocusEffect は画面遷移でしか発火しないため、これが無いとバックグラウンド更新で
@@ -1338,14 +1364,10 @@ export default function HomeScreen() {
   }, [filteredArticles, searchQuery]);
   const searchActive = searchOpen && searchQuery.trim().length > 0;
 
-  // これらは「現在ロード済みの記事だけ」では既存仕様と意味が変わるモード。
-  // 明示操作を受けたときだけ残りを読み切り、全保持記事を対象にする。
+  // 検索と除外記事表示は「現在ロード済みの記事だけ」では既存仕様と意味が変わる。
+  // SQLとJavaScriptの文字比較差を避けるため、この2モードだけは残りを読み切る。
   React.useEffect(() => {
-    const needsCompleteList =
-      searchActive ||
-      showStarredOnly ||
-      selectedFeedIds !== null ||
-      showBlockedKeywords;
+    const needsCompleteList = searchActive || showBlockedKeywords;
     if (needsCompleteList && hasMoreArticles && !isLoadingMore) {
       void loadAllRemainingArticles();
     }
@@ -1354,9 +1376,7 @@ export default function HomeScreen() {
     isLoadingMore,
     loadAllRemainingArticles,
     searchActive,
-    selectedFeedIds,
     showBlockedKeywords,
-    showStarredOnly,
   ]);
 
   const displayArticles = showTutorialDemo ? dummyArticles : searchedArticles;

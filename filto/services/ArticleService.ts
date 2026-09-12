@@ -1,5 +1,9 @@
 import { ArticleRepository } from '@/repositories/ArticleRepository';
-import type { ArticlePage, ArticlePageCursor } from '@/repositories/ArticleRepository';
+import type {
+  ArticlePage,
+  ArticlePageCursor,
+  ArticlePageQuery,
+} from '@/repositories/ArticleRepository';
 import { Article } from '@/types/Article';
 
 /**
@@ -20,8 +24,12 @@ export const ArticleService = {
   },
 
   /** ホーム向けの記事を確定済み表示順のまま段階取得する。 */
-  async getArticlePage(limit: number, cursor?: ArticlePageCursor): Promise<ArticlePage> {
-    return ArticleRepository.listPage(limit, cursor);
+  async getArticlePage(
+    limit: number,
+    cursor?: ArticlePageCursor,
+    query?: ArticlePageQuery
+  ): Promise<ArticlePage> {
+    return ArticleRepository.listPage(limit, cursor, query);
   },
 
   /**
