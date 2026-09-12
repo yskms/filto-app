@@ -101,7 +101,7 @@ export default function FeedEditScreen() {
       } else {
         router.back();
       }
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('feeds.saveError'));
       router.back();
     } finally {
@@ -144,7 +144,7 @@ export default function FeedEditScreen() {
         setUrlError(null);
         setFetchSuccess(false);
       }
-    } catch (_) {
+    } catch {
     }
   };
 
@@ -152,7 +152,7 @@ export default function FeedEditScreen() {
     try {
       await Clipboard.setStringAsync(url);
       showToast(t('feeds.urlCopied'), 'success');
-    } catch (_) {
+    } catch {
     }
   };
 
@@ -194,7 +194,7 @@ export default function FeedEditScreen() {
       }
       setFetchSuccess(true);
       showToast(t('feeds.metaFetched'), 'success');
-    } catch (_) {
+    } catch {
       setUrlError(t('feeds.metaFetchFailed'));
     } finally {
       setIsLoadingMeta(false);
@@ -240,7 +240,7 @@ export default function FeedEditScreen() {
     try {
       await FeedService.setHiddenFromHome(feed.id, next);
       setFeed({ ...feed, hiddenFromHome: next });
-    } catch (_) {
+    } catch {
       setHiddenFromHome(!next); // 失敗したら戻す
       Alert.alert(t('common.error'), t('feeds.saveError'));
     } finally {
@@ -260,7 +260,7 @@ export default function FeedEditScreen() {
           try {
             await FeedService.delete(feed.id);
             router.back();
-          } catch (_) {
+          } catch {
             Alert.alert(t('common.error'), t('feeds.deleteError'));
           } finally {
             setIsDeleting(false);

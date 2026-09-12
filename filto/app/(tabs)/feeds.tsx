@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
+import { useRouter , Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -450,10 +449,10 @@ export default function FeedsScreen() {
         map.set(feed.id, sig === 'never' && !showNever ? null : sig);
       }
       setSignals(map);
-    } catch (_) {
+    } catch {
       ErrorHandler.showLoadError(t);
     }
-  }, [currentSort]);
+  }, [currentSort, t]);
 
   // Swipeable refを取得または作成
   const getSwipeableRef = React.useCallback((feedId: string) => {
@@ -584,7 +583,7 @@ export default function FeedsScreen() {
             setMode('none');
             setSelectedIds(new Set());
             await loadFeeds();
-          } catch (_) {
+          } catch {
             ErrorHandler.showDatabaseError(t, t('feeds.deleteError'));
           }
         },
@@ -609,7 +608,7 @@ export default function FeedsScreen() {
         targetHidden ? t('feeds.hiddenToast', { count }) : t('feeds.shownToast', { count }),
         'success'
       );
-    } catch (_) {
+    } catch {
       ErrorHandler.showDatabaseError(t, t('feeds.saveError'));
     }
   };

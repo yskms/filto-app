@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -13,8 +12,7 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
+import { useRouter , Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { FeedService, DuplicateFeedUrlError } from '@/services/FeedService';
 import { RssService } from '@/services/RssService';
@@ -169,7 +167,7 @@ export default function FeedAddScreen() {
         setUrlError(null);
         setFetchSuccess(false);
       }
-    } catch (_) {
+    } catch {
     }
   };
 
@@ -246,7 +244,7 @@ export default function FeedAddScreen() {
         setFetchSuccess(false);
         setUrlError(t('feeds.autoDetectFailed'));
       }
-    } catch (_) {
+    } catch {
       setFetchSuccess(false);
       setUrlError(t('feeds.metaFetchFailed'));
     } finally {
@@ -262,7 +260,7 @@ export default function FeedAddScreen() {
     setDetectedNotice(null);
     try {
       await applyCandidate(candidate.url, true);
-    } catch (_) {
+    } catch {
       setFetchSuccess(false);
       setUrlError(t('feeds.metaFetchFailed'));
     } finally {

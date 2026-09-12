@@ -149,7 +149,7 @@ export default function ProScreen() {
   const openLink = async (url: string) => {
     try {
       await Linking.openURL(url);
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('pro.linkOpenError'));
     }
   };

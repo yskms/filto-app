@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
@@ -11,8 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
+import { useRouter , Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
@@ -96,7 +94,7 @@ export default function GlobalAllowKeywordsScreen() {
 
       const remaining = await GlobalAllowKeywordService.getRemainingCount();
       setRemainingCount(remaining);
-    } catch (_) {
+    } catch {
     }
   }, []);
 
@@ -162,7 +160,7 @@ export default function GlobalAllowKeywordsScreen() {
             try {
               await GlobalAllowKeywordService.delete(keyword.id);
               await loadKeywords();
-            } catch (_) {
+            } catch {
               Alert.alert(t('common.error'), t('globalAllowKeywords.deleteError'));
             }
           },

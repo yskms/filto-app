@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -156,14 +155,7 @@ export default function FilterEditScreen() {
     router.navigate('/feeds');
   }, [router]);
 
-  // 編集モード時、フィルタを読み込む
-  React.useEffect(() => {
-    if (filterId) {
-      loadFilter();
-    }
-  }, [filterId]);
-
-  const loadFilter = async () => {
+  const loadFilter = React.useCallback(async () => {
     setIsLoading(true);
     try {
       const filter = await FilterService.get(parseInt(filterId!, 10));
@@ -173,13 +165,20 @@ export default function FilterEditScreen() {
         setTargetTitle(filter.target_title === 1);
         setTargetDescription(filter.target_description === 1);
       }
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('filters.saveError'));
       router.back();
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filterId, router, t]);
+
+  // 編集モード時、フィルタを読み込む
+  React.useEffect(() => {
+    if (filterId) {
+      void loadFilter();
+    }
+  }, [filterId, loadFilter]);
 
   // クリップボードからブロックキーワードへ貼り付け。
   // 空白のみの場合は貼り付けない（入力済みの値を消さないため）
@@ -190,7 +189,7 @@ export default function FilterEditScreen() {
         // maxLength は value の代入を切り詰めないため、ここで明示的に丸める
         setBlockKeyword(clipboardText.slice(0, MAX_KEYWORD_LENGTH));
       }
-    } catch (_) {
+    } catch {
     }
   };
 
@@ -238,7 +237,7 @@ export default function FilterEditScreen() {
       } else {
         Alert.alert(t('common.error'), t('filters.saveError'));
       }
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('filters.saveError'));
     } finally {
       setIsSaving(false);
@@ -259,7 +258,7 @@ export default function FilterEditScreen() {
             try {
               await FilterService.delete(parseInt(filterId!, 10));
               router.back();
-            } catch (error) {
+            } catch {
               Alert.alert(t('common.error'), t('filters.deleteError'));
             } finally {
               setIsDeleting(false);

@@ -113,7 +113,7 @@ export default function SettingsScreen() {
         router.push('/about');
         break;
     }
-  }, [router, t]);
+  }, [router]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
