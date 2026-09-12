@@ -33,6 +33,53 @@ export const ArticleService = {
   },
 
   /**
+   * JavaScriptと同じ文字比較を保ったまま検索結果を段階取得する。
+   * SQLiteのlower/LIKEへ移すと非ASCII文字の大小文字変換が一致しないため、
+   * DBページを走査し、一致した記事だけを呼び出し側へ返す。
+   */
+  async getSearchArticlePage(
+    limit: number,
+    searchQuery: string,
+    cursor?: ArticlePageCursor,
+    query?: ArticlePageQuery,
+    shouldCancel?: () => boolean
+  ): Promise<ArticlePage> {
+    const pageSize = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : 1;
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return ArticleRepository.listPage(pageSize, cursor, query);
+    }
+
+    const matches: Article[] = [];
+    let scanCursor = cursor;
+    while (matches.length <= pageSize) {
+      if (shouldCancel?.()) return { articles: [], nextCursor: null };
+      const page = await ArticleRepository.listPage(pageSize, scanCursor, query);
+      for (const article of page.articles) {
+        const matchesQuery = article.title.toLowerCase().includes(normalizedQuery) ||
+          article.summary?.toLowerCase().includes(normalizedQuery) === true;
+        if (matchesQuery) {
+          matches.push(article);
+          if (matches.length > pageSize) {
+            const lastVisible = matches[pageSize - 1];
+            return {
+              articles: matches.slice(0, pageSize),
+              nextCursor: {
+                displayOrder: lastVisible.displayOrder!,
+                id: Number(lastVisible.id),
+              },
+            };
+          }
+        }
+      }
+      if (!page.nextCursor) break;
+      scanCursor = page.nextCursor;
+    }
+
+    return { articles: matches, nextCursor: null };
+  },
+
+  /**
    * 記事を保存（重複チェック付き）
    * @param feedId フィードID
    * @param feedName フィード名
