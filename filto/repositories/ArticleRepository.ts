@@ -104,7 +104,7 @@ export const ArticleRepository = {
   async listAll(): Promise<Article[]> {
     const db = openDatabase();
 
-    const rows = db.getAllSync<ArticleRow>(
+    const rows = await db.getAllAsync<ArticleRow>(
       `
         SELECT ${ARTICLE_COLUMNS}
         FROM articles
@@ -124,7 +124,7 @@ export const ArticleRepository = {
   async listByFeed(feedId: string): Promise<Article[]> {
     const db = openDatabase();
 
-    const rows = db.getAllSync<ArticleRow>(
+    const rows = await db.getAllAsync<ArticleRow>(
       `
         SELECT ${ARTICLE_COLUMNS}
         FROM articles
@@ -334,7 +334,7 @@ export const ArticleRepository = {
   /** 指定フィードで手動非表示にした記事の累計件数（サイト非表示の提案トリガー用）。 */
   async countHiddenByFeed(feedId: string): Promise<number> {
     const db = openDatabase();
-    const row = db.getFirstSync<{ c: number }>(
+    const row = await db.getFirstAsync<{ c: number }>(
       'SELECT COUNT(*) as c FROM articles WHERE feed_id = ? AND is_hidden = 1',
       [feedId]
     );
@@ -346,7 +346,7 @@ export const ArticleRepository = {
    */
   async getHiddenIds(): Promise<string[]> {
     const db = openDatabase();
-    const rows = db.getAllSync<{ id: number }>('SELECT id FROM articles WHERE is_hidden = 1');
+    const rows = await db.getAllAsync<{ id: number }>('SELECT id FROM articles WHERE is_hidden = 1');
     return rows.map((r) => String(r.id));
   },
 
@@ -356,7 +356,7 @@ export const ArticleRepository = {
    */
   async getReadStatsByFeed(): Promise<Map<string, { total: number; read: number }>> {
     const db = openDatabase();
-    const rows = db.getAllSync<{ feed_id: string; total: number; read: number }>(
+    const rows = await db.getAllAsync<{ feed_id: string; total: number; read: number }>(
       'SELECT feed_id, COUNT(*) as total, SUM(is_read) as read FROM articles GROUP BY feed_id'
     );
     const map = new Map<string, { total: number; read: number }>();
@@ -427,7 +427,7 @@ export const ArticleRepository = {
   async listStarred(): Promise<Article[]> {
     const db = openDatabase();
 
-    const rows = db.getAllSync<ArticleRow>(
+    const rows = await db.getAllAsync<ArticleRow>(
       `
         SELECT ${ARTICLE_COLUMNS}
         FROM articles
