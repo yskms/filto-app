@@ -380,6 +380,8 @@ export default function HomeScreen() {
   const loadedArticleCountRef = React.useRef(0);
   const articlePageQueryRef = React.useRef<ArticlePageQuery>({});
   const articleScopeInitializedRef = React.useRef(false);
+  const articleSearchQueryRef = React.useRef('');
+  const articleSearchInitializedRef = React.useRef(false);
 
   // 記事スワイプ: 一度に1行だけ開く。開いているIDは ref で管理し（再レンダリングを避ける）、
   // 各行の Swipeable ref は id ごとにキャッシュして安定参照にする（メモ化を効かせるため）。
@@ -497,6 +499,22 @@ export default function HomeScreen() {
     return t('home.feedsSelected', { count: selectedFeedIds.length });
   }, [selectedFeedIds, feeds, t]);
 
+  const getScopedArticlePage = React.useCallback(
+    (limit: number, cursor?: ArticlePageCursor, shouldCancel?: () => boolean) => {
+      const query = articleSearchQueryRef.current;
+      return query
+        ? ArticleService.getSearchArticlePage(
+            limit,
+            query,
+            cursor,
+            articlePageQueryRef.current,
+            shouldCancel
+          )
+        : ArticleService.getArticlePage(limit, cursor, articlePageQueryRef.current);
+    },
+    []
+  );
+
   // データを読み込む（showLoading=falseの場合はスピナーを出さずバックグラウンド更新）
   const loadData = React.useCallback(async (showLoading = true, minArticleCount?: number) => {
     const generation = ++articleLoadGenerationRef.current;
@@ -508,7 +526,11 @@ export default function HomeScreen() {
       const [feedList, firstArticlePage, hiddenIds, filterList, globalAllowList, savedReadDisplay] =
         await Promise.all([
           FeedService.listWithSort(feedSort),
-          ArticleService.getArticlePage(ARTICLE_PAGE_SIZE, undefined, articlePageQueryRef.current),
+          getScopedArticlePage(
+            ARTICLE_PAGE_SIZE,
+            undefined,
+            () => articleLoadGenerationRef.current !== generation
+          ),
           ArticleService.getHiddenIds(),
           FilterService.list(),
           GlobalAllowKeywordService.list(),
@@ -524,10 +546,10 @@ export default function HomeScreen() {
       let nextCursor = firstArticlePage.nextCursor;
       while (nextCursor && articleList.length < targetCount) {
         const remaining = targetCount - articleList.length;
-        const page = await ArticleService.getArticlePage(
+        const page = await getScopedArticlePage(
           Math.min(ARTICLE_PAGE_SIZE, remaining),
           nextCursor,
-          articlePageQueryRef.current
+          () => articleLoadGenerationRef.current !== generation
         );
         if (articleLoadGenerationRef.current !== generation) return;
         articleList.push(...page.articles);
@@ -561,7 +583,7 @@ export default function HomeScreen() {
         setIsLoading(false);
       }
     }
-  }, [feedSort, t]);
+  }, [feedSort, getScopedArticlePage, t]);
 
   const loadNextArticlePage = React.useCallback(async () => {
     const cursor = articlePageCursorRef.current;
@@ -571,10 +593,10 @@ export default function HomeScreen() {
     loadingMoreRef.current = true;
     setIsLoadingMore(true);
     try {
-      const page = await ArticleService.getArticlePage(
+      const page = await getScopedArticlePage(
         ARTICLE_PAGE_SIZE,
         cursor,
-        articlePageQueryRef.current
+        () => articleLoadGenerationRef.current !== generation
       );
       if (articleLoadGenerationRef.current !== generation) return;
 
@@ -599,7 +621,7 @@ export default function HomeScreen() {
         setIsLoadingMore(false);
       }
     }
-  }, [t]);
+  }, [getScopedArticlePage, t]);
 
   const loadAllRemainingArticles = React.useCallback(async () => {
     if (!articlePageCursorRef.current || loadingMoreRef.current) return;
@@ -611,10 +633,10 @@ export default function HomeScreen() {
       const additions: Article[] = [];
       let cursor: ArticlePageCursor | null = articlePageCursorRef.current;
       while (cursor) {
-        const page = await ArticleService.getArticlePage(
+        const page = await getScopedArticlePage(
           ARTICLE_PAGE_SIZE,
           cursor,
-          articlePageQueryRef.current
+          () => articleLoadGenerationRef.current !== generation
         );
         if (articleLoadGenerationRef.current !== generation) return;
         additions.push(...page.articles);
@@ -642,7 +664,7 @@ export default function HomeScreen() {
         setIsLoadingMore(false);
       }
     }
-  }, [t]);
+  }, [getScopedArticlePage, t]);
 
   // 保存済みのフィード並び順を読み込む
   React.useEffect(() => {
@@ -875,6 +897,24 @@ export default function HomeScreen() {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     void loadDataRef.current(true);
   }, [selectedFeedIds, showStarredOnly]);
+
+  // 入力のたびに全ページを走査しないよう短く待ち、検索対象が変わった時だけ
+  // 検索用ページを先頭から作り直す。stateには一致した記事だけを保持する。
+  React.useEffect(() => {
+    const normalizedQuery = searchOpen ? searchQuery.trim().toLowerCase() : '';
+    if (!articleSearchInitializedRef.current) {
+      articleSearchQueryRef.current = normalizedQuery;
+      articleSearchInitializedRef.current = true;
+      return;
+    }
+    if (articleSearchQueryRef.current === normalizedQuery) return;
+    articleSearchQueryRef.current = normalizedQuery;
+    const timer = setTimeout(() => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      void loadDataRef.current(true);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchOpen, searchQuery]);
 
   // アプリがバックグラウンドから前面に戻ったら記事を読み直す。
   // useFocusEffect は画面遷移でしか発火しないため、これが無いとバックグラウンド更新で
@@ -1364,10 +1404,10 @@ export default function HomeScreen() {
   }, [filteredArticles, searchQuery]);
   const searchActive = searchOpen && searchQuery.trim().length > 0;
 
-  // 検索と除外記事表示は「現在ロード済みの記事だけ」では既存仕様と意味が変わる。
-  // SQLとJavaScriptの文字比較差を避けるため、この2モードだけは残りを読み切る。
+  // 除外記事表示は「現在ロード済みの記事だけ」では既存仕様と意味が変わる。
+  // キーワード判定をSQLへ移すと文字比較差が出るため、このモードは残りを読み切る。
   React.useEffect(() => {
-    const needsCompleteList = searchActive || showBlockedKeywords;
+    const needsCompleteList = showBlockedKeywords;
     if (needsCompleteList && hasMoreArticles && !isLoadingMore) {
       void loadAllRemainingArticles();
     }
@@ -1375,7 +1415,6 @@ export default function HomeScreen() {
     hasMoreArticles,
     isLoadingMore,
     loadAllRemainingArticles,
-    searchActive,
     showBlockedKeywords,
   ]);
 
