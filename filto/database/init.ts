@@ -382,6 +382,18 @@ async function runInitDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_articles_display_order ON articles(display_order DESC, id DESC);
   `);
 
+  // ホームのフィード指定・お気に入りページングで、条件一致後の表示順まで
+  // インデックスから取得できるようにする（既存端末にも起動時に追加される）。
+  database.execSync(`
+    CREATE INDEX IF NOT EXISTS idx_articles_feed_display_order
+    ON articles(feed_id, display_order DESC, id DESC);
+  `);
+
+  database.execSync(`
+    CREATE INDEX IF NOT EXISTS idx_articles_starred_display_order
+    ON articles(is_starred, display_order DESC, id DESC);
+  `);
+
   database.execSync(`
     CREATE INDEX IF NOT EXISTS idx_articles_is_read ON articles(is_read);
   `);

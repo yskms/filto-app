@@ -63,6 +63,11 @@ export interface ArticlePage {
   nextCursor: ArticlePageCursor | null;
 }
 
+export interface ArticlePageQuery {
+  feedIds?: readonly string[];
+  starredOnly?: boolean;
+}
+
 function rowToArticle(row: ArticleRow): Article {
   return {
     id: String(row.id),
@@ -134,11 +139,27 @@ export const ArticleRepository = {
    * nextCursor が null なら最終ページ。limit + 1件だけ取得して続きを判定するため、
    * COUNT(*) は実行しない。
    */
-  async listPage(limit: number, cursor?: ArticlePageCursor): Promise<ArticlePage> {
+  async listPage(
+    limit: number,
+    cursor?: ArticlePageCursor,
+    query?: ArticlePageQuery
+  ): Promise<ArticlePage> {
     const db = openDatabase();
     const pageSize = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : 1;
     const params: (number | string)[] = [];
+    const scopeConditions: string[] = [];
     let cursorCondition = '';
+
+    if (query?.feedIds) {
+      if (query.feedIds.length === 0) {
+        return { articles: [], nextCursor: null };
+      }
+      scopeConditions.push(`feed_id IN (${query.feedIds.map(() => '?').join(', ')})`);
+      params.push(...query.feedIds);
+    }
+    if (query?.starredOnly) {
+      scopeConditions.push('is_starred = 1');
+    }
 
     if (cursor) {
       cursorCondition = `
@@ -147,12 +168,16 @@ export const ArticleRepository = {
       params.push(cursor.displayOrder, cursor.displayOrder, cursor.id);
     }
     params.push(pageSize + 1);
+    const scopeCondition = scopeConditions.length > 0
+      ? `AND ${scopeConditions.join(' AND ')}`
+      : '';
 
     const rows = await db.getAllAsync<ArticleRow>(
       `
         SELECT ${ARTICLE_COLUMNS}
         FROM articles
         WHERE display_order IS NOT NULL
+        ${scopeCondition}
         ${cursorCondition}
         ORDER BY display_order DESC, id DESC
         LIMIT ?

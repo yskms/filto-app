@@ -88,4 +88,23 @@ describe('ArticleRepository article reads', () => {
 
     expect(getAllAsync.mock.calls[0][1]).toEqual([2]);
   });
+
+  it('pushes selected feeds and starred-only scope into the paged query', async () => {
+    await ArticleRepository.listPage(
+      20,
+      { displayOrder: 9, id: 41 },
+      { feedIds: ['feed-1', 'feed-2'], starredOnly: true }
+    );
+
+    expect(getAllAsync.mock.calls[0][0]).toContain('feed_id IN (?, ?)');
+    expect(getAllAsync.mock.calls[0][0]).toContain('is_starred = 1');
+    expect(getAllAsync.mock.calls[0][1]).toEqual(['feed-1', 'feed-2', 9, 9, 41, 21]);
+  });
+
+  it('returns an empty page without querying SQLite when no feeds are selected', async () => {
+    const page = await ArticleRepository.listPage(20, undefined, { feedIds: [] });
+
+    expect(getAllAsync).not.toHaveBeenCalled();
+    expect(page).toEqual({ articles: [], nextCursor: null });
+  });
 });
