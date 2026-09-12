@@ -8,8 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
+import { useRouter , Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
@@ -102,7 +101,7 @@ const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> 
 const DropdownModal: React.FC<{
   visible: boolean;
   title: string;
-  options: Array<{ value: number; label: string }>;
+  options: { value: number; label: string }[];
   selectedValue: number;
   onSelect: (value: number) => void;
   onClose: () => void;
@@ -179,7 +178,7 @@ export default function DataManagementScreen() {
       if (savedWifiOnly !== null) setWifiOnlyFetch(savedWifiOnly === 'true');
       if (savedMinRefresh !== null) setMinRefreshInterval(parseInt(savedMinRefresh, 10));
       setBackgroundFetchEnabled(bgEnabled);
-    } catch (_) {
+    } catch {
     }
   }, []);
 
@@ -189,7 +188,7 @@ export default function DataManagementScreen() {
     try {
       setArticleRetentionDays(days);
       await AsyncStorage.setItem(StorageKeys.articleRetentionDays, days.toString());
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -198,7 +197,7 @@ export default function DataManagementScreen() {
     try {
       setMinRefreshInterval(minutes);
       await AsyncStorage.setItem(StorageKeys.minRefreshIntervalMinutes, minutes.toString());
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -208,7 +207,7 @@ export default function DataManagementScreen() {
       const next = !deleteStarredInAuto;
       setDeleteStarredInAuto(next);
       await AsyncStorage.setItem(StorageKeys.deleteStarredInAutoDelete, next.toString());
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -218,7 +217,7 @@ export default function DataManagementScreen() {
       const next = !wifiOnlyFetch;
       setWifiOnlyFetch(next);
       await AsyncStorage.setItem(StorageKeys.wifiOnlyFetch, next.toString());
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -229,7 +228,7 @@ export default function DataManagementScreen() {
     try {
       // 設定の保存とタスクの登録/解除をまとめて行う
       await BackgroundSync.setEnabled(next);
-    } catch (_) {
+    } catch {
       setBackgroundFetchEnabled(!next); // 失敗したらUIを戻す
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
@@ -245,7 +244,7 @@ export default function DataManagementScreen() {
       if (result.status === 'unavailable') {
         Alert.alert(t('dataManagement.backupExport'), t('dataManagement.shareUnavailable'));
       }
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('dataManagement.backupExportError'));
     } finally {
       setIsBackupBusy(false);
@@ -288,7 +287,7 @@ export default function DataManagementScreen() {
           articles: result.articles,
         }) + (notes.length > 0 ? '\n' + notes.join('\n') : '')
       );
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('dataManagement.backupRestoreError'));
     } finally {
       setIsBackupBusy(false);
@@ -327,7 +326,7 @@ export default function DataManagementScreen() {
       setIsBackupBusy(true);
       // 読み込んで検証するだけ。ここではまだ何も書き換えない
       picked = await BackupService.pickBackupFile();
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('dataManagement.backupRestoreError'));
       return;
     } finally {
@@ -391,7 +390,7 @@ export default function DataManagementScreen() {
         Alert.alert(t('dataManagement.opmlExport'), t('dataManagement.opmlShareUnavailable'));
       }
       // shared の場合は共有シートが結果なので追加の通知は不要
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('dataManagement.opmlExportError'));
     } finally {
       setIsOpmlBusy(false);
@@ -414,7 +413,7 @@ export default function DataManagementScreen() {
         );
       }
       // cancelled は通知しない
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('dataManagement.opmlImportError'));
     } finally {
       setIsOpmlBusy(false);
@@ -445,7 +444,7 @@ export default function DataManagementScreen() {
               // 新しいデフォルトフィードの記事を取得（明示操作なので WiFi 限定は無視）
               await SyncService.refresh({ ignoreWifiOnly: true });
               Alert.alert(t('common.done'), t('dataManagement.resetFeedsComplete'));
-            } catch (_) {
+            } catch {
               Alert.alert(t('common.error'), t('dataManagement.resetError'));
             } finally {
               setIsResetting(false);
@@ -481,7 +480,7 @@ export default function DataManagementScreen() {
                   { text: t('dataManagement.replayTourConfirm'), onPress: () => { restartOnboarding(); } },
                 ]
               );
-            } catch (_) {
+            } catch {
               Alert.alert(t('common.error'), t('dataManagement.resetError'));
             } finally {
               setIsResetting(false);

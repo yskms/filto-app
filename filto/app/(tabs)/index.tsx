@@ -516,12 +516,12 @@ export default function HomeScreen() {
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
         setReadDisplay(savedReadDisplay);
       }
-    } catch (error) {
+    } catch {
       ErrorHandler.showLoadError(t);
     } finally {
       if (showLoading) setIsLoading(false);
     }
-  }, [feedSort]);
+  }, [feedSort, t]);
 
   // 保存済みのフィード並び順を読み込む
   React.useEffect(() => {
@@ -714,7 +714,7 @@ export default function HomeScreen() {
         // ツアー完走の区切りとして一言（スキップ時は出さない）
         Alert.alert(t('home.tutorialCompleteTitle'), t('home.tutorialCompleteMessage'));
       }).catch(() => {});
-    }, [])
+    }, [t])
   );
 
   // 初回同期(autoSync の refresh→loadData)が完了したら準備スピナーを解除
@@ -794,7 +794,7 @@ export default function HomeScreen() {
         await SyncService.refresh();
         await loadDataRef.current(false);
         setHasAutoSynced(true);
-      } catch (_) {
+      } catch {
         setHasAutoSynced(true);
       }
     };
@@ -896,7 +896,7 @@ export default function HomeScreen() {
           flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
         });
       });
-    } catch (_) {
+    } catch {
       ErrorHandler.showSyncError(t);
     } finally {
       setRefreshing(false);
@@ -937,7 +937,7 @@ export default function HomeScreen() {
         );
         return;
       }
-    } catch (_) {
+    } catch {
     }
     await runRefresh();
   }, [runRefresh, t]);
@@ -994,10 +994,10 @@ export default function HomeScreen() {
       
       // ブラウザで開く
       await Linking.openURL(article.link);
-    } catch (_) {
+    } catch {
       ErrorHandler.showGenericError(t, t('home.articleOpenError'));
     }
-  }, []);
+  }, [t]);
 
   // 左スワイプでお気に入りをトグル。スワイプ自体がフィードバックになるため、
   // 長押し時代の派手なハイライトアニメ（useNativeDriver:false）は使わない
@@ -1014,7 +1014,7 @@ export default function HomeScreen() {
           prev.map(a => a.id === article.id ? { ...a, isStarred: next } : a)
         );
       }, 260);
-    } catch (_) {
+    } catch {
       ErrorHandler.showDatabaseError(t, t('home.favoriteError'));
     }
   }, [t]);

@@ -1,5 +1,5 @@
-import { Filter } from './FilterService';
-import { Article } from '@/types/Article';
+import type { Filter } from './FilterService';
+import type { Article } from '@/types/Article';
 
 /**
  * FilterEngine
@@ -85,4 +85,3 @@ export const FilterEngine = {
     return text.toLowerCase();
   },
 };
-

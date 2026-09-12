@@ -91,13 +91,13 @@ For development guidelines and project structure, see [CONTRIBUTING.md](CONTRIBU
 ## Project Status
 
 * Personal project
-* **Available on both iOS and Android** (v1.2.0)
+* **Available on both iOS and Android** (v1.5.1)
 
 App Store: https://apps.apple.com/app/filto/id6763070121
 
 Google Play: https://play.google.com/store/apps/details?id=com.yskms.filto
 
-> Monetization is not implemented yet, but the app is designed with future premium features in mind.
+> Filto offers an optional Pro subscription while keeping its core local-first experience available for free.
 
 ---
 

@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
+import { useRouter , Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageKeys } from '@/constants/storageKeys';
@@ -73,7 +72,7 @@ const Dropdown: React.FC<{ label: string; value: string; onPress: () => void }> 
 const DropdownModal: React.FC<{
   visible: boolean;
   title: string;
-  options: Array<{ value: string; label: string }>;
+  options: { value: string; label: string }[];
   selectedValue: string;
   onSelect: (value: string) => void;
   onClose: () => void;
@@ -129,7 +128,7 @@ export default function DisplayBehaviorScreen() {
       if (savedRead === 'dim' || savedRead === 'hide') setReadDisplay(savedRead);
       const savedAdPosition = await AsyncStorage.getItem(StorageKeys.adPosition);
       if (savedAdPosition === 'top' || savedAdPosition === 'bottom') setAdPosition(savedAdPosition);
-    } catch (_) {
+    } catch {
     }
   }, []);
 
@@ -139,7 +138,7 @@ export default function DisplayBehaviorScreen() {
     try {
       setReadDisplay(mode);
       await AsyncStorage.setItem(StorageKeys.readDisplay, mode);
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -148,7 +147,7 @@ export default function DisplayBehaviorScreen() {
     try {
       setAdPosition(position);
       await AsyncStorage.setItem(StorageKeys.adPosition, position);
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -156,7 +155,7 @@ export default function DisplayBehaviorScreen() {
   const handleTheme = async (value: string) => {
     try {
       setPreference(value as 'light' | 'dark' | 'system');
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };
@@ -164,7 +163,7 @@ export default function DisplayBehaviorScreen() {
   const handleLanguage = async (value: string) => {
     try {
       await setLanguage(value as 'ja' | 'en');
-    } catch (_) {
+    } catch {
       Alert.alert(t('common.error'), t('displayBehavior.saveError'));
     }
   };

@@ -370,10 +370,10 @@ export default function FiltersScreen() {
     try {
       const filterList = await FilterService.listWithSort(currentSort);
       setFilters(filterList);
-    } catch (error) {
+    } catch {
       ErrorHandler.showLoadError(t);
     }
-  }, [currentSort]);
+  }, [currentSort, t]);
 
   // Swipeable refを取得または作成
   const getSwipeableRef = React.useCallback((filterId: number) => {
@@ -508,7 +508,7 @@ export default function FiltersScreen() {
                 openSwipeIdRef.current = null;
                 await FilterService.delete(filterId);
                 await loadFilters();
-              } catch (error) {
+              } catch {
                 ErrorHandler.showDatabaseError(t, t('filters.deleteError'));
               }
             },
@@ -541,7 +541,7 @@ export default function FiltersScreen() {
               setSelectedIds([]);
               setDeleteMode(false);
               await loadFilters();
-            } catch (error) {
+            } catch {
               ErrorHandler.showDatabaseError(t, t('filters.deleteError'));
             }
           },
