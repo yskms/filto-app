@@ -26,11 +26,11 @@ import { FeedSelectModal } from '@/components/FeedSelectModal';
 import { FeedSortType } from '@/components/FeedSortModal';
 import { CoachMarks, CoachStep, CoachRect } from '@/components/CoachMarks';
 import { Feed } from '@/types/Feed';
-import { FilterEngine } from '@/services/FilterEngine';
 import { FilterService, Filter } from '@/services/FilterService';
 import { FeedService } from '@/services/FeedService';
 import { ArticleService } from '@/services/ArticleService';
 import { ArticleRepository } from '@/repositories/ArticleRepository';
+import type { ArticlePageCursor } from '@/repositories/ArticleRepository';
 import { SyncService } from '@/services/SyncService';
 import { GlobalAllowKeywordService } from '@/services/GlobalAllowKeywordService';
 import { GlobalAllowKeyword } from '@/types/GlobalAllowKeyword';
@@ -52,10 +52,13 @@ import { ArticleActionSheet } from '@/components/ArticleActionSheet';
 import SiteHideSuggestModal from '@/components/SiteHideSuggestModal';
 import { SITE_SUGGEST_CONSECUTIVE, SITE_SUGGEST_CUMULATIVE, isSiteSuggestSuppressed, dismissSiteSuggest } from '@/utils/siteSuggest';
 import { AdBanner } from '@/components/AdBanner';
+import { evaluateArticleScope } from '@/utils/articleScope';
 
 const ACCENT = '#0a7ea4';
 const SCROLLBAR_INSET = 4; // スクロールバー上下の余白
 const SCROLL_TOP_THRESHOLD = 250; // この位置を超えたら「トップへ戻る」ボタンを表示
+const ARTICLE_PAGE_SIZE = 250;
+const MIN_INITIAL_VISIBLE_ARTICLES = 30;
 
 // 経過時間を計算
 const getTimeAgo = (publishedAt: string, justNow: string): string => {
@@ -330,6 +333,8 @@ export default function HomeScreen() {
   const { showToast } = useToast();
   const [refreshing, setRefreshing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  const [hasMoreArticles, setHasMoreArticles] = React.useState(false);
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [feeds, setFeeds] = React.useState<Feed[]>([]);
   const [selectedFeedIds, setSelectedFeedIds] = React.useState<string[] | null>(null);
@@ -369,6 +374,10 @@ export default function HomeScreen() {
   // スクロール位置保持
   const flatListRef = React.useRef<FlatList>(null);
   const isInitialLoad = React.useRef(true);
+  const articlePageCursorRef = React.useRef<ArticlePageCursor | null>(null);
+  const articleLoadGenerationRef = React.useRef(0);
+  const loadingMoreRef = React.useRef(false);
+  const loadedArticleCountRef = React.useRef(0);
 
   // 記事スワイプ: 一度に1行だけ開く。開いているIDは ref で管理し（再レンダリングを避ける）、
   // 各行の Swipeable ref は id ごとにキャッシュして安定参照にする（メモ化を効かせるため）。
@@ -487,41 +496,142 @@ export default function HomeScreen() {
   }, [selectedFeedIds, feeds, t]);
 
   // データを読み込む（showLoading=falseの場合はスピナーを出さずバックグラウンド更新）
-  const loadData = React.useCallback(async (showLoading = true) => {
+  const loadData = React.useCallback(async (showLoading = true, minArticleCount?: number) => {
+    const generation = ++articleLoadGenerationRef.current;
+    loadingMoreRef.current = false;
+    setIsLoadingMore(false);
     try {
       if (showLoading) setIsLoading(true);
 
-      // フィード一覧を取得（選択中のソート順で）
-      const feedList = await FeedService.listWithSort(feedSort);
+      const [feedList, firstArticlePage, hiddenIds, filterList, globalAllowList, savedReadDisplay] =
+        await Promise.all([
+          FeedService.listWithSort(feedSort),
+          ArticleService.getArticlePage(ARTICLE_PAGE_SIZE),
+          ArticleService.getHiddenIds(),
+          FilterService.list(),
+          GlobalAllowKeywordService.list(),
+          AsyncStorage.getItem(StorageKeys.readDisplay),
+        ]);
+
+      // タブ復帰や同期完了で再読込するときは、ユーザーが既に読み込んだ範囲を縮めない。
+      // 新着件数が分かる場合はそのぶんも足し、以前の末尾記事が押し出されないようにする。
+      const targetCount = showLoading
+        ? ARTICLE_PAGE_SIZE
+        : Math.max(ARTICLE_PAGE_SIZE, loadedArticleCountRef.current, minArticleCount ?? 0);
+      const articleList = [...firstArticlePage.articles];
+      let nextCursor = firstArticlePage.nextCursor;
+      while (nextCursor && articleList.length < targetCount) {
+        const remaining = targetCount - articleList.length;
+        const page = await ArticleService.getArticlePage(
+          Math.min(ARTICLE_PAGE_SIZE, remaining),
+          nextCursor
+        );
+        if (articleLoadGenerationRef.current !== generation) return;
+        articleList.push(...page.articles);
+        nextCursor = page.nextCursor;
+      }
+
+      // 更新・画面復帰などで新しい読み込みが始まった場合、古い応答でstateを戻さない。
+      if (articleLoadGenerationRef.current !== generation) return;
+
       setFeeds(feedList);
-
-      // 記事一覧を取得
-      const articleList = await ArticleService.getArticles();
       setArticles(articleList);
-
-      // 手動で非表示にした記事ID
-      const hiddenIds = await ArticleService.getHiddenIds();
+      loadedArticleCountRef.current = articleList.length;
+      articlePageCursorRef.current = nextCursor;
+      setHasMoreArticles(nextCursor !== null);
       setHiddenArticleIds(new Set(hiddenIds));
-
-      // フィルタ一覧を取得
-      const filterList = await FilterService.list();
       setFilters(filterList);
-
-      // グローバル許可キーワード一覧を取得
-      const globalAllowList = await GlobalAllowKeywordService.list();
       setGlobalAllowKeywords(globalAllowList);
-
-      // Display & Behavior の設定を取得
-      const savedReadDisplay = await AsyncStorage.getItem(StorageKeys.readDisplay);
       if (savedReadDisplay === 'dim' || savedReadDisplay === 'hide') {
         setReadDisplay(savedReadDisplay);
       }
     } catch {
-      ErrorHandler.showLoadError(t);
+      if (articleLoadGenerationRef.current === generation) {
+        articlePageCursorRef.current = null;
+        setHasMoreArticles(false);
+        ErrorHandler.showLoadError(t);
+      }
     } finally {
-      if (showLoading) setIsLoading(false);
+      // スピナー付き読み込みを、後発のスピナーなし読み込みが置き換える場合もある。
+      // 最新世代が完了した時点で必ず解除し、古い世代だけが立てた状態を残さない。
+      if (articleLoadGenerationRef.current === generation) {
+        setIsLoading(false);
+      }
     }
   }, [feedSort, t]);
+
+  const loadNextArticlePage = React.useCallback(async () => {
+    const cursor = articlePageCursorRef.current;
+    if (!cursor || loadingMoreRef.current) return;
+
+    const generation = articleLoadGenerationRef.current;
+    loadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      const page = await ArticleService.getArticlePage(ARTICLE_PAGE_SIZE, cursor);
+      if (articleLoadGenerationRef.current !== generation) return;
+
+      setArticles((current) => {
+        const existingIds = new Set(current.map((article) => article.id));
+        const additions = page.articles.filter((article) => !existingIds.has(article.id));
+        const next = additions.length > 0 ? [...current, ...additions] : current;
+        loadedArticleCountRef.current = next.length;
+        return next;
+      });
+      articlePageCursorRef.current = page.nextCursor;
+      setHasMoreArticles(page.nextCursor !== null);
+    } catch {
+      if (articleLoadGenerationRef.current === generation) {
+        articlePageCursorRef.current = null;
+        setHasMoreArticles(false);
+        ErrorHandler.showLoadError(t);
+      }
+    } finally {
+      if (articleLoadGenerationRef.current === generation) {
+        loadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      }
+    }
+  }, [t]);
+
+  const loadAllRemainingArticles = React.useCallback(async () => {
+    if (!articlePageCursorRef.current || loadingMoreRef.current) return;
+
+    const generation = articleLoadGenerationRef.current;
+    loadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      const additions: Article[] = [];
+      let cursor: ArticlePageCursor | null = articlePageCursorRef.current;
+      while (cursor) {
+        const page = await ArticleService.getArticlePage(ARTICLE_PAGE_SIZE, cursor);
+        if (articleLoadGenerationRef.current !== generation) return;
+        additions.push(...page.articles);
+        cursor = page.nextCursor;
+      }
+
+      setArticles((current) => {
+        const existingIds = new Set(current.map((article) => article.id));
+        const uniqueAdditions = additions.filter((article) => !existingIds.has(article.id));
+        const next = uniqueAdditions.length > 0 ? [...current, ...uniqueAdditions] : current;
+        loadedArticleCountRef.current = next.length;
+        return next;
+      });
+      articlePageCursorRef.current = null;
+      setHasMoreArticles(false);
+    } catch {
+      if (articleLoadGenerationRef.current === generation) {
+        articlePageCursorRef.current = null;
+        setHasMoreArticles(false);
+        ErrorHandler.showLoadError(t);
+      }
+    } finally {
+      if (articleLoadGenerationRef.current === generation) {
+        loadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      }
+    }
+  }, [t]);
 
   // 保存済みのフィード並び順を読み込む
   React.useEffect(() => {
@@ -761,8 +871,8 @@ export default function HomeScreen() {
   // 同期の完了通知を購読し、終わった時点でDBを読み直す。loadData(false) なので
   // スピナーは出ず、スクロール位置も保持される。
   React.useEffect(() => {
-    const unsubscribe = SyncService.onSyncComplete(() => {
-      loadDataRef.current(false);
+    const unsubscribe = SyncService.onSyncComplete(({ newArticles }) => {
+      loadDataRef.current(false, loadedArticleCountRef.current + newArticles);
     });
     return unsubscribe;
   }, []);
@@ -804,43 +914,22 @@ export default function HomeScreen() {
 
   // フィルタ適用
   React.useEffect(() => {
-    // ホームで非表示（ミュート）にしたフィードの記事は常に除外する（削除ではなく表示制御）
     const hiddenFeedIds = new Set(feeds.filter(f => f.hiddenFromHome).map(f => f.id));
-    let filtered = hiddenFeedIds.size > 0
-      ? articles.filter(a => !hiddenFeedIds.has(a.feedId))
-      : articles;
-
-    // フィードでフィルタリング
-    if (selectedFeedIds !== null) {
-      filtered = filtered.filter(a => selectedFeedIds.includes(a.feedId));
-    }
-
-    // お気に入りフィルタを適用
-    if (showStarredOnly) {
-      filtered = filtered.filter(a => a.isStarred);
-    }
-
-    // グローバル許可キーワードを文字列配列に変換
     const allowKeywords = globalAllowKeywords.map(k => k.keyword);
-
-    // フィルタエンジンで評価（ブロック対象を除外せず印を付ける）
-    const blockedIds = new Set<string>();
-    for (const article of filtered) {
-      if (FilterEngine.evaluate(article, filters, allowKeywords)) {
-        blockedIds.add(article.id);
-      }
-    }
-    setBlockedKeywordIds(blockedIds);
-    setBlockedByFilters(blockedIds.size);
-
-    // 現在のスコープ内で手動非表示にされている件数（バー表示用）
-    const hiddenInView = filtered.reduce((n, a) => (hiddenArticleIds.has(a.id) ? n + 1 : n), 0);
-    setHiddenInViewCount(hiddenInView);
+    const scoped = evaluateArticleScope(articles, {
+      hiddenFeedIds,
+      selectedFeedIds,
+      showStarredOnly,
+      filters,
+      globalAllowKeywords: allowKeywords,
+      hiddenArticleIds,
+    });
+    setBlockedKeywordIds(scoped.blockedIds);
 
     // 通常はブロック記事・非表示記事を除外。統合トグルON時は順序を保ったまま含める（淡色表示）
     let displayed = showBlockedKeywords
-      ? filtered
-      : filtered.filter(a => !blockedIds.has(a.id) && !hiddenArticleIds.has(a.id));
+      ? scoped.articles
+      : scoped.articles.filter(a => !scoped.blockedIds.has(a.id) && !hiddenArticleIds.has(a.id));
 
     // 既読表示設定に基づいてフィルタリング
     if (readDisplay === 'hide') {
@@ -855,9 +944,74 @@ export default function HomeScreen() {
     setFilteredArticles(displayed);
   }, [articles, feeds, selectedFeedIds, showStarredOnly, filters, globalAllowKeywords, readDisplay, showBlockedKeywords, hiddenArticleIds]);
 
+  // 除外・非表示件数はロード済みページだけでなく、現在のスコープ全体から集計する。
+  // 記事はページごとに破棄するため、全件をReact stateへ載せずに正確な件数を出せる。
+  const loadedStarredCount = React.useMemo(
+    () => showStarredOnly ? articles.reduce((count, article) => count + (article.isStarred ? 1 : 0), 0) : 0,
+    [articles, showStarredOnly]
+  );
+  React.useEffect(() => {
+    let cancelled = false;
+    const hiddenFeedIds = new Set(feeds.filter((feed) => feed.hiddenFromHome).map((feed) => feed.id));
+    const allowKeywords = globalAllowKeywords.map((keyword) => keyword.keyword);
+
+    const scan = async () => {
+      if (filters.length === 0 && hiddenArticleIds.size === 0) {
+        setBlockedByFilters(0);
+        setHiddenInViewCount(0);
+        return;
+      }
+
+      setBlockedByFilters(0);
+      setHiddenInViewCount(0);
+      let blockedCount = 0;
+      let hiddenCount = 0;
+      let cursor: ArticlePageCursor | undefined;
+      do {
+        const page = await ArticleService.getArticlePage(ARTICLE_PAGE_SIZE, cursor);
+        if (cancelled) return;
+        const scoped = evaluateArticleScope(page.articles, {
+          hiddenFeedIds,
+          selectedFeedIds,
+          showStarredOnly,
+          filters,
+          globalAllowKeywords: allowKeywords,
+          hiddenArticleIds,
+        });
+        blockedCount += scoped.blockedIds.size;
+        hiddenCount += scoped.hiddenCount;
+        cursor = page.nextCursor ?? undefined;
+      } while (cursor);
+
+      if (!cancelled) {
+        setBlockedByFilters(blockedCount);
+        setHiddenInViewCount(hiddenCount);
+      }
+    };
+
+    void scan().catch(() => {
+      // 件数表示の失敗で記事一覧そのものを使用不能にしない。
+    });
+    return () => { cancelled = true; };
+  }, [feeds, filters, globalAllowKeywords, hiddenArticleIds, loadedStarredCount, selectedFeedIds, showStarredOnly]);
+
+  // 最初のページがフィルタでほぼ消える場合、空に近い画面で止めず、最低限の表示件数に
+  // 届くまで次ページを補充する。1ページずつ進めることでメインスレッドを長時間占有しない。
+  React.useEffect(() => {
+    if (
+      !isLoading &&
+      !isLoadingMore &&
+      hasMoreArticles &&
+      filteredArticles.length < MIN_INITIAL_VISIBLE_ARTICLES
+    ) {
+      void loadNextArticlePage();
+    }
+  }, [filteredArticles.length, hasMoreArticles, isLoading, isLoadingMore, loadNextArticlePage]);
+
   const runRefresh = React.useCallback(async () => {
     try {
       setRefreshing(true);
+      const articleCountBeforeRefresh = loadedArticleCountRef.current;
 
       // RSS同期を実行（手動更新は明示操作なのでWiFi限定設定を無視して必ず取得）
       const result = await SyncService.refresh({ ignoreWifiOnly: true });
@@ -876,7 +1030,7 @@ export default function HomeScreen() {
 
 
       // データを再読み込み（RefreshControlが既にスピナーを出すので再マウントしない）
-      await loadData(false);
+      await loadData(false, articleCountBeforeRefresh + result.newArticles);
 
       // 明示的な手動更新にだけ結果を通知する。起動直後・バックグラウンド同期では
       // ユーザー操作と無関係にトーストが出ないよう、完了イベント側では表示しない。
@@ -1183,6 +1337,28 @@ export default function HomeScreen() {
     );
   }, [filteredArticles, searchQuery]);
   const searchActive = searchOpen && searchQuery.trim().length > 0;
+
+  // これらは「現在ロード済みの記事だけ」では既存仕様と意味が変わるモード。
+  // 明示操作を受けたときだけ残りを読み切り、全保持記事を対象にする。
+  React.useEffect(() => {
+    const needsCompleteList =
+      searchActive ||
+      showStarredOnly ||
+      selectedFeedIds !== null ||
+      showBlockedKeywords;
+    if (needsCompleteList && hasMoreArticles && !isLoadingMore) {
+      void loadAllRemainingArticles();
+    }
+  }, [
+    hasMoreArticles,
+    isLoadingMore,
+    loadAllRemainingArticles,
+    searchActive,
+    selectedFeedIds,
+    showBlockedKeywords,
+    showStarredOnly,
+  ]);
+
   const displayArticles = showTutorialDemo ? dummyArticles : searchedArticles;
   const displayBlockedCount = showTutorialDemo ? 8 : blockedByFilters;
   const displayHiddenCount = showTutorialDemo ? 0 : hiddenInViewCount;
@@ -1291,16 +1467,27 @@ export default function HomeScreen() {
             onScrollBeginDrag={() => closeOpenSwipe()}
             scrollEventThrottle={16}
             onContentSizeChange={(_, h) => setListContentH(h)}
+            onEndReached={() => { void loadNextArticlePage(); }}
+            onEndReachedThreshold={0.5}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
             }
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name={searchActive ? 'search-outline' : 'newspaper-outline'} size={64} color={emptyIconColor} style={styles.emptyIcon} />
-                <ThemedText style={styles.emptyMessage}>{searchActive ? t('home.noSearchResults') : t('home.noArticles')}</ThemedText>
-                {!searchActive && <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>}
-              </View>
+              isLoadingMore
+                ? <ActivityIndicator style={styles.pageLoadingIndicator} color={ACCENT} />
+                : (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name={searchActive ? 'search-outline' : 'newspaper-outline'} size={64} color={emptyIconColor} style={styles.emptyIcon} />
+                      <ThemedText style={styles.emptyMessage}>{searchActive ? t('home.noSearchResults') : t('home.noArticles')}</ThemedText>
+                      {!searchActive && <ThemedText style={styles.emptyHint}>{t('home.noArticlesHint')}</ThemedText>}
+                    </View>
+                  )
+            }
+            ListFooterComponent={
+              isLoadingMore && displayArticles.length > 0
+                ? <ActivityIndicator style={styles.pageLoadingIndicator} color={ACCENT} />
+                : null
             }
           />
 
@@ -1511,6 +1698,9 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingBottom: 20,
+  },
+  pageLoadingIndicator: {
+    paddingVertical: 20,
   },
   scrollbarTrack: {
     position: 'absolute',
