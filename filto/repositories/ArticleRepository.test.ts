@@ -56,4 +56,36 @@ describe('ArticleRepository article reads', () => {
 
     expect(getAllAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE feed_id = ?'), ['feed-1']);
   });
+
+  it('loads one extra row to produce a stable keyset cursor', async () => {
+    getAllAsync.mockResolvedValue([
+      row,
+      { ...row, id: 41, display_order: 9 },
+      { ...row, id: 40, display_order: 8 },
+    ]);
+
+    const page = await ArticleRepository.listPage(2);
+
+    expect(getAllAsync).toHaveBeenCalledWith(expect.stringContaining('LIMIT ?'), [3]);
+    expect(page.articles.map((item) => item.id)).toEqual(['42', '41']);
+    expect(page.nextCursor).toEqual({ displayOrder: 9, id: 41 });
+  });
+
+  it('uses display order and id as the next-page boundary', async () => {
+    getAllAsync.mockResolvedValue([{ ...row, id: 40, display_order: 8 }]);
+
+    const page = await ArticleRepository.listPage(20, { displayOrder: 9, id: 41 });
+
+    expect(getAllAsync.mock.calls[0][0]).toContain(
+      'display_order < ? OR (display_order = ? AND id < ?)'
+    );
+    expect(getAllAsync.mock.calls[0][1]).toEqual([9, 9, 41, 21]);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it('normalizes a non-finite page size before binding it to SQLite', async () => {
+    await ArticleRepository.listPage(Number.NaN);
+
+    expect(getAllAsync.mock.calls[0][1]).toEqual([2]);
+  });
 });

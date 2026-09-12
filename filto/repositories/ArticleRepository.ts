@@ -53,6 +53,16 @@ interface ArticleRow {
   is_starred: number;
 }
 
+export interface ArticlePageCursor {
+  displayOrder: number;
+  id: number;
+}
+
+export interface ArticlePage {
+  articles: Article[];
+  nextCursor: ArticlePageCursor | null;
+}
+
 function rowToArticle(row: ArticleRow): Article {
   return {
     id: String(row.id),
@@ -114,6 +124,52 @@ export const ArticleRepository = {
     );
 
     return rows.map(rowToArticle);
+  },
+
+  /**
+   * ホーム向けの記事を、確定済みの表示順を保ったままキーセットページングする。
+   * OFFSETは後ろのページほど走査量が増え、同期で先頭に記事が追加された場合に
+   * 重複・欠落も起こすため使わない。
+   *
+   * nextCursor が null なら最終ページ。limit + 1件だけ取得して続きを判定するため、
+   * COUNT(*) は実行しない。
+   */
+  async listPage(limit: number, cursor?: ArticlePageCursor): Promise<ArticlePage> {
+    const db = openDatabase();
+    const pageSize = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : 1;
+    const params: (number | string)[] = [];
+    let cursorCondition = '';
+
+    if (cursor) {
+      cursorCondition = `
+        AND (display_order < ? OR (display_order = ? AND id < ?))
+      `;
+      params.push(cursor.displayOrder, cursor.displayOrder, cursor.id);
+    }
+    params.push(pageSize + 1);
+
+    const rows = await db.getAllAsync<ArticleRow>(
+      `
+        SELECT ${ARTICLE_COLUMNS}
+        FROM articles
+        WHERE display_order IS NOT NULL
+        ${cursorCondition}
+        ORDER BY display_order DESC, id DESC
+        LIMIT ?
+      `,
+      params
+    );
+
+    const hasMore = rows.length > pageSize;
+    const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
+    const last = pageRows.at(-1);
+
+    return {
+      articles: pageRows.map(rowToArticle),
+      nextCursor: hasMore && last
+        ? { displayOrder: last.display_order!, id: last.id }
+        : null,
+    };
   },
 
   /**
