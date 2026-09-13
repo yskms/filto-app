@@ -1,6 +1,6 @@
 # Store Description (English)
 
-Last updated: 2026-09-13 (v1.5.2 submission preparation; continuing the v1.3.2 rewrite)
+Last updated: 2026-09-13 (v1.5.2 submitted for review; continuing the v1.3.2 rewrite)
 
 ## App Name
 
