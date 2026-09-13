@@ -13,7 +13,7 @@ v1.5.0 提出時のメモは、初期バージョンのまま更新されてお�
 - 「Settings > Filters」→ フィルタは**独立したタブ**で、設定の下ではない
 - 「スクリーン録画を添付した」→ **添付ファイルは未選択**（存在しない添付を参照していた）
 
-v1.5.1 で以下に差し替える。
+v1.5.1で差し替え、v1.5.2提出前に言語設定と外部サービスの説明を実装に合わせて更新。
 
 ---
 
@@ -29,7 +29,9 @@ ask for. Filto removes the algorithm entirely: users read only the RSS feeds the
 subscribe to, and use keyword filters to hide topics they do not want (with optional
 allow keywords as exceptions).
 
-No account, no tracking, and no user data leaves the device.
+No account is required. Reading history, feeds, and filters are stored on-device.
+The app does not track users across apps or websites. AdMob handles ad requests and
+RevenueCat handles subscription status as described below.
 
 2. Instructions for Review
 
@@ -76,9 +78,9 @@ No login credentials are required. The app has no account system.
 
 5. Regional Differences
 
-The app behaves the same in all regions. It supports English and Japanese, following
-the device language setting. The set of default feeds differs between the two
-languages.
+The app behaves the same in all regions. It supports English and Japanese. The device
+language is used initially, and users can change the language in Settings > Display &
+Behavior. The set of default feeds differs between the two languages.
 
 6. Regulated Industry
 
