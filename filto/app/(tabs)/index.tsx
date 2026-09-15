@@ -376,6 +376,13 @@ export default function HomeScreen() {
   const isInitialLoad = React.useRef(true);
   const articlePageCursorRef = React.useRef<ArticlePageCursor | null>(null);
   const articleLoadGenerationRef = React.useRef(0);
+  // runRefresh（手動更新）が呼ばれるたびに進める専用カウンタ。
+  // articleLoadGenerationRef は画面フォーカス時の再読込など「位置を保持したまま
+  // 更新する」中立な loadData 呼び出しでも進んでしまうため、それとは別に持つ。
+  // 手動更新に限定することで、スワイプの「必ず先頭へ戻す」という約束を、
+  // 無関係な再読込では取り消さず、後続の別の手動更新（特に位置キープ方針のボタン）
+  // が割り込んだ場合にだけ古い方の強制スクロールを取り消す
+  const manualRefreshGenerationRef = React.useRef(0);
   const loadingMoreRef = React.useRef(false);
   const loadedArticleCountRef = React.useRef(0);
   const articlePageQueryRef = React.useRef<ArticlePageQuery>({});
@@ -1036,6 +1043,10 @@ export default function HomeScreen() {
   // - ヘッダーの更新ボタン: 常に位置を保つ（false。記事タイトルを読んでいる
   //   最中に強制スクロールされるとユーザー体験として悪い）
   const runRefresh = React.useCallback(async (scrollToTopOnComplete: boolean) => {
+    // 後続の手動更新（特に位置キープ方針のボタン）が割り込んだら、この回の
+    // 強制スクロールは取り消す。画面フォーカス時の中立な再読込などでは進まない
+    // 専用カウンタなので、それらに巻き込まれて取り消されることはない
+    const refreshId = ++manualRefreshGenerationRef.current;
     try {
       setRefreshing(true);
       const articleCountBeforeRefresh = loadedArticleCountRef.current;
@@ -1077,15 +1088,15 @@ export default function HomeScreen() {
         // JS側のフレームタイミングを保証するだけでAndroidのネイティブ側レイアウト
         // 完了とは同期しないため、実時間で待つ
         //
-        // このタイマーは loadData と同じ世代カウンタで有効性を確認してから発火する。
-        // 確認なしだと、300ms以内にタブ切替・フィルタ/検索変更・次の同期完了などで
-        // 別の loadData が走った場合、ユーザーが既に移った先の文脈を巻き戻して
-        // 先頭へ強制スクロールしてしまう（Home タブはバックグラウンドでも
-        // マウントされたままのため、他タブを見ている間に発火することもある）
-        const generation = articleLoadGenerationRef.current;
+        // このタイマーは manualRefreshGenerationRef（手動更新専用カウンタ）で有効性を
+        // 確認してから発火する。articleLoadGenerationRef を使うと、画面フォーカス時の
+        // 再読込（タブ切替で戻っただけ）のような中立な loadData 呼び出しでも取り消され、
+        // 「スワイプは必ず先頭へ戻す」という約束を壊してしまう。手動更新専用カウンタなら、
+        // タブ切替・バックグラウンド同期などには巻き込まれず、後続の別の手動更新
+        // （特に位置キープ方針のボタン）が割り込んだ場合にだけ正しく取り消せる
         const delayMs = result.newArticles > 0 ? 300 : 0;
         setTimeout(() => {
-          if (articleLoadGenerationRef.current !== generation) return;
+          if (manualRefreshGenerationRef.current !== refreshId) return;
           flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
         }, delayMs);
       }
