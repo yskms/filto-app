@@ -323,18 +323,25 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 32,
-    // ThemedText の既定スタイルが lineHeight:24 を当てているため、fontSize だけ
-    // 上書きすると 32px の文字が 24px の行に収まらず、はみ出した分が下の購入ボタンに
-    // 重なる（実機Androidで発生）。fontSize を変えたら lineHeight も必ず併せて指定する
-    lineHeight: 40,
+    // ThemedText の既定スタイルが lineHeight:24（fontSize:16向け）を当てているため、
+    // fontSize だけ上書きすると32pxの文字が24pxの行に収まらず、はみ出した分が下の
+    // 購入ボタンに重なる（実機Androidで発生）。
+    //
+    // 固定pxで lineHeight:40 を指定する対症療法は一度試したが、iOSのDynamic Type
+    // （文字サイズのアクセシビリティ設定）でfontSizeが拡大されるとlineHeightだけ
+    // 追従せず、今度は上端がクリップされる不具合が出た（実機iPhoneで発生。
+    // allowFontScalingはアプリ全体で無効化していないため既定で有効）。
+    // lineHeight: undefined でThemedTextから継承した24を明示的に打ち消し、
+    // RNに実際に描画されるfontSize（拡大後を含む）に応じた自然な行高を
+    // 計算させることで、文字サイズ設定に関わらず常に収まるようにする
+    lineHeight: undefined,
     fontWeight: '700',
     marginBottom: 20,
   },
   priceSuffix: {
     fontSize: 16,
-    // 親（price）と同じ行高に揃える。入れ子の Text で行高が食い違うと、
-    // Android でベースラインがずれることがある
-    lineHeight: 40,
+    // price と同じ理由で自然な行高に任せる
+    lineHeight: undefined,
     fontWeight: '400',
   },
   subscribeButton: {
