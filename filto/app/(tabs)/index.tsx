@@ -1076,8 +1076,16 @@ export default function HomeScreen() {
         // （新着0件なら補正が発生しないため即座に効く）。requestAnimationFrame は
         // JS側のフレームタイミングを保証するだけでAndroidのネイティブ側レイアウト
         // 完了とは同期しないため、実時間で待つ
+        //
+        // このタイマーは loadData と同じ世代カウンタで有効性を確認してから発火する。
+        // 確認なしだと、300ms以内にタブ切替・フィルタ/検索変更・次の同期完了などで
+        // 別の loadData が走った場合、ユーザーが既に移った先の文脈を巻き戻して
+        // 先頭へ強制スクロールしてしまう（Home タブはバックグラウンドでも
+        // マウントされたままのため、他タブを見ている間に発火することもある）
+        const generation = articleLoadGenerationRef.current;
         const delayMs = result.newArticles > 0 ? 300 : 0;
         setTimeout(() => {
+          if (articleLoadGenerationRef.current !== generation) return;
           flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
         }, delayMs);
       }
