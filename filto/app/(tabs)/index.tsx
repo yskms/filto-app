@@ -1031,7 +1031,11 @@ export default function HomeScreen() {
     }
   }, [filteredArticles.length, hasMoreArticles, isLoading, isLoadingMore, loadNextArticlePage]);
 
-  const runRefresh = React.useCallback(async () => {
+  // scrollToTopOnComplete: トリガーによって完了後の挙動を分ける。
+  // - 上から下スワイプ（RefreshControl）: 常に先頭へ戻す（true）
+  // - ヘッダーの更新ボタン: 常に位置を保つ（false。記事タイトルを読んでいる
+  //   最中に強制スクロールされるとユーザー体験として悪い）
+  const runRefresh = React.useCallback(async (scrollToTopOnComplete: boolean) => {
     try {
       setRefreshing(true);
       const articleCountBeforeRefresh = loadedArticleCountRef.current;
@@ -1064,15 +1068,22 @@ export default function HomeScreen() {
         'success'
       );
 
-      // 手動更新は明示操作なので、取得完了後は必ず先頭まで戻す。
-      // 先頭に記事が差し込まれた直後は maintainVisibleContentPosition が offset を
-      // 補正するため、同フレームでスクロールすると途中で止まる。レイアウトが
-      // 落ち着く次フレームまで待ってからスクロールする（2フレーム待つ）
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
+      if (scrollToTopOnComplete) {
+        // 上から下スワイプ（プルリフレッシュ）は、ジェスチャ自体が先頭付近でしか
+        // 発火しないが、取得中に下へスクロールされることもあるため完了時に必ず
+        // 先頭へ戻す。先頭に記事が差し込まれた直後は maintainVisibleContentPosition
+        // が offset を補正するため、その最中にスクロールすると途中で止まる
+        // （新着0件なら補正が発生しないため即座に効く）。requestAnimationFrame は
+        // JS側のフレームタイミングを保証するだけでAndroidのネイティブ側レイアウト
+        // 完了とは同期しないため、実時間で待つ
+        const delayMs = result.newArticles > 0 ? 300 : 0;
+        setTimeout(() => {
           flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-        });
-      });
+        }, delayMs);
+      }
+      // ヘッダーの更新ボタン（scrollToTopOnComplete=false）は何もしない。
+      // maintainVisibleContentPosition が先頭付近（10px以内）にいるときだけ新着に
+      // 追従し、下にスクロール中は位置を保つ（背景同期・起動時同期と同じ挙動）
     } catch {
       ErrorHandler.showSyncError(t);
     } finally {
@@ -1081,8 +1092,10 @@ export default function HomeScreen() {
   }, [loadData, showToast, t]);
 
   // 手動更新。「WiFi接続時のみ取得」がオンでモバイル回線のときは、
-  // 通信量が発生する旨を確認してから取得する（判定に失敗したらそのまま取得）
-  const handleRefresh = React.useCallback(async () => {
+  // 通信量が発生する旨を確認してから取得する（判定に失敗したらそのまま取得）。
+  // scrollToTopOnComplete の既定値は true（RefreshControl の onRefresh は引数なしで
+  // 呼ばれるため）。ヘッダーの更新ボタンは onPressRefresh 側で明示的に false を渡す
+  const handleRefresh = React.useCallback(async (scrollToTopOnComplete: boolean = true) => {
     try {
       // 同期実行中（起動直後の自動同期など）は refresh() が黙って何もせず返るため、
       // 先にここで拾って「更新中」であることを伝える。
@@ -1109,14 +1122,14 @@ export default function HomeScreen() {
           t('home.mobileFetchConfirmMessage'),
           [
             { text: t('common.cancel'), style: 'cancel' },
-            { text: t('home.mobileFetchConfirmButton'), onPress: () => { void runRefresh(); } },
+            { text: t('home.mobileFetchConfirmButton'), onPress: () => { void runRefresh(scrollToTopOnComplete); } },
           ]
         );
         return;
       }
     } catch {
     }
-    await runRefresh();
+    await runRefresh(scrollToTopOnComplete);
   }, [runRefresh, t]);
 
   // スクロール監視（バー連動 + ボタン表示切替）
@@ -1385,7 +1398,7 @@ export default function HomeScreen() {
         onPressStarFilter={handleToggleStarFilter}
         onPressSearch={handleToggleSearch}
         onPressLayoutToggle={handleToggleLayout}
-        onPressRefresh={handleRefresh}
+        onPressRefresh={() => { void handleRefresh(false); }}
         feedSelectorRef={feedSelectorRef}
         refreshRef={refreshRef}
         starFilterRef={starFilterRef}
