@@ -1174,6 +1174,10 @@ Runtime 1.5.2）に対してOTAで配信。審査不要。
 - **横展開**: アプリ全体を再走査したが同種の箇所（`fontSize>24`で`lineHeight`
   未指定）は他に無かった。ただし**`allowFontScaling`の扱いがアプリ全体で
   未対応という構造的な課題は残る**。「将来対応検討」へ追記
+- **OTA配信（2026-09-16）**: JSのみの変更（`befcc3d`）のため公開済みv1.5.2へ配信。
+  実害のあるバグ（友人が実機で踏んだ）のため審査を待たず即配信を選択
+  - iOS: Update Group `685e0dbb-f035-4776-aa78-19bd0bb81700`
+  - Android: Update Group `300e0bc2-f917-4ded-acc3-ece2debd349b`
 
 ---
 
