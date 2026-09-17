@@ -332,6 +332,10 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [refreshing, setRefreshing] = React.useState(false);
+  // 起動直後の自動同期やバックグラウンド同期など、runRefresh を経由しない同期の
+  // 実行中だけを表す。runRefresh 自身の refreshing とは完全に独立させており、
+  // 表示側で OR して使う（詳細は onRefreshingChange の購読箇所のコメント参照）
+  const [backgroundSyncing, setBackgroundSyncing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const [hasMoreArticles, setHasMoreArticles] = React.useState(false);
@@ -899,11 +903,28 @@ export default function HomeScreen() {
   // 起動直後の自動同期やバックグラウンド同期がアプリ内で走ると、ホームはそれが
   // 終わる前に描画されるため新着が出ない（別タブに移動して戻ると反映される現象）。
   // 同期の完了通知を購読し、終わった時点でDBを読み直す。loadData(false) なので
-  // スピナーは出ず、スクロール位置も保持される。
+  // 一覧を隠すスピナーは出ず、スクロール位置も保持される（下の backgroundSyncing
+  // による非ブロッキングの上部スピナーとは別軸）。
   React.useEffect(() => {
     const unsubscribe = SyncService.onSyncComplete(({ newArticles }) => {
       loadDataRef.current(false, loadedArticleCountRef.current + newArticles);
     });
+    return unsubscribe;
+  }, []);
+
+  // runRefresh を経由しない同期（起動直後の自動同期・バックグラウンドタスク）が
+  // 実行中であることを、非ブロッキングの上部スピナー（RefreshControl）で示す。
+  // onSyncComplete（成功時のみ発火、新着の反映用）とは別に、開始/終了のたびに
+  // 必ず発火する onRefreshingChange を使う。成功時イベントだけに頼ると、同期が
+  // 例外で終わった回はスピナーが消えなくなるため。
+  //
+  // 購読は「今後の変化」しか拾えないため、マウント時点で既に同期中のことがある
+  // （起動直後に同期が走っている最中、等）。購読と同時に isRefreshing を直接
+  // 確認して初期値を反映する（この2行はどちらが先でも実害は無いが、購読を先に
+  // 行うことで、仮に何か割り込んでも取りこぼさない側に倒す）。
+  React.useEffect(() => {
+    const unsubscribe = SyncService.onRefreshingChange(setBackgroundSyncing);
+    setBackgroundSyncing(SyncService.isRefreshing);
     return unsubscribe;
   }, []);
 
@@ -1504,7 +1525,15 @@ export default function HomeScreen() {
             onEndReached={() => { void loadNextArticlePage(); }}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+              <RefreshControl
+                // refreshing: 手動更新（runRefresh）自身が管理する状態、そのまま。
+                // backgroundSyncing: それ以外の同期（起動直後・バックグラウンド）の
+                // 生死をそのまま映すだけの、完全に独立した状態。互いに関知しないため
+                // 手動更新中にbackgroundSyncingも重複して動くことがあるが、その間は
+                // refreshingがtrueのままなのでORした結果に見た目の影響は無い
+                refreshing={refreshing || backgroundSyncing}
+                onRefresh={handleRefresh}
+              />
             }
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={

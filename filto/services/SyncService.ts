@@ -72,6 +72,40 @@ export const SyncService = {
   },
 
   /**
+   * isRefreshing（同期ロックの生死）が変化するたびに通知するリスナー。
+   * UIが「同期中スピナーを出す」ために購読する。onSyncComplete とは別物：
+   * こちらは成功・失敗・キャンセルを問わず開始/終了のたびに必ず発火する
+   * （「新着があるので再読込すべきか」ではなく「スピナーを出すべきか」の情報）。
+   * 成功時のみ発火する onSyncComplete だけに頼ると、途中で例外が起きた回は
+   * 通知が来ずスピナーが消えなくなる。
+   */
+  _refreshingChangeListeners: new Set<(refreshing: boolean) => void>(),
+
+  /**
+   * isRefreshingの変化を購読する。戻り値の関数で解除。
+   * 購読した時点で既に同期中の場合があるため、呼び出し側は購読直後に
+   * isRefreshing を自分で確認して初期値を反映すること（このメソッドは
+   * "今後の変化"だけを通知し、購読前から続いている状態は伝えない）。
+   */
+  onRefreshingChange(listener: (refreshing: boolean) => void): () => void {
+    this._refreshingChangeListeners.add(listener);
+    return () => {
+      this._refreshingChangeListeners.delete(listener);
+    };
+  },
+
+  /** isRefreshingの変化をリスナーへ通知 */
+  _emitRefreshingChange(refreshing: boolean): void {
+    this._refreshingChangeListeners.forEach((listener) => {
+      try {
+        listener(refreshing);
+      } catch (_) {
+        // リスナー側の失敗は無視
+      }
+    });
+  },
+
+  /**
    * 実行中の同期にキャンセルを要求する。
    * 世代を進めることで、ループ中の refresh が次の保存前に中断する。
    *
@@ -180,6 +214,8 @@ export const SyncService = {
     if (!release) {
       return { fetched: 0, newArticles: 0, busy: true };
     }
+    // ロックを取れた＝この呼び出しが実際に同期を始める。スピナー表示用に通知する
+    this._emitRefreshingChange(true);
 
     const gen = this.generation; // この同期の世代を記録（リセットで変わったら中断）
     let fetched = 0;
@@ -265,7 +301,10 @@ export const SyncService = {
       }
       return { fetched, newArticles };
     } finally {
+      // 成功・失敗・キャンセルいずれでも必ずここを通る。release() の後に通知する
+      // ことで、通知を受け取った側が isRefreshing を確認しても矛盾が無いようにする
       release();
+      this._emitRefreshingChange(false);
     }
   },
 
