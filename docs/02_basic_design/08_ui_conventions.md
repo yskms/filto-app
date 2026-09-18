@@ -145,3 +145,8 @@ SafeAreaView
 - UI 実装段階で Service / DB ロジックを書かない
 - ヘッダーの高さを画面ごとに変えない
 - スワイプ状態を画面間で持ち越さない
+- `fontSize` を上書きする際に `lineHeight` を固定px値で指定しない
+  （ThemedText の既定 lineHeight とのズレを直そうとして固定pxを入れると、
+  iOS の Dynamic Type で fontSize だけ拡大された時に lineHeight が追従せず
+  上端がクリップされる。`lineHeight: undefined` で既定値を打ち消し、
+  RN に実際の描画 fontSize から自然な行高を計算させること。参考: `ad75873`）
