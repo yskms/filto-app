@@ -1222,8 +1222,14 @@ Runtime 1.5.2）に対してOTAで配信。審査不要。
 `RefreshControl`の`refreshing`に`refreshing || backgroundSyncing`としてORで足す。
 `runRefresh`自身の`refreshing`・既存の`onSyncComplete`ハンドラには一切変更なし。
 
-tsc・lint・テスト20件とも通過。**実機検証はこれから**（特に、起動直後に同期が
-既に走っている状態を意図的に再現できるか）。
+tsc・lint・テスト20件とも通過。
+
+**OTA配信（2026-09-18）**: JSのみの変更（`7ca951a`）のため公開済みv1.5.2へ配信。
+  - iOS: Update Group `1bfed59a-a789-478f-b5d5-da9068eec762`
+  - Android: Update Group `10cda1d0-24a2-4242-a12e-7aadcc9b1e26`
+
+**実機検証（2026-09-18、完了）**: 起動直後に同期が走っている状態でのスピナー表示、
+既存の手動更新（トースト・スクロールのタイミング含む）とも問題なし。
 
 ---
 
