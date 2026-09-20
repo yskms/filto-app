@@ -39,6 +39,8 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
         await seedDefaultFeeds(language === 'ja' ? 'ja' : 'en');
         await AsyncStorage.setItem(StorageKeys.onboardingCompleted, 'true');
         // 記事を取得（オフライン等で失敗しても先へ進める）。
+        // オンボーディング専用の進捗UIで先へ進めるため、notify は渡さない
+        // （既定 false ＝ 通知しない。ホーム画面がまだ無く、出しても見えない）
         try {
           await SyncService.refresh();
         } catch {

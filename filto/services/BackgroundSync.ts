@@ -15,6 +15,20 @@ import { ensureDatabaseInitialized } from '@/database/init';
  * 中身は既存の SyncService.refresh() を呼ぶだけ。UI 非依存で headless で動く。
  * refresh() は lastSyncTime を更新するため、バックグラウンド更新も手動更新の
  * クールダウン（最低更新間隔）にカウントされる（＝仕様どおり）。WiFiのみ設定も尊重する。
+ *
+ * 【実測知見】OSのスケジューラ都合で、本タスクが「アプリを裏に回している間」に
+ * 実際に発火することは稀（実機を2週間ヘビーに使った範囲ではほぼ観測されない）。
+ * 主に発生するのは「しばらく（30分以上）裏に置いてから前面に戻した直後」に
+ * 走るケースで、この時点ではアプリのJSランタイムはまだ（または既に）生きている
+ * ため、SyncLock 経由でホーム側の onSyncComplete / onRefreshingChange が正しく
+ * 機能する（SyncLock.ts 参照）。つまり「アプリを閉じたまま裏でOSが本当にheadless
+ * に実行する」ケースは実際にはレアで、実運用上の主経路は「前面復帰直後に走る」方。
+ *
+ * refresh({ notify: true }) を渡しているため、上記の主経路（JSランタイムが生きている
+ * 状態での完了）ではホームの onSyncComplete が完了トースト（成功/失敗とも）を出す。
+ * 真にヘッドレスな実行（アプリ完全終了後にOSが別プロセスで動かす、レアなケース）は
+ * ホーム側のリスナー自体が存在しないためトーストは出しようがない（次にアプリを
+ * 開いた時点で新着として表示されるのみ）。
  */
 
 const BACKGROUND_FETCH_TASK = 'filto-background-fetch';
@@ -38,7 +52,7 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     // ensure 版を使うのは、UI と同じランタイムで動く場合に接続の作り直しと
     // DDL の再実行を30分ごとに繰り返さないため。
     await ensureDatabaseInitialized();
-    await SyncService.refresh();
+    await SyncService.refresh({ notify: true });
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (_) {
     return BackgroundTask.BackgroundTaskResult.Failed;

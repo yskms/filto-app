@@ -441,7 +441,8 @@ export default function DataManagementScreen() {
               await SyncService.runExclusive(async () => {
                 await resetFeedsToDefault(language === 'ja' ? 'ja' : 'en');
               });
-              // 新しいデフォルトフィードの記事を取得（明示操作なので WiFi 限定は無視）
+              // 新しいデフォルトフィードの記事を取得（明示操作なので WiFi 限定は無視）。
+              // 直後に完了Alertを出すので、notify は渡さない（既定 false ＝ 通知しない）
               await SyncService.refresh({ ignoreWifiOnly: true });
               Alert.alert(t('common.done'), t('dataManagement.resetFeedsComplete'));
             } catch {

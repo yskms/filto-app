@@ -49,11 +49,25 @@ export const SyncService = {
    * 同期完了リスナー。UI が「走行中の同期が終わったらDBを読み直す」ために購読する。
    * 起動直後の自動同期やバックグラウンド同期がアプリのJSランタイム内で走ると、
    * ホームはそれが終わる前に描画されるため、完了を通知して再読込させる。
+   *
+   * notify は呼び出し側（refresh の options.notify）から素通しした値で、UIはこれを
+   * 見て「この完了を自分でトーストすべきか」を判断する（下記 onSyncComplete 参照）。
+   * 既定は false ＝ 通知しない。呼び出し側5箇所のうち4箇所（手動更新・データ
+   * リセット・オンボーディング関連）は既に自前のフィードバックを持つため、
+   * 「付け忘れ」の失敗モードを多数派の false 側＝「トーストが出ないだけ」に
+   * 倒している（true を付け忘れると二重トーストになる設計は事故りやすいため避けた）。
+   *
+   * failed は「新着0件の正常完了」と「取得に失敗した」を区別するためのフラグ。
+   * 例外で終わった回・全フィードが1件も取得できなかった回で true になる。
    */
-  _syncCompleteListeners: new Set<(info: { newArticles: number }) => void>(),
+  _syncCompleteListeners: new Set<(info: { newArticles: number; notify: boolean; failed: boolean }) => void>(),
 
-  /** 同期完了通知を購読する。戻り値の関数で解除。 */
-  onSyncComplete(listener: (info: { newArticles: number }) => void): () => void {
+  /**
+   * 同期完了通知を購読する。戻り値の関数で解除。
+   * notify:true の回だけUI側でトーストすることを想定している
+   * （呼び出し側が既に自前のフィードバックを出す場合は notify を渡さない＝既定false）。
+   */
+  onSyncComplete(listener: (info: { newArticles: number; notify: boolean; failed: boolean }) => void): () => void {
     this._syncCompleteListeners.add(listener);
     return () => {
       this._syncCompleteListeners.delete(listener);
@@ -61,7 +75,7 @@ export const SyncService = {
   },
 
   /** 完了をリスナーへ通知（1つのリスナーの例外が他へ波及しないよう握りつぶす） */
-  _emitSyncComplete(info: { newArticles: number }): void {
+  _emitSyncComplete(info: { newArticles: number; notify: boolean; failed: boolean }): void {
     this._syncCompleteListeners.forEach((listener) => {
       try {
         listener(info);
@@ -179,17 +193,24 @@ export const SyncService = {
   /**
    * 全フィードを同期
    * @param options.ignoreWifiOnly 「WiFi接続時のみ取得」設定を無視する（手動更新など明示操作で使う）
+   * @param options.notify 完了時（成功・失敗いずれも）に onSyncComplete 経由でUIに自動
+   *   トーストを出させる。呼び出し側が自前のフィードバック（トースト・Alert・専用の
+   *   進捗UI）を持たない場合にだけ true を渡す。既定は false（何も通知しない）。
    * @returns 取得成功フィード数と新規記事数。オフライン時は offline: true、
    *          WiFi限定設定でモバイル回線のためスキップした場合は skippedNotWifi: true、
-   *          他の同期や復元・リセットが実行中で開始できなかった場合は busy: true
+   *          他の同期や復元・リセットが実行中で開始できなかった場合は busy: true、
+   *          フィードが1件以上あるのに1件も取得できなかった場合は allFeedsFailed: true
+   *          （例外は投げず newArticles: 0 の「成功」として返るため、回線不安定時の
+   *          誤った「同期完了」表示を避けたい呼び出し側はこれを見ること）
    */
-  async refresh(options?: { ignoreWifiOnly?: boolean }): Promise<{
+  async refresh(options?: { ignoreWifiOnly?: boolean; notify?: boolean }): Promise<{
     fetched: number;
     newArticles: number;
     deleted?: number;
     offline?: boolean;
     skippedNotWifi?: boolean;
     busy?: boolean;
+    allFeedsFailed?: boolean;
   }> {
     // ネットワーク接続チェック
     // isConnected / isInternetReachable は boolean | null のため、
@@ -295,11 +316,29 @@ export const SyncService = {
         // 未採番の記事を表示できないまま「更新した（けど何も増えない）」状態になる。
         await ArticleRepository.assignDisplayOrders();
 
+        // フィードが1件以上あるのに1件も取得できなかった場合、新着0件は「正常完了」
+        // ではなく「取得失敗」として扱う。フィード単位のエラーは上のworker内で握り
+        // つぶされ例外にならないため、ここで検知しないと回線不安定時に「同期完了」
+        // という誤った成功表示になってしまう（背景同期が自動でトーストを出す今の
+        // 仕組みでは、手動更新と違い誤報に気づいた本人が押した操作ではないため実害が大きい）
+        const allFeedsFailed = feeds.length > 0 && fetched === 0;
+
         // 採番が終わってから完了を通知する（購読中のホーム等がDBを読み直す）
-        this._emitSyncComplete({ newArticles });
-        return { fetched, newArticles, deleted: deletedCount };
+        this._emitSyncComplete({ newArticles, notify: options?.notify === true, failed: allFeedsFailed });
+        return { fetched, newArticles, deleted: deletedCount, allFeedsFailed };
       }
       return { fetched, newArticles };
+    } catch (error) {
+      // 例外で終わった回（assignDisplayOrders の失敗等）は、スピナー
+      // （onRefreshingChange）だけが動いて消え、何も知らせずに終わっていた。
+      // notify:true の呼び出し元にだけ「失敗」を伝える（notify:false の呼び出し元は
+      // 自前の catch で処理する想定のため、ここでは二重に知らせない）。
+      // generation が変わっている場合はリセット等による意図的な中断なので、
+      // ここでの失敗とは別物として扱わない（何も通知しない）。
+      if (this.generation === gen) {
+        this._emitSyncComplete({ newArticles: 0, notify: options?.notify === true, failed: true });
+      }
+      throw error;
     } finally {
       // 成功・失敗・キャンセルいずれでも必ずここを通る。release() の後に通知する
       // ことで、通知を受け取った側が isRefreshing を確認しても矛盾が無いようにする

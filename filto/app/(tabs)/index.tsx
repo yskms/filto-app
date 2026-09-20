@@ -904,19 +904,43 @@ export default function HomeScreen() {
   // 終わる前に描画されるため新着が出ない（別タブに移動して戻ると反映される現象）。
   // 同期の完了通知を購読し、終わった時点でDBを読み直す。loadData(false) なので
   // 一覧を隠すスピナーは出ず、スクロール位置も保持される（下の backgroundSyncing
-  // による非ブロッキングの上部スピナーとは別軸）。
+  // による非ブロッキングの上部スピナーとは別軸）。失敗時（failed）もあえて
+  // reload だけは行う。DBが更新されている可能性（deleteOldArticlesAuto 等）を
+  // 拾うためで、新着が実際に無ければ見た目には何も変わらない安全な操作
+  //（余計なフィールドを増やすより、この1回無駄なreloadを許容する方を選んだ）。
+  //
+  // notify:true で完了した回はここでトーストも出す。以前はここで一切表示しておらず
+  // 「背景で新着が反映されたのに気づけない」という報告があった。notify を渡さない
+  // 呼び出し（runRefresh・データリセット・オンボーディング関連）は、それぞれ自前の
+  // フィードバックを別途出すため、ここでは何もしない（トーストが二重に出るのを防ぐ）。
+  //
+  // failed:true（例外で終わった回、または1件もフィードを取得できなかった回）は
+  // 「同期完了」ではなく取得失敗のトーストにする。以前はスピナーが消えるだけで
+  // 何も知らせない場合があった（成功時のみ通知する設計だったため）。
   React.useEffect(() => {
-    const unsubscribe = SyncService.onSyncComplete(({ newArticles }) => {
+    const unsubscribe = SyncService.onSyncComplete(({ newArticles, notify, failed }) => {
       loadDataRef.current(false, loadedArticleCountRef.current + newArticles);
+      if (!notify) return;
+      if (failed) {
+        showToast(t('home.errorFetchingFeeds'), 'error');
+      } else {
+        showToast(
+          newArticles > 0
+            ? t('home.newArticles', { count: newArticles })
+            : t('home.syncComplete'),
+          'success'
+        );
+      }
     });
     return unsubscribe;
-  }, []);
+  }, [showToast, t]);
 
   // runRefresh を経由しない同期（起動直後の自動同期・バックグラウンドタスク）が
   // 実行中であることを、非ブロッキングの上部スピナー（RefreshControl）で示す。
-  // onSyncComplete（成功時のみ発火、新着の反映用）とは別に、開始/終了のたびに
-  // 必ず発火する onRefreshingChange を使う。成功時イベントだけに頼ると、同期が
-  // 例外で終わった回はスピナーが消えなくなるため。
+  // onSyncComplete（新着の反映・完了トースト用）とは別に、開始/終了のたびに必ず
+  // 発火する onRefreshingChange を使う。onSyncComplete は世代がリセットで変わった
+  // 回（キャンセル）では発火しないため、そちらだけに頼るとスピナーが消えない
+  // ケースが残る。
   //
   // 購読は「今後の変化」しか拾えないため、マウント時点で既に同期中のことがある
   // （起動直後に同期が走っている最中、等）。購読と同時に isRefreshing を直接
@@ -951,7 +975,8 @@ export default function HomeScreen() {
         // しない（例外的なケースのため、次回は通常起動とする）。フラグは先に消す。
         await AsyncStorage.removeItem(StorageKeys.pendingInitialFetch);
         // 全フィードの取得・保存が終わるまで待つ（SyncService.refresh は順次処理）。
-        // オフライン時のダイアログはオンボーディング完了時に出すため、ここでは出さない
+        // オフライン時のダイアログはオンボーディング完了時に出すため、ここでは出さない。
+        // 同じ理由でトーストも不要なので notify は渡さない（既定 false ＝ 通知しない）
         await SyncService.refresh();
         await loadDataRef.current(false);
         setHasAutoSynced(true);
@@ -1072,7 +1097,8 @@ export default function HomeScreen() {
       setRefreshing(true);
       const articleCountBeforeRefresh = loadedArticleCountRef.current;
 
-      // RSS同期を実行（手動更新は明示操作なのでWiFi限定設定を無視して必ず取得）
+      // RSS同期を実行（手動更新は明示操作なのでWiFi限定設定を無視して必ず取得）。
+      // トーストはこの下で自前に出すため notify は渡さない（既定 false ＝ 通知しない）
       const result = await SyncService.refresh({ ignoreWifiOnly: true });
 
       if (result.offline) {
@@ -1091,14 +1117,21 @@ export default function HomeScreen() {
       // データを再読み込み（RefreshControlが既にスピナーを出すので再マウントしない）
       await loadData(false, articleCountBeforeRefresh + result.newArticles);
 
-      // 明示的な手動更新にだけ結果を通知する。起動直後・バックグラウンド同期では
-      // ユーザー操作と無関係にトーストが出ないよう、完了イベント側では表示しない。
-      showToast(
-        result.newArticles > 0
-          ? t('home.newArticles', { count: result.newArticles })
-          : t('home.syncComplete'),
-        'success'
-      );
+      // 手動更新の結果を通知する。SyncService.refresh に notify を渡していないため
+      // 上の onSyncComplete 側の自動トースト（背景同期用）は発火せず、二重表示にはならない。
+      // allFeedsFailed（フィードはあるのに1件も取得できなかった）は例外を投げず
+      // newArticles:0 の「成功」として返ってくるため、ここで見分けて誤った
+      // 「同期完了」表示にしない。
+      if (result.allFeedsFailed) {
+        showToast(t('home.errorFetchingFeeds'), 'error');
+      } else {
+        showToast(
+          result.newArticles > 0
+            ? t('home.newArticles', { count: result.newArticles })
+            : t('home.syncComplete'),
+          'success'
+        );
+      }
 
       if (scrollToTopOnComplete) {
         // 上から下スワイプ（プルリフレッシュ）は、ジェスチャ自体が先頭付近でしか
