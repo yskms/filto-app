@@ -18,7 +18,6 @@ canvas_w=1290
 canvas_h=2796
 shot_w=1170
 corner=40
-shot_y=610
 
 mkdir -p "$en_dir" "$ja_dir"
 
@@ -32,16 +31,27 @@ make_slide() {
   local font_reg="$7"
   local headline_size="${8:-92}"
   local subhead_size="${9:-46}"
+  local headline_color="${10:-#11181C}"
+  local subhead_color="${11:-#55636B}"
+  local border_color="${12:-}"
+
+  # 見出しが1行だけの場合、2行分の高さを前提にした補足コピーの固定位置(470)では
+  # 見出しと補足の間が間延びするため、行数に応じて詰める。
+  local subhead_y=470
+  if [[ "$headline" != *$'\n'* ]]; then
+    subhead_y=$(( 140 + (headline_size * 12 / 10) + 70 ))
+  fi
+  local shot_y=$(( subhead_y + (subhead_size * 12 / 10) + 85 ))
 
   local base="$asset_dir/.tmp-base.png"
   local rounded="$asset_dir/.tmp-rounded.png"
   local shadowed="$asset_dir/.tmp-shadowed.png"
 
   magick -size ${canvas_w}x${canvas_h} xc:"$bg" \
-    -font "$font_bold" -fill '#11181C' -pointsize "$headline_size" -gravity north \
+    -font "$font_bold" -fill "$headline_color" -pointsize "$headline_size" -gravity north \
     -interline-spacing 14 -annotate +0+140 "$headline" \
-    -font "$font_reg" -fill '#55636B' -pointsize "$subhead_size" -gravity north \
-    -annotate +0+470 "$subhead" \
+    -font "$font_reg" -fill "$subhead_color" -pointsize "$subhead_size" -gravity north \
+    -annotate +0+${subhead_y} "$subhead" \
     "$base"
 
   magick "$input" -resize ${shot_w}x \
@@ -50,6 +60,13 @@ make_slide() {
        \( +clone -flop \) -compose Multiply -composite \
     \) -alpha off -compose CopyOpacity -composite \
     "$rounded"
+
+  if [[ -n "$border_color" ]]; then
+    read -r shot_rw shot_rh <<< "$(magick identify -format '%w %h' "$rounded")"
+    magick "$rounded" -fill none -stroke "$border_color" -strokewidth 2 \
+      -draw "roundrectangle 1,1 $((shot_rw - 2)),$((shot_rh - 2)) $corner,$corner" \
+      "$rounded"
+  fi
 
   magick "$rounded" \( +clone -background black -shadow 30x25+0+18 \) +swap \
     -background none -layers merge +repage \
@@ -65,6 +82,10 @@ make_slide() {
 
 bg_brand='#D8ECF1'
 bg_accent='#FBE0D0'
+bg_dark='#101820'
+fg_dark_headline='#F5F7F8'
+fg_dark_subhead='#A9B4BA'
+border_dark='#2A343C'
 
 make_slide "$src_dir/ss_home_.png" "$en_dir/01-less-noise.png" \
   $'Less noise.\nMore of what matters.' \
@@ -91,6 +112,11 @@ make_slide "$src_dir/ss_home_bigpic.png" "$en_dir/05-read-your-way.png" \
   'Choose the layout that feels right.' \
   "$bg_brand" "$font_en_bold" "$font_en_reg"
 
+make_slide "$src_dir/ss_home_dark.png" "$en_dir/06-easy-on-the-eyes.png" \
+  'Easy on the eyes.' \
+  'Comfortable reading, day or night.' \
+  "$bg_dark" "$font_en_bold" "$font_en_reg" 92 46 "$fg_dark_headline" "$fg_dark_subhead" "$border_dark"
+
 make_slide "$src_dir/ss_home_jp.png" "$ja_dir/01-less-noise.png" \
   $'読みたい記事だけ、\nもっと快適に。' \
   '読みたくない記事を自動でフィルタ。' \
@@ -115,3 +141,8 @@ make_slide "$src_dir/ss_home_bigpic_jp.png" "$ja_dir/05-read-your-way.png" \
   $'読み方も、\n自分好みに。' \
   '見やすいレイアウトに切り替え。' \
   "$bg_brand" "$font_ja_bold" "$font_ja_reg" 84 42
+
+make_slide "$src_dir/ss_home_dark_jp.png" "$ja_dir/06-easy-on-the-eyes.png" \
+  '目にやさしく、読みやすく。' \
+  '昼も夜も、快適に読めます。' \
+  "$bg_dark" "$font_ja_bold" "$font_ja_reg" 84 42 "$fg_dark_headline" "$fg_dark_subhead" "$border_dark"
