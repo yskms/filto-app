@@ -113,7 +113,7 @@ make_slide "$src_dir/ss_home_bigpic.png" "$en_dir/05-read-your-way.png" \
   "$bg_brand" "$font_en_bold" "$font_en_reg"
 
 make_slide "$src_dir/ss_home_dark.png" "$en_dir/06-easy-on-the-eyes.png" \
-  'Easy on the eyes.' \
+  $'Easy on\nthe eyes.' \
   'Comfortable reading, day or night.' \
   "$bg_dark" "$font_en_bold" "$font_en_reg" 92 46 "$fg_dark_headline" "$fg_dark_subhead" "$border_dark"
 
@@ -143,6 +143,6 @@ make_slide "$src_dir/ss_home_bigpic_jp.png" "$ja_dir/05-read-your-way.png" \
   "$bg_brand" "$font_ja_bold" "$font_ja_reg" 84 42
 
 make_slide "$src_dir/ss_home_dark_jp.png" "$ja_dir/06-easy-on-the-eyes.png" \
-  '目にやさしく、読みやすく。' \
+  $'目にやさしく、\n読みやすく。' \
   '昼も夜も、快適に読めます。' \
   "$bg_dark" "$font_ja_bold" "$font_ja_reg" 84 42 "$fg_dark_headline" "$fg_dark_subhead" "$border_dark"
