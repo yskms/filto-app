@@ -4,8 +4,12 @@
 export const en = {
   // First launch
   firstRun: {
+    welcome: 'Welcome',
     title: 'Less noise. More reading.',
     caption: "Hide articles and sites you don't want to see with a swipe or a long press.",
+    start: 'Get Started',
+    next: 'Next',
+    skip: 'Skip',
     preparing: 'Preparing your articles...',
     ready: 'Ready!',
   },

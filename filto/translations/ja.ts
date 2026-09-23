@@ -4,8 +4,12 @@
 export const ja = {
     // 初回起動
     firstRun: {
+      welcome: 'ようこそ',
       title: '読みたいものだけ、残そう。',
       caption: '興味のない記事やサイトは、スワイプや長押しで簡単に非表示にできます。',
+      start: 'はじめる',
+      next: '次へ',
+      skip: 'スキップ',
       preparing: '記事を準備しています...',
       ready: '準備ができました',
     },
