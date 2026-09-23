@@ -1387,6 +1387,44 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
 ---
 
+### 初回起動画面を「ようこそ→ストアスクショ→準備完了待ち」のステップ形式に刷新（2026-09-23）
+
+- **経緯**: 旧`FirstRunScreen`はGIFアニメーション（`onboarding-hide.webp`）を見せるだけの
+  単一画面だった。ちょうど作成済みのストア用スクリーンショット（`docs/05_store/
+  store_screenshots/`、EN/JA各6枚、見出し・補足コピー焼き込み済み）があったため、
+  これをそのままオンボーディングのスライドとして再利用する形に刷新した。
+- **フロー**: ①ようこそ画面（ロゴ＋既存の`firstRun.title`/`caption`コピーを流用）
+  → ②ストア用スクショ6枚を「次へ」で1枚ずつ、中央のカードに収めて表示
+  （進捗バー左に「戻る」、右に「スキップ」で最終画面へ直行可）
+  → ③準備完了待ち画面（`loading-illustration.png`＋スピナー/「準備中」→
+  完了後チェックマーク＋「はじめる」）。
+- **裏側の読み込みとの分離**: `seedDefaultFeeds()`→`SyncService.refresh()`は
+  ステップ表示とは独立して初回マウント時から並行して走らせる。スクショを
+  見ている間に完了させておき、③の待機画面は読み込み完了（`ready`）まで
+  先へ進めない（スキップしても③自体はスキップされない）。
+- **アセット**: `docs/05_store/store_screenshots/{ja-JP,en-US}/*.png`（各1290×2796、
+  合計約2.3MB×2言語）を`cwebp -q 82`でWebP変換し`filto/assets/onboarding/{ja,en}/`
+  に配置（変換後は12枚合計で約2.4MB。旧`onboarding-hide.webp`/`-en.webp`は削除）。
+- **翻訳キー**: `firstRun`に`welcome`/`start`/`next`/`skip`を追加。既存の
+  `title`/`caption`/`preparing`/`ready`はそのまま流用。
+- **スクショ画面のレイアウト**: 当初は全画面(`cover`)表示にしていたが、
+  レビューで「画面中央のカードに収めて、進捗バーと次へボタンの間におさまるように」
+  と指摘があり、`contain`表示＋カード枠（既存の`cardBg`パターン）に変更した。
+- **ネイティブビルドの副産物（このタスクで踏んだ罠）**:
+  実機確認のため`expo run:android`でローカルビルドしたところ、JS/アセットのみの
+  変更にもかかわらずAdMobの`APPLICATION_ID`不正で起動直後にクラッシュした。
+  原因は今回の変更ではなく、ローカルの`android/`フォルダ（gitignore対象・
+  自動生成物）が2026年6月生成のまま3ヶ月分の`app.json`変更（AdMob設定含む）に
+  追従しておらず陳腐化していたため。`expo prebuild --platform android --clean`で
+  作り直して解消。**`android/`が既に存在する状態で`app.json`のネイティブ設定
+  （config plugin等）を変更した場合、`expo run:android`は自動で追従しない**
+  ため、挙動が怪しい時はまず`android/`の生成日時とapp.jsonの更新日時を
+  比較すること。
+  → `/Users/yskms/.claude/CLAUDE.md`「ローカル開発環境」にnice/gradle.propertiesの
+  CPU負荷対策も追記済み。
+
+---
+
 ## 既知の不具合
 
 ### ホームが全記事を同期APIでJSに載せる（LIMITなし）（2026-09-01検出 → 2026-09-13解消）

@@ -109,6 +109,14 @@
 - JSのみの変更は `eas update` でOTA配信できる（審査不要）。ただし
   `--platform ios` と `android` は個別に実行すること（同時実行だとweb向け
   wasmビルドで失敗することがある）。
+- ローカルの `filto/android/`（gitignore対象・`expo prebuild` の自動生成物）は、
+  存在している限り `expo run:android` を実行しても自動では作り直されない。
+  `app.json` のネイティブ設定（config plugin等、例: AdMobの`androidAppId`）を
+  変更した後にローカルビルドすると、その変更が反映されないまま古い設定で
+  ビルド・起動してしまう（実際にAdMobの`APPLICATION_ID`不正で起動直後に
+  クラッシュした事例あり）。ローカルビルドで原因不明の挙動に当たったら、まず
+  `android/`の生成日時と`app.json`の更新日時を比較し、古ければ
+  `expo prebuild --platform android --clean` で作り直してからビルドし直すこと。
 
 ## ドキュメントの置き場所
 
