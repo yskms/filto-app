@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Filto（フィルト）— Decide What You Read, Not an Algorithm</title>
+    <meta name="description" content="Filto is an RSS reader where you decide what you read, not an algorithm. Mute topics with keywords, hide articles or sites as you read, and shape a feed that fits you.">
+    <meta name="theme-color" content="#081920">
+
+    <link rel="icon" href="assets/images/favicon.png">
+    <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="ja_JP">
+    <meta property="og:site_name" content="Filto">
+    <meta property="og:url" content="https://yskms.github.io/filto-app/">
+    <meta property="og:title" content="Filto — See less of what you don't want.">
+    <meta property="og:description" content="An RSS reader where you decide what you read, not an algorithm. Mute topics with keywords, and hide articles or sites as you read.">
+    <meta property="og:image" content="https://yskms.github.io/filto-app/assets/images/app-icon-512.png">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Filto — See less of what you don't want.">
+    <meta name="twitter:description" content="An RSS reader where you decide what you read, not an algorithm. Mute topics with keywords, and hide articles or sites as you read.">
+    <meta name="twitter:image" content="https://yskms.github.io/filto-app/assets/images/app-icon-512.png">
+
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('filto-lang');
+          if (saved === 'ja' || saved === 'en') {
+            document.documentElement.setAttribute('data-lang', saved);
+            document.documentElement.setAttribute('lang', saved);
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #081920;
+        --surface: rgb(255 255 255 / 4%);
+        --surface-strong: rgb(255 255 255 / 7%);
+        --text: #f3f7f6;
+        --muted: #9db4ba;
+        --border: rgb(255 255 255 / 10%);
+        --teal: #14cdd6;
+        --green: #1ed8a3;
+        --gradient: linear-gradient(90deg, var(--teal), var(--green));
+      }
+
+      * { box-sizing: border-box; }
+
+      html[data-lang="en"] [data-i18n="ja"] { display: none !important; }
+      html[data-lang="ja"] [data-i18n="en"] { display: none !important; }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 12% -12%, rgb(20 205 214 / 22%) 0, transparent 42rem),
+          radial-gradient(circle at 92% 4%, rgb(30 216 163 / 16%) 0, transparent 38rem),
+          var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Segoe UI", Roboto, sans-serif;
+        line-height: 1.7;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      main {
+        width: min(980px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      a { color: var(--teal); }
+
+      img { max-width: 100%; display: block; }
+
+      section { padding: 72px 0; }
+
+      /* ---------- Language switch ---------- */
+      .lang-switch {
+        position: fixed;
+        top: 18px;
+        right: 18px;
+        z-index: 50;
+        display: inline-flex;
+        padding: 3px;
+        gap: 2px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgb(8 22 28 / 78%);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+      .lang-btn {
+        appearance: none;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 7px 13px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .lang-btn[aria-pressed="true"] {
+        background: var(--gradient);
+        color: #06181d;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 20px;
+        padding: 6px 14px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 0.85rem;
+        letter-spacing: 0.02em;
+      }
+
+      h1, h2, h3 { line-height: 1.3; margin: 0; }
+      h1 { font-size: clamp(2.1rem, 5.2vw, 3.4rem); letter-spacing: -0.01em; }
+      h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 12px; }
+      h3 { font-size: 1.1rem; margin-bottom: 8px; }
+      p { margin: 0 0 16px; }
+      p:last-child { margin-bottom: 0; }
+
+      .accent {
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .lead {
+        color: var(--text);
+        font-size: 1.15rem;
+        max-width: 46ch;
+      }
+
+      /* ---------- Hero ---------- */
+      .hero {
+        padding: 72px 0 40px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 48px;
+        align-items: center;
+      }
+      .hero-art img {
+        width: 260px;
+        height: 260px;
+        aspect-ratio: 1 / 1;
+        border-radius: 58px;
+        box-shadow: 0 24px 64px rgb(0 0 0 / 40%);
+        margin: 0 auto;
+      }
+      .store-badges {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px;
+        margin-top: 28px;
+      }
+      .store-badges img { width: auto; display: block; }
+      .store-badges img.badge-apple { height: 44px; }
+      .store-badges img.badge-google { height: 65px; }
+      .store-badges img.badge-google-ja { height: 57px; }
+      .store-badges a { display: inline-flex; line-height: 0; transition: opacity 0.15s ease; }
+      .store-badges a:hover { opacity: 0.82; }
+      .hero-note { margin-top: 16px; color: var(--muted); font-size: 0.88rem; }
+
+      /* ---------- Section headings ---------- */
+      .section-head { max-width: 56ch; margin-bottom: 40px; }
+      .section-head h2 { margin-bottom: 10px; }
+      .section-head p { color: var(--muted); }
+
+      /* ---------- Feature grid ---------- */
+      .features {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+      .feature-card {
+        padding: 28px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--surface);
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      }
+      .feature-card:hover {
+        transform: translateY(-3px);
+        border-color: rgb(255 255 255 / 20%);
+        background: var(--surface-strong);
+      }
+      .feature-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, rgb(20 205 214 / 18%), rgb(30 216 163 / 18%));
+        border: 1px solid rgb(255 255 255 / 12%);
+      }
+      .feature-icon svg { width: 22px; height: 22px; stroke: var(--teal); }
+      .feature-card p { color: var(--muted); font-size: 0.96rem; }
+
+      /* ---------- Showcase ---------- */
+      .showcase {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.62fr);
+        gap: 48px;
+        align-items: center;
+        padding: 40px;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        background: var(--surface);
+      }
+      .showcase p { color: var(--muted); }
+      .showcase-frame {
+        justify-self: center;
+        padding: 14px;
+        background: #0c242c;
+        border: 1px solid var(--border);
+        border-radius: 32px;
+        box-shadow: 0 24px 60px rgb(0 0 0 / 35%);
+      }
+      .showcase-frame img {
+        border-radius: 20px;
+        width: 200px;
+        height: auto;
+        aspect-ratio: 415 / 900;
+      }
+
+      /* ---------- Chips ---------- */
+      .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+      .chip {
+        padding: 8px 16px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      /* ---------- Final CTA ---------- */
+      .cta {
+        text-align: center;
+        padding: 56px 40px;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        background: var(--surface);
+      }
+      .cta .store-badges { justify-content: center; margin-top: 24px; }
+
+      /* ---------- Footer ---------- */
+      footer {
+        padding: 40px 0 64px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      footer .brand { display: flex; align-items: center; gap: 10px; color: var(--text); }
+      footer .brand img { height: 22px; width: auto; }
+      footer nav { display: flex; flex-wrap: wrap; gap: 20px; }
+      footer nav a { color: var(--muted); text-decoration: none; }
+      footer nav a:hover { color: var(--text); }
+      footer .copyright { width: 100%; margin-top: 24px; font-size: 0.82rem; opacity: 0.75; }
+
+      @media (max-width: 760px) {
+        section { padding: 52px 0; }
+        .lang-switch { top: 14px; right: 14px; }
+        .hero { padding-top: 72px; grid-template-columns: minmax(0, 1fr); text-align: center; }
+        .hero-art img { margin: 0 auto; }
+        .lead { max-width: none; margin-left: auto; margin-right: auto; }
+        .store-badges { justify-content: center; }
+        .features { grid-template-columns: 1fr; }
+        .showcase { grid-template-columns: minmax(0, 1fr); text-align: center; padding: 28px; }
+        .showcase-frame { order: -1; }
+        .cta { padding: 40px 24px; }
+        footer { flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="lang-switch" role="group" aria-label="Language / 言語">
+      <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="true">EN</button>
+      <button type="button" class="lang-btn" data-lang-btn="ja" aria-pressed="false">日本語</button>
+    </div>
+
+    <main>
+      <header class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow" data-i18n="en">RSS Reader · Filto</span>
+          <span class="eyebrow" data-i18n="ja" lang="ja">RSSリーダー Filto</span>
+
+          <h1 data-i18n="en">See less of<br>what you <span class="accent">don't want.</span></h1>
+          <h1 data-i18n="ja" lang="ja">見たくない話題は、<br><span class="accent">見ない。</span></h1>
+
+          <p class="lead" data-i18n="en">Filto is an RSS reader that lets you decide what to read—instead of leaving it to an algorithm. Mute topics with keywords, and shape a feed that fits you as you read.</p>
+          <p class="lead" data-i18n="ja" lang="ja">アルゴリズムに「何を読むか」を決めてもらうのではなく、自分で読むものを自分で決める。キーワードで非表示にしながら、自分に合うフィードを少しずつ育てられます。</p>
+
+          <nav class="store-badges" aria-label="Download">
+            <a data-i18n="en" href="https://apps.apple.com/app/filto/id6763070121">
+              <img class="badge-apple" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store">
+            </a>
+            <a data-i18n="ja" lang="ja" href="https://apps.apple.com/jp/app/filto/id6763070121">
+              <img class="badge-apple" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="App Storeからダウンロード">
+            </a>
+            <a data-i18n="en" href="https://play.google.com/store/apps/details?id=com.yskms.filto&amp;hl=en">
+              <img class="badge-google" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play">
+            </a>
+            <a data-i18n="ja" lang="ja" href="https://play.google.com/store/apps/details?id=com.yskms.filto&amp;hl=ja">
+              <img class="badge-google-ja" src="https://play.google.com/intl/ja/badges/static/images/badges/ja_badge_web_generic.png" alt="Google Playで手に入れよう">
+            </a>
+          </nav>
+
+          <p class="hero-note" data-i18n="en">Free to download on iOS and Android. No account required.</p>
+          <p class="hero-note" data-i18n="ja" lang="ja">iOS / Android対応・無料でダウンロード。アカウント登録は不要です。</p>
+          <p class="hero-note" data-i18n="en">Free includes up to 10 filters. Filto Pro removes ads and unlocks higher limits.</p>
+          <p class="hero-note" data-i18n="ja" lang="ja">無料版はフィルタ10件まで登録できます。Filto Proで広告オフ・上限解除。</p>
+        </div>
+        <div class="hero-art">
+          <img src="assets/images/app-icon-hero.webp" alt="Filto app icon" width="560" height="560">
+        </div>
+      </header>
+
+      <section class="showcase-section">
+        <div class="showcase">
+          <div>
+            <h2 data-i18n="en">A quieter feed,<br>shaped by you.</h2>
+            <h2 data-i18n="ja" lang="ja">少し静かな、<br>自分だけのフィードに。</h2>
+            <p data-i18n="en">Only the sources you follow — filtered by your own rules. When a filter catches something it just disappears, with a quick count showing how much it's doing.</p>
+            <p data-i18n="ja" lang="ja">並ぶのは、自分が選んだフィードの記事だけ。フィルタが効いた記事は自動で消え、「n件を非表示にしました」の表示で効き具合もひと目で分かります。</p>
+          </div>
+          <div class="showcase-frame">
+            <img src="assets/images/screenshot-home.webp" alt="Filto's home screen showing 19 articles hidden by filters" width="415" height="900">
+          </div>
+        </div>
+      </section>
+
+      <section class="features" aria-label="Key features">
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="8"></circle>
+              <line x1="6.3" y1="6.3" x2="17.7" y2="17.7"></line>
+            </svg>
+          </div>
+          <h3 data-i18n="en">Mute topics by keyword</h3>
+          <h3 data-i18n="ja" lang="ja">見たくない話題を、キーワードで非表示</h3>
+          <p data-i18n="en">Just like muting words on social media, add names of people, shows, or companies you don't want to see — matching articles disappear from your feed.</p>
+          <p data-i18n="ja" lang="ja">SNSでミュートするように、興味のない人物・番組・企業名などのキーワードを登録すると、それを含む記事がフィードから消えます。</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 12.5l3.8 3.8L18 8"></path>
+            </svg>
+          </div>
+          <h3 data-i18n="en">Keep the exceptions you want</h3>
+          <h3 data-i18n="ja" lang="ja">見たい話題は、例外として残せる</h3>
+          <p data-i18n="en">Add exceptions to your filters — hide sports news, but keep Formula 1. Hide politics, but keep tech policy.</p>
+          <p data-i18n="ja" lang="ja">「スポーツは非表示、でもF1だけは読む」。許可キーワードで、ブロックの中にも読みたい話題を残しておけます。</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6l6 6-6 6"></path>
+              <path d="M14 6l6 6-6 6"></path>
+            </svg>
+          </div>
+          <h3 data-i18n="en">Shape your feed as you read</h3>
+          <h3 data-i18n="ja" lang="ja">読みながら、フィードを育てる</h3>
+          <p data-i18n="en">Swipe an article to hide it, or hide an entire site with a long press. Changed your mind? Restore it anytime.</p>
+          <p data-i18n="ja" lang="ja">ルールを作るだけでなく、読みながら「これはいらない」と思った記事やサイトをその場で非表示に。間違えてもいつでも元に戻せます。</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="11" width="14" height="9" rx="2"></rect>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+            </svg>
+          </div>
+          <h3 data-i18n="en">Non-personalized ads</h3>
+          <h3 data-i18n="ja" lang="ja">広告はあるが、行動は追跡しない</h3>
+          <p data-i18n="en">The free tier shows non-personalized ads. No cross-app tracking, and no analytics. Want ads gone? Filto Pro removes them.</p>
+          <p data-i18n="ja" lang="ja">無料版には広告がありますが、興味関心に基づくパーソナライズ広告は使わず、他アプリやサイトをまたいだ追跡もしません。広告を消したいときはFilto Proも選べます。</p>
+        </article>
+      </section>
+
+      <section class="chips-section">
+        <div class="section-head">
+          <h2 data-i18n="en">Other features</h2>
+          <h2 data-i18n="ja" lang="ja">そのほかの機能</h2>
+        </div>
+        <div class="chips">
+          <span class="chip" data-i18n="en">No account required</span>
+          <span class="chip" data-i18n="ja" lang="ja">アカウント登録不要</span>
+          <span class="chip" data-i18n="en">Data stays on your device</span>
+          <span class="chip" data-i18n="ja" lang="ja">データは端末内に保存</span>
+          <span class="chip" data-i18n="en">Light / dark theme</span>
+          <span class="chip" data-i18n="ja" lang="ja">ライト / ダークテーマ</span>
+          <span class="chip" data-i18n="en">English / Japanese support</span>
+          <span class="chip" data-i18n="ja" lang="ja">日本語 / 英語対応</span>
+          <span class="chip" data-i18n="en">Save favorites</span>
+          <span class="chip" data-i18n="ja" lang="ja">お気に入り保存</span>
+          <span class="chip" data-i18n="en">Choose article retention (90 / 180 days / unlimited)</span>
+          <span class="chip" data-i18n="ja" lang="ja">記事保持期間を選べる（90日 / 180日 / 無制限）</span>
+        </div>
+      </section>
+
+      <section class="cta-section">
+        <div class="cta">
+          <h2 data-i18n="en">Ready to see less noise?</h2>
+          <h2 data-i18n="ja" lang="ja">さっそく試してみる</h2>
+          <p data-i18n="en">Free to download on iOS and Android.</p>
+          <p data-i18n="ja" lang="ja">iOS / Android対応・無料でダウンロードできます。</p>
+          <nav class="store-badges" aria-label="Download">
+            <a data-i18n="en" href="https://apps.apple.com/app/filto/id6763070121">
+              <img class="badge-apple" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store">
+            </a>
+            <a data-i18n="ja" lang="ja" href="https://apps.apple.com/jp/app/filto/id6763070121">
+              <img class="badge-apple" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="App Storeからダウンロード">
+            </a>
+            <a data-i18n="en" href="https://play.google.com/store/apps/details?id=com.yskms.filto&amp;hl=en">
+              <img class="badge-google" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play">
+            </a>
+            <a data-i18n="ja" lang="ja" href="https://play.google.com/store/apps/details?id=com.yskms.filto&amp;hl=ja">
+              <img class="badge-google-ja" src="https://play.google.com/intl/ja/badges/static/images/badges/ja_badge_web_generic.png" alt="Google Playで手に入れよう">
+            </a>
+          </nav>
+        </div>
+      </section>
+
+      <footer>
+        <div class="brand">
+          <img src="assets/images/filto-logo.webp" alt="Filto">
+        </div>
+        <nav aria-label="Links">
+          <a data-i18n="en" href="privacy-policy">Privacy Policy</a>
+          <a data-i18n="ja" lang="ja" href="privacy-policy">プライバシーポリシー</a>
+          <a data-i18n="en" href="https://github.com/yskms/filto-app/issues">Report an issue (GitHub)</a>
+          <a data-i18n="ja" lang="ja" href="https://github.com/yskms/filto-app/issues">不具合を報告（GitHub）</a>
+          <a data-i18n="en" href="https://github.com/yskms/filto-app">Source Code</a>
+          <a data-i18n="ja" lang="ja" href="https://github.com/yskms/filto-app">ソースコード</a>
+        </nav>
+        <div class="copyright">
+          <p data-i18n="en">© 2026 Masashi Yasaka. Your feeds, filters, and reading activity stay on your device. We don't use analytics.</p>
+          <p data-i18n="ja" lang="ja">© 2026 Masashi Yasaka. フィード、フィルタ、閲覧履歴は端末内に保存されます。アクセス解析は行いません。</p>
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        var html = document.documentElement;
+        function setLang(lang) {
+          html.setAttribute('data-lang', lang);
+          html.setAttribute('lang', lang);
+          document.querySelectorAll('[data-lang-btn]').forEach(function (btn) {
+            btn.setAttribute('aria-pressed', btn.getAttribute('data-lang-btn') === lang ? 'true' : 'false');
+          });
+          try { localStorage.setItem('filto-lang', lang); } catch (e) {}
+        }
+        document.querySelectorAll('[data-lang-btn]').forEach(function (btn) {
+          btn.addEventListener('click', function () { setLang(btn.getAttribute('data-lang-btn')); });
+        });
+        setLang(html.getAttribute('data-lang') || 'en');
+      })();
+    </script>
+  </body>
+</html>
