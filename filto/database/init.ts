@@ -9,6 +9,7 @@ import { getFaviconUrl } from '@/utils/feedUrl';
 
 const SEED_KEY = StorageKeys.defaultFeedsSeeded;
 const FILTER_SEED_KEY = StorageKeys.defaultFiltersSeeded;
+const IN_PROGRESS_KEY = StorageKeys.onboardingInProgress;
 
 /**
  * 期待するスキーマのバージョン（PRAGMA user_version と比較する）。
@@ -540,7 +541,7 @@ export async function resetFeedsAndFilters(): Promise<void> {
   // 次回（初回設定やり直し＝FirstRunScreen）でデフォルトフィードを再投入できるよう、
   // seed 済み・オンボ完了フラグを消す。これが無いと seedDefaultFeeds がスキップして
   // フィードが空のままになる。
-  await AsyncStorage.multiRemove([SEED_KEY, FILTER_SEED_KEY, ONBOARDING_KEY]);
+  await AsyncStorage.multiRemove([SEED_KEY, FILTER_SEED_KEY, ONBOARDING_KEY, IN_PROGRESS_KEY]);
 }
 
 /**
@@ -558,13 +559,20 @@ export async function resetFeedsToDefault(lang?: 'ja' | 'en'): Promise<void> {
 
 /**
  * オンボーディング完了済みかどうかを判定する（既存ユーザーも含む）
+ *
+ * feedsSeeded は「seedDefaultFeeds が完了した」だけを示し、FirstRunScreen を
+ * 最後まで終えたことは保証しない（mount直後に実行するため）。onboardingInProgress
+ * が残っている＝seedはしたが完了前に中断した状態なので、その場合は feedsSeeded を
+ * 完了扱いに使わない。onboardingInProgress を持たない既存ユーザー（旧バージョンから
+ * 継続）は従来通り feedsSeeded だけで完了扱いにする。
  */
 export async function isOnboardingComplete(): Promise<boolean> {
-  const [onboardingDone, feedsSeeded] = await Promise.all([
+  const [onboardingDone, feedsSeeded, inProgress] = await Promise.all([
     AsyncStorage.getItem(ONBOARDING_KEY),
     AsyncStorage.getItem(SEED_KEY),
+    AsyncStorage.getItem(IN_PROGRESS_KEY),
   ]);
-  return !!(onboardingDone || feedsSeeded);
+  return !!(onboardingDone || (feedsSeeded && !inProgress));
 }
 
 /**

@@ -60,10 +60,20 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
     let cancelled = false;
     (async () => {
       try {
+        // seedDefaultFeeds は defaultFeedsSeeded を立てるが、それだけでは
+        // 「seedはしたがステップ完了前に中断した」状態と区別できない
+        // （isOnboardingComplete が defaultFeedsSeeded 単体でも完了扱いにしてしまう）。
+        // 先にこのフラグを立てておき、handleStart で消す。
+        // seed本体とは別のtryにする（この書き込みが失敗してもseedは続行させる。
+        // 失敗時の影響は「中断時にオンボが再表示されない」＝従来挙動に留まる）。
+        await AsyncStorage.setItem(StorageKeys.onboardingInProgress, 'true');
+      } catch {
+        // 無視して seed は続行する
+      }
+      try {
         // デフォルトフィードを投入（初期フィルタは入れない）。冪等。
         // デバイスロケールではなくアプリの言語設定に合わせる。
         await seedDefaultFeeds(language === 'ja' ? 'ja' : 'en');
-        await AsyncStorage.setItem(StorageKeys.onboardingCompleted, 'true');
         // 記事を取得（オフライン等で失敗しても先へ進める）。
         // オンボーディング専用の進捗UIで先へ進めるため、notify は渡さない
         // （既定 false ＝ 通知しない。ホーム画面がまだ無く、出しても見えない）
@@ -87,6 +97,18 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
   const goNext = () => setStep((s) => Math.min(s + 1, LOADING_STEP));
   const goBack = () => setStep((s) => Math.max(s - 1, WELCOME_STEP));
   const skipToLoading = () => setStep(LOADING_STEP);
+
+  // 最終画面（LOADING_STEP）の「はじめる」タップ時に完了フラグを立てる。
+  // 永続化に失敗しても、次回起動時にオンボーディングをやり直せる側に倒すため
+  // （＝onComplete を諦めてボタンが無反応のまま詰むことは避ける）、必ずホームへ進める。
+  const handleStart = async () => {
+    try {
+      await AsyncStorage.setItem(StorageKeys.onboardingCompleted, 'true');
+      await AsyncStorage.removeItem(StorageKeys.onboardingInProgress);
+    } finally {
+      onComplete();
+    }
+  };
 
   if (step === WELCOME_STEP) {
     return (
@@ -200,7 +222,7 @@ export default function FirstRunScreen({ onComplete }: { onComplete: () => void 
         {ready && (
           <TouchableOpacity
             style={[styles.primaryButton, { backgroundColor: tintColor }]}
-            onPress={onComplete}
+            onPress={handleStart}
             accessibilityRole="button"
           >
             <ThemedText style={[styles.primaryButtonText, { color: buttonTextColor }]}>

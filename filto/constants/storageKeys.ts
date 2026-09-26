@@ -17,6 +17,10 @@ export const StorageKeys = {
   defaultFeedsSeeded: '@filto/defaultFeedsSeeded',
   defaultFiltersSeeded: '@filto/defaultFiltersSeeded',
   onboardingCompleted: '@filto/onboardingCompleted',
+  // FirstRunScreen の mount 直後（seed実行前）に立て、「はじめる」到達時に消す一時フラグ。
+  // defaultFeedsSeeded は途中終了でも立ってしまう（isOnboardingComplete の判定に混ざる）ため、
+  // 「seedは実行したが最後まで到達していない」を区別するのに使う。
+  onboardingInProgress: '@filto/onboardingInProgress',
   // サイト非表示の提案を「あとで」で断ったフィードと時刻のマップ（JSON）。一定期間は再提案しない。
   siteSuggestDismissed: '@filto/siteSuggestDismissed',
   // オンボーディング完了直後に立て、タブ側の初回取得（ブートストラップ）で消費する一時フラグ
