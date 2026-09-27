@@ -1425,6 +1425,45 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
 ---
 
+### 初回起動画面刷新が新規インストールに反映されていなかった件（2026-09-26〜27）
+
+- **経緯**: 上記の初回起動画面刷新（2026-09-23）を`eas update`でOTA配信した後、
+  「配信済み」と認識していたが、実機でアンインストール→再インストールすると
+  旧GIF版が表示された。調査の結果、**本番バイナリ（Android/iOSとも2026-09-13
+  ビルド）には該当変更が含まれておらず、OTAのみが先行配信されていた**ことが
+  判明した。
+- **なぜOTAだけでは届かないか**: `expo-updates`は`checkAutomatically`の設定に
+  関わらず、起動時にバックグラウンドでアップデートを取得するだけで、その回の
+  描画には反映されない（次回起動から有効）。新規インストール直後の1回目の起動
+  時点では端末にOTAの内容がまだ存在しないため、**どの設定でも原理的に間に合わ
+  ない**。初回起動画面のように「初回起動時にしか意味がない」画面をOTAだけで
+  差し替えることはできず、ネイティブビルドの再submitが必須。
+- **P0（レビューで発覚）: オンボーディング中断で再表示されなくなる不具合**:
+  `database/init.ts`の`isOnboardingComplete()`は元々
+  `onboardingDone || feedsSeeded`（`ONBOARDING_KEY`と`SEED_KEY`のOR）で判定
+  していた。`SEED_KEY`は`FirstRunScreen`のmount直後・`seedDefaultFeeds()`完了時
+  に立つため、スクショ6枚を見ている途中で強制終了すると、次回起動時に
+  `SEED_KEY`だけで完了扱いとなり、**フィード投入・初回同期が未完了のまま
+  オンボーディングがスキップされる**（旧GIF版1枚のときより閲覧時間が延びた分、
+  露出が増えていた）。第3のキー`onboardingInProgress`
+  （mount直後に立て、「はじめる」到達時に消す）を追加し、
+  `onboardingDone || (feedsSeeded && !inProgress)`に変更して解消した。
+  **`SEED_KEY`のOR判定を安易に外す・単純化すると、`onboardingInProgress`を
+  持たない既存ユーザー（旧バージョンから継続、ONBOARDING_KEY未設定で
+  SEED_KEYのみ設定）を誤って再オンボーディングさせる回帰になる**ため、
+  3キーとも残すこと。
+- **バージョンを1.5.2のまま再ビルドしなかった理由**: `runtimeVersion.policy:
+  "appVersion"`のため、1.5.2のままビルドすると新旧バイナリが同じ
+  runtimeVersionを共有し、以後の1.5.2向けOTAが新バイナリにも混線する。
+  1.5.3へ上げてからビルドした（`app.json`・`package.json`・`package-lock.json`
+  を同時に更新。過去の`c3264754`同様、README/docs側は別途submit前に対応）。
+- **対応**: Android本番ビルド・submit実施済み（versionCode 26、Play Console
+  ではdraft）。iOSはビルド枠の都合で本件時点では未実施、枠が空き次第
+  `eas build --platform ios --profile production`で追随する。
+  → `docs/05_store/release_notes_v1.5.3.md`
+
+---
+
 ## 既知の不具合
 
 ### ホームが全記事を同期APIでJSに載せる（LIMITなし）（2026-09-01検出 → 2026-09-13解消）

@@ -49,6 +49,28 @@
 後続処理（`loadData`・トースト・スクロール）より先に発火するため、手動更新の
 スピナーが本来より早く消える。
 
+## 初回起動画面とオンボーディング完了判定（`components/FirstRunScreen.tsx` / `database/init.ts`）
+
+### `isOnboardingComplete()` は3キーのOR/AND判定。安易に統合・単純化しない
+
+`onboardingDone || (feedsSeeded && !inProgress)` という一見冗長な式になっている。
+
+- `defaultFeedsSeeded`（`SEED_KEY`）は`seedDefaultFeeds()`が立てるが、これは
+  `FirstRunScreen`の**mount直後**に呼ばれる。ステップ形式（ようこそ→スクショ→
+  待機）になった今、「seedは実行した」ことは「オンボーディングを完了した」
+  ことを意味しない。
+- `onboardingInProgress`はそのズレを埋めるためのキーで、mount直後に立て、
+  最終画面の「はじめる」到達時（`handleStart`）に消す。**このキーが無いと、
+  スクショ閲覧中に強制終了したユーザーが次回起動でオンボーディングを
+  スキップされ、フィード投入・初回同期が未完了のままホームに入る**
+  （2026-09に実際に発生・修正）。
+- `SEED_KEY`のOR判定自体は意図的（`ONBOARDING_KEY`を持たない旧バージョンからの
+  継続ユーザーを誤って初回扱いしないため）。`onboardingInProgress`を導入せず
+  `ONBOARDING_KEY`単体に単純化する、または`SEED_KEY`のORを外す、といった
+  変更は、`onboardingInProgress`を持たない既存ユーザーを誤って再オンボーディング
+  させる回帰になる。3キーとも残すこと。
+→ WBS「初回起動画面刷新が新規インストールに反映されていなかった件」
+
 ## 同期の並行性モデル（`services/SyncService.ts` / `utils/syncLock.ts`）
 
 - `SyncLock` は**単一JSランタイム内**の排他制御。`expo-background-task` が
@@ -109,6 +131,15 @@
 - JSのみの変更は `eas update` でOTA配信できる（審査不要）。ただし
   `--platform ios` と `android` は個別に実行すること（同時実行だとweb向け
   wasmビルドで失敗することがある）。
+- **例外：初回起動画面（`FirstRunScreen`）のようにアプリの最初の起動でしか
+  意味を持たない画面は、OTA配信だけでは新規ユーザーに届かない。**
+  `expo-updates`は`checkAutomatically`の設定に関わらず起動時にバックグラウンドで
+  アップデートを取得するだけで、その回の描画には反映されない（次回起動から
+  有効）。新規インストール直後の1回目の起動時点では、端末にOTAの内容がまだ
+  存在しないため原理的にどの設定でも間に合わない。この種の画面を変更した場合は
+  ネイティブビルドの再submitが必須（2026-09に「OTA配信済み＝反映済み」と
+  誤認した実例あり）。→ WBS「初回起動画面刷新が新規インストールに反映
+  されていなかった件」
 - ローカルの `filto/android/`（gitignore対象・`expo prebuild` の自動生成物）は、
   存在している限り `expo run:android` を実行しても自動では作り直されない。
   `app.json` のネイティブ設定（config plugin等、例: AdMobの`androidAppId`）を
