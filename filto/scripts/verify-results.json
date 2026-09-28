@@ -1084,9 +1084,15 @@
     "lang": "ja",
     "category": "business",
     "title": "Forbes JAPAN",
-    "url": "https://forbesjapan.com/list/feed",
-    "status": "FAIL",
-    "reason": "HTTP 404"
+    "url": "https://forbesjapan.com/RSS/newspicks.xml",
+    "note": "URL名はNewsPicks向け配信の名残だが、中身はForbes JAPAN公式サイトの全記事フィード(feed/rss.xml/RSS/index.xml等は404で、現状これが唯一稼働しているRSS経路)。承知の上で採用",
+    "status": "OK",
+    "kind": "rss2",
+    "items": 20,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "Forbes JAPAN 公式サイト（フォーブス ジャパン）"
   },
   {
     "lang": "ja",
@@ -3953,10 +3959,14 @@
     "lang": "ja",
     "category": "news",
     "title": "CNN.co.jp",
-    "url": "https://www.cnn.co.jp/rss/news.rdf",
-    "exclude": true,
-    "excludeReason": "RSS無し(404)",
-    "status": "EXCLUDED"
+    "url": "https://feeds.cnn.co.jp/rss/cnn/cnn.rdf",
+    "status": "OK",
+    "kind": "rdf",
+    "items": 30,
+    "withThumb": 20,
+    "checked": 20,
+    "ratio": "1.00",
+    "feedTitle": "国際ニュース - CNN.co.jp"
   },
   {
     "lang": "ja",
@@ -3965,6 +3975,114 @@
     "url": "https://www.newsweekjapan.jp/story.rss",
     "exclude": true,
     "excludeReason": "RSS無し(404)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Record China",
+    "url": "https://news.livedoor.com/rss/article/vender/record_china",
+    "exclude": true,
+    "excludeReason": "取得・画像とも要件は満たすが、recordchina.co.jp自身のフィードではなくライブドア経由の配信のため、ユーザー判断で見送り",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "ハンギョレ新聞 日本語版",
+    "url": "https://japan.hani.co.kr/rss/",
+    "exclude": true,
+    "excludeReason": "記事のlinkが相対URL(例: /arti/economy/57266.html)で、アプリ側は絶対URL解決に未対応のため開けない",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Sputnik日本",
+    "url": "https://sputniknews.jp/export/rss2/archive/index.xml",
+    "exclude": true,
+    "excludeReason": "取得・画像とも要件は満たすが、ロシア国営の対外プロパガンダメディアのためユーザー判断で不採用",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "JBpress",
+    "url": "https://jbpress.ismedia.jp/list/feed/rss",
+    "exclude": true,
+    "excludeReason": "RSS無し(404、サイト側の導線も壊れている)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Searchina",
+    "url": "https://news.searchina.net/rss20/index.rdf",
+    "exclude": true,
+    "excludeReason": "ドメインが無関係サービスに転用済み。ライブドア配信版(vender/searchina)は取得できるが画像なし",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "wowKorea",
+    "url": "https://www.wowkorea.jp/news/rss.asp",
+    "exclude": true,
+    "excludeReason": "存在しないパスにも常時200で自作404ページを返すため有効なRSSが見つからない",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "中央日報日本語版",
+    "url": "https://japanese.joins.com/rss/",
+    "exclude": true,
+    "excludeReason": "RSS配信なし(rss.joins.comもトップへリダイレクトのみ)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "KBS WORLD 日本語",
+    "url": "http://world.kbs.co.kr/rss/rss_news.htm?lang=j",
+    "exclude": true,
+    "excludeReason": "取得できるが画像なし",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "Reuters Japan",
+    "url": "https://jp.reuters.com/",
+    "exclude": true,
+    "excludeReason": "一般向けRSS配信を廃止済み(401)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "DW 日本語版",
+    "url": "https://rss.dw.com/xml/rss-ja-all",
+    "exclude": true,
+    "excludeReason": "日本語サービスが実質縮小、RSSも無効(エラーメッセージのみ)",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "人民網日本語版",
+    "url": "http://j.people.com.cn/rss/94474.xml",
+    "exclude": true,
+    "excludeReason": "取得はできるが更新停止(最終更新2025年6月時点)。中国国営メディア",
+    "status": "EXCLUDED"
+  },
+  {
+    "lang": "ja",
+    "category": "news",
+    "title": "CRI Online 日本語",
+    "url": "https://japanese.cri.cn/",
+    "exclude": true,
+    "excludeReason": "RSS配信なし。中国国営メディア",
     "status": "EXCLUDED"
   },
   {

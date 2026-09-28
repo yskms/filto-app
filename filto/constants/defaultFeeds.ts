@@ -1,6 +1,6 @@
 // 自動生成されたデフォルトフィード一覧（scripts/verify-feeds.mjs で実URL検証済み）
 // すべて「取得成功 + 記事にサムネイル画像が存在する」ことを確認したフィードのみ収録。
-// 収録数: JA 77件 / EN 63件
+// 収録数: JA 79件 / EN 63件
 // ⚠️ このファイルは生成物。直接編集しない。追加/除外の手順は scripts/README.md を参照。
 // 再生成: node scripts/verify-feeds.mjs > scripts/verify-results.json && node scripts/generate-default-feeds.mjs
 
@@ -19,6 +19,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
       { id: "default_ja_livedoor", title: "ライブドアニュース", url: "https://news.livedoor.com/topics/rss/top.xml" },
       { id: "default_ja_gendai", title: "現代ビジネス", url: "https://gendai.media/list/feed/rss" },
       { id: "default_ja_bbci", title: "BBC News 日本語", url: "https://feeds.bbci.co.uk/japanese/rss.xml" },
+      { id: "default_ja_cnn", title: "CNN.co.jp", url: "https://feeds.cnn.co.jp/rss/cnn/cnn.rdf" },
     ],
   },
   {
@@ -41,6 +42,7 @@ export const DEFAULT_FEED_CATEGORIES: Record<'ja' | 'en', DefaultFeedCategory[]>
     id: "business",
     label: "ビジネス・マネー",
     feeds: [
+      { id: "default_ja_forbesjapan", title: "Forbes JAPAN", url: "https://forbesjapan.com/RSS/newspicks.xml" },
       { id: "default_ja_businessinsider", title: "ビジネスインサイダー日本版", url: "https://www.businessinsider.jp/feed/index.xml" },
       { id: "default_ja_zuuonline", title: "ZUU online", url: "https://zuuonline.com/feed" },
       { id: "default_ja_toyokeizai", title: "東洋経済オンライン", url: "https://toyokeizai.net/list/feed/rss" },
