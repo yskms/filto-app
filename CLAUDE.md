@@ -193,13 +193,10 @@ SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であ�
   指定しており単独ではビルド不能なため、`plugins/withIosPodsDeploymentTargetFix.js`
   でPodfileの`post_install`にターゲット引き上げ処理を追加している。これも
   `ios/Podfile`への直接編集ではなく、必ずこのプラグイン側に変更を加えること。
-- Simulator（iPhone 18 Pro, iOS 27.0）でDebug/Releaseとも起動・`filto://`の
-  コールド/ウォームスタートからの画面遷移・Dev Clientの`exp+filto://`
-  コールドスタート（Metro接続・バンドリング）まで確認済み。実機での回帰は未確認。
-  **UIScene化はビルドに使うSDKと関係なく全iOSバージョンで挙動が変わるため、
-  iOS 27 Simulatorでの確認だけでは不十分**（Filtoのdeployment targetは15.1で
-  iOS 15・16ユーザーも対象）。実機確認はXcode経由の接続を諦め、TestFlight
-  経由で行う方針。現在の確認状況・残タスクは
+- Simulator・実機（iPhone 8, iOS 16.7.16、TestFlight経由）の両方で起動・
+  `filto://`の画面遷移まで確認済み。**Xcode 27はiOS 16実機との開発用
+  ペアリングが成立しなかった**ため、実機確認はXcode経由を諦めTestFlight
+  経由（`eas build --local` → `eas submit`）で行った。詳細・経緯は
   WBS「iOS 27 SDK対応：UISceneライフサイクル必須化」を参照。
 
 ## リリース作業

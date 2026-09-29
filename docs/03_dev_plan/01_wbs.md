@@ -1462,7 +1462,7 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
   `eas build --platform ios --profile production`で追随する。
   → `docs/05_store/release_notes_v1.5.3.md`
 
-### v1.5.4（日本語版デフォルトフィードにCNN.co.jpを追加 / Android審査提出済み・iOS未）
+### v1.5.4（日本語版デフォルトフィードにCNN.co.jpを追加 / Android・iOSとも審査提出済み）
 
 - **経緯（2026-09-29）**: 「日本語版で海外ニュースの記事が出てこない」という指摘を受けて
   `constants/defaultFeeds.ts`のJA「ニュース」カテゴリを調査したところ、海外ニュース専門と
@@ -1501,10 +1501,16 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
   `nice -n 10 npx eas-cli build --platform android --profile production --local`で
   ローカルビルド（所要約19分、うちGradle実行が18分3秒）。versionCode 26→27に
   自動採番。`eas submit --platform android`でPlay Consoleにdraft提出し、
-  審査に提出済み（2026-09-29）。iOSは未実施。
+  審査に提出済み（2026-09-29）。
+  iOSは、iOS 27 UIScene対応（下記）とあわせて`eas build --platform ios
+  --profile production --local`でビルド（buildNumber 29→30、fastlane未導入
+  だったため`brew install fastlane`で追加導入して解消）、`eas submit
+  --platform ios`でTestFlightへ提出。実機（iPhone 8, iOS 16.7.16）でTestFlight
+  経由の動作確認（起動・オンボーディング/ホーム表示・`filto://about`の
+  ディープリンク）を行った上で、App Store審査に提出済み（2026-09-29）。
   → `docs/05_store/release_notes_v1.5.4.md`
 
-### iOS 27 SDK対応：UISceneライフサイクル必須化 → 実装済み・実機確認は一部残
+### iOS 27 SDK対応：UISceneライフサイクル必須化 → 実装・実機確認とも完了
 
 - **経緯（2026-09-27）**: Xcode 27 / iOS 27 SDKでビルドしたアプリは、UISceneライフ
   サイクルに対応していないと起動直後にクラッシュするようになった
@@ -1557,10 +1563,10 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
     `launchOptions[UIApplicationLaunchOptionsURLKey]`分岐は通らなくなるが、
     `willConnectTo`から転送された`onDeepLink`経由の別経路で正しく処理される
     ことが実機（Simulator）で確認できた。
-  - ❌ **未確認**: 実機での回帰。UIScene化はビルドに使うSDKと関係なく
-    全iOSバージョンで挙動が変わるため、iOS 27 Simulatorでの確認だけでは
-    不十分。特にFiltoのdeployment targetは15.1のため、iOS 15・16ユーザーも
-    今回の変更の影響を受ける。
+  - ✅ **実機での回帰確認も完了（2026-09-29）**: UIScene化はビルドに使う
+    SDKと関係なく全iOSバージョンで挙動が変わるため、iOS 27 Simulatorでの
+    確認だけでは不十分と判断（Filtoのdeployment targetは15.1のため、
+    iOS 15・16ユーザーも今回の変更の影響を受ける）。
     - 本人の日常使用端末のiPhone 8（iOS 16.7.16）をXcode経由で直接
       接続しての確認を試みたが、断念した。Finder（ファイル同期レベル）は
       端末を認識できる一方、デベロッパモードは有効済みにもかかわらず
@@ -1570,15 +1576,22 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
       サポートファイル）も生成されなかった。Xcode 27とiOS 16.7の
       組み合わせが未対応である可能性が高いと見ているが、確定はしていない
       （2026-09-27）。
-    - **対応方針**: Xcode経由の接続を追わず、TestFlight経由で確認する。
-      TestFlightはXcodeとの実機ペアリングを必要としないため、上記の
-      接続問題を回避できる。どのみちストア提出前に
-      `eas build --profile production`を実行するため、そのビルドを
-      TestFlightでiPhone 8に配布し、(1) 起動すること、(2) オンボーディング
-      とホーム画面が表示されること、(3) `filto://about`が動作すること、
-      の3点を確認すれば十分（Xcode 27がiOS 16実機を認識しない根本原因の
-      特定は不要）。`eas build` / `eas submit`は事前確認が必要な操作のため、
-      実行タイミングは別途判断する。
+    - **代わりにTestFlight経由で確認した**（Xcodeとの実機ペアリングが
+      不要なため、上記の接続問題を回避できる）。ちょうどv1.5.4のiOS版が
+      未提出だったため、そのままストア提出用ビルドを兼ねる形で実施：
+      `npx eas-cli build --platform ios --profile production --local`で
+      ローカルビルド（EAS credentials serviceが管理するDistribution
+      証明書・プロビジョニングプロファイルを使うため、Xcode側の個人チーム
+      署名設定は不要。ビルドにはfastlaneが必要で、未導入だったため
+      `brew install fastlane`で追加導入）→`eas submit --platform ios`で
+      TestFlightへ提出→iPhone 8のTestFlightアプリからインストールし、
+      (1) 起動すること、(2) オンボーディング/ホーム画面が表示されること、
+      (3) `filto://about`のディープリンクが動作すること、の3点を確認して
+      問題なし。Xcode 27がiOS 16実機を認識しない根本原因の特定は不要だった。
+    - **副次的に見つかった別件（本件とは無関係）**: 実機確認中、初回起動
+      画面のスクショ閲覧中に「次へ」の反応が重いとの報告があり、Pixel 11
+      でも同様に重かった。古い端末固有ではなく設計自体の問題の可能性が
+      高いとみて、対応は保留（後日対応）。→「既知の不具合」の該当項目を参照。
 - **関連する未解決事項（本件と無関係、ビルド確認中に副次的に発見）**:
   `react-native-quick-crypto`のNEON専用コード（`blake3_neon.c`）が、Xcode 27で
   Releaseのユニバーサルビルド（arm64 + x86_64）を組むとx86_64向けにも
