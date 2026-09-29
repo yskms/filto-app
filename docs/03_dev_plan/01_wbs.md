@@ -1462,6 +1462,48 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
   `eas build --platform ios --profile production`で追随する。
   → `docs/05_store/release_notes_v1.5.3.md`
 
+### v1.5.4（日本語版デフォルトフィードにCNN.co.jpを追加 / Android審査提出済み・iOS未）
+
+- **経緯（2026-09-29）**: 「日本語版で海外ニュースの記事が出てこない」という指摘を受けて
+  `constants/defaultFeeds.ts`のJA「ニュース」カテゴリを調査したところ、海外ニュース専門と
+  言えるのはBBC News日本語のみだった。CNN.co.jp（`feeds.cnn.co.jp/rss/cnn/cnn.rdf`、
+  チャンネル名「国際ニュース - CNN.co.jp」）を新規追加した。過去に`scripts/
+  feed-candidates.json`で「RSS無し(404)」と判定していたのは推測URLが誤っていた
+  だけで、正しいURLでは画像付きで取得できることが判明し再調査で解消した。
+- **ついでに直したもの**: ビジネスカテゴリのForbes JAPANがURL切れ(404)で長期間
+  候補倒れになっていたのを`https://forbesjapan.com/RSS/newspicks.xml`に修正して復活。
+  URL名はNewsPicks向け配信の名残だが、`feed`・`rss.xml`・`RSS/index.xml`等は
+  すべて404で、これが現状唯一稼働しているForbes JAPAN公式の全記事フィードで
+  あることを確認済み（経緯は`feed-candidates.json`の`note`欄に記録）。
+- **検討したが不採用の候補**: Record China（ライブドア経由の配信で自社フィード
+  ではないため見送り）、ハンギョレ新聞（記事linkが相対URLでアプリが未対応）、
+  Sputnik日本（技術要件は満たすがロシア国営プロパガンダメディアのため見送り）、
+  JBpress・Searchina・wowKorea・中央日報・KBS WORLD・Reuters Japan・DW・人民網・
+  CRI Onlineなど（いずれもRSS配信終了/画像なし/更新停止）。理由込みで
+  `feed-candidates.json`に記録済みのため、次回同じ調査は不要。
+- **レビューで気づいた落とし穴（ストアのリリースノートの書き方）**: 当初
+  「デフォルトフィードにCNN.co.jpを追加」とリリースノートに書いたが、
+  `seedDefaultFeeds()`は`SEED_KEY`が立っていると何もしないため、**アップデートで
+  読むのはほぼ既存ユーザーなのに、実際には反映されない機能を告知してしまう**
+  ことをレビューで指摘され気づいた。最終的にリリースノートは「内部処理の
+  安定性を改善しました」のみに簡略化した。デフォルトフィード変更を
+  リリースノートに書きたい場合は、新規インストール限定である旨を明記するか、
+  書かないことにする（→ CLAUDE.md「`constants/defaultFeeds.ts`の変更は、
+  既存ユーザーには自動で届かない」にも追記）。
+- **レビューで気づいた落とし穴（コミット分割とビルド除外は別物）**: フィード
+  変更とバージョン更新のコミットを分けても、その時点で作業ツリーに残っている
+  未コミットの変更（今回はiOS 27対応）はビルドにはそのまま含まれる。本当に
+  除外してビルドしたい場合は、ビルド直前に対象パスを指定して
+  `git stash push -u -- <パス...>`で退避し、ビルド後に`git stash pop`で戻す
+  運用にした。
+- **対応**: `app.json`・`package.json`・`package-lock.json`を1.5.4に更新（README/docs
+  側の不一致はv1.5.2から続く既知の問題として今回は対象外）。
+  `nice -n 10 npx eas-cli build --platform android --profile production --local`で
+  ローカルビルド（所要約19分、うちGradle実行が18分3秒）。versionCode 26→27に
+  自動採番。`eas submit --platform android`でPlay Consoleにdraft提出し、
+  審査に提出済み（2026-09-29）。iOSは未実施。
+  → `docs/05_store/release_notes_v1.5.4.md`
+
 ---
 
 ## 既知の不具合
