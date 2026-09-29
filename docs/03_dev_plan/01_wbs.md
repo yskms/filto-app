@@ -1504,6 +1504,89 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
   審査に提出済み（2026-09-29）。iOSは未実施。
   → `docs/05_store/release_notes_v1.5.4.md`
 
+### iOS 27 SDK対応：UISceneライフサイクル必須化 → 実装済み・実機確認は一部残
+
+- **経緯（2026-09-27）**: Xcode 27 / iOS 27 SDKでビルドしたアプリは、UISceneライフ
+  サイクルに対応していないと起動直後にクラッシュするようになった
+  （"UIScene life cycle is required for apps built with this SDK"）。Apple が
+  WWDC25で予告済みの正式な仕様変更で、Filto固有の不具合や開発環境の設定ミスでは
+  ない。Expo 54 / React Native 0.81時点ではExpo・RN本体ともに公式のシーン対応が
+  未実装（RN公式テンプレートの対応はRN 0.87/0.88以降が前提）のため、config plugin
+  （`plugins/withIosSceneDelegate.js`）で自前実装した。方針・制約は
+  CLAUDE.md「iOS 27 (UIScene) 対応」に集約。
+- **実装当初の誤り**: 最初はAppDelegateの`window`生成処理をまるごとSceneDelegate側
+  （`scene(_:willConnectTo:)`）に移す設計にしていた。レビューで、
+  `expo-dev-launcher`（Dev Client、Debugビルドのみ）が`didFinishLaunchingWithOptions`
+  時点で`UIApplication.shared.delegate?.window`（またはkeyWindow）の存在を前提に
+  `fatalError`する実装（`ExpoDevLauncherAppDelegateSubscriber.swift`）になっている
+  ことを指摘され、window生成をAppDelegate側に残しSceneDelegateはwindowSceneの
+  割り当てだけを行う設計に修正した。この非対称性（Releaseは無事でもDev Client
+  だけ起動直後に確実にクラッシュする）に気づかず一般的な「UIScene移行のお作法」
+  だけで実装すると同じ回帰を踏むため、次にこの領域を触る際の教訓として残す。
+- **副次的に発覚した別問題**: 上記とは無関係に、Xcode 27のSDKは
+  `IPHONEOS_DEPLOYMENT_TARGET`が15.0未満のターゲットのビルドを拒否するようになった。
+  SDWebImage・RevenueCat・Google Mobile Ads・RNCAsyncStorage・ReachabilitySwift等、
+  一部Podのリソースバンドルターゲットが古い値（9.0〜13.4等）を個別指定しており、
+  単独ではビルド不能だった。`plugins/withIosPodsDeploymentTargetFix.js`
+  （Podfileの`post_install`にターゲット引き上げ処理を追加）で解消。
+- **実機・Simulator確認の状況（2026-09-27時点）**:
+  - ✅ Debug（Dev Client）ビルド：iPhone 18 Pro Simulator（iOS 27.0、Xcode 27.0）で
+    起動確認済み。fatalErrorは再発せず、Dev Launcherのサーバー選択画面
+    （Metro `http://localhost:8081`検出）まで正常に表示された。
+  - ✅ Releaseビルド：同Simulatorで起動確認済み。スプラッシュ→初回起動
+    オンボーディング画面まで正常にレンダリングされた。
+  - ✅ `filto://`のコールド/ウォームスタート双方でアプリ内遷移まで確認済み。
+    `filto://about`をコールドスタート（アプリ完全終了状態から）・ウォーム
+    スタート（ホーム画面表示中）の両方で開き、どちらも「アプリについて」画面
+    （`app/about.tsx`）へ正しく遷移することを確認した。`SceneDelegate`→
+    `RCTLinkingManager`／`ExpoAppDelegateSubscriberManager`→`expo-router`の
+    転送経路が実際に機能している証拠になる。
+    （検証手段: Simulatorへのタップ自動化ができなかったため、`idb`
+    （`brew install facebook/fb/idb-companion` + venv内`pip install fb-idb`）を
+    導入し、`idb ui describe-all`でアクセシビリティツリーから座標を取得、
+    `idb ui tap`でシステムの「"Filto"で開きますか？」確認ダイアログや
+    オンボーディングをタップで突破した。この環境ではmacOSのAccessibility権限が
+    無くosascript/System Eventsでのクリックは使えないため、`idb`が有効な代替手段
+    として機能した）
+  - ✅ Dev Clientの`exp+filto://`経由のコールドスタートも確認済み。
+    `exp+filto://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081`を
+    完全終了状態から開いたところ、Dev Launcher画面を経由せず直接Metroへ接続し
+    Bundling → オンボーディング画面の表示まで正常に完了した。UIScene採用後は
+    `didFinishLaunchingWithOptions`の`launchOptions`にURLが入らなくなり
+    `EXDevLauncherController startWithWindow:`内の
+    `launchOptions[UIApplicationLaunchOptionsURLKey]`分岐は通らなくなるが、
+    `willConnectTo`から転送された`onDeepLink`経由の別経路で正しく処理される
+    ことが実機（Simulator）で確認できた。
+  - ❌ **未確認**: 実機での回帰。UIScene化はビルドに使うSDKと関係なく
+    全iOSバージョンで挙動が変わるため、iOS 27 Simulatorでの確認だけでは
+    不十分。特にFiltoのdeployment targetは15.1のため、iOS 15・16ユーザーも
+    今回の変更の影響を受ける。
+    - 本人の日常使用端末のiPhone 8（iOS 16.7.16）をXcode経由で直接
+      接続しての確認を試みたが、断念した。Finder（ファイル同期レベル）は
+      端末を認識できる一方、デベロッパモードは有効済みにもかかわらず
+      Xcodeの開発用ペアリングが成立せず（USB抜き差し後も端末側に
+      「このコンピュータを信頼しますか？」が出ない）、
+      `~/Library/Developer/Xcode/iOS DeviceSupport/`（実機ごとのXcode
+      サポートファイル）も生成されなかった。Xcode 27とiOS 16.7の
+      組み合わせが未対応である可能性が高いと見ているが、確定はしていない
+      （2026-09-27）。
+    - **対応方針**: Xcode経由の接続を追わず、TestFlight経由で確認する。
+      TestFlightはXcodeとの実機ペアリングを必要としないため、上記の
+      接続問題を回避できる。どのみちストア提出前に
+      `eas build --profile production`を実行するため、そのビルドを
+      TestFlightでiPhone 8に配布し、(1) 起動すること、(2) オンボーディング
+      とホーム画面が表示されること、(3) `filto://about`が動作すること、
+      の3点を確認すれば十分（Xcode 27がiOS 16実機を認識しない根本原因の
+      特定は不要）。`eas build` / `eas submit`は事前確認が必要な操作のため、
+      実行タイミングは別途判断する。
+- **関連する未解決事項（本件と無関係、ビルド確認中に副次的に発見）**:
+  `react-native-quick-crypto`のNEON専用コード（`blake3_neon.c`）が、Xcode 27で
+  Releaseのユニバーサルビルド（arm64 + x86_64）を組むとx86_64向けにも
+  コンパイルされようとして失敗する（NEON命令はARM専用のため）。今回は
+  `EXCLUDED_ARCHS=x86_64`でarm64限定ビルドにして回避しただけで恒久対応では
+  ない。EASビルドやIntel Mac向けのユニバーサルSimulatorビルドを組む場合に
+  再発する可能性があるため、要対応。
+
 ---
 
 ## 既知の不具合

@@ -147,6 +147,61 @@
   対象外になるため、そもそも「1箇所で全体を制御する」こと自体が成立しない。
 - → WBS「`allowFontScaling`（Dynamic Type / 文字サイズ設定）の方針」
 
+## iOS 27 (UIScene) 対応（`plugins/withIosSceneDelegate.js`）
+
+Xcode 27 / iOS 27 SDKでビルドしたアプリは、UISceneライフサイクルに対応していないと
+起動直後にクラッシュする（"UIScene life cycle is required for apps built with this
+SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であり、環境不備ではない
+（2026-09に判明）。
+
+- Expo 54 / React Native 0.81時点では、Expo・RN本体ともに公式のシーン対応が未実装
+  （RN公式テンプレートのシーン対応はRN 0.87/0.88以降が前提）。そのため
+  `plugins/withIosSceneDelegate.js` というconfig pluginで、`ios/`生成時に
+  `AppDelegate.swift`の書き換え・`SceneDelegate.swift`の新規生成・pbxprojへの登録・
+  Info.plistへの`UIApplicationSceneManifest`追加を自前で行っている。
+- **`ios/`はgitignore対象で`expo prebuild`の自動生成物のため、UIScene対応を
+  `ios/Filto/AppDelegate.swift`や`ios/Filto/SceneDelegate.swift`へ直接手で
+  書き込んでも、次の`expo prebuild`（cleanの有無を問わず）で上書き・消失する。**
+  変更は必ず`plugins/withIosSceneDelegate.js`側に加えること。
+- URLスキーム（`filto://`等）・Universal Linksは、UIScene採用後は
+  `AppDelegate.application(_:open:options:)` / `application(_:continue:
+  restorationHandler:)` がシステムから呼ばれなくなる。`expo-linking`
+  （＝`expo-router`のディープリンク）や`expo-dev-launcher`（Dev Client起動時の
+  URL処理）は`ExpoAppDelegateSubscriberManager`経由でこれらのコールバックに
+  依存しているため、`SceneDelegate.swift`側で`RCTLinkingManager`だけでなく
+  `ExpoAppDelegateSubscriberManager`へも同じイベントを転送している。
+- **`AppDelegate`のwindow生成（`didFinishLaunchingWithOptions`内の
+  `window = UIWindow(...)` / `factory.startReactNative(...)`）は意図的に
+  そのまま残しており、SceneDelegate側で新規windowを作ってはいけない。**
+  `expo-dev-launcher`（Dev Client、Debugビルドのみ）は`didFinishLaunchingWithOptions`
+  の時点で`UIApplication.shared.delegate?.window`（またはkeyWindow）の存在を
+  前提にしており、無いと`fatalError`する
+  （`ExpoDevLauncherAppDelegateSubscriber.swift`）。windowの生成をSceneDelegate側
+  （`scene(_:willConnectTo:)`）に完全移管すると、didFinishLaunching時点では
+  まだシーンが接続されておらずwindowが存在しないため、**Dev Client
+  （Debugビルド）だけが起動直後に確実にクラッシュする**（Releaseビルドは
+  `expo-dev-launcher`を含まないため影響しない、という非対称な壊れ方をする）。
+  「windowはAppDelegateが生成し、SceneDelegateはwindowSceneを割り当てるだけ」
+  という役割分担を崩さないこと。経緯は WBS「iOS 27 SDK対応：UISceneライフサイクル
+  必須化」を参照。
+- これはExpo側の公式対応が来るまでの暫定シムという位置づけ。Expo SDKが
+  UISceneに公式対応した場合は、このプラグインと`SceneDelegate.swift`を撤去し、
+  公式の仕組みに乗り換えること。
+- **Xcode 27のSDKは`IPHONEOS_DEPLOYMENT_TARGET`が15.0未満のターゲットのビルドも
+  拒否する**（UIScene必須化とは別の変更）。SDWebImage・RevenueCat・
+  Google Mobile Ads等、一部Podのリソースバンドルターゲットが個別に古い値を
+  指定しており単独ではビルド不能なため、`plugins/withIosPodsDeploymentTargetFix.js`
+  でPodfileの`post_install`にターゲット引き上げ処理を追加している。これも
+  `ios/Podfile`への直接編集ではなく、必ずこのプラグイン側に変更を加えること。
+- Simulator（iPhone 18 Pro, iOS 27.0）でDebug/Releaseとも起動・`filto://`の
+  コールド/ウォームスタートからの画面遷移・Dev Clientの`exp+filto://`
+  コールドスタート（Metro接続・バンドリング）まで確認済み。実機での回帰は未確認。
+  **UIScene化はビルドに使うSDKと関係なく全iOSバージョンで挙動が変わるため、
+  iOS 27 Simulatorでの確認だけでは不十分**（Filtoのdeployment targetは15.1で
+  iOS 15・16ユーザーも対象）。実機確認はXcode経由の接続を諦め、TestFlight
+  経由で行う方針。現在の確認状況・残タスクは
+  WBS「iOS 27 SDK対応：UISceneライフサイクル必須化」を参照。
+
 ## リリース作業
 
 - `eas build` / `eas submit` / `eas update` は必ず事前確認する

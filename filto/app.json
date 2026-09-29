@@ -46,6 +46,8 @@
       "expo-sqlite",
       "expo-localization",
       "./plugins/withAndroidSplashIconBackground",
+      "./plugins/withIosSceneDelegate",
+      "./plugins/withIosPodsDeploymentTargetFix",
       "expo-background-task",
       [
         "react-native-google-mobile-ads",
