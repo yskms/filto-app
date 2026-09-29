@@ -4,6 +4,7 @@ import * as Encoding from 'encoding-japanese';
 import { Article } from '@/types/Article';
 import { getFaviconUrl } from '@/utils/feedUrl';
 import { XML_ENTITY_PROCESSING } from '@/constants/xmlEntityOptions';
+import { yieldToEventLoop } from '@/utils/yieldToEventLoop';
 
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_ARTICLES = 50;
@@ -195,6 +196,29 @@ const FEED_REQUEST_HEADERS = {
 // 注: 以前は Cache-Control / Pragma に no-cache を送っていたが、条件付きGET
 // （ETag / Last-Modified による再検証）と相性が悪く 304 を得にくいため除去した。
 
+// UTF-8フィードのdecodeをチャンク分割するサイズ。大きいフィード（数百KB〜数MB）の
+// 一括decodeはJSスレッドを長時間（1秒超）占有し、React Nativeのタッチ操作を
+// ブロックする。チャンクの合間にyieldを挟むことで、長時間ブロックを分割する
+// （実機計測でblock最大が1793ms→227msまで改善したことを確認済み）。
+// Shift_JIS/EUC-JPを対象にしていないのは、実測で問題になった巨大フィードが
+// いずれもUTF-8だったため（対象を広げると文字境界やencoding-japaneseの状態管理で
+// 新しいリスクが増える）。
+const UTF8_DECODE_CHUNK_SIZE = 65536; // 64KB
+
+/** UTF-8のバイト列をチャンクに分けてdecodeする。 */
+async function decodeUtf8Chunked(bytes: Uint8Array): Promise<string> {
+  const decoder = new TextDecoder('utf-8');
+  const parts: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += UTF8_DECODE_CHUNK_SIZE) {
+    const end = Math.min(offset + UTF8_DECODE_CHUNK_SIZE, bytes.length);
+    parts.push(decoder.decode(bytes.subarray(offset, end), { stream: end < bytes.length }));
+    if (end < bytes.length) {
+      await yieldToEventLoop();
+    }
+  }
+  return parts.join('');
+}
+
 export type FeedFetchResult =
   | { status: 'notModified' }
   | { status: 'ok'; text: string; etag: string | null; lastModified: string | null; finalUrl: string };
@@ -223,7 +247,7 @@ function extractValidators(response: Response): { etag: string | null; lastModif
 }
 
 /** フィードのバイト列をエンコーディング判定してデコードする */
-function decodeFeedBytes(arrayBuffer: ArrayBuffer, url: string): string {
+async function decodeFeedBytes(arrayBuffer: ArrayBuffer, url: string): Promise<string> {
   const bytes = new Uint8Array(arrayBuffer);
   const encoding = detectEncoding(bytes, url);
   if (encoding === 'shift_jis') {
@@ -234,7 +258,7 @@ function decodeFeedBytes(arrayBuffer: ArrayBuffer, url: string): string {
     const unicodeArray = Encoding.convert(Array.from(bytes), { to: 'UNICODE', from: 'EUCJP' });
     return Encoding.codeToString(unicodeArray);
   }
-  return new TextDecoder('utf-8').decode(bytes);
+  return decodeUtf8Chunked(bytes);
 }
 
 async function fetchWithTimeout(
@@ -279,7 +303,14 @@ async function fetchWithTimeout(
       return { status: 'ok', text, etag, lastModified, finalUrl: retry.url || finalUrl };
     }
 
-    const text = decodeFeedBytes(arrayBuffer, url);
+    // ネットワーク取得はここで完了しているので、以降のdecode（チャンク化でyield待ちを
+    // 挟み、数百ms〜数秒かかりうる）にはタイムアウト監視を及ぼさない。
+    clearTimeout(timer);
+
+    // decode前にJSスレッドを一度手放す（複数フィードの応答が同時期に返った際、
+    // decode→次のフィードのdecodeと連続占有するのを防ぐ）。
+    await yieldToEventLoop();
+    const text = await decodeFeedBytes(arrayBuffer, url);
     return { status: 'ok', text, etag, lastModified, finalUrl };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -610,6 +641,8 @@ export const RssService = {
       const { etag, lastModified } = fetchRes;
       const xml = fetchRes.text;
 
+      // parse前にもJSスレッドを一度手放す（decode直後にparseへ連続突入するのを防ぐ）。
+      await yieldToEventLoop();
       const parsed = parser.parse(xml) as Record<string, unknown>;
 
       const now = Date.now();

@@ -7,6 +7,7 @@ import { StorageKeys } from '@/constants/storageKeys';
 import { normalizeArticleRetentionDays } from '@/constants/articleRetention';
 import * as Network from 'expo-network';
 import { SyncLock } from '@/utils/syncLock';
+import { yieldToEventLoop } from '@/utils/yieldToEventLoop';
 
 /**
  * フィード取得の同時実行数。直列だとネットワーク待ちがフィード数ぶん積み上がるため
@@ -294,6 +295,9 @@ export const SyncService = {
           } catch (_) {
             // フィード単位のエラーは握りつぶして継続
           }
+          // 1フィード処理後にもJSスレッドを一度手放す（複数フィードの完了が
+          // 集中した際に、decode/parseが連続してJSスレッドを占有するのを防ぐ）。
+          await yieldToEventLoop();
         }
       };
       await Promise.all(
