@@ -132,6 +132,30 @@
   という誤った成功表示になる）。
   → WBS「背景同期完了時にトーストが出ない」「コードレビュー指摘への対応」
 
+## フィード取得のdecode（`services/RssService.ts` / `utils/yieldToEventLoop.ts`）
+
+- UTF-8フィードのdecodeは`decodeFeedBytes()`から`decodeUtf8Chunked()`を必ず経由する。
+  `new TextDecoder('utf-8').decode(bytes)`への一括decode差し戻しは禁止。
+  デフォルトフィードには数百KB〜3MB超のものが複数あり（例: MELOS 3.2MB）、
+  一括decodeだとJSスレッドを1秒以上連続占有し、その間タッチ操作が一切効かなく
+  なる（オンボーディングの「次へ」が反応しない不具合として実機で確認済み）。
+  64KBチャンク単位で`TextDecoder`に`stream: true`で渡し、チャンクの合間に
+  `yieldToEventLoop()`（macrotask yield）を挟むことで解消している。
+- `yieldToEventLoop()`は`Promise.resolve().then()`のようなmicrotaskではなく
+  `setTimeout(resolve, 0)`で実装する必要がある。microtaskはタッチ/タイマー処理の
+  前に消化し切られてしまい、ブロック分割の効果がない（実装時に一度誤って
+  microtask版を検証し、効果が出ないことを確認済み）。
+- decode前・parse前・`SyncService.ts`のworkerで1フィード処理完了後、の3箇所に
+  yieldがある。どれか1箇所だけでは、並列取得（`FETCH_CONCURRENCY=10`）で複数の
+  重いフィードの応答が同時期に返った際の「decode→次のフィードのdecode」という
+  連続占有を防ぎきれない。
+- Shift_JIS/EUC-JP（`encoding-japanese`使用）は意図的にチャンク化の対象外。
+  実測で問題になった巨大フィードがいずれもUTF-8だったため、対象を広げて
+  文字境界の分割や`encoding-japanese`側の状態管理という新しいリスクを増やす
+  必要はないと判断した。将来、巨大な非UTF-8フィードが実測で問題になった時点で
+  改めて対応すること。
+- → WBS「初回起動画面で「次へ」の反応が重い」
+
 ## 文字サイズ・フォントスケーリング（`allowFontScaling`）
 
 - 方針は**原則スケーリング許容＋レイアウト側を可変にする**。`fontSize` を
