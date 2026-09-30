@@ -1602,7 +1602,7 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
 ---
 
-### v1.5.5（初回起動画面「次へ」もたつき対応 / TestFlight提出準備中）
+### v1.5.5（初回起動画面「次へ」もたつき対応 / Android・iOSとも審査提出済み 2026-09-30）
 
 - **経緯**: v1.5.4のiPhone 8実機TestFlight確認中に見つかった「オンボーディングの
   「次へ」タップがもたつく」件（詳細は「既知の不具合」の該当項目を参照）。
@@ -1612,9 +1612,25 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
   （64KB単位、`stream: true`）とmacrotask yield（`utils/yieldToEventLoop.ts`）を
   導入。実機計測でblock最大 1793ms→227ms（Android、約87%減）まで改善。
   詳細・計測データは「既知の不具合」の該当項目を参照。
-- **リリースフロー**: `eas build --local`でiOS/Androidをビルド → TestFlightで
-  iPhone 8実機確認 → 問題なければ`eas submit`でストア申請、の順で進める予定。
-  現時点ではコード変更・記録のみ完了、ビルドはこれから。
+- **リリースフロー（2026-09-29〜30実施）**:
+  - iOS: `eas build --platform ios --profile production --local`でローカル
+    ビルド→`eas submit --platform ios`でApp Store Connectへ提出。アップロード
+    自体は数秒で終わるが、Apple側のバイナリ処理待ちで`eas submit`のポーリングが
+    1時間程度かかった（異常ではない。プロセスが生きていることだけ確認して待てばよい）。
+  - Android: `nice -n 10 eas build --platform android --profile production --local`
+    でローカルビルド。ビルド自体（`.aab`生成）は成功したが、直後の一時ディレクトリ
+    クリーンアップで`ENOTEMPTY: rmdir '.../.git'`エラーが発生した。生成された
+    `.aab`とgitの作業ツリーには影響がないことを確認済みで、実害のない既知の
+    クリーンアップ不具合として無視してよい。`eas submit --platform android`で
+    Play Consoleへdraft提出。
+  - Android submitはAuto Modeの分類器に「Production Deploy」としてブロックされる
+    （ストア公開系の操作のため）。ユーザーの明示的な承認を得てから再実行する必要がある。
+  - リリースノートは`docs/05_store/release_notes_v1.5.5.md`。今回の変更は
+    オンボーディング（初回起動時）限定の内部改善で既存ユーザーには関係しないため、
+    v1.5.4同様「内部処理の安定性を改善しました」の一行のみとした
+    （CLAUDE.mdの「新規インストール限定の変更をリリースノートに書いても
+    既存ユーザーには反映されない」という方針に従った）。
+  - 両OSとも2026-09-30にストア審査へ提出済み。
 
 ---
 
