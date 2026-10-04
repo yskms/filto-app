@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,8 +21,13 @@ lockfileVersions.forEach((version, index) => {
   }
 });
 
-for (const name of ['README.md', 'README_EN.md']) {
-  const contents = readFileSync(resolve(repositoryDir, name), 'utf8');
+for (const name of ['README.md', 'README_JA.md']) {
+  const path = resolve(repositoryDir, name);
+  if (!existsSync(path)) {
+    errors.push(`${name}: file not found`);
+    continue;
+  }
+  const contents = readFileSync(path, 'utf8');
   if (!contents.includes(`v${appVersion}`)) {
     errors.push(`${name}: v${appVersion} not found`);
   }

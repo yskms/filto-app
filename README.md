@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  English | <a href="README.md">日本語</a>
+  English | <a href="README_JA.md">日本語</a>
 </p>
 
 <p align="center">
@@ -82,7 +82,7 @@ Filto is built around three core ideas:
 * **Language:** TypeScript
 * **Local Database:** SQLite
 * **Architecture:** UI / Service / Repository
-* **Network:** RSS fetching only (no cloud backend)
+* **Network:** RSS fetching only (no cloud backend). When adding a feed, if the entered URL isn't itself a feed, Filto fetches the HTML once (only on user action) to detect the feed URL via `<link rel="alternate">` (RSS Autodiscovery).
 
 For development guidelines and project structure, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -91,13 +91,13 @@ For development guidelines and project structure, see [CONTRIBUTING.md](CONTRIBU
 ## Project Status
 
 * Personal project
-* **Available on both iOS and Android** (v1.5.2 is under review)
+* **Available on both iOS and Android** (latest update, v1.5.5, has been submitted for review)
 
 App Store: https://apps.apple.com/app/filto/id6763070121
 
 Google Play: https://play.google.com/store/apps/details?id=com.yskms.filto
 
-> Filto offers an optional Pro subscription while keeping its core local-first experience available for free.
+> Filto offers an optional Pro subscription (removes ads, and unlocks unlimited filters and allow keywords) while keeping its core local-first experience available for free.
 
 ---
 
