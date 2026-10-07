@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/06_reference/filto-logo.png" width="120" />
+  <img src="docs/05_store/feature_graphic_1024x500.png" width="600" alt="Filto" />
 </p>
 
 <h1 align="center">Filto</h1>
