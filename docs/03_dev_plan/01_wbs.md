@@ -1634,7 +1634,7 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
 ---
 
-### v1.5.6（アプリアイコン刷新 / 2026-10-07 ビルド・提出）
+### v1.5.6（アプリアイコン刷新 / Android・iOSとも審査提出済み 2026-10-07）
 
 - **対応内容**: 新ロゴ（ティールの重なりリボン）でアプリアイコン・ファビコン・
   GitHub Pagesのアイコン類を差し替え、Google Play用フィーチャーグラフィック
@@ -1651,7 +1651,12 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 - リリースノートは`docs/05_store/release_notes_v1.5.6.md`。
 - **ビルド・提出（2026-10-07）**: iOS Build 32 を`eas build --local`→`eas submit`で
   App Store Connectへアップロード。Android versionCode 29 を同様にビルドし、
-  Play Consoleへdraft提出。審査への提出（ストア側の操作）は別途。
+  Play Consoleへdraft提出。同日、両OSともストア側で審査へ提出済み。
+  - App Store Connectの新項目「ヘッダと検索結果」（プロダクトページ上部・検索結果の
+    クリエイティブ素材、任意）は、**ヘッダのみ**に
+    `docs/05_store/app_store_header_3840x1646.png`を設定。検索結果は、アプリの
+    中身が伝わるスクリーンショットの方が有利と判断し未設定（未設定ならスクショが出る）。
+    素材はアセットライブラリからバージョン申請と独立して差し替え可能。
   - `eas`はグローバル未インストールのため`npx eas-cli`で実行した
     （`nice -n 10 eas ...`は`eas: No such file or directory`で即失敗する）。
 
