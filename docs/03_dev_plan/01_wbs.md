@@ -1649,6 +1649,11 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
     `filto-logo.webp`は意図的に旧デザインのまま。
 - アイコンはネイティブ資産のためOTA（`eas update`）では届かず、ストア提出が必要。
 - リリースノートは`docs/05_store/release_notes_v1.5.6.md`。
+- **ビルド・提出（2026-10-07）**: iOS Build 32 を`eas build --local`→`eas submit`で
+  App Store Connectへアップロード。Android versionCode 29 を同様にビルドし、
+  Play Consoleへdraft提出。審査への提出（ストア側の操作）は別途。
+  - `eas`はグローバル未インストールのため`npx eas-cli`で実行した
+    （`nice -n 10 eas ...`は`eas: No such file or directory`で即失敗する）。
 
 ---
 
