@@ -91,7 +91,7 @@ For development guidelines and project structure, see [CONTRIBUTING.md](CONTRIBU
 ## Project Status
 
 * Personal project
-* **Available on both iOS and Android** (latest update, v1.5.5, has been submitted for review)
+* **Available on both iOS and Android** (latest update, v1.5.6, has been submitted for review)
 
 App Store: https://apps.apple.com/app/filto/id6763070121
 

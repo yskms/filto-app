@@ -85,7 +85,7 @@ Filto（フィルト）は、好きな情報源だけを集めて、不要な話
 ## 開発状況
 
 - 個人開発プロジェクト
-- **App Store / Google Play で公開中（最新版 v1.5.5 は審査提出済み）** — [App Store](https://apps.apple.com/jp/app/filto/id6763070121) ／ [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
+- **App Store / Google Play で公開中（最新版 v1.5.6 は審査提出済み）** — [App Store](https://apps.apple.com/jp/app/filto/id6763070121) ／ [Google Play](https://play.google.com/store/apps/details?id=com.yskms.filto)
 
 > Filtoはローカルファーストの基本体験を無料で維持しつつ、広告非表示・フィルタ数無制限・許可キーワード数無制限になる任意のPro版（サブスクリプション）も用意しています。
 
