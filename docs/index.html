@@ -282,8 +282,10 @@
       @media (max-width: 760px) {
         section { padding: 52px 0; }
         .lang-switch { top: 14px; right: 14px; }
-        .hero { padding-top: 72px; grid-template-columns: minmax(0, 1fr); text-align: center; }
-        .hero-art img { margin: 0 auto; }
+        .hero { padding-top: 72px; grid-template-columns: minmax(0, 1fr); gap: 24px; text-align: center; }
+        /* 狭い幅では、アイコンを先頭に96pxで置く（Solo + Usの紹介ページと揃える）。HTMLでは文章の後ろにある */
+        .hero-art { order: -1; }
+        .hero-art img { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 8px 24px rgb(0 0 0 / 40%); margin: 0 auto; }
         .lead { max-width: none; margin-left: auto; margin-right: auto; }
         .store-badges { justify-content: center; }
         .features { grid-template-columns: 1fr; }
