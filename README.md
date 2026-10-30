@@ -31,7 +31,7 @@ Many RSS readers focus on collecting information, but filtering out noise is oft
 
 Filto is built around three core ideas:
 
-* **Everything runs locally** — no cloud processing, no account required.
+* **Everything runs locally** - no cloud processing, no account required.
 * **Powerful filtering without unnecessary complexity.**
 * **A quiet reading experience without notification overload.**
 
@@ -70,9 +70,9 @@ Filto is built around three core ideas:
   <img src="docs/05_store/Screenshot/ss_home_.png" width="220" alt="Enjoy a cleaner feed" />
 </p>
 
-1. **Add your favorite feeds** — RSS and Atom are supported. No account required.
-2. **Create your filters** — Block topics you don't want to see, while allowing specific exceptions.
-3. **Enjoy a cleaner feed** — Only articles that match your own rules are shown. Articles open in your default browser.
+1. **Add your favorite feeds** - RSS and Atom are supported. No account required.
+2. **Create your filters** - Block topics you don't want to see, while allowing specific exceptions.
+3. **Enjoy a cleaner feed** - Only articles that match your own rules are shown. Articles open in your default browser.
 
 ---
 
