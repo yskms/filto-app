@@ -1667,6 +1667,85 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
   - `eas`はグローバル未インストールのため`npx eas-cli`で実行した
     （`nice -n 10 eas ...`は`eas: No such file or directory`で即失敗する）。
 
+### Android R8（難読化）の有効化（2026-11-01、`feat/android-r8`）
+
+- **背景**: 2027年2月から、Google Playは「DEXが10MBを超えるアプリ」に、難読化・最適化・
+  縮小の3つの率を各25%以上にすることを求める（Play Console ヘルプ「technical quality
+  requirements」）。Expo / React Nativeのテンプレートは`android.enableMinifyInReleaseBuilds`
+  が既定で`false`で、FiltoのDEXはR8なしで**61.07MB（6ファイル）**あり、対象になる。
+- **実装**: retracks・singfolio・solo-plus-us（Expo 57 / RN 0.86.3）で実績のある
+  `plugins/withAndroidR8.js`と`plugins/android-r8-rules.pro`を移植し、`app.json`の
+  pluginsに登録した（出力ファイル名は`filto-r8-rules.pro`）。入る設定は、minify有効、
+  `proguard-android-optimize.txt`への置き換え、keepルールの追加、`shrinkResources`無効
+  （明示）、`org.gradle.jvmargs`を4GBへ、AGPの指定。**`android/`は`expo prebuild`の
+  生成物なので、設定はpluginに入れる。** 理由と「外してはいけない」点は`CLAUDE.md`の
+  「Android R8」。
+- **Filtoだけの違い**: Expo 54 / RN 0.81.5で、RNが固定するAGPは**8.11.0**（参考側は
+  8.12.0）。AGPは`8.12.3`を指定した。Playが`r8.json`から率を読む条件は「AGP 8.10以降の
+  最新パッチ」で、8.11系の最新パッチ（8.11.2）なのか全体の最新（8.12.3）なのかが読み
+  取れないため、どちらの読み方でも満たす8.12.3にした。Gradle 8.14.3・Kotlin 2.1.20の
+  まま、ビルドも起動も問題なし。APK・AABの`androidGradlePluginVersion`は`8.12.3`、R8は
+  8.12.22。**Play Consoleでの率の表示は未確認**。
+- **実測**（arm64のみ・debug署名のリリース。R8なしは同じコードを
+  `-Pandroid.enableMinifyInReleaseBuilds=false`でビルドした）
+
+  | | R8なし | R8あり |
+  |---|---|---|
+  | DEX（非圧縮） | 61.07MB（6ファイル） | 15.35MB（2ファイル） |
+  | 難読化率 | 未測定 | 69.03% |
+  | 最適化率 | 未測定 | 68.76% |
+  | 縮小率 | 未測定 | 68.94% |
+
+  率は、AABの`BUNDLE-METADATA/com.android.tools/r8.json`の`noXPercentage`を100−Xと
+  読んだ値（retracksでConsoleの表示と一致を確認済みの読み方）。DEXが10MBを超えるため
+  要件の対象のままだが、3つとも25%を大きく上回る。`proguard.map`は約108MBで、4GB指定の
+  もと`bundleRelease`は`Java heap space`にならなかった（2GBで落ちるかは試していない）。
+- **R8で壊れていた不具合（Filto固有、参考にした3アプリでは出ない）**: `ExpoModulesCore`の
+  `AppLoaderProvider`は、マニフェストの`meta-data`
+  （`org.unimodules.core.AppLoader#react-native-headless`）に書かれたクラス名を
+  `Class.forName`で読む。このクラス（`RNHeadlessAppLoader`）はコードから静的に参照
+  されないため、**R8が未使用とみなしてクラスごと削除**していた（`mapping.txt`に
+  存在しない）。AGPがマニフェストから自動で残すのはActivity・Serviceなどのコンポー
+  ネントだけで、`meta-data`の値は対象外。`expo-modules-core`にもkeepルールが無い。
+  - 症状: **クラッシュはしない**。起動と前面復帰のたびにlogcatへ`Cannot initialize app
+    loader`と`ClassNotFoundException`が出る。使うのは`expo-task-manager`の`TaskService`
+    で、**アプリのプロセスが落ちている間に`expo-background-task`が起動されたときの
+    ヘッドレス実行**。削除されると、その経路の同期が静かに失敗する（既定でバック
+    グラウンド更新はオン）。R8なしのリリースでは出ない（debugは未確認）。
+  - 切り分け: keepなし=2件 → keepあり=0件、R8なし=0件（同じエミュレータ・同じ手順）。
+  - 対策: `plugins/android-r8-rules.pro`に
+    `-keep class expo.modules.adapters.react.apploader.RNHeadlessAppLoader { *; }`。
+  - **見つけ方が重要**: `FATAL EXCEPTION`では出ない。リリースを新規インストールして、
+    `adb logcat -d | grep -E 'ClassNotFound|app loader'`まで見ること。
+- **エミュレータでの確認**（`Filto_API_36`・API 36・arm64、新規インストール。keep追加後の
+  ビルドで`FATAL EXCEPTION`・`ClassNotFoundException`・`NullPointerException`・
+  `UnsatisfiedLinkError`・`SQLiteException`はすべて0件）
+  - 起動、オンボーディングの全画面（`require()`したwebp 6枚・ロゴ・読み込み中イラスト
+    が表示される = `shrinkResources`無効の確認）、初回同期（取得・decode・DB書き込み）、
+    ホームの記事一覧と画像、AdMobのテストバナー。
+  - タブの巡回（ログ確認。画面を目視したのはSettingsのみ）、データ管理、Filto Pro画面（RevenueCat SDKは
+    初期化でき、`Billing is not available`を正規のエラーとして返す。エミュレータに課金
+    環境が無いため）、OPMLとバックアップの書き出し（共有シートまで）。
+  - バックグラウンド更新: WorkManagerのジョブ登録を確認し、`cmd jobscheduler run -f`で
+    強制起動して、アプリ生存中の経路で`doWork`が走ることを確認（同期の完了までは
+    見ていない）。この同期と重ねてヘッダーの更新ボタンを押すと「Refreshing」のAlertが
+    出た（`SyncLock`が効いている）。
+- **未確認（次にやること）**
+  1. **プロセスが死んだ状態からのヘッドレス実行**。エミュレータ（userビルド）ではshell
+     からプロセスを落とせず（`am kill`・`am crash`・`kill`は不可、`force-stop`は
+     WorkManagerのジョブも消す）再現できなかった。確認できたのは、`RNHeadlessAppLoader`の
+     読み込みと生成（`Class.forName` + `getDeclaredConstructor`）が前面復帰のたびに成功
+     すること。実機（Pixel 11）で、アプリを閉じて30分以上置いたあとの更新で確認する。
+  2. 内部テストトラックでの購入と復元（Billingはエミュレータで確認できない）、Play
+     Consoleの「DEXコードの最適化」の表示。**内部テストに上げたversionCodeは再利用
+     できない**。
+  3. バックアップの復元（Document Picker経由）、フィルタ編集は未実施。
+  4. `react-native-quick-crypto`・`react-native-quick-base64`・`react-native-nitro-modules`
+     はJSから一度も参照されていない（ランタイムで通らないためR8の検証対象外）。
+     使っていないなら依存の整理候補（別件）。
+- **ついでの修正**: 英語のチュートリアル文（`translations/en.ts`）のemダッシュを半角
+  ハイフンに置換した（`b417d8a`、main）。R8の検証ビルドにも含まれることを確認。
+
 ---
 
 ## 既知の不具合

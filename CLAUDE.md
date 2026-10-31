@@ -223,6 +223,34 @@ SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であ�
   経由（`eas build --local` → `eas submit`）で行った。詳細・経緯は
   WBS「iOS 27 SDK対応：UISceneライフサイクル必須化」を参照。
 
+## Android R8（難読化・最適化・縮小）: `plugins/withAndroidR8.js` は外さない・簡略化しない
+
+2027年2月から、Google PlayはDEXが10MB超のアプリに難読化・最適化・縮小の各率25%以上を
+求める。ExpoのテンプレートはR8が無効で、FiltoのDEXはR8なしで61MB。pluginでR8を有効に
+すると15MB・各率69%台（実測は WBS「Android R8（難読化）の有効化」）。`android/`は
+`expo prebuild`の生成物なので、設定はpluginにしか入れられない。簡略化したくなるが外さないもの:
+
+- **`proguard-android-optimize.txt`への置き換えと`plugins/android-r8-rules.pro`はセット。**
+  最適化を有効にしてkeepを外すと、ExpoのRecord変換がR8に壊れ、リリースだけで起動直後に
+  落ちうる（参考にしたretracksで実際に発生）。`-dontoptimize`へ戻して済ませない（最適化率が出ない）。
+- **`RNHeadlessAppLoader`のkeepはFilto固有で、外すと静かに壊れる。** マニフェストの
+  `meta-data`のクラス名文字列を`Class.forName`で読む仕組みのため、R8が未使用とみなして
+  クラスごと消す。**クラッシュはせず**、プロセスが落ちている間のバックグラウンド同期
+  （ヘッドレス実行）だけが失敗する。`FATAL EXCEPTION`には出ないので、リリースを新規
+  インストールして`adb logcat -d | grep -E 'ClassNotFound|app loader'`まで見ること。
+- **AGPはpluginが`8.12.3`に指定している**（RN 0.81.5の固定は8.11.0）。Playが`r8.json`から
+  率を読むのは「AGP 8.10以降の最新パッチ」のときだけ。RN・Expoの更新でAGPが変わったときや
+  新しいパッチが出たときは`AGP_VERSION`を見直す。
+- **`shrinkResources`は無効のまま。** `FirstRunScreen`が`require()`するオンボーディング画像は、
+  リリースで`res/drawable-*`に入って名前で読まれるため、リソース縮小に消される恐れがある。
+- `org.gradle.jvmargs`の4GB指定を戻さない（minifyでAABに約108MBの`proguard.map`が入る）。
+- **R8の不具合はリリースの実行時にしか出ない。** Expo・RN・ライブラリ・pluginを更新したら、
+  R8入りのリリースAPK（`cd android && nice -n 10 ./gradlew assembleRelease
+  -PreactNativeArchitectures=arm64-v8a`）を`Filto_API_36`へ新規インストールして、
+  オンボーディング→同期→ホーム→設定まで動かし、logcatを見る。
+- 未確認: 実機でのヘッドレス実行、内部テストでの購入・復元、Play Consoleの率の表示
+  （WBSの「未確認」を参照。内部テストに上げたversionCodeは再利用できない）。
+
 ## リリース作業
 
 - `eas build` / `eas submit` / `eas update` は必ず事前確認する
