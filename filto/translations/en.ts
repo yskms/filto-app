@@ -122,7 +122,7 @@ export const en = {
     sampleKeyword3: 'Horoscope',
     tutBlockDesc: '*Hide* articles that contain this text.',
     tutAllowDesc: 'Even if an article would be hidden, it *stays visible* when it contains this text.',
-    tutTargetDesc: 'Choose *where to search* — the title, the text, or both.',
+    tutTargetDesc: 'Choose *where to search* - the title, the text, or both.',
     addFilter: 'Add Filter',
     editFilter: 'Edit Filter',
     deleteMode: 'Delete Mode',
