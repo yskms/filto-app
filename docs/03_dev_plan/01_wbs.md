@@ -1691,10 +1691,10 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
   | | R8なし | R8あり |
   |---|---|---|
-  | DEX（非圧縮） | 61.07MB（6ファイル） | 15.35MB（2ファイル） |
-  | 難読化率 | 未測定 | 69.03% |
-  | 最適化率 | 未測定 | 68.76% |
-  | 縮小率 | 未測定 | 68.94% |
+  | DEX（非圧縮） | 61.07MB（6ファイル） | 15.36MB（2ファイル） |
+  | 難読化率 | 未測定 | 68.84% |
+  | 最適化率 | 未測定 | 68.57% |
+  | 縮小率 | 未測定 | 68.75% |
 
   率は、AABの`BUNDLE-METADATA/com.android.tools/r8.json`の`noXPercentage`を100−Xと
   読んだ値（retracksでConsoleの表示と一致を確認済みの読み方）。DEXが10MBを超えるため
@@ -1717,6 +1717,29 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
     `-keep class expo.modules.adapters.react.apploader.RNHeadlessAppLoader { *; }`。
   - **見つけ方が重要**: `FATAL EXCEPTION`では出ない。リリースを新規インストールして、
     `adb logcat -d | grep -E 'ClassNotFound|app loader'`まで見ること。
+- **レビュー指摘への対応（2026-11-01）**
+  - **`expo-task-manager`のkeepルールが効いていなかった（対応済み）**: パッケージは
+    `proguard-rules.pro`（`-keep class expo.modules.taskManager.** {*;}`）を同梱するが、
+    `build.gradle`に`consumerProguardFiles`が無く、アプリのビルドに入らない（同梱ルールを持つ
+    他のパッケージは全部指定している）。`mapping.txt`で`TaskService`・`TaskManagerUtils`・`Task`が
+    改名されていた。`TaskService`は保存済みタスクを`Class.forName`で復元し、ヘッドレス実行の
+    入口でもあるので、同じkeepを`android-r8-rules.pro`に追加した。追加後は`mapping.txt`で3クラス
+    とも名前が残ることを確認。率は上の表の値（追加前より約0.2ポイント低下）。
+    上流が`consumerProguardFiles`を指定したら、このルールは外してよい。
+  - **AGP指定が「黙って版を下げる」という指摘は成り立たない**: `classpath`をRN固定
+    （8.11.0）より低い8.10.1にして`buildEnvironment`を見ると`8.10.1 -> 8.11.0`で、Gradleは
+    新しい方（RN側）を採用する。実際に起きうるのは逆で、RN・Expoの更新でRNの固定版が
+    `AGP_VERSION`より新しくなると、plugin側の指定が効かなくなり、「最新パッチを使う」狙い
+    が外れる。plugin側でRNの固定版を読んで失敗させる仕組みは、参考3アプリと同じ構成から
+    離れ、`libs.versions.toml`の形式にも依存するため入れていない。代わりに`AGP_VERSION`の
+    コメントに、この挙動と見る場所（`node_modules/react-native/gradle/libs.versions.toml`の
+    `agp`）を書いた。
+  - **既存ユーザーの更新経路（R8なし → R8あり、`adb install -r`）**: `firstInstallTime`が
+    変わらずデータが残り、起動ログは`FATAL EXCEPTION`・`ClassNotFoundException`・`Cannot
+    initialize app loader`・`Could not create Worker`・`SQLiteException`がすべて0件。
+    WorkManagerが保存している`BackgroundTaskWork`のWorkerも新版で生成できた（このクラスは
+    expo-background-taskのルールで名前が残る）。ジョブは1件のまま（2件目の`datatransport`は
+    Google系の送信ジョブ）。
 - **エミュレータでの確認**（`Filto_API_36`・API 36・arm64、新規インストール。keep追加後の
   ビルドで`FATAL EXCEPTION`・`ClassNotFoundException`・`NullPointerException`・
   `UnsatisfiedLinkError`・`SQLiteException`はすべて0件）
@@ -1731,11 +1754,25 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
     見ていない）。この同期と重ねてヘッダーの更新ボタンを押すと「Refreshing」のAlertが
     出た（`SyncLock`が効いている）。
 - **未確認（次にやること）**
-  1. **プロセスが死んだ状態からのヘッドレス実行**。エミュレータ（userビルド）ではshell
-     からプロセスを落とせず（`am kill`・`am crash`・`kill`は不可、`force-stop`は
-     WorkManagerのジョブも消す）再現できなかった。確認できたのは、`RNHeadlessAppLoader`の
-     読み込みと生成（`Class.forName` + `getDeclaredConstructor`）が前面復帰のたびに成功
-     すること。実機（Pixel 11）で、アプリを閉じて30分以上置いたあとの更新で確認する。
+  1. **バックグラウンド同期の完了（ヘッドレス実行と、背面で生きているときの実行の両方）**。
+     実機（Pixel 11）で、アプリを閉じて30分以上置いたあとに同期されること、logcatに
+     `ClassNotFound`・`app loader`が出ないこと、**DBに新着が反映されること**を確認する。
+     ストア提出用のビルドより前に行う。エミュレータで分かったことは次のとおり。
+     - ヘッドレス（プロセスが死んだ状態）: userビルドのshellからはプロセスを落とせず
+       （`am kill`・`am crash`・`kill`は不可、`force-stop`はWorkManagerのジョブも消す）、
+       意図的には再現できなかった。R8なしの旧版では、ジョブが新しいプロセスを起こす
+       コールドスタートが2回偶然起き（原因不明）、`RNHeadlessAppLoader`経由でReactHostが
+       作られるところまでは見えた（完了までは見ていない）。R8版では2回試して再現しなかった。
+       確認できたのは、`RNHeadlessAppLoader`の読み込みと生成（`Class.forName` +
+       `getDeclaredConstructor`）が前面復帰のたびに成功すること。
+     - 背面でプロセスが生きているときの実行（`cmd jobscheduler run -f`）: 完了
+       （`Task successfully finished`）する回と、数分たっても完了しない回があり、**R8の有無では
+       説明できなかった**。待ち時間を揃えて交互に4回ずつ測ると、R8ありは4回とも3秒で完了、
+       R8なしは4回とも45秒で未完了だった。それ以前の不揃いな計測では、R8ありも止まる回
+       （120秒・3分以上）があり、R8なしは5秒で完了した回もあった。原因は特定できていない。
+       R8なしでも止まる回があるのでR8起因とは言えないが、R8版が問題ないとも言い切れない。
+       JS側のタスクにログが無く（リリースビルド）、エミュレータの状態にも依存するため、
+       上記の実機確認で見る。
   2. 内部テストトラックでの購入と復元（Billingはエミュレータで確認できない）、Play
      Consoleの「DEXコードの最適化」の表示。**内部テストに上げたversionCodeは再利用
      できない**。

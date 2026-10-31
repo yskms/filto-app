@@ -227,7 +227,7 @@ SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であ�
 
 2027年2月から、Google PlayはDEXが10MB超のアプリに難読化・最適化・縮小の各率25%以上を
 求める。ExpoのテンプレートはR8が無効で、FiltoのDEXはR8なしで61MB。pluginでR8を有効に
-すると15MB・各率69%台（実測は WBS「Android R8（難読化）の有効化」）。`android/`は
+すると15MB・各率68%台（実測は WBS「Android R8（難読化）の有効化」）。`android/`は
 `expo prebuild`の生成物なので、設定はpluginにしか入れられない。簡略化したくなるが外さないもの:
 
 - **`proguard-android-optimize.txt`への置き換えと`plugins/android-r8-rules.pro`はセット。**
@@ -238,9 +238,13 @@ SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であ�
   クラスごと消す。**クラッシュはせず**、プロセスが落ちている間のバックグラウンド同期
   （ヘッドレス実行）だけが失敗する。`FATAL EXCEPTION`には出ないので、リリースを新規
   インストールして`adb logcat -d | grep -E 'ClassNotFound|app loader'`まで見ること。
+- **`expo-task-manager`のkeepも外さない。** 同梱の`proguard-rules.pro`は`consumerProguardFiles`
+  未指定で効かないため、pluginのルールで`expo.modules.taskManager.**`を残している（外すと
+  `TaskService`が改名・最適化される）。上流が直したら外してよい。
 - **AGPはpluginが`8.12.3`に指定している**（RN 0.81.5の固定は8.11.0）。Playが`r8.json`から
-  率を読むのは「AGP 8.10以降の最新パッチ」のときだけ。RN・Expoの更新でAGPが変わったときや
-  新しいパッチが出たときは`AGP_VERSION`を見直す。
+  率を読むのは「AGP 8.10以降の最新パッチ」のときだけ。Gradleは新しい方を採用するので、RNの
+  固定版がこの値より新しくなると指定が効かなくなる（下げることはない）。RN・Expoの更新でAGPが
+  変わったときや新しいパッチが出たときは`AGP_VERSION`を見直す。
 - **`shrinkResources`は無効のまま。** `FirstRunScreen`が`require()`するオンボーディング画像は、
   リリースで`res/drawable-*`に入って名前で読まれるため、リソース縮小に消される恐れがある。
 - `org.gradle.jvmargs`の4GB指定を戻さない（minifyでAABに約108MBの`proguard.map`が入る）。
@@ -248,8 +252,9 @@ SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であ�
   R8入りのリリースAPK（`cd android && nice -n 10 ./gradlew assembleRelease
   -PreactNativeArchitectures=arm64-v8a`）を`Filto_API_36`へ新規インストールして、
   オンボーディング→同期→ホーム→設定まで動かし、logcatを見る。
-- 未確認: 実機でのヘッドレス実行、内部テストでの購入・復元、Play Consoleの率の表示
-  （WBSの「未確認」を参照。内部テストに上げたversionCodeは再利用できない）。
+- 未確認: 実機でのバックグラウンド同期の完了（エミュレータでは、R8の有無によらず完了しない回が
+  あり原因不明）、内部テストでの購入・復元、Play Consoleの率の表示（WBSの「未確認」を参照。
+  **ストア提出用のビルドより前に、実機で同期の完了まで確認する**。内部テストに上げたversionCodeは再利用できない）。
 
 ## リリース作業
 
