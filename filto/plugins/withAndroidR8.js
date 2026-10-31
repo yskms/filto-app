@@ -52,12 +52,17 @@ const path = require('path');
 const MINIFY_KEY = 'android.enableMinifyInReleaseBuilds';
 const SHRINK_RESOURCES_KEY = 'android.enableShrinkResourcesInReleaseBuilds';
 const JVM_ARGS_KEY = 'org.gradle.jvmargs';
-// minifyを有効にすると、AABに難読化の対応表（proguard.map、約100〜170MB）が入る。
-// テンプレートの-Xmx2048mでは、AABのバンドル時にbundletoolが`Java heap space`で
-// 落ちることがある（retracksで確認）。
+// minifyを有効にすると、AABに難読化の対応表（proguard.map）が入る。Filtoは約108MB
+// （参考にしたアプリは約100〜170MB）。テンプレートの-Xmx2048mでは、AABのバンドル時に
+// bundletoolが`Java heap space`で落ちることがある（retracksで確認。Filtoは2GBを試していない）。
 const JVM_ARGS_VALUE = '-Xmx4096m -XX:MaxMetaspaceSize=1g';
 
 // Googleのmaven（dl.google.com/dl/android/maven2/com/android/tools/build/gradle/）で確認した版。
+// Gradleは競合する版のうち新しい方を採用する。RNの固定版（今は8.11.0）より低く指定しても
+// RN側が採用される（8.10.1を指定して`buildEnvironment`で`8.10.1 -> 8.11.0`を確認）ので、
+// この値が黙って版を下げることはない。逆に、RN・Expoの更新でRNの固定版がこの値より新しく
+// なると、この値は効かなくなり、「最新パッチを使う」という狙い（上の4）が外れる。
+// RNの固定版は`node_modules/react-native/gradle/libs.versions.toml`の`agp`で見る。
 const AGP_VERSION = '8.12.3';
 const OLD_AGP_CLASSPATH = "classpath('com.android.tools.build:gradle')";
 const NEW_AGP_CLASSPATH = `classpath('com.android.tools.build:gradle:${AGP_VERSION}')`;

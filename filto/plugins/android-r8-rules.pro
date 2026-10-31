@@ -29,3 +29,13 @@
 # logcat に `Cannot initialize app loader` / `ClassNotFoundException` が出るだけで、その経路の同期が
 # 静かに失敗する（エミュレータのリリースビルドで確認）。
 -keep class expo.modules.adapters.react.apploader.RNHeadlessAppLoader { *; }
+
+# --- expo-task-manager（Filto固有） ---
+# expo-task-manager は android/proguard-rules.pro（`-keep class expo.modules.taskManager.** {*;}`）を
+# 同梱しているが、android/build.gradle に consumerProguardFiles の指定が無く、アプリのビルドに入らない
+# （同梱ルールを持つ他のパッケージ、expo-background-task・expo-modules-core・expo-updates などは指定している）。
+# そのため R8 が TaskService・TaskManagerUtils・Task を改名・最適化していた（mapping.txt で確認）。
+# TaskService は保存済みのタスクを Class.forName で復元し（restoreTasks）、ヘッドレス実行の入口でもあるので、
+# ライブラリ作者の前提（パッケージごと残す）に合わせる。壊れてもクラッシュせず、同期が静かに失敗する種類の箇所。
+# 上流が consumerProguardFiles を指定するようになったら、このルールは外してよい。
+-keep class expo.modules.taskManager.** { *; }
