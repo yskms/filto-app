@@ -1,6 +1,6 @@
 # Store Description (English)
 
-Last updated: 2026-09-13 (v1.5.2 submitted for review; continuing the v1.3.2 rewrite)
+Last updated: 2026-11-01 (replaced em dashes with " - "; previously 2026-09-13, v1.5.2 submitted for review)
 
 ## App Name
 
@@ -18,7 +18,7 @@ Decide what you read, not an algorithm. Mute topics and shape your own feed.
 
 See less of what you don't want.
 
-Filto is an RSS reader for deciding what you read — instead of letting an algorithm decide for you.
+Filto is an RSS reader for deciding what you read - instead of letting an algorithm decide for you.
 
 Gather the sources you like, mute unwanted topics with keywords, and hide the articles and sites you don't want as you read. Little by little, you shape a feed that fits you.
 
@@ -37,8 +37,8 @@ KEEP WHAT YOU WANT TO READ
 Set allowed keywords as exceptions to your block rules.
 
 For example:
-Hide sports news — but keep Formula 1.
-Hide politics — but keep technology policy.
+Hide sports news - but keep Formula 1.
+Hide politics - but keep technology policy.
 
 Fine-tune your feed to match what you want to read.
 
@@ -50,7 +50,7 @@ Beyond keyword rules, you can hide any article the moment you decide "not this o
 
 Swipe an article to hide it, or hide an entire site with a long press. Changed your mind? Restore it anytime.
 
-You don't need to build the perfect feed up front. Read, hide, read again — and gradually make it your own.
+You don't need to build the perfect feed up front. Read, hide, read again - and gradually make it your own.
 
 ---
 
@@ -58,7 +58,7 @@ FOLLOW ONLY THE SOURCES YOU CHOOSE
 
 Your feed contains articles from the RSS sources you add.
 
-Follow news sites, blogs, tech publications, hobby sites, and more — all in one place.
+Follow news sites, blogs, tech publications, hobby sites, and more - all in one place.
 
 ---
 
