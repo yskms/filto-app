@@ -245,7 +245,8 @@ SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であ�
   率を読むのは「AGP 8.10以降の最新パッチ」のときだけ。Gradleは新しい方を採用するので、RNの
   固定版がこの値より新しくなると指定が効かなくなる（下げることはない）。RN・Expoの更新でAGPが
   変わったときや新しいパッチが出たときは`AGP_VERSION`を見直す（RNの固定版は`android/`で
-  `./gradlew buildEnvironment`を実行し、`gradle:8.11.0 -> 8.12.3`の行で見る）。
+  `./gradlew buildEnvironment`を実行し、`gradle:8.11.0 -> 8.12.3`のような行で見る。左が要求
+  された版、右が実際に使われる版で、数字は更新で変わる）。
 - **`shrinkResources`は無効のまま。** `FirstRunScreen`が`require()`するオンボーディング画像は、
   リリースで`res/drawable-*`に入って名前で読まれるため、リソース縮小に消される恐れがある。
 - `org.gradle.jvmargs`の4GB指定を戻さない（minifyでAABに約108MBの`proguard.map`が入る）。
