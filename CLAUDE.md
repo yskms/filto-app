@@ -227,7 +227,8 @@ SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であ�
 
 2027年2月から、Google PlayはDEXが10MB超のアプリに難読化・最適化・縮小の各率25%以上を
 求める。ExpoのテンプレートはR8が無効で、FiltoのDEXはR8なしで61MB。pluginでR8を有効に
-すると15MB・各率68%台（実測は WBS「Android R8（難読化）の有効化」）。`android/`は
+すると15MB・各率68%台（実測は WBS「Android R8（難読化）の有効化」。Play Consoleでも
+3つとも68%・評価「高」を確認済み）。`android/`は
 `expo prebuild`の生成物なので、設定はpluginにしか入れられない。簡略化したくなるが外さないもの:
 
 - **`proguard-android-optimize.txt`への置き換えと`plugins/android-r8-rules.pro`はセット。**
@@ -254,9 +255,12 @@ SDK"）。Appleが2025年のWWDC25で予告済みの正式な仕様変更であ�
   R8入りのリリースAPK（`cd android && nice -n 10 ./gradlew assembleRelease
   -PreactNativeArchitectures=arm64-v8a`）を`Filto_API_36`へ新規インストールして、
   オンボーディング→同期→ホーム→設定まで動かし、logcatを見る。
-- 未確認: 実機でのバックグラウンド同期の完了（エミュレータでは、R8の有無によらず完了しない回が
-  あり原因不明）、内部テストでの購入・復元、Play Consoleの率の表示（WBSの「未確認」を参照。
-  **ストア提出用のビルドより前に、実機で同期の完了まで確認する**。内部テストに上げたversionCodeは再利用できない）。
+- 未確認: 購入・復元（RevenueCat・Play Billing。エミュレータでは確認できないので、公開後に
+  ライセンステスターの端末で見る）。バックグラウンド同期（`expo-background-task`）の完了は、
+  **実機でもOSがバックグラウンドで走らせず（開いたときに同期が走るだけ）、確認する手段が無い**。
+  「閉じて30分置いたあとに同期が完了するのを確認する」は成立しないので、条件にしない。
+  エミュレータで背面のジョブを強制起動すると、R8の有無によらず完了する回としない回があり、
+  原因は不明（WBSの「未確認」1）。内部テストに上げたversionCodeは再利用できない。
 
 ## リリース作業
 
