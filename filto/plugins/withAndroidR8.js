@@ -62,7 +62,11 @@ const JVM_ARGS_VALUE = '-Xmx4096m -XX:MaxMetaspaceSize=1g';
 // RN側が採用される（8.10.1を指定して`buildEnvironment`で`8.10.1 -> 8.11.0`を確認）ので、
 // この値が黙って版を下げることはない。逆に、RN・Expoの更新でRNの固定版がこの値より新しく
 // なると、この値は効かなくなり、「最新パッチを使う」という狙い（上の4）が外れる。
-// RNの固定版は`node_modules/react-native/gradle/libs.versions.toml`の`agp`で見る。
+// RNの固定版は、android/で`./gradlew buildEnvironment`を実行し、`com.android.tools.build:gradle:8.11.0 -> 8.12.3`
+// のような行（左が要求された版、右が実際に使われる版）で見るのが確実。版を供給しているのは
+// includeBuildされる`@react-native/gradle-plugin`で、カタログは
+// `node_modules/@react-native/gradle-plugin/gradle/libs.versions.toml`の`agp`
+// （`node_modules/react-native/gradle/libs.versions.toml`はRN自身のビルド用で、別物。今は同じ値）。
 const AGP_VERSION = '8.12.3';
 const OLD_AGP_CLASSPATH = "classpath('com.android.tools.build:gradle')";
 const NEW_AGP_CLASSPATH = `classpath('com.android.tools.build:gradle:${AGP_VERSION}')`;

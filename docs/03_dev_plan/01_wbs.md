@@ -1732,8 +1732,12 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
     `AGP_VERSION`より新しくなると、plugin側の指定が効かなくなり、「最新パッチを使う」狙い
     が外れる。plugin側でRNの固定版を読んで失敗させる仕組みは、参考3アプリと同じ構成から
     離れ、`libs.versions.toml`の形式にも依存するため入れていない。代わりに`AGP_VERSION`の
-    コメントに、この挙動と見る場所（`node_modules/react-native/gradle/libs.versions.toml`の
-    `agp`）を書いた。
+    コメントに、この挙動と見る場所を書いた。見る場所は、`android/`で`./gradlew
+    buildEnvironment`を実行したときの`com.android.tools.build:gradle:8.11.0 -> 8.12.3`の行
+    が確実（左が要求された版、右が実際に使われる版）。版を供給しているのは、includeBuild
+    される`@react-native/gradle-plugin`（`node_modules/@react-native/gradle-plugin/gradle/
+    libs.versions.toml`の`agp`）。`node_modules/react-native/gradle/libs.versions.toml`はRN
+    自身のビルド用で別物（当初こちらを書いていたのをレビューで訂正。今はどちらも8.11.0）。
   - **既存ユーザーの更新経路（R8なし → R8あり、`adb install -r`）**: `firstInstallTime`が
     変わらずデータが残り、起動ログは`FATAL EXCEPTION`・`ClassNotFoundException`・`Cannot
     initialize app loader`・`Could not create Worker`・`SQLiteException`がすべて0件。
