@@ -1835,6 +1835,31 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
 ## 既知の不具合
 
+### Play Consoleのクラッシュ：expo-sqliteのSIGSEGV（推定原因：UI初期化後にBackgroundSyncが接続を閉じ直す）（2026-11-01検出 → 同日修正、OTA配信待ち）
+
+- **症状**: v1.5.6（versionCode 29、製品版）で、過去28日にPlay Consoleへ3種のクラッシュが出た。
+  - `libexpo-sqlite.so` の `exsqlite3_step` で SIGSEGV（1件・1ユーザー）
+  - 同 `NativeStatementBinding::getColumnNames()` で SIGSEGV（5件・1ユーザー）
+  - `ReactNativeHostWrapperBase.invokeDelegateMethod` の `ConcurrentModificationException`
+    （1件）。Expo本体の `ArrayMap`（非スレッドセーフ）の内部で、Filto側では直せない。様子見。
+  - 影響は少数で、1.5.7の審査を止める理由にはしなかった。
+- **推定原因（再現は未確認。スタックはネイティブ側のみでJSの呼び出し元は不明）**:
+  `_layout.tsx` が `initDatabase()` を**直接**呼ぶため、`ensureDatabaseInitialized()` の
+  記憶（`initialized`）が立たなかった。そのため、BackgroundSyncの**初回実行**
+  （＝実運用の主経路の「30分以上裏に置いた後の前面復帰」直後）で `initDatabase()` が
+  もう一度走り、`openDatabase(true)` が既存接続を `closeSync()` する。expo-sqlite の
+  `closeDatabase` は閉じる前に全ステートメントを finalize するので、同時にホームの
+  `getAllAsync`（別スレッド）が実行中だと、解放済みステートメントを触って落ちる。
+- **修正**: `initDatabase()` を非公開にし、UI（`_layout.tsx`）・BackgroundSyncとも
+  `ensureDatabaseInitialized()` を通す。成功済みなら何もしない・実行中の初期化には
+  合流する・失敗は記憶しない（再試行は効く）。`database/init.test.ts` を追加
+  （`initSucceeded` 判定を外すと失敗することを変異テストで確認）。
+- **配信**: JSのみなので `eas update` のOTAで足りる。runtimeVersion が `appVersion` ポリシーのため
+  届くのは1.5.7のユーザーだけ。1.5.6のユーザーは1.5.7へ更新されるまで残る。
+- **未確認**: 実機・エミュレータでの再現と、修正後に落ちなくなることの確認は
+  していない（タイミング依存で意図的な再現が難しい）。公開後のPlay Consoleで、
+  該当2件の発生が止まるかを見ること。
+
 ### 初回起動画面で「次へ」の反応が重い（真因：巨大UTF-8フィードのdecodeによるJSスレッド長時間占有）（2026-09-29検出 → 2026-09-30解消、v1.5.5で審査提出済み）
 
 - **経緯**: iPhone 8実機でのTestFlight動作確認中（iOS 27 UIScene対応の検証作業）に、

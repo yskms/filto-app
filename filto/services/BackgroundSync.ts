@@ -49,8 +49,9 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     // 投げることになり、バックグラウンド更新だけが黙って失敗し続ける。
     // 移行の適用可否はトランザクション内で判定するため、UI 側と同時に呼ばれても
     // 二重適用にならない。
-    // ensure 版を使うのは、UI と同じランタイムで動く場合に接続の作り直しと
-    // DDL の再実行を30分ごとに繰り返さないため。
+    // ensure 版を使うのは、UI と同じランタイムで動く場合に、UI が初期化済みの接続を
+    // 閉じ直さないため（ホームの実行中クエリの下で閉じるとネイティブでSIGSEGVする）。
+    // UI 側（_layout.tsx）も同じ ensure を通すので、初期化は1ランタイムにつき1回。
     await ensureDatabaseInitialized();
     await SyncService.refresh({ notify: true });
     return BackgroundTask.BackgroundTaskResult.Success;

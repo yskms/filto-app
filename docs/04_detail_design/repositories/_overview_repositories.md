@@ -198,7 +198,7 @@ set(key: string, value: string): Promise<void>
 **主な関数**:
 ```ts
 openDatabase(): SQLiteDatabase
-initDatabase(): Promise<void>
+ensureDatabaseInitialized(): Promise<void>  // 1ランタイムにつき1回だけ初期化。UI・BackgroundSyncとも必ずこれを通す
 ```
 
 ### database/migrations.ts（将来）

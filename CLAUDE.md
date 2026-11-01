@@ -132,6 +132,16 @@
   という誤った成功表示になる）。
   → WBS「背景同期完了時にトーストが出ない」「コードレビュー指摘への対応」
 
+## DB初期化は `ensureDatabaseInitialized()` だけを通す（`database/init.ts`）
+
+`initDatabase()` は非公開。`_layout.tsx`（UI）も`BackgroundSync`も`ensureDatabaseInitialized()`
+を呼ぶこと。`initDatabase()`は`openDatabase(true)`で既存接続を`closeSync()`し、expo-sqliteは
+閉じる前に全ステートメントをfinalizeする。成功済みのランタイムで再実行すると、ホームの
+実行中クエリ（`getAllAsync`、別スレッド）の下で閉じてネイティブでSIGSEGVする
+（v1.5.6のPlay Consoleクラッシュの推定原因）。「UI側は再試行のために直接呼ぶ」ようにして
+export し直さないこと。再試行は、失敗が記憶されない`ensureDatabaseInitialized()`でも効く。
+→ WBS「Play Consoleのクラッシュ：expo-sqliteのSIGSEGV」
+
 ## フィード取得のdecode（`services/RssService.ts` / `utils/yieldToEventLoop.ts`）
 
 - UTF-8フィードのdecodeは`decodeFeedBytes()`から`decodeUtf8Chunked()`を必ず経由する。

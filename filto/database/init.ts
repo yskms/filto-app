@@ -269,22 +269,41 @@ function applyMigrations(database: SQLite.SQLiteDatabase): boolean {
  * 無効になり、閉鎖チェックをすり抜けて NPE になる。
  *
  * 呼び出し元は _layout.tsx（起動時・再試行時）と BackgroundSync（headless）の2つ。
+ * どちらも ensureDatabaseInitialized() を通すこと（initDatabase() は公開しない）。
+ *
+ * ただし直列化しただけでは足りない。後発の initDatabase() が**先発の完了後**に走ると、
+ * 先発が作った接続を closeSync し、その接続で実行中の getAllAsync などのネイティブ
+ * クエリ（別スレッド）の下でステートメントが finalize されて SIGSEGV になる
+ * （v1.5.6 で Play Console に出た exsqlite3_step / getColumnNames のクラッシュの原因と
+ * 推定。再現は未確認。30分以上裏に置いたあとの前面復帰で、BackgroundSync の初回実行が
+ * ホームの再読込と重なる形）。そのため、初期化が成功済みなら再実行しないことが本質。
  */
 let initChain: Promise<void> = Promise.resolve();
 
-/**
- * データベースを初期化（テーブル作成・インデックス作成）。
- * 同時に呼ばれても直列に実行される。
- */
-export function initDatabase(): Promise<void> {
-  // 前回が失敗していても必ず実行する（_layout.tsx の「再試行」を殺さないため、
+/** このJSランタイムで initDatabase が成功したか。成功後は接続を作り直さない */
+let initSucceeded = false;
+
+/** 実行中（または待機中）の initDatabase。同時に来た呼び出しはこれに合流する */
+let initPending: Promise<void> | null = null;
+
+function initDatabase(): Promise<void> {
+  // 前回が失敗していても必ず実行する（再試行を殺さないため、
   // 成功・失敗どちらのハンドラでも走らせる）
-  const result = initChain.then(runInitDatabase, runInitDatabase);
+  const result = initChain
+    .then(runInitDatabase, runInitDatabase)
+    .then(() => {
+      initSucceeded = true;
+    });
+  initPending = result;
   // 失敗が後続の呼び出しを止めないよう、握り潰した版を待ち合わせに使う
-  initChain = result.then(
-    () => undefined,
-    () => undefined
-  );
+  initChain = result
+    .then(
+      () => undefined,
+      () => undefined
+    )
+    .then(() => {
+      if (initPending === result) initPending = null;
+    });
   return result;
 }
 
@@ -446,24 +465,17 @@ async function runInitDatabase(): Promise<void> {
 }
 
 /**
- * このJSランタイムで一度だけ initDatabase() を実行する。
+ * このJSランタイムで一度だけ DB を初期化する。UI（_layout.tsx）も BackgroundSync も
+ * 必ずこれを通すこと。
  *
- * initDatabase() は openDatabase(true) で毎回DB接続を作り直すため、定期実行される
- * バックグラウンドタスクからそのまま呼ぶと、30分ごとに接続の open/close と
- * 十数本の DDL を繰り返すことになる。成功を一度だけ記憶して以降は再利用する。
- * 失敗は記憶しない（次の機会に再試行できるようにする）。
- *
- * UI 側（_layout.tsx）は再試行のために initDatabase() を直接呼ぶこと。
+ * 初期化は openDatabase(true) で毎回DB接続を作り直すため、成功済みなら何もしない。
+ * UI の初期化後にバックグラウンドタスクが走っても、実行中のクエリの下で接続を
+ * 閉じることがない。初期化が実行中なら、それに合流する（後発として再実行しない）。
+ * 失敗は記憶しない（_layout.tsx の「再試行」で、もう一度初期化が走る）。
  */
-let initialized: Promise<void> | null = null;
 export function ensureDatabaseInitialized(): Promise<void> {
-  if (!initialized) {
-    initialized = initDatabase().catch((error) => {
-      initialized = null; // 失敗は記憶しない
-      throw error;
-    });
-  }
-  return initialized;
+  if (initSucceeded) return Promise.resolve();
+  return initPending ?? initDatabase();
 }
 
 /**

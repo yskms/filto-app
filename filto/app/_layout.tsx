@@ -9,7 +9,7 @@ import { AppThemeProvider, useAppTheme } from '@/providers/theme';
 import { LanguageProvider } from '@/providers/language';
 import { ToastProvider } from '@/providers/toast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { initDatabase, isOnboardingComplete } from '@/database/init';
+import { ensureDatabaseInitialized, isOnboardingComplete } from '@/database/init';
 import FirstRunScreen from '@/components/FirstRunScreen';
 import InitErrorScreen from '@/components/InitErrorScreen';
 import { subscribeRestartOnboarding } from '@/utils/onboarding';
@@ -57,7 +57,10 @@ export default function RootLayout() {
     let cancelled = false;
     setDbReady(false);
     setInitError(false);
-    initDatabase()
+    // initDatabase() を直接呼ばないこと。BackgroundSync と同じ入口を通さないと、
+    // 初期化済みの接続をバックグラウンド同期が閉じ直し、実行中のクエリが落ちる
+    // （database/init.ts の initChain のコメント参照）。失敗は記憶されないので再試行も効く。
+    ensureDatabaseInitialized()
       .then(isOnboardingComplete)
       .then((done) => {
         if (cancelled) return;
