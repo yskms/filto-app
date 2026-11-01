@@ -1789,7 +1789,7 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
 ---
 
-### v1.5.7（Android R8の有効化・英語文言のダッシュ修正 / 準備済み、ビルド・提出は未実施）
+### v1.5.7（Android R8の有効化・英語文言のダッシュ修正 / 2026-11-01 ビルド・提出済み、公開・審査はこれから）
 
 - **含まれる変更**: 上記「Android R8（難読化）の有効化」（Android）、英語のチュートリアル文の
   ダッシュ修正（`translations/en.ts`、JSのみで両OSに入る）。iOSのネイティブ側の変更は無い。
@@ -1800,7 +1800,17 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
   `eas.json`の`appVersionSource: remote`と`autoIncrement`に任せる。
 - リリースノートは`docs/05_store/release_notes_v1.5.7.md`。R8は利用者に見えない変更なので
   「内部処理の改善と、表記の軽微な修正」とした（安定性の改善とは書かない）。
-- **提出時にやること**
+- **ビルド・提出（2026-11-01）**: どちらも`eas build --local`→`eas submit`。
+  - Android: versionCode 29→30、Play Consoleへdraftで提出（EASの提出記録は`finished`、
+    トラックはproduction）。AABを検証し、ABIは`arm64-v8a`・`armeabi-v7a`・`x86`・`x86_64`、
+    DEXは15.36MB（2ファイル）、`androidGradlePluginVersion=8.12.3`、R8 8.12.22、率は
+    難読化68.84%・最適化68.57%・縮小68.75%（検証用ビルドと同じ）、`proguard.map`同梱、
+    版は1.5.7。
+  - iOS: ビルド番号32→33、App Store Connectへアップロード（EASの提出記録は`finished`、
+    Apple側の処理待ち）。Bundle IDは`com.yskms.filto`、版は1.5.7。
+  - ビルド中はディスクの空きが、開始時の約12GBから、Androidで約3.7GB、iOSで約3.4GBまで
+    減った（EASの一時領域だけで約4GB）。空きが少ないときは、ビルド前に確認すること。
+- **提出時にやること**（残り）
   - App Store Connectの英語説明文を、`docs/05_store/description_en.md`（emダッシュ置換済み）
     で差し替える（v1.5.6の審査中は変えられなかったため、この版の提出時に行う）。
     Play Consoleの英語の詳細説明は、いつでも差し替えられる。
