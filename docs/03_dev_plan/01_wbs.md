@@ -1634,7 +1634,7 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
 ---
 
-### v1.5.6（アプリアイコン刷新 / Android・iOSとも審査提出済み 2026-10-07）
+### v1.5.6（アプリアイコン刷新 / 両OS公開済み）
 
 - **対応内容**: 新ロゴ（ティールの重なりリボン）でアプリアイコン・ファビコン・
   GitHub Pagesのアイコン類を差し替え、Google Play用フィーチャーグラフィック
@@ -1786,6 +1786,28 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
      使っていないなら依存の整理候補（別件）。
 - **ついでの修正**: 英語のチュートリアル文（`translations/en.ts`）のemダッシュを半角
   ハイフンに置換した（`b417d8a`、main）。R8の検証ビルドにも含まれることを確認。
+
+---
+
+### v1.5.7（Android R8の有効化・英語文言のダッシュ修正 / 準備済み、ビルド・提出は未実施）
+
+- **含まれる変更**: 上記「Android R8（難読化）の有効化」（Android）、英語のチュートリアル文の
+  ダッシュ修正（`translations/en.ts`、JSのみで両OSに入る）。iOSのネイティブ側の変更は無い。
+  Androidのネイティブビルドを1回作れば両方入るので、文言だけのOTAは不要（公開済みv1.5.6
+  のユーザーへ先に届けたいときだけ意味がある）。
+- バージョンは、`runtimeVersion.policy: "appVersion"`のため1.5.7へ上げた
+  （`app.json`・`package.json`・`package-lock.json`・README 2種）。versionCode・iOSビルド番号は
+  `eas.json`の`appVersionSource: remote`と`autoIncrement`に任せる。
+- リリースノートは`docs/05_store/release_notes_v1.5.7.md`。R8は利用者に見えない変更なので
+  「内部処理の改善と、表記の軽微な修正」とした（安定性の改善とは書かない）。
+- **提出時にやること**
+  - App Store Connectの英語説明文を、`docs/05_store/description_en.md`（emダッシュ置換済み）
+    で差し替える（v1.5.6の審査中は変えられなかったため、この版の提出時に行う）。
+    Play Consoleの英語の詳細説明は、いつでも差し替えられる。
+  - `eas.json`の`submit.android`は`releaseStatus: draft`なので、`eas submit`でPlay Consoleに
+    上がっても公開はされない。**公開（ドラフトの昇格）の前に、実機（Pixel 11）でバック
+    グラウンド同期の完了を確認する**（上記R8の節の「未確認」1）。
+  - 公開後、Play Consoleの「DEXコードの最適化」で3つの率が出ることを確認し、結果を記録する。
 
 ---
 
