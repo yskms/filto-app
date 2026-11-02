@@ -1835,7 +1835,7 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
 
 ## 既知の不具合
 
-### Play Consoleのクラッシュ：expo-sqliteのSIGSEGV（推定原因：UI初期化後にBackgroundSyncが接続を閉じ直す）（2026-11-01検出 → 同日修正、OTA配信待ち）
+### Play Consoleのクラッシュ：expo-sqliteのSIGSEGV（推定原因：UI初期化後にBackgroundSyncが接続を閉じ直す）（2026-11-01検出 → 同日修正、2026-11-02にOTA配信済み）
 
 - **症状**: v1.5.6（versionCode 29、製品版）で、過去28日にPlay Consoleへ3種のクラッシュが出た。
   - `libexpo-sqlite.so` の `exsqlite3_step` で SIGSEGV（1件・1ユーザー）
@@ -1854,8 +1854,14 @@ tsc・lint・テスト20件とも通過。実機での「復帰時同期の失�
   `ensureDatabaseInitialized()` を通す。成功済みなら何もしない・実行中の初期化には
   合流する・失敗は記憶しない（再試行は効く）。`database/init.test.ts` を追加
   （`initSucceeded` 判定を外すと失敗することを変異テストで確認）。
-- **配信**: JSのみなので `eas update` のOTAで足りる。runtimeVersion が `appVersion` ポリシーのため
-  届くのは1.5.7のユーザーだけ。1.5.6のユーザーは1.5.7へ更新されるまで残る。
+- **配信（2026-11-02）**: v1.5.7が両OSの審査を通った後、`fix/db-init-race`をmainへ
+  fast-forwardマージ（`e9cf0a2`）し、`npx eas-cli update --branch production`を
+  `--platform android`と`ios`で個別に実行した（Runtime 1.5.7）。
+  Android update group `b7f6a22a-663d-450d-80f5-227cab975f25`、
+  iOS update group `bdf1fd00-75c5-461f-aa20-860d86aee5ee`。出荷済みの1.5.7ビルドとの差分は
+  この修正のJS 4ファイルのみ（ネイティブ側の変更なし）。runtimeVersion が `appVersion`
+  ポリシーのため、届くのは1.5.7のユーザーだけ。1.5.6のユーザーは1.5.7へ更新されるまで残る。
+  OTAは次回起動で裏DLされ、その次の起動から反映される。
 - **未確認**: 実機・エミュレータでの再現と、修正後に落ちなくなることの確認は
   していない（タイミング依存で意図的な再現が難しい）。公開後のPlay Consoleで、
   該当2件の発生が止まるかを見ること。
